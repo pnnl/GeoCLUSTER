@@ -1,0 +1,18 @@
+﻿Variable Parameter,Value,Fixed Parameter,Fixed Value,Result,Result Value
+Mass Flow Rate (kg/s),,Inlet Pressure (MPa),20,H2O LCOH ($/MWh th),
+Horizontal Extent (m),,Ambient Temperature (˚C),26.85,H2O LCOE ($/MWh e),
+Drilling Depth (m),,Surface Temperature (˚C),25,H2O 40-Year Average Outlet Temperature (˚C),
+Geothermal Gradient (K/m),,Pipe Roughness (mm),0.025,H2O 40-Year Average Outlet Pressure (MPa),
+Borehole Diameter (m),,Rock Density (kg/m3),2750,H2O X-Year Average Heat (MWt),
+Injection Temperature (˚C),,Rock Specific Heat (J/kg-K),790,H2O X-Year Average Electricity Production (MWe),
+Rock Thermal Conductivity (W/m-K),,Inner Pipe / Annulus Area Ratio,1,sCO2 LCOH ($/MWh th),
+Drilling Cost ($/m),,Inner Pipe Thickness (m),0.0192,sCO2 LCOE ($/ MWh e),
+Discount Rate (%),,Inner Pipe Thermal Conductivity (W/m-K),0.06,sCO2 40-Year Average Outlet Temperature (˚C),
+Lifetime (years),,Operation and Maintence Cost of Plant,0.015,sCO2 40-Year Average Outlet Pressure (MPa),
+Plant CAPEX ($/kWt),,Pump Efficiency For Circulation Pump,0.8,sCO2 X-Year Average Heat (MWt),
+Plant CAPEX ($/kWe),,Turbine Isentropic Efficency,0.9,sCO2 X-Year Average Electricity Production (MWe),
+Pre-Cooling (˚C),,Generator Conversion Efficiency ,0.98,-,-
+Turbine Outlet Pressure (bar),,Dead-State Temperature (˚C),293.15,-,-
+Select Interpolation,,Dead-State Temperature (˚C),100000,-,-
+Select Heat-Exchanger Design,,Electricity Rate in Direct-Use,0.1,-,-
+Select Fluid,,-,-,-,-

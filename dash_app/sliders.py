@@ -1,0 +1,232 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# web app and interactive graphics libraries 
+from dash import dcc, html
+import dash_bootstrap_components as dbc
+
+# sourced scripts
+from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
+
+# -------------------------------------------------------------------------------------------
+# Create dictionaries to assign the values and boundaries of the parameter siders.
+#
+#   mdot - mass flow rates [kg/s]
+#   L2 - horizontal extent [m]
+#   L1 - drilling depth [m] 
+#   grad - thermal gradient [K/m] 
+#   D - borehole diameter [m]
+#   Tinj - injection temperature [K]
+#   k - rock thermal conductivity [W/m-K]
+#
+# -------------------------------------------------------------------------------------------
+
+
+def create_steps(arg_arr, str_round_place, val_round_place):
+    """
+    OUTPUT: Returns a newly annnotated dictionary for a slider component.
+    """
+    
+    value_list = [round(elem, val_round_place) for elem in arg_arr.tolist()]
+
+    # print(value_list)
+
+    if value_list[-1] >= 1000:
+        arg_arr = arg_arr / 1000
+        value_list = [int(item) for item in value_list]
+
+     # print(value_list)
+
+    # exception
+    if value_list[0] > 2 and value_list[0] < 100:
+        value_list[0] = int(value_list[0])
+        value_list[-1] = int(value_list[-1])
+
+    list_str = [str_round_place.format(x) for x in arg_arr.tolist()]
+
+    for i in range(len(list_str)):
+        if value_list[i] >= 1000:
+            list_str[i] = list_str[i] + "k"
+        if i >= 1 and i < len(list_str) - 1:
+            list_str[i] = ""
+
+    slider_dict = dict(zip(value_list, list_str))
+
+    return slider_dict
+
+
+slider_list = ["Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)", "Geothermal Gradient (K/m)",
+                "Borehole Diameter (m)", "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)", 
+                    "Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
+                    "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
+
+mdot_dict = create_steps(arg_arr=u_sCO2.mdot, str_round_place='{:.1f}', val_round_place=1)
+L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_place=0)
+L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
+grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
+D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
+Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
+k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
+
+# slider labels for economic paramters
+drillcost_dict = create_steps(arg_arr=np.arange(start=0, stop=4100, step=200), str_round_place='{:.0f}', val_round_place=0)
+discount_dict = create_steps(arg_arr=np.arange(start=0, stop=20.1, step=1), str_round_place='{:.1f}', val_round_place=1)
+lifetime_dict = create_steps(arg_arr=np.arange(start=10, stop=41, step=5), str_round_place='{:.0f}', val_round_place=0)
+kwt_dict = create_steps(arg_arr=np.arange(start=0, stop=1010, step=100), str_round_place='{:.0f}', val_round_place=0)
+kwe_dict = create_steps(arg_arr=np.arange(start=0, stop=10100, step=1000), str_round_place='{:.0f}', val_round_place=0)
+precool_dict = create_steps(arg_arr=np.arange(start=0, stop=40.1, step=5), str_round_place='{:.0f}', val_round_place=0)
+turb_pout_dict = create_steps(arg_arr=np.arange(start=75, stop=201, step=10), str_round_place='{:.0f}', val_round_place=0)
+
+discount_dict = {0: '0', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 
+                    11: '', 12: '', 13: '', 14: '', 15: '', 16: '', 17: '', 18: '', 19: '', 20: '20'}
+precool_dict = {0: '0', 5: '', 10: '', 15: '', 20: '', 25: '', 30: '', 35: '', 40: '40'}
+
+
+# ---------------------------
+# Global style element(s).
+# ---------------------------
+div_block_style = {'display': 'block'}
+p_bold_style = {"fontWeight": "bold"}
+
+
+def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v):
+
+    # ---------------------------------------------------------------------------
+    # Create a Div with the name and the slider stacked **with** the option to 
+    # define steps.
+    # ---------------------------------------------------------------------------
+
+    return html.Div(id=DivID,
+                    style=div_block_style,
+                    children=[
+                       html.P(ptitle, style=p_bold_style),
+                       dcc.Slider(id=ID,
+                       min=min_v, max=max_v,
+                       marks=mark_dict, 
+                       step=step_i,
+                       value=start_v,
+                       tooltip={"placement": "bottom", "always_visible": True}),
+                       ]
+                    )
+
+
+def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v):
+
+    # ---------------------------------------------------------------------------
+    # Create a Div with the name and the slider stacked **without** the option to 
+    # define steps.
+    # ---------------------------------------------------------------------------
+
+    return html.Div(id=DivID,
+                    style=div_block_style,
+                    children=[
+                       html.P(ptitle, style=p_bold_style),
+                       dcc.Slider(id=ID,
+                       min=min_v, max=max_v, #step=None,
+                       marks=mark_dict,
+                       value=start_v,
+                       tooltip={"placement": "bottom", "always_visible": True}
+                       ),
+                       ]
+                    )
+
+
+def slider_card():
+
+    # -----------------------------------------------------------------------
+    # A Div containing controls for graphs. Controls include the following:
+    #
+    #   Sliders for thermal parameters:
+    #           mdot, L2, L1, grad, D, Tinj, and k parameters.
+    #
+    #   Sliders for economic parameters;
+    #       drillcost, discount-rate, lifetime, kwt, kwe, precool, turb-pout
+    #
+    # -----------------------------------------------------------------------
+
+    return html.Div(
+        children=[
+            dbc.Button(
+                    "ⓘ Finetune System Values",
+                    id="collapse-button3",
+                    className="mb-33",
+                    color="primary",
+                    n_clicks=0,
+                ),
+            dbc.Collapse(
+                dbc.Card(
+                    dbc.CardBody(
+                        children=[
+                            html.Div(id="slider-container",
+                                    children=[
+                                    html.Div(id="therm-sliders",
+                                        children=[
+
+                                        slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                mark_dict=mdot_dict, start_v=24.0),
+                                        slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                mark_dict=L2_dict, start_v=10000),
+                                        slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                mark_dict=L1_dict, start_v=3500),
+                                        slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                mark_dict=grad_dict, start_v=0.05),
+                                        # slider2(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=u_sCO2.D[0], max_v=u_sCO2.D[-1], 
+                                        #         mark_dict=D_dict, start_v=0.3500),
+                                        slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                mark_dict=D_dict, step_i=0.002, start_v=0.3500),
+                                        # slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
+                                        #         mark_dict=Tinj_dict, start_v=303.15-273.15),
+                                        slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                mark_dict=Tinj_dict, start_v=30.0),
+                                        # slider1(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30, max_v=60, 
+                                        #     mark_dict=Tinj_dict, step_i=0.2,start_v=30),
+                                        slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                mark_dict=k_dict, start_v=3.0)
+                                    ]),
+
+                                    html.Div(id="econ-sliders",
+                                    children=[
+
+                                    slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
+                                            mark_dict=drillcost_dict, start_v=1000),
+                                    slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
+                                            mark_dict=discount_dict, start_v=7.0),
+                                    # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                                    #         mark_dict=lifetime_dict, start_v=30),
+                                    slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                                            mark_dict=lifetime_dict, step_i=1, start_v=40),
+                                    slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
+                                            mark_dict=kwt_dict, start_v=100),
+                                    slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
+                                            mark_dict=kwe_dict, start_v=3000),
+                                    
+                                    html.Div(id="sCO2-card",
+                                             children=[
+                                                html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
+                                                slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                        mark_dict=precool_dict, start_v=13),
+                                                slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
+                                                        mark_dict=turb_pout_dict, start_v=80),
+                                                html.Div(id="check-visual-card",
+                                                         children=[
+                                                                dcc.Checklist(id="checklist",
+                                                                    options=[' '],
+                                                                    value=[' '],
+                                                                    inline=True
+                                                                ),
+                                                                # html.P("Display heat added or removed from the CLG system to tune for LCOE minima.", id="TS-diagram-text"),
+                                                                html.P("In CLGS, working fluids drive turbines to generate electricity. \
+                                                                    Display a cycle for sCO2 that depends on turbine cooling and turbine outlet pressure. \
+                                                                    Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
+                                                    ])
+                                            ])
+
+                                    ]),
+                                ])
+                            ]
+                    )),
+                id="collapse3",
+                is_open=True,
+            ),
+        ]
+    )
