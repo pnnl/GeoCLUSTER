@@ -18,10 +18,13 @@ from plotly.subplots import make_subplots
 from reader import initialize_data, data_dict
 from econ_support import create_teaobject
 from plots_support import * 
+import traceback
 
 # -----------------------
 # Read in data.
 # -----------------------
+print("code in plots.py is running!")
+traceback.print_stack()
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
 
@@ -76,14 +79,6 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
 
     if case == "utube":
 
-        try:
-            sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point)
-            H2O_kWe, H2O_kWt = u_H2O.interp_kW(point)
-
-        except ValueError as e:
-            sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data_kW()
-            error_message = parse_error_message(e=e, e_name='Err SubRes1')
-            error_messages_d['Err SubRes1'] = error_message
 
         if fluid == "H2O" or fluid == "All":
             H2O_kWe_avg = u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
@@ -95,14 +90,6 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
 
     if case == "coaxial":
 
-        try:
-            sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point)
-            H2O_kWe, H2O_kWt = c_H2O.interp_kW(point)
-        
-        except ValueError as e:
-            sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data_kW()
-            error_message = parse_error_message(e=e, e_name='Err SubRes2')
-            error_messages_d['Err SubRes2'] = error_message
 
         if fluid == "H2O" or fluid == "All":
             H2O_kWe_avg = c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
@@ -112,7 +99,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
             sCO2_kWe_avg = c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
             sCO2_kWt_avg = c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
-    return sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt, sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
+    return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
 
 def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale):
@@ -147,7 +134,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
     # ** Average calculations
-    sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt, sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+    sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
                             get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
 
     error_messages_dict.update(error_messages_d)
@@ -180,6 +167,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
                 sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
+    print("interp time", interp_time)
     if interp_time == "True":
 
         # this doesn't impact the kWe and kWt averages
@@ -189,8 +177,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             try:
                 sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states(point)
                 H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states(point)
-                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point)
-                H2O_kWe, H2O_kWt = u_H2O.interp_kW(point)
+                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
@@ -203,8 +191,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             try:
                 sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states(point)
                 H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states(point)
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW(point)
+                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
@@ -375,7 +363,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     # arg_v = 40 # 20
     arg_i = 160 - (1*101) 
     arg_v = 40 - (0.25*101)
-
+    print("!!!!!")
+    print("interp_time", interp_time)
     if interp_time == "False":
 
         # print('FALSE')
@@ -439,12 +428,13 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         # print(param_ij[0,:].shape) # (20,)
 
         point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
+        print("point for contour", point)
         # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
         if fluid == "sCO2" and case == "utube":
             try:
-                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param, point)
                 sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param, point) 
+                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -454,8 +444,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "sCO2" and case == "coaxial":
             try:
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param, point)
                 sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param, point)
+                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -465,8 +455,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "H2O" and case == "utube":
             try:
-                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param, point)
                 H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param, point)
+                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -479,9 +469,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
         if fluid == "H2O" and case == "coaxial":
             try:
-                # H2O_kWe, H2O_kWt = c_H2O.interp_kW(point2)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param, point)
                 H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param, point)
+                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:

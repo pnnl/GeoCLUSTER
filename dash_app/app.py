@@ -1182,10 +1182,6 @@ server = app.server
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
 if __name__ == '__main__':
-    app.run_server(port=8060, debug=True) 
+    app.run_server(port=8060, debug=False) 
     # EXAMPLE: *************
     # app.run_server(port=8050, proxy="http://127.0.0.1:8059::https://<site>/<page_name>")
-
-
-
-

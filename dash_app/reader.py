@@ -4,6 +4,7 @@
 # sourced scripts
 import clgs as clgs
 from paths import inpath_dict
+from pympler import asizeof
 
 def initialize_data():
 
@@ -13,6 +14,8 @@ def initialize_data():
 	u_H2O = clgs.data(filename, "utube", "H2O")
 	c_sCO2 = clgs.data(filename, "coaxial", "sCO2")
 	c_H2O = clgs.data(filename, "coaxial", "H2O")
+	
+
 
 	# print('Read in data.')
 

@@ -7,6 +7,9 @@ import h5py
 from scipy.interpolate import interpn
 import CoolProp.CoolProp as CP
 import itertools as iter
+from pympler import asizeof
+import zarr
+import time
 
 class data:
   def __init__(self, fname, case, fluid):
@@ -29,7 +32,7 @@ class data:
       self.k = file[input_loc + "k_rock"][:]  # i6
       self.time = file[input_loc + "time"][:]  # i7
       self.ivars = (self.mdot, self.L2, self.L1, self.grad, self.D, self.Tinj, self.k, self.time)
-
+      
       # fixed vars
       self.Pinj = file[fixed_loc + "Pinj"][()]
       self.Tamb = file[fixed_loc + "Tamb"][()]
@@ -53,26 +56,69 @@ class data:
           len(self.Tinj),
           len(self.k),
           len(self.time))
-      self.Tout = self.__uncompress(file, output_loc, "Tout")
-      self.Pout = self.__uncompress(file, output_loc, "Pout")
+      print(case, fluid)
+      self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
+      self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
+
+      print("sizes", self.kWe_avg.shape, self.Tout.shape)
+      print("dtypes", self.kWe_avg.dtype, self.Tout.dtype)
 
     self.CP_fluid = "CO2"
     if (fluid == "H2O"):
       self.CP_fluid = "H2O"
+      
+  def get_parameter_indices(self, array, target):
+    """
+    returns a slice of the parameter indices around a given point.
+    I.E array = [1, 2, 3] and target = 1.5, returns slice(0, 2)
+
+    """
+    
+    if target == "all":
+        return slice(None)
+    if target < array[0] or target > array[-1]:
+        raise Exception(f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})")
+    for i, value in enumerate(array):
+        if value == target:
+            return slice(i, i+1)
+        if value > target:
+            return slice(i-1, i+1)
+
+  def read_values_around_point_for_interpolation(self, zarr_array, point, parameter_values):
+    indices = [self.get_parameter_indices(params, value) for value, params in zip(point, parameter_values)]
+    data = zarr_array[tuple(indices)]
+    return indices, data
+
 
   def __uncompress(self, file, output_loc, state):
     U = file[output_loc + state + "/" + "U"][:]
     sigma = file[output_loc + state + "/" + "sigma"][:]
     Vt = file[output_loc + state + "/" + "Vt"][:]
+
     M_k = np.dot(U, np.dot(np.diag(sigma), Vt))
 
     shape = self.shape
     valid_runs = np.argwhere(np.isfinite(self.We.flatten()))[:, 0]
     M_k_full = np.full((shape[-1], np.prod(shape[:-1])), np.nan)
     M_k_full[:, valid_runs] = M_k
-    return np.reshape(M_k_full.T, shape)
+    ans = np.reshape(M_k_full.T, shape)
+    #cleaning up
+    del U, sigma, Vt, M_k
+    return ans
+
+  def interpolate_points(self, zarr_array, point_to_read_around, points):
+    def read_values_around_points_for_interpolation(zarr_array, point_to_read_around, parameter_values):
+        indices = [self.get_parameter_indices(params, value) for value, params in zip(point_to_read_around, parameter_values)]
+        read_in_data = zarr_array[tuple(indices)]
+        return indices, read_in_data
+
+    indices, values_around_point = read_values_around_points_for_interpolation(zarr_array, point_to_read_around, self.ivars)
+    grid = [params[these_indices] for these_indices, params in zip(indices, self.ivars)]
+    interpolated_points = interpn(grid, values_around_point, points)
+    return interpolated_points
 
   def interp_outlet_states(self, point):
+    start_time = time.time()
 
     points = list(iter.product(
             (point[0],),
@@ -83,13 +129,28 @@ class data:
             (point[5],),
             (point[6],),
             self.time))
-    Tout = interpn(self.ivars, self.Tout, points)
-    Pout = interpn(self.ivars, self.Pout, points)
+    
 
+  #   print("--------")
+  #   print(self.ivars)
+  #   print(point)
+  #   Tout = interpn(self.ivars, self.Tout, points)
+  #   Pout = interpn(self.ivars, self.Pout, points)
+  #   print("------")
+  #   print("Tout", Tout[-1])
+  #   print(len(self.time), len(Tout))
+
+    point_to_read_around =(*point, "all") # unpacking point
+    Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
+    Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+
+    print("--- %s seconds ---" % (time.time() - start_time))
     return Tout, Pout
 
   def interp_outlet_states_contour(self, param, point):
+    print("param", param, point)
 
+    var_index = None
     if param == "Horizontal Extent (m)":
       points = list(iter.product(
             self.mdot,
@@ -101,6 +162,7 @@ class data:
             (point[5],),
             (point[6],)
             )) 
+      var_index = 1
     if param == "Vertical Extent (m)":
       points = list(iter.product(
             self.mdot,
@@ -112,6 +174,7 @@ class data:
             (point[5],),
             (point[6],)
             )) 
+      var_index = 2
     if param == "Geothermal Gradient (K/m)":
       points = list(iter.product(
             self.mdot,
@@ -123,6 +186,7 @@ class data:
             (point[5],),
             (point[6],)
             )) 
+      var_index = 3
     if param == "Borehole Diameter (m)":
       points = list(iter.product(
             self.mdot,
@@ -134,6 +198,7 @@ class data:
             (point[5],),
             (point[6],)
             )) 
+      var_index = 4
     if param == "Injection Temperature (˚C)":
       points = list(iter.product(
             self.mdot,
@@ -145,6 +210,7 @@ class data:
             (point[5],),
             (point[6],)
             )) 
+      var_index = 5
     if param == "Rock Thermal Conductivity (W/m-K)":
       points = list(iter.product(
             self.mdot,
@@ -156,14 +222,30 @@ class data:
             self.k,
             (point[6],)
             )) 
+      var_index = 6
 
-    # print(self.ivars) # tuple
-    # print(self.Tout.shape) # e.g., (26, 20, 9, 5, 3, 3, 3, 161)
-    # print(points) # list
+    # converting to a list so we can mutate it
+    N_DIMENSIONS = 8
+    points_to_read_around = [None] * N_DIMENSIONS
+    point_index = 0
+    # the passed in point contains the coordinate of the value we're slicing over in conjuction with mass flow rate.
+    # we don't want to include that point the points to fetch, so we're removing it from the list of parameters to read at a point
+    parameters_to_read_from_point = list(point)
+    del parameters_to_read_from_point[var_index - 1]
+    for i in range(len(points_to_read_around)):
+      if i == 0 or i == var_index:
+        points_to_read_around[i] = "all"
+      else:
+        points_to_read_around[i] = parameters_to_read_from_point[point_index]
+        point_index += 1
+    points_to_read_around = tuple(points_to_read_around)
 
-    # points=ivars (tuple)values=Tout, points=the coordinates 
-    Tout = interpn(self.ivars, self.Tout, points) # mass flow vs. param
-    Pout = interpn(self.ivars, self.Pout, points)
+    print("points_to_read_around", points_to_read_around)
+    print("og point", point)
+    
+    Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
+    Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
+
 
     if param == "Horizontal Extent (m)":
       Tout = np.transpose(np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[1]))) # 20,26
@@ -190,14 +272,14 @@ class data:
       Pout = np.transpose(np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[6])))
 
 
+    print("return tout from intepr outlet states shape", Tout.shape)
     return Tout, Pout
 
 
-  def interp_kW(self, point, Tamb=300.0):
+  def interp_kW(self, point,  Tout, Pout, Tamb=300.0,):
     
     mdot = point[0]
     Tinj = point[5]
-    Tout, Pout = self.interp_outlet_states(point) # one dimensional output
     enthalpy_out = CP.PropsSI('H', 'T', Tout, 'P', Pout, self.CP_fluid)
     enthalpy_in = CP.PropsSI('H', 'T', Tinj, 'P', self.Pinj, self.CP_fluid)
     entropy_out = CP.PropsSI('S', 'T', Tout, 'P', Pout, self.CP_fluid)
@@ -207,11 +289,10 @@ class data:
     
     return kWe, kWt
 
-  def interp_kW_contour(self, param, point, Tamb=300.0):
+  def interp_kW_contour(self, param, point, Tout, Pout, Tamb=300.0):
     
     mdot = self.mdot
     Tinj = point[4]
-    Tout, Pout = self.interp_outlet_states_contour(param, point) # multidimensional output
 
     accept_one_dim_only = False
     
