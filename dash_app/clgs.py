@@ -7,9 +7,7 @@ import h5py
 from scipy.interpolate import interpn
 import CoolProp.CoolProp as CP
 import itertools as iter
-from pympler import asizeof
 import zarr
-import time
 
 class data:
   def __init__(self, fname, case, fluid):
@@ -57,6 +55,8 @@ class data:
           len(self.k),
           len(self.time))
       print(case, fluid)
+
+      # if you get an error that these files don't exist, run the zarr.ipynb notebook in the data directory to build these files!
       self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
       self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
 
@@ -69,13 +69,17 @@ class data:
       
   def get_parameter_indices(self, array, target):
     """
-    returns a slice of the parameter indices around a given point.
-    I.E array = [1, 2, 3] and target = 1.5, returns slice(0, 2)
-
+    returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
+    I.E if array is [1, 2, 3] and you give it 1.5, the points around 1.5 are [1, 2], so it will return the indices of [1,2], which are [0, 1].
+    However, since we need to use this indices to slice into the 8D matrix, we return a slice object that will slice indices.
+    
+    if the array contains the target exactly, it'll just return a slice for getting specifically that point.
+    
+    If we pass in "all" as the target, it will return a slice that will slice the entirety of that array
     """
     
     if target == "all":
-        return slice(None)
+        return slice(None) #slice all of the points
     if target < array[0] or target > array[-1]:
         raise Exception(f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})")
     for i, value in enumerate(array):
@@ -85,41 +89,28 @@ class data:
             return slice(i-1, i+1)
 
   def read_values_around_point_for_interpolation(self, zarr_array, point, parameter_values):
+    """
+    reads the values around the given point(s) for interpolation from the passed in zarr_array. 
+    If "all" is passed in as any of the coordinates of the point,
+    then it'll slice across the entirety of that coordinate's dimension
+    """
     indices = [self.get_parameter_indices(params, value) for value, params in zip(point, parameter_values)]
-    data = zarr_array[tuple(indices)]
+    data = zarr_array[tuple(indices)] # need to convert into into a tuple or zarr thinks we're doing fancy indexing
     return indices, data
 
-
-  def __uncompress(self, file, output_loc, state):
-    U = file[output_loc + state + "/" + "U"][:]
-    sigma = file[output_loc + state + "/" + "sigma"][:]
-    Vt = file[output_loc + state + "/" + "Vt"][:]
-
-    M_k = np.dot(U, np.dot(np.diag(sigma), Vt))
-
-    shape = self.shape
-    valid_runs = np.argwhere(np.isfinite(self.We.flatten()))[:, 0]
-    M_k_full = np.full((shape[-1], np.prod(shape[:-1])), np.nan)
-    M_k_full[:, valid_runs] = M_k
-    ans = np.reshape(M_k_full.T, shape)
-    #cleaning up
-    del U, sigma, Vt, M_k
-    return ans
-
   def interpolate_points(self, zarr_array, point_to_read_around, points):
-    def read_values_around_points_for_interpolation(zarr_array, point_to_read_around, parameter_values):
-        indices = [self.get_parameter_indices(params, value) for value, params in zip(point_to_read_around, parameter_values)]
-        read_in_data = zarr_array[tuple(indices)]
-        return indices, read_in_data
-
-    indices, values_around_point = read_values_around_points_for_interpolation(zarr_array, point_to_read_around, self.ivars)
-    grid = [params[these_indices] for these_indices, params in zip(indices, self.ivars)]
+    """
+    Reads in only the data directly around points_to_read_around from zarr_array and interpolates the passed in points on that data.
+    Essentially a wrapper around interpn where we only read the data we need.
+    Alot of the data from the original zarr_array is not needed for interpolation since the default linear interpolation method of interpn only needs the corners of the hypercube around a given point to interpolate it's value
+    Instead of the entire 8D parameter space.
+    """
+    indices, values_around_point = self.read_values_around_point_for_interpolation(zarr_array, point_to_read_around, self.ivars)
+    grid = [params[these_indices] for these_indices, params in zip(indices, self.ivars)] # the grid is the values of the parameters at the points we're interpolating between
     interpolated_points = interpn(grid, values_around_point, points)
     return interpolated_points
 
   def interp_outlet_states(self, point):
-    start_time = time.time()
-
     points = list(iter.product(
             (point[0],),
             (point[1],),
@@ -129,22 +120,11 @@ class data:
             (point[5],),
             (point[6],),
             self.time))
-    
 
-  #   print("--------")
-  #   print(self.ivars)
-  #   print(point)
-  #   Tout = interpn(self.ivars, self.Tout, points)
-  #   Pout = interpn(self.ivars, self.Pout, points)
-  #   print("------")
-  #   print("Tout", Tout[-1])
-  #   print(len(self.time), len(Tout))
-
-    point_to_read_around =(*point, "all") # unpacking point
+    point_to_read_around =(*point, "all") # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension 
     Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
     Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
 
-    print("--- %s seconds ---" % (time.time() - start_time))
     return Tout, Pout
 
   def interp_outlet_states_contour(self, param, point):
@@ -224,12 +204,12 @@ class data:
             )) 
       var_index = 6
 
-    # converting to a list so we can mutate it
     N_DIMENSIONS = 8
     points_to_read_around = [None] * N_DIMENSIONS
     point_index = 0
     # the passed in point contains the coordinate of the value we're slicing over in conjuction with mass flow rate.
     # we don't want to include that point the points to fetch, so we're removing it from the list of parameters to read at a point
+    # and replacing that with "all", so the function will slice over that entire dimension
     parameters_to_read_from_point = list(point)
     del parameters_to_read_from_point[var_index - 1]
     for i in range(len(points_to_read_around)):
@@ -238,11 +218,8 @@ class data:
       else:
         points_to_read_around[i] = parameters_to_read_from_point[point_index]
         point_index += 1
-    points_to_read_around = tuple(points_to_read_around)
+    points_to_read_around = tuple(points_to_read_around) #interpolate_points expects this to be a tuple so converting it
 
-    print("points_to_read_around", points_to_read_around)
-    print("og point", point)
-    
     Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
     Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
 

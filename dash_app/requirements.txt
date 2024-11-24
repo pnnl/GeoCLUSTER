@@ -6,3 +6,4 @@ h5py==3.10.0
 pandas==2.0.3
 scipy==1.10.1
 xlsxwriter==3.1.9
+zarr
