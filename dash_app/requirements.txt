@@ -1,9 +1,12 @@
 CoolProp==6.6.0
+CoolProp==6.6.0
 dash==2.14.2
 dash_bootstrap_components==1.5.0
 dash_daq==0.5.0
 h5py==3.10.0
+numpy==1.24.4
 pandas==2.0.3
-scipy==1.10.1
-xlsxwriter==3.1.9
-zarr
+plotly==5.24.1
+Pympler==1.1
+scipy==1.14.1
+zarr==2.16.1
