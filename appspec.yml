@@ -1,0 +1,13 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /www/GeoCLUSTER
+hooks:
+  BeforeInstall:
+    - location: /bin/rm -rf /www/GeoCLUSTER.orig && mv /www/GeoCLUSTER /www/GeoCLUSTER.orig && mkdir /www/GeoCLUSTER
+      timeout: 10
+  AfterInstall:
+    - location: /bin/systemctl restart httpd
+      timeout: 30
+  
