@@ -267,53 +267,12 @@ class data:
         Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
         Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
 
-        if param == "Horizontal Extent (m)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[1]))
-            )  # 20,26
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[1]))
-            )
-
-        if param == "Vertical Extent (m)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[2]))
-            )  # 20,9
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[2]))
-            )
-
-        if param == "Geothermal Gradient (K/m)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[3]))
-            )  # 20,5
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[3]))
-            )
-
-        if param == "Borehole Diameter (m)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[4]))
-            )  # 20,3
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[4]))
-            )
-
-        if param == "Injection Temperature (˚C)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[5]))
-            )  # 20,3
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[5]))
-            )
-
-        if param == "Rock Thermal Conductivity (W/m-K)":
-            Tout = np.transpose(
-                np.reshape(Tout, (self.Tout.shape[0], self.Tout.shape[6]))
-            )  # 20,3
-            Pout = np.transpose(
-                np.reshape(Pout, (self.Tout.shape[0], self.Tout.shape[6]))
-            )
+        Tout = np.transpose(
+            np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
+        )  # 20,26
+        Pout = np.transpose(
+            np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
+        )
 
         return Tout, Pout
 
