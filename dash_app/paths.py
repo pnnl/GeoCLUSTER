@@ -5,7 +5,7 @@ localpath = ""
 internal_pnnl_path = "/var/www/html/dash_app/"
 aws_path = "/www/GeoCLUSTER/dash_app/"
 
-absolute_path = localpath # **** CHANGE HERE
+absolute_path = aws_path
 
 inpath_dict = {
 

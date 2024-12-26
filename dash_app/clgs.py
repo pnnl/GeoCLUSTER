@@ -8,6 +8,7 @@ from scipy.interpolate import interpn
 import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
+from paths import absolute_path
 
 
 class data:
@@ -71,8 +72,8 @@ class data:
             )
 
             # if you get an error that these files don't exist, run the zarr.ipynb notebook in the data directory to build these files!
-            self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
-            self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
+            self.Tout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Tout.zarr", mode="r")
+            self.Pout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Pout.zarr", mode="r")
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
