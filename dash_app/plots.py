@@ -23,8 +23,6 @@ import traceback
 # -----------------------
 # Read in data.
 # -----------------------
-print("code in plots.py is running!")
-traceback.print_stack()
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
 
