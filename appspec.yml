@@ -6,5 +6,5 @@ files:
 hooks:
   AfterInstall:
     - location: afterinstall.sh
-      timeout: 30
+      timeout: 300
   
