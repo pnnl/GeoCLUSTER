@@ -46,16 +46,16 @@ class data:
             self.Tamb = file[fixed_loc + "Tamb"][()]
 
             # dim = Mdot x L2 x L1 x grad x D x Tinj x k
-            self.Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
-            self.We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
+            Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
+            We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
 
             self.GWhr = 1e6 * 3600000.0
 
             self.kWe_avg = (
-                self.We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+                We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
             )
             self.kWt_avg = (
-                self.Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+                Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
             )
 
             # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
@@ -70,7 +70,7 @@ class data:
                 len(self.time),
             )
 
-            # if you get an error that these files don't exist, run the zarr.ipynb notebook in the data directory to build these files!
+            # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
             self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
             self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
 
@@ -269,7 +269,7 @@ class data:
 
         Tout = np.transpose(
             np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
-        )  # 20,26
+        )  
         Pout = np.transpose(
             np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
         )
