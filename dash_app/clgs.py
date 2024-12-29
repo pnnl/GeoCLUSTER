@@ -114,8 +114,6 @@ class data:
             self.get_parameter_indices(params, value)
             for value, params in zip(point, parameter_values)
         ]
-        print(point)
-        print(indices)
         data = zarr_array[
             tuple(indices)
         ]  # need to convert into into a tuple or zarr thinks we're doing fancy indexing

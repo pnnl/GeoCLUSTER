@@ -47,7 +47,6 @@ for tube_shape in shapes:
                 M_k_full[:, valid_runs] = M_k
                 ans = np.reshape(M_k_full.T, shape)
                 ans = ans.astype(np.float32)
-                print(ans.shape)
 
                 chunk_size = (26, 1, 1, 1, 1, 1, 1, 161)
                 z = zarr.creation.array(

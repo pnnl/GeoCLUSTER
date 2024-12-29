@@ -165,7 +165,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
                 sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-    print("interp time", interp_time)
     if interp_time == "True":
 
         # this doesn't impact the kWe and kWt averages
@@ -361,8 +360,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     # arg_v = 40 # 20
     arg_i = 160 - (1*101) 
     arg_v = 40 - (0.25*101)
-    print("!!!!!")
-    print("interp_time", interp_time)
     if interp_time == "False":
 
         # print('FALSE')
@@ -426,7 +423,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         # print(param_ij[0,:].shape) # (20,)
 
         point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
-        print("point for contour", point)
         # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
         if fluid == "sCO2" and case == "utube":
