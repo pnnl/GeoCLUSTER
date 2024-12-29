@@ -532,6 +532,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
     fig = update_layout_properties_subsurface_contours(fig, param)
     
+    print("made subsurface countouts")
     return fig, error_messages_dict
 
 
