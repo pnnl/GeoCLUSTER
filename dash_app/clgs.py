@@ -8,7 +8,6 @@ from scipy.interpolate import interpn
 import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
-from sbt import run_sbt
 
 
 class data:
@@ -22,7 +21,7 @@ class data:
             input_loc = "/" + case + "/" + fluid + "/input/"
             output_loc = "/" + case + "/" + fluid + "/output/"
 
-            # independent vars
+            # independent vars``
             self.mdot = file[input_loc + "mdot"][:]  # i0
             self.L2 = file[input_loc + "L2"][:]  # i1
             self.L1 = file[input_loc + "L1"][:]  # i2
@@ -132,6 +131,8 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
+        print("interp shape")
+        print(values_around_point.shape)
         interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
