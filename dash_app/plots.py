@@ -23,8 +23,6 @@ import traceback
 # -----------------------
 # Read in data.
 # -----------------------
-print("code in plots.py is running!")
-traceback.print_stack()
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
 
@@ -363,8 +361,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     # arg_v = 40 # 20
     arg_i = 160 - (1*101) 
     arg_v = 40 - (0.25*101)
-    print("!!!!!")
-    print("interp_time", interp_time)
     if interp_time == "False":
 
         # print('FALSE')

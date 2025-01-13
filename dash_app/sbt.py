@@ -9,21 +9,21 @@ import pdb
 import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
-from dataclasses import dataclass
+from traceback import print_stack
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
 #%% -------
 # 1. Input
 # Generally, the user should only make changes to this section
 #---------
-def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1000, k_f=0.68, mu_f=600*10**-6, Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875):
+def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1000, k_f=0.68, mu_f=600*10**-6, Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875, vertical_depth=2000):
     """
     Runs the SBT Model
     Args:
         clg_configuration:                                           #Must be 1 or 2. "1" mean co-axial, "2" U-loop
         sbt_version:                                       #Must be 1 or 2. 1 means SBT v1 (Temperature only); 2 means SBT v2 (Temperature and Pressure including allowing TP dependent fluid properties)
         m:                                                          #Total fluid mass flow rate [kg/s]. m must be provided if the user sets variableflowrate to 0.
-        Tin:`                                                        #Constant injection temperature [deg.C]
+        Tin:                                                        #Constant injection temperature [deg.C]
         cp_f:                                                     #Fluid specific heat capacity [J/kgK]
         rho_f:                                                    #Fluid density [kg/m3]
         k_f:                                                      #Fluid heat conductivity [W/m.K]
@@ -63,7 +63,8 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     variablefluidproperties = 1                                     #Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
 
     ## Simulation and SBT algorithm settings
-    times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))) #simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
+    print("here")
+    times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) #simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
     print(times.shape)
     #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
     #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
@@ -71,7 +72,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     #Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
     #times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
     fullyimplicit = 1                                               #Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
-    accuracy = 5                                                    #Must be 1,2,3,4 or 5 with 1 lowest accuracy and 5 highest accuracy. Lowest accuracy runs fastest. Accuracy level impacts number of discretizations for numerical integration and decision tree thresholds in SBT algorithm.
+    accuracy = 1                                                    #Must be 1,2,3,4 or 5 with 1 lowest accuracy and 5 highest accuracy. Lowest accuracy runs fastest. Accuracy level impacts number of discretizations for numerical integration and decision tree thresholds in SBT algorithm.
     FMM = 1                                                        #if 1, use fast multi-pole methold-like approach (i.e., combine old heat pulses to speed up simulation)
     FMMtriggertime = 3600*24*10                                     #threshold time beyond which heat pulses can be combined with others [s]
 
@@ -86,7 +87,10 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
 
     if clg_configuration == 1: #co-axial geometry: (x,y,z)-coordinates of centerline of co-axial heat exchanger [m]
         #Example 1: 2 km vertical well
-        z = np.arange(0, -2001, -50).reshape(-1, 1)
+        # TODO: we need link this to depth
+        # NOTE: option for speeidng up, change step size here
+        max_dim_1 = -1 * (vertical_depth + 1)
+        z = np.arange(0, max_dim_1, -100).reshape(-1, 1)
         x = np.zeros((len(z), 1))
         y = np.zeros((len(z), 1))
         
@@ -127,31 +131,31 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
             z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
     
     # Make 3D figure of borehole geometry to make sure it looks correct
-    plt.close('all') #close all curent figures
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    # plt.close('all') #close all curent figures
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection='3d')
 
-    if clg_configuration == 1: #co-axial geometry
-        ax.plot(x, y, z, 'k-o', linewidth=2)
-        ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-        ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-        ax.set_zlim([np.min(z) - 500, 0])
-        ax.set_zlabel('Depth (m)')
-        ax.set_xlabel('x (m)')
-        ax.set_ylabel('y (m)')
-    elif clg_configuration == 2: #U-loop geometry
-        ax.plot(xinj, yinj, zinj, 'b-o', linewidth=2)
-        #ax.axis('equal') # Uncomment this next line to set the plotted geometry to correct scale with equal axis unit spacing
-        ax.plot(xprod, yprod, zprod, 'r-o', linewidth=2)
-        for i in range(numberoflaterals):
-            ax.plot(xlat[:, i], ylat[:, i], zlat[:, i], 'k-o', linewidth=2)
-        ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-        ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-        ax.set_zlim([np.min(z) - 500, 0])
-        ax.set_zlabel('Depth (m)')
-        ax.set_xlabel('x (m)')
-        ax.set_ylabel('y (m)')
-        ax.legend(['Injection Well', 'Production Well', 'Lateral(s)'])
+    # if clg_configuration == 1: #co-axial geometry
+    #     ax.plot(x, y, z, 'k-o', linewidth=2)
+    #     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
+    #     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
+    #     ax.set_zlim([np.min(z) - 500, 0])
+    #     ax.set_zlabel('Depth (m)')
+    #     ax.set_xlabel('x (m)')
+    #     ax.set_ylabel('y (m)')
+    # elif clg_configuration == 2: #U-loop geometry
+    #     ax.plot(xinj, yinj, zinj, 'b-o', linewidth=2)
+    #     #ax.axis('equal') # Uncomment this next line to set the plotted geometry to correct scale with equal axis unit spacing
+    #     ax.plot(xprod, yprod, zprod, 'r-o', linewidth=2)
+    #     for i in range(numberoflaterals):
+    #         ax.plot(xlat[:, i], ylat[:, i], zlat[:, i], 'k-o', linewidth=2)
+    #     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
+    #     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
+    #     ax.set_zlim([np.min(z) - 500, 0])
+    #     ax.set_zlabel('Depth (m)')
+    #     ax.set_xlabel('x (m)')
+    #     ax.set_ylabel('y (m)')
+    #     ax.legend(['Injection Well', 'Production Well', 'Lateral(s)'])
 
     # plt.show()
 
@@ -1632,11 +1636,13 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     line_to_print = f'Average heat production = {AverageHeatProduction:.2f} MWt\n'
     print(line_to_print, end='')
 
-    #end time
     toc = time.time()
     passedtime = toc-tic
     line_to_print = f'Calculation time = {passedtime:.2f} s\n'
     print(line_to_print)
+    return Toutput
+
+    #end time
 
     #Plot final fluid temperature profile
     # if clg_configuration == 1: #co-axial geometry 
@@ -1748,4 +1754,5 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     # plt.yticks(fontsize=12)
     # plt.show()
         
-run_sbt(sbt_version=2, clg_configuration=1, m=24, Tin=30, GeoGradient=0.05, k_m=3)
+if __name__ == "__main__":
+    Tout = run_sbt(sbt_version=1, clg_configuration=1, m=24, Tin=30, GeoGradient=0.05, k_m=3)

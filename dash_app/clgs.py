@@ -4,10 +4,11 @@
 # data manipulation libraries
 import numpy as np
 import h5py
-from scipy.interpolate import interpn
+from scipy.interpolate import interpn, interp1d
 import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
+from sbt import run_sbt
 
 
 class data:
@@ -131,31 +132,50 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
-        print("interp shape")
-        print(values_around_point.shape)
         interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
-    def interp_outlet_states(self, point):
-        points = list(
-            iter.product(
-                (point[0],),
-                (point[1],),
-                (point[2],),
-                (point[3],),
-                (point[4],),
-                (point[5],),
-                (point[6],),
-                self.time,
-            )
-        )
+    def reshape_output(self, tout):
+        NEW_SIZE = 161
+        original_indices = np.arange(tout.shape[0])
+        new_indices = np.arange(NEW_SIZE + 1,)
+        interpolator = interp1d(original_indices, tout, kind='quadratic')
+        new_data = interpolator(new_indices)
+        return new_data
 
-        point_to_read_around = (
-            *point,
-            "all",
-        )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
-        Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
-        Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+
+    def interp_outlet_states(self, point, sbt_version = 1):
+        """
+        :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
+        """
+        if sbt_version == 0:
+            points = list(
+                iter.product(
+                    (point[0],),
+                    (point[1],),
+                    (point[2],),
+                    (point[3],),
+                    (point[4],),
+                    (point[5],),
+                    (point[6],),
+                    self.time,
+                )
+            )
+
+            point_to_read_around = (
+                *point,
+                "all",
+            )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
+            Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
+            Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+        else:
+            mdot, L2, L1, grad, D , Tinj, k = point
+            Tout = run_sbt(sbt_version=sbt_version, m=mdot, vertical_depth=L1, GeoGradient=grad, Tin=Tinj, k_m=k)
+            Tout = Tout + 273.15
+            Tout = self.reshape_output(Tout)
+            #reshaping Tout to make it match the dimensions the rest of the app expects
+            constant_pressure = 1e7 # 100 Bar in pascal
+            Pout = constant_pressure * np.ones_like(Tout)
 
         return Tout, Pout
 
@@ -286,6 +306,8 @@ class data:
 
         mdot = point[0]
         Tinj = point[5]
+        print('!!!!!!!')
+        print(Tout, Pout, self.CP_fluid)
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
