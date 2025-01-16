@@ -3,12 +3,16 @@
 
 # sourced scripts
 import clg_tea_module as clg_tea_module_v3
-
+from memory_profiler import profile
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 # -----------------------
 # Global properties.
 # -----------------------
 to_kelvin_factor = 273.15
 
+@profile(stream=memory_profile_file)
 def fixed_economic_inputs():
 
     # --------------------------------------------------------------------------------
@@ -26,7 +30,7 @@ def fixed_economic_inputs():
 
     return O_and_M_cost_plant, Pump_efficiency, Turbine_isentropic_efficiency, Generator_efficiency, Compressor_isentropic_efficiency, T0, P0, Electricity_rate
 
-
+@profile(stream=memory_profile_file)
 def create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
                      case, end_use, fluid, 
                      Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, Tin_user, krock_user, 

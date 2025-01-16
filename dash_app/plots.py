@@ -3,6 +3,7 @@
 
 # standard system libraries
 import sys
+from memory_profiler import profile
 
 # data manipulation libraries
 import numpy as np
@@ -17,13 +18,15 @@ from plotly.subplots import make_subplots
 # sourced scripts
 from reader import initialize_data, data_dict
 from econ_support import create_teaobject
-from plots_support import * 
+from plots_support import *
 import traceback
-
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 # -----------------------
 # Read in data.
 # -----------------------
-print("code in plots.py is running!")
+# print("code in plots.py is running!")
 traceback.print_stack()
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
@@ -41,6 +44,7 @@ lw = 1.4 # line width
 # THERMAL PERFORMANCE PLOTS
 # --------------------------------------------------------------------------------------------------------------------
 
+@profile(stream=memory_profile_file)
 def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
 
     arg_mdot_v, arg_mdot_i = find_nearest(u_sCO2.mdot, arg_mdot) 
@@ -54,7 +58,7 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
     return arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
 
-
+@profile(stream=memory_profile_file)
 def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i):
 
     # --------------------------------------------------------------------------------------------------------------
@@ -101,7 +105,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
 
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
-
+@profile(stream=memory_profile_file)
 def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -167,7 +171,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
                 sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-    print("interp time", interp_time)
+    # print("interp time", interp_time)
     if interp_time == "True":
 
         # this doesn't impact the kWe and kWt averages
@@ -331,7 +335,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict
 
 
-
+@profile(stream=memory_profile_file)
 def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -546,7 +550,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 # ECONOMIC PERFORMANCE PLOTS
 # --------------------------------------------------------------------------------------------------------------------
 
-
+@profile(stream=memory_profile_file)
 def generate_econ_lineplots(interp_time, case, end_use, fluid,
                             mdot, L2, L1, grad, D, Tinj, k,
                             Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -881,7 +885,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 
 
-
+@profile(stream=memory_profile_file)
 def CO2_isobaric_lines(tmatrix_pathname):
 
     # CO2 isobaric lines data for Ts diagram
@@ -901,6 +905,7 @@ def CO2_isobaric_lines(tmatrix_pathname):
 
     return pvectorforTS, svectorforTS, tmatrix, sdome, Tdome
 
+@profile(stream=memory_profile_file)
 def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
 
     error_dict = {}

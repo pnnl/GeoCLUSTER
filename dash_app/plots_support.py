@@ -3,12 +3,15 @@
 
 # standard libraries
 import re
+from memory_profiler import profile
 
 # data manipulation and plotting libraries
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 # --------------------------------------
 # Colors for the contours.
 # --------------------------------------
@@ -30,6 +33,7 @@ slider_list = ["Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth
 
 
 
+@profile(stream=memory_profile_file)
 def blank_canvas(fig, row_n, col_n):
 
 	# --------------------------------------------------------------------------------
@@ -53,6 +57,7 @@ def blank_canvas(fig, row_n, col_n):
     #                     row=row_n, col=col_n)
 
 
+@profile(stream=memory_profile_file)
 def blank_data():
 	
 	# ------------------------------
@@ -70,6 +75,7 @@ def blank_data():
 
     return sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt
 
+@profile(stream=memory_profile_file)
 def blank_data_kW():
 
 	# ------------------------------
@@ -85,6 +91,7 @@ def blank_data_kW():
 
 
 
+@profile(stream=memory_profile_file)
 def update_blank_econ(fig, nrow1, ncol1):
 
 	fig.add_trace(go.Scatter(x=pd.Series(dtype=object), y=pd.Series(dtype=object),), row=nrow1, col=ncol1)
@@ -94,6 +101,7 @@ def update_blank_econ(fig, nrow1, ncol1):
 
 	return fig, blank_val
 
+@profile(stream=memory_profile_file)
 def update_blank_econ2(fig, nrow1, ncol1, nrow2, ncol2):
 
 	fig.add_trace(go.Scatter(x=pd.Series(dtype=object), y=pd.Series(dtype=object),), row=nrow1, col=ncol1)
@@ -108,6 +116,7 @@ def update_blank_econ2(fig, nrow1, ncol1, nrow2, ncol2):
 	return fig, blank_val1 #, blank_val2
 
 
+@profile(stream=memory_profile_file)
 def parse_error_message(e, e_name):
 
 	# print('\t', e)
@@ -129,6 +138,7 @@ def parse_error_message(e, e_name):
 	return error_message
 
 
+@profile(stream=memory_profile_file)
 def rename_for_contour(input1, input2, input3, input4):
 
 	kWe_avg_flipped = input1
@@ -138,6 +148,7 @@ def rename_for_contour(input1, input2, input3, input4):
 
 	return kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped
 
+@profile(stream=memory_profile_file)
 def find_nearest(array, value):
 
 	# --------------------------------------------------------------------------------
@@ -151,6 +162,7 @@ def find_nearest(array, value):
 
 
 
+@profile(stream=memory_profile_file)
 def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 
 	# --------------------------------------------------------------------------------------------------
@@ -219,6 +231,7 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 	return fig
 
 
+@profile(stream=memory_profile_file)
 def update_layout_properties_subsurface_contours(fig, param):
 
     fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=1, col=1)
@@ -253,6 +266,7 @@ def update_layout_properties_subsurface_contours(fig, param):
 
 
 
+@profile(stream=memory_profile_file)
 def update_layout_properties_econ_results(fig, end_use, plot_scale):
 
 	if end_use == "Electricity":
@@ -319,6 +333,7 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale):
 	return fig
 
 
+@profile(stream=memory_profile_file)
 def update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, lcoe_H2O):
 
 

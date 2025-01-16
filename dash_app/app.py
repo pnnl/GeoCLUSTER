@@ -24,6 +24,13 @@ from dash import Dash, dcc, html, ctx
 import dash_daq as daq                  # Adds more data acquisition (DAQ) and controls to dash callbacks 
 import dash_bootstrap_components as dbc # Adds bootstrap components for more web themes and templates
 from dash.exceptions import PreventUpdate
+import flask
+import os
+import signal
+from memory_profiler import profile
+import tracemalloc
+from guppy import hpy
+import io
 
 # sourced scripts
 from paths import inpath_dict
@@ -33,6 +40,18 @@ from dropdowns import *
 from text import *
 from tables import generate_summary_table
 
+import clg_tea_module
+import clgs
+import dropdowns
+import econ_support
+import plots_support
+import plots
+import reader
+import sliders
+import tables
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+tracemalloc.start()
+h = hpy()
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
 #
@@ -60,7 +79,33 @@ app = dash.Dash(__name__, assets_folder='assets',
                                         This research was funded by the Geothermal Technologies Office (GTO) within the 
                                         Office of Energy Efficiency and  Renewable Energy (EERE) at the U.S. Department of 
                                         Energy (DOE) to form a collaborative study of closed-loop geothermal systems."""}
-                            ])
+                            ],
+                            external_scripts=["https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"])
+
+# # Modify the index_string to include the Pyodide script in the HTML <head>
+# app.index_string = """
+# <!DOCTYPE html>
+# <html>
+#     <head>
+#         <title>My Dash App with Pyodide</title>
+#         <meta charset="UTF-8">
+#         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+#         <!-- Include the Pyodide JS script -->
+#         <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+#     </head>
+#     <body>
+#         <div id="react-entry-point">
+#             <!-- Dash will inject components here -->
+#             {%app_entry%}
+#         </div>
+#         <footer>
+#             {%config%}
+#             {%scripts%}
+#             {%renderer%}
+#         </footer>
+#     </body>
+# </html>
+# """
 
 app.title = "GeoCLUSTER | Geothermal Closed-Loop User Tool in Energy Research"
 
@@ -106,6 +151,7 @@ carousel_image_style = {'objectFit': 'contain'}
 # HTML components.
 # -----------------------------------------------
 
+@profile(stream=memory_profile_file)
 def description_card():
 
     # -----------------------------------------------------------------------
@@ -120,6 +166,7 @@ def description_card():
         ],
     )
 
+@profile(stream=memory_profile_file)
 def generate_control_card():
 
     # -----------------------------------------------------------------------
@@ -167,6 +214,7 @@ def generate_control_card():
 
 
 
+@profile(stream=memory_profile_file)
 def graph_guidance_card(btnID, cardID, dropdown_children):
 
     # -----------------------------------------------------------------------
@@ -199,6 +247,7 @@ def graph_guidance_card(btnID, cardID, dropdown_children):
 
 
 
+@profile(stream=memory_profile_file)
 def generate_tabs():
 
     # -------------------------------------------------------------------------------------------------
@@ -398,6 +447,7 @@ app.layout = html.Div(
         dcc.Store(id='thermal-results-errors'),
         dcc.Store(id='thermal-contours-errors'),
         dcc.Store(id='summary-memory'),
+        dcc.Location(id='url', refresh=False),
 
         # Left column
         html.Div(
@@ -437,6 +487,7 @@ app.layout = html.Div(
     prevent_initial_call=True,
 )
 
+@profile(stream=memory_profile_file)
 def func(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
 
     if "btn_xlsx" == ctx.triggered_id:
@@ -453,6 +504,7 @@ def func(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
     [Input(component_id="collapse-button", component_property="n_clicks")],
     [State(component_id="collapse", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -468,6 +520,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button2", component_property="n_clicks")],
     [State(component_id="collapse2", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -484,6 +537,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button3", component_property="n_clicks")],
     [State(component_id="collapse3", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -500,6 +554,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button4", component_property="n_clicks")],
     [State(component_id="collapse4", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -522,6 +577,7 @@ def toggle_collapse(n, is_open):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def retain_entry_between_tabs(tab, btn1, btn3, fluid):
 
     if tab != "energy-tab" and fluid == "All":
@@ -546,6 +602,7 @@ def retain_entry_between_tabs(tab, btn1, btn3, fluid):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def flip_to_tab(tab, btn1, btn3, end_use):
 
     if tab != "energy-tab" and end_use == "All":
@@ -573,6 +630,7 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     Input(component_id='fluid-select', component_property='value')
     ])
 
+@profile(stream=memory_profile_file)
 def change_dropdown(at, fluid):
 
     if at == "energy-time-tab":
@@ -614,6 +672,7 @@ def change_dropdown(at, fluid):
      Input(component_id='btn-nclicks-3', component_property='n_clicks')
      ])
 
+@profile(stream=memory_profile_file)
 def flip_to_tab(tab, btn1, btn3):
 
     if tab == "about-tab":
@@ -660,6 +719,7 @@ def flip_to_tab(tab, btn1, btn3):
      ]
 )
 
+@profile(stream=memory_profile_file)
 def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
 
     # ----------------------------------------------------------------------------------------------
@@ -751,6 +811,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
     Input(component_id="end-use-select", component_property="value")
     ])
 
+@profile(stream=memory_profile_file)
 def show_hide_element(visibility_state, at, fluid, end_use):
 
     # ----------------------------------------------------------------------------------------------
@@ -834,6 +895,7 @@ def show_hide_element(visibility_state, at, fluid, end_use):
     Input(component_id="end-use-select", component_property="value")
     ])
 
+@profile(stream=memory_profile_file)
 def show_hide_detailed_card(tab, fluid, end_use):
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -873,6 +935,7 @@ def show_hide_detailed_card(tab, fluid, end_use):
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale):
 
     # -----------------------------------------------------------------------------
@@ -905,6 +968,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k):
 
     # -----------------------------------------------------------------------------
@@ -950,6 +1014,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_econ_plots(interp_time, fluid, case, end_use,
                       mdot, L2, L1, grad, D, Tinj, k,
                       Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -991,6 +1056,7 @@ def update_econ_plots(interp_time, fluid, case, end_use,
     ]
     )
 
+@profile(stream=memory_profile_file)
 def update_plot_title(fluid, end_use, checklist):
 
     if checklist == [' ']:
@@ -1040,6 +1106,7 @@ def update_plot_title(fluid, end_use, checklist):
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Drilling_cost_per_m, Discount_rate, Lifetime, 
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -1066,6 +1133,7 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
     ]
 )
 
+@profile(stream=memory_profile_file)
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
     
     # print(err_sub_dict)
@@ -1146,6 +1214,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
     Input(component_id='econ-memory', component_property='data'),
 )
 
+@profile(stream=memory_profile_file)
 def update_error_divs(levelized_cost_dict):
     
     warning_div3 = html.Div(style={'display': 'none'})
@@ -1174,14 +1243,151 @@ def update_error_divs(levelized_cost_dict):
 
     return warning_div3
 
+# # Update the clientside callback to render the list as <ul> with <li> elements
+# app.clientside_callback(
+#     """
+#     async function(n_clicks) {
+#         let groups = await geoCluster.getGroups();
+#         return groups.map(group => ({
+#             label: group,
+#             value: group
+#         }));
+#     }
+#     """,
+#     Output("select-group", "options"),  # Output to the div instead of button
+#     Input("url", "pathname"),  # Trigger on button click
+# )
+
 # -----------------------------------------------------------------------------
 # App runs here. Define configurations, proxies, etc.
 # -----------------------------------------------------------------------------
 
-server = app.server 
+server = app.server
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
+# -----------------------------------------------------------------------------
+# Routes to serve Zarr files to the browser. Deemed unnecessary
+# -----------------------------------------------------------------------------
+# @profile(stream=memory_profile_file)
+# @server.route('/zarr/<path:filename>')
+# def serve_zarr_file(filename):
+#     # dash_app\data\utube_sCO2_Pout.zarr
+#     ZARR_DIRECTORY_ON_DISK = 'data/'
+#     zarr_path = os.path.join(ZARR_DIRECTORY_ON_DISK, filename)
+#     #Check if the file exists and return it
+#     if os.path.exists(zarr_path):
+#         return flask.send_from_directory(ZARR_DIRECTORY_ON_DISK, filename, as_attachment=True)
+#     else:
+#         return flask.Response('File Not Found', status=404)
+
+# @profile(stream=memory_profile_file)
+# @server.route('/zarr_list/<path:dir_path>')
+# def list_zarr_directory(dir_path):
+#     ZARR_DIRECTORY_ON_DISK = 'data/'
+#     full_dir_path = os.path.join(ZARR_DIRECTORY_ON_DISK, dir_path)
+#     if os.path.exists(full_dir_path) and os.path.isdir(full_dir_path):
+#         file_list = []
+#         for root, _, files in os.walk(full_dir_path):
+#             for file in files:
+#                 relative_path = os.path.relpath(os.path.join(root, file), ZARR_DIRECTORY_ON_DISK)
+#                 file_list.append(relative_path)
+#         return flask.jsonify(file_list)
+#     else:
+#         return flask.Response('Directory Not Found', status=404)
+
+# def capture_output(func, *args, **kwargs):
+#     output = io.StringIO()
+#     profiled_func = profile(func)
+
+#     # Run the profiled function and capture the memory output
+#     try:
+#         profiled_func(*args, **kwargs)
+#     except KeyboardInterrupt:
+#         # Handle the KeyboardInterrupt here to ensure we capture the profiling output
+#         with open('memory_profile_output.txt', 'w', encoding='utf-8') as f:
+#             f.write(output.getvalue())
+#         print("Memory profile output saved to memory_profile_output.txt")
+#         # Re-raise the KeyboardInterrupt to trigger the signal handler's logic
+#         handle_sigint(None, None)
+#         raise
+
+@profile(stream=memory_profile_file)
+def run_server():
+    app.run_server(port=8060, debug=False)
+
+def handle_sigint(signum, frame):
+
+    #close the memory_profile_file
+    memory_profile_file.close()
+
+    # take snapshot and list top consuming
+    mem_snapshot2 = tracemalloc.take_snapshot()
+    top_stats_snapshot2 = mem_snapshot2.statistics('lineno')
+    with open('top_10_consuming_lines.txt', 'w', encoding='utf-8') as f:
+        f.write("[ TOP 10 MEMORY CONSUMING LINES ]")
+        for stat in top_stats_snapshot2[:10]:
+            f.write(str(stat) + '\n')
+    f.close()
+
+    #compare snapshoto the the one before running the server
+    top_stats = mem_snapshot2.compare_to(mem_snapshot1, 'lineno')
+    with open('top_10_mem_cdifferences.txt', 'w', encoding='utf-8') as f:
+        f.write("[ TOP 10 DIFFERENCES ]")
+        for stat in top_stats[:10]:
+            f.write(str(stat) + '\n')
+    f.close()
+
+    # look at heap memory before terminating server
+    with open('end_heap_summary.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n" + str(h.heap()))
+    f.close()
+
+    heap = h.heap()
+    with open('end_heap_output_full.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n")
+        for index in range(0,1422):
+            f.write(str(heap[index]))
+    f.close()
+
+    #close all the other memory files
+    clg_tea_module.close_mem_file()
+    clgs.close_mem_file()
+    dropdowns.close_mem_file()
+    econ_support.close_mem_file()
+    plots_support.close_mem_file()
+    plots.close_mem_file()
+    reader.close_mem_file()
+    sliders.close_mem_file()
+    tables.close_mem_file()
+
+    #stop the server
+    exit(0)
+#register signal handler
+signal.signal(signal.SIGINT, handle_sigint)
+
 if __name__ == '__main__':
-    app.run_server(port=8060, debug=False) 
+    with open('initial_trace_malloc.txt', 'w', encoding='utf-8') as f:
+        f.write(f'INITIAL MEMORY USAGE: {tracemalloc.get_traced_memory()[1] / 1024 / 1024:.2f} MiB')
+    f.close()
+
+    with open('initial_heap_summary.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n" + str(h.heap()))
+    f.close()
+
+    heap = h.heap()
+    with open('initial_heap_output_full.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n")
+        for index in range(0,968):
+            f.write(str(heap[index]))
+    f.close()
+
+    global mem_snapshot1
+    mem_snapshot1 = tracemalloc.take_snapshot()
+    # Capture the memory profile of the run_server function and handle SIGINT
+    try:
+        run_server()
+    except KeyboardInterrupt:
+        # This will ensure we save any necessary data before exiting if KeyboardInterrupt wasn't handled
+        handle_sigint(None, None)
     # EXAMPLE: *************
     # app.run_server(port=8050, proxy="http://127.0.0.1:8059::https://<site>/<page_name>")

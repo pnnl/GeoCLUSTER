@@ -4,7 +4,10 @@
 # web app and interactive graphics libraries 
 from dash import dcc, html
 import dash_bootstrap_components as dbc
-
+from memory_profiler import profile
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 # sourced scripts
 from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
 
@@ -22,6 +25,7 @@ from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
 # -------------------------------------------------------------------------------------------
 
 
+@profile(stream=memory_profile_file)
 def create_steps(arg_arr, str_round_place, val_round_place):
     """
     OUTPUT: Returns a newly annnotated dictionary for a slider component.
@@ -89,6 +93,7 @@ div_block_style = {'display': 'block'}
 p_bold_style = {"fontWeight": "bold"}
 
 
+@profile(stream=memory_profile_file)
 def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v):
 
     # ---------------------------------------------------------------------------
@@ -110,6 +115,7 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v):
                     )
 
 
+@profile(stream=memory_profile_file)
 def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v):
 
     # ---------------------------------------------------------------------------
@@ -131,6 +137,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v):
                     )
 
 
+@profile(stream=memory_profile_file)
 def slider_card():
 
     # -----------------------------------------------------------------------

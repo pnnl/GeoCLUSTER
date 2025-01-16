@@ -4,7 +4,10 @@
 # data manipulation libraries
 import pandas as pd
 import plotly.graph_objects as go
-
+from memory_profiler import profile
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 # source script
 from paths import inpath_dict
 
@@ -27,6 +30,7 @@ summary_tbl_pathname = inpath_dict["summary_tbl_in"] # "data/summary_tbl_in.csv"
 # summary_tbl_pathname = "/www/GeoCLUSTER/dash_app/data/summary_tbl_in.csv"
 summary_tbl = pd.read_csv(summary_tbl_pathname) 
 
+@profile(stream=memory_profile_file)
 def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid,
