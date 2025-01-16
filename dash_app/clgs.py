@@ -144,7 +144,7 @@ class data:
         return new_data
 
 
-    def interp_outlet_states(self, point, sbt_version = 1):
+    def interp_outlet_states(self, point, sbt_version): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -306,8 +306,8 @@ class data:
 
         mdot = point[0]
         Tinj = point[5]
-        print('!!!!!!!')
-        print(Tout, Pout, self.CP_fluid)
+        # print('!!!!!!!')
+        # print(Tout, Pout, self.CP_fluid)
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)

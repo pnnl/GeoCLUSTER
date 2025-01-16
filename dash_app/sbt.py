@@ -63,9 +63,9 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     variablefluidproperties = 1                                     #Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
 
     ## Simulation and SBT algorithm settings
-    print("here")
+    # print("here")
     times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) #simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
-    print(times.shape)
+    # print(times.shape)
     #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
     #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
     #times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
@@ -663,7 +663,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     
     toc = time.time()
     passedtime = toc-tic
-    print(f"preprocessing time = {passedtime:.2f}" )
+    # print(f"preprocessing time = {passedtime:.2f}" )
 
     #%% -------------
     # 3. Calculating
@@ -1631,15 +1631,15 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     AverageProductionTemperature = np.sum((times[1:] - times[:-1]) * Toutput[1:]) / times[-1]  # Calculates the weighted-average production temperature [deg.C]
     AverageHeatProduction = np.sum((times[1:] - times[:-1]) * HeatProduction[1:]) / times[-1]  # Calculates the weighted-average heat production [MW]
     line_to_print = f'Average production temperature = {AverageProductionTemperature:.2f} °C\n'
-    print(line_to_print, end='')
+    # print(line_to_print, end='')
 
     line_to_print = f'Average heat production = {AverageHeatProduction:.2f} MWt\n'
-    print(line_to_print, end='')
+    # print(line_to_print, end='')
 
     toc = time.time()
     passedtime = toc-tic
-    line_to_print = f'Calculation time = {passedtime:.2f} s\n'
-    print(line_to_print)
+    # line_to_print = f'Calculation time = {passedtime:.2f} s\n'
+    # print(line_to_print)
     return Toutput
 
     #end time

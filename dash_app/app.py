@@ -197,190 +197,193 @@ def graph_guidance_card(btnID, cardID, dropdown_children):
         ]
     )
 
+# -------------------------------------------------------------------------------------------------
+# Defines tab contents for 5 of the following tabs:
+# 
+#   About, Subsurface Results, Subsurface Contours, Economic Results, and Summary
+#
+# -------------------------------------------------------------------------------------------------
 
-
-def generate_tabs():
-
-    # -------------------------------------------------------------------------------------------------
-    # Defines tab contents for 5 of the following tabs:
-    # 
-    #   About, Subsurface Results, Subsurface Contours, Economic Results, and Summary
-    #
-    # -------------------------------------------------------------------------------------------------
-
-    about_tab = dcc.Tab(label='About',
-                         id="about-tab",
-                         value='about-tab',
-                         selected_className="active_tabs",
-                         children=[
-                                   html.Hr(className="tab-hr"),
-                                   html.Div(
-                                        id="demo",
-                                        children=[
-                                                  html.Div(id='intro2', 
-                                                            children=[html.P("About Our Research", id='ab-title1'),
-                                                                      html.P(note, id='ab-note'), 
-                                                                      html.P(note2, id='ab-note2'),
-                                                                      html.P("Navigating the Results", id='ab-title2'),
-                                                                      html.P(note3, id='ab-note3'), 
-                                                                      html.P("Resources", id='ab-title3'),
-                                                                      html.Label([html.P("Download the contributing", id="shorttext1"),
-                                                                                    html.A('papers', href='https://gdr.openei.org/submissions/1473', id='hyperlink1'),
-                                                                                    html.P("and", id="shorttext2"),
-                                                                                    html.A('code', href='https://github.com/pnnl/GeoCLUSTER', id='hyperlink2'),
-                                                                                    html.P(".", id="shorttext3"),
-                                                                                    ], id='ab-note4')
-                                                    ]),
-                                                    html.Div(id='image-container', 
-                                                            children=[html.Img(id="cluster-img", src=app.get_asset_url('CLGWG3.png'),),
-                                                                      dbc.Carousel(id="carousel-ride",
-                                                                            items=[
-                                                                                {"key": "1", 
-                                                                                 "src": app.get_asset_url('CLGS-1.3.png'), 
-                                                                                 "img_style": carousel_image_style
-                                                                                    },
-                                                                                {"key": "2", 
-                                                                                 "src": app.get_asset_url('CLGS-3.2.png'),
-                                                                                 "img_style": carousel_image_style
+about_tab = dcc.Tab(label='About',
+                        id="about-tab",
+                        value='about-tab',
+                        selected_className="active_tabs",
+                        children=[
+                                html.Hr(className="tab-hr"),
+                                html.Div(
+                                    id="demo",
+                                    children=[
+                                                html.Div(id='intro2', 
+                                                        children=[html.P("About Our Research", id='ab-title1'),
+                                                                    html.P(note, id='ab-note'), 
+                                                                    html.P(note2, id='ab-note2'),
+                                                                    html.P("Navigating the Results", id='ab-title2'),
+                                                                    html.P(note3, id='ab-note3'), 
+                                                                    html.P("Resources", id='ab-title3'),
+                                                                    html.Label([html.P("Download the contributing", id="shorttext1"),
+                                                                                html.A('papers', href='https://gdr.openei.org/submissions/1473', id='hyperlink1'),
+                                                                                html.P("and", id="shorttext2"),
+                                                                                html.A('code', href='https://github.com/pnnl/GeoCLUSTER', id='hyperlink2'),
+                                                                                html.P(".", id="shorttext3"),
+                                                                                ], id='ab-note4')
+                                                ]),
+                                                html.Div(id='image-container', 
+                                                        children=[html.Img(id="cluster-img", src=app.get_asset_url('CLGWG3.png'),),
+                                                                    dbc.Carousel(id="carousel-ride",
+                                                                        items=[
+                                                                            {"key": "1", 
+                                                                                "src": app.get_asset_url('CLGS-1.3.png'), 
+                                                                                "img_style": carousel_image_style
                                                                                 },
-                                                                            ],
-                                                                            variant="dark",
-                                                                            ride="carousel",
-                                                                            interval=3000,
-                                                                            controls=True,
-                                                                            indicators=False),
-                                                                      ]
-                                                            )
-                                                  ],
-                                        ),
-                    ])
+                                                                            {"key": "2", 
+                                                                                "src": app.get_asset_url('CLGS-3.2.png'),
+                                                                                "img_style": carousel_image_style
+                                                                            },
+                                                                        ],
+                                                                        variant="dark",
+                                                                        ride="carousel",
+                                                                        interval=3000,
+                                                                        controls=True,
+                                                                        indicators=False),
+                                                                    ]
+                                                        )
+                                                ],
+                                    ),
+                ])
 
 
-    energy_time_tab = dcc.Tab(label='Subsurface Results',
-                         id="subsurface-tab",
-                         value='energy-time-tab',
-                         selected_className="active_tabs",
-                         children=[
-                             html.Div(className="extra-space"),
-                             graph_guidance_card(btnID="collapse-button2", cardID="collapse2", dropdown_children=html.P(dropdown_text1)),
-                             html.Div(id="error_block_div1"), 
-                             html.Br(),
-                             html.Div(id="graphics-container",
-                                        children=[
-                                             dcc.Graph(id="geothermal_time_plots",
-                                                      config=plotly_config),
-                                             dbc.RadioItems(
-                                                        options=[
-                                                            {"label": "Auto Scale", "value": 1},
-                                                            {"label": "Full Scale", "value": 2},
-                                                        ],
-                                                        value=1,
-                                                        id="radio-graphic-control3",
-                                                    ),
-                                        ]
+energy_time_tab = dcc.Tab(label='Subsurface Results',
+                        id="subsurface-tab",
+                        value='energy-time-tab',
+                        selected_className="active_tabs",
+                        children=[
+                            html.Div(className="extra-space"),
+                            graph_guidance_card(btnID="collapse-button2", cardID="collapse2", dropdown_children=html.P(dropdown_text1)),
+                            html.Div(id="error_block_div1"), 
+                            html.Br(),
+                            # TODO: Experiment more on skeleton loading
+                            # dcc.Loading(
+                            #     type='circle',
+                            #     children=[
+                            #             html.Div(id="graphics-container",
+                            #                 children=[
+                            #                         dcc.Graph(id="geothermal_time_plots",
+                            #                                 config=plotly_config),
+                            #                         dbc.RadioItems(
+                            #                                 options=[
+                            #                                     {"label": "Auto Scale", "value": 1},
+                            #                                     {"label": "Full Scale", "value": 2},
+                            #                                 ],
+                            #                                 value=1,
+                            #                                 id="radio-graphic-control3",
+                            #                             ),
+                            #                 ]
 
-                                    )
-
-                    ])
-
-
-    energy_tab = dcc.Tab(label='Subsurface Contours',
-                         id="contour-tab",
-                         value='energy-tab',
-                         selected_className="active_tabs",
-                         children=[
-                             html.Div(className="extra-space"),
-                             # html.Hr(),
-                             html.Div(id="dropdown-card5",
-                                      children=[
-                                            graph_guidance_card(btnID="collapse-button", cardID="collapse", dropdown_children=html.P(dropdown_text2)),
-                                            html.Div(id="error_block_div2"), 
-                                            html.P("Select Parameter", id='select-text'),
-                                            dcc.Dropdown(
-                                                id="param-select",
-                                                options=[{"label": i, "value": i} for i in param_list],
-                                                value="Horizontal Extent (m)",
-                                                clearable=False,
-                                                searchable=False,
-                                            ),
-                                        ]
-                                    ), 
-                            dcc.Graph(id="geothermal_plots",
-                                      config=plotly_config)
-
-                    ])
-
-    economics_time_tab = dcc.Tab(label='Economic Results',
-                            id="econ-tab",
-                            value='economics-time-tab',
-                            selected_className="active_tabs",
-                             children=[
-                             html.Div(className="extra-space"),
-                             # html.Hr(),
-                             graph_guidance_card(btnID="collapse-button4", cardID="collapse4", 
-                                                    dropdown_children=
-                                                        html.Div(
-                                                            children=[
-                                                                html.P(dropdown_text1.replace("5 options", "7 options")),
-                                                                html.P(dropdown_econ_text1),
-                                                                html.Img(id="formulas-img", src=app.get_asset_url('lcoe-lcoh-formulas.png')),
-                                                                dcc.Markdown(dropdown_econ_markdown_text1, mathjax=True),
-                                                                html.P(dropdown_econ_text2)
-                                                                ]
-                                                            )
-                                                        ),
-                             html.Div(id="warning_block_div3"),
-                             html.Div(id="error_block_div3"), 
-                             html.Br(),
-                             html.Div(id="graphics-container-econ",
-                                        children=[
-                                            dcc.Graph(id="econ_plots",
-                                                        config=plotly_config),
+                            #         )
+                            #     ]
+                            # ),
+                            html.Div(id="graphics-container",
+                                    children=[
+                                            dcc.Graph(id="geothermal_time_plots",
+                                                    config=plotly_config),
                                             dbc.RadioItems(
-                                                        options=[
-                                                            {"label": "Auto Scale", "value": 1},
-                                                            {"label": "Full Scale", "value": 2},
-                                                        ],
-                                                        value=1,
-                                                        id="radio-graphic-control4",
-                                                    ),
-                                            html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-                                            # html.P("sCO2 only", id="ts-subtext")
-                                            # dcc.Graph(id="ts_plot",
-                                            #             config=plotly_config),
-                                        ]
+                                                    options=[
+                                                        {"label": "Auto Scale", "value": 1},
+                                                        {"label": "Full Scale", "value": 2},
+                                                    ],
+                                                    value=1,
+                                                    id="radio-graphic-control3",
+                                                ),
+                                    ]
 
-                                    )
+                                )
 
-                    ])
+                ])
 
-    summary_tab = dcc.Tab(label='Summary',
-                            id="summary-tab",
-                            value='summary-tab',
-                            selected_className="active_tabs",
+
+energy_tab = dcc.Tab(label='Subsurface Contours',
+                        id="contour-tab",
+                        value='energy-tab',
+                        selected_className="active_tabs",
+                        children=[
+                            html.Div(className="extra-space"),
+                            # html.Hr(),
+                            html.Div(id="dropdown-card5",
+                                    children=[
+                                        graph_guidance_card(btnID="collapse-button", cardID="collapse", dropdown_children=html.P(dropdown_text2)),
+                                        html.Div(id="error_block_div2"), 
+                                        html.P("Select Parameter", id='select-text'),
+                                        dcc.Dropdown(
+                                            id="param-select",
+                                            options=[{"label": i, "value": i} for i in param_list],
+                                            value="Horizontal Extent (m)",
+                                            clearable=False,
+                                            searchable=False,
+                                        ),
+                                    ]
+                                ), 
+                        dcc.Graph(id="geothermal_plots",
+                                    config=plotly_config)
+
+                ])
+
+economics_time_tab = dcc.Tab(label='Economic Results',
+                        id="econ-tab",
+                        value='economics-time-tab',
+                        selected_className="active_tabs",
                             children=[
-                                 html.Hr(className="tab-hr"),
-                                 html.Button("Download Results", id="btn_xlsx"),
-                                 dcc.Download(id="download-dataframe-xlsx"),
-                                 html.Br(),
-                                 html.Br(),
-                                 dcc.Graph(id="table",
-                                          config=plotly_config)
-                    ])
+                            html.Div(className="extra-space"),
+                            # html.Hr(),
+                            graph_guidance_card(btnID="collapse-button4", cardID="collapse4", 
+                                                dropdown_children=
+                                                    html.Div(
+                                                        children=[
+                                                            html.P(dropdown_text1.replace("5 options", "7 options")),
+                                                            html.P(dropdown_econ_text1),
+                                                            html.Img(id="formulas-img", src=app.get_asset_url('lcoe-lcoh-formulas.png')),
+                                                            dcc.Markdown(dropdown_econ_markdown_text1, mathjax=True),
+                                                            html.P(dropdown_econ_text2)
+                                                            ]
+                                                        )
+                                                    ),
+                            html.Div(id="warning_block_div3"),
+                            html.Div(id="error_block_div3"), 
+                            html.Br(),
+                            html.Div(id="graphics-container-econ",
+                                    children=[
+                                        dcc.Graph(id="econ_plots",
+                                                    config=plotly_config),
+                                        dbc.RadioItems(
+                                                    options=[
+                                                        {"label": "Auto Scale", "value": 1},
+                                                        {"label": "Full Scale", "value": 2},
+                                                    ],
+                                                    value=1,
+                                                    id="radio-graphic-control4",
+                                                ),
+                                        html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
+                                        # html.P("sCO2 only", id="ts-subtext")
+                                        # dcc.Graph(id="ts_plot",
+                                        #             config=plotly_config),
+                                    ]
 
+                                )
 
-    tabs = dcc.Tabs(id="tabs", 
-                    value='about-tab', 
-                    children=[about_tab,
-                              energy_time_tab,
-                              energy_tab,
-                              economics_time_tab,
-                              summary_tab,
-                              ])
+                ])
 
-    return tabs
-
-
+summary_tab = dcc.Tab(label='Summary',
+                        id="summary-tab",
+                        value='summary-tab',
+                        selected_className="active_tabs",
+                        children=[
+                                html.Hr(className="tab-hr"),
+                                html.Button("Download Results", id="btn_xlsx"),
+                                dcc.Download(id="download-dataframe-xlsx"),
+                                html.Br(),
+                                html.Br(),
+                                dcc.Graph(id="table",
+                                        config=plotly_config)
+                ])
 
 # -----------------------------------------------------------------------------
 # Define dash app layout here.
@@ -414,8 +417,15 @@ app.layout = html.Div(
             children=[
                 html.Div(
                     id="geothermal_card",
-                    children=[generate_tabs()
-                    ],
+                    children=#[dcc.Tabs(id='tabs', value='tab-1', children=[])]
+                              [dcc.Tabs(id="tabs", 
+                                        value='about-tab', 
+                                        children=[about_tab,
+                                                energy_time_tab,
+                                                energy_tab,
+                                                economics_time_tab,
+                                                summary_tab,
+                              ])],
                 ),
             ],
         ),
@@ -437,7 +447,7 @@ app.layout = html.Div(
     prevent_initial_call=True,
 )
 
-def func(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
+def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
 
     if "btn_xlsx" == ctx.triggered_id:
         write_excelsheet(df_summary=df_tbl, df_subsurf_res_mass=df_mass_flow_rate, 
@@ -510,6 +520,23 @@ def toggle_collapse(n, is_open):
         return not is_open
     return is_open
 
+@app.callback(
+   Output(component_id="contour-tab", component_property="style"),
+   [Input(component_id="model-select", component_property="value")
+    ],
+   prevent_initial_call=True
+   )
+
+def update_tabs(selected_model):
+
+    if selected_model == "HDF5": 
+
+        return {'display': 'block'}
+
+    elif selected_model == "SBT V1.0": 
+            
+        # TODO: update tabs styline
+        return {'display': 'none'}
 
 
 @app.callback(
@@ -868,19 +895,19 @@ def show_hide_detailed_card(tab, fluid, end_use):
      Input(component_id="diameter-select", component_property="value"),
      Input(component_id="Tinj-select", component_property="value"),
      Input(component_id="k-select", component_property="value"),
-
      Input(component_id='radio-graphic-control3', component_property='value'),
+     Input(component_id='model-select', component_property='value'),
     ],
 )
 
-def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale):
+def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale, model):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict = generate_subsurface_lineplots(
-        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale
+        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale, model
     )
 
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict
@@ -947,6 +974,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      Input(component_id="turb-pout-select", component_property="value"),
      Input(component_id='radio-graphic-control4', component_property='value'),
      Input(component_id="checklist", component_property="value"),
+     Input(component_id='model-select', component_property='value'),
     ],
 )
 
@@ -954,7 +982,7 @@ def update_econ_plots(interp_time, fluid, case, end_use,
                       mdot, L2, L1, grad, D, Tinj, k,
                       Drilling_cost_per_m, Discount_rate, Lifetime, 
                       Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                      scale, checklist
+                      scale, checklist, model
                       ):
 
     # -----------------------------------------------------------------------------
@@ -976,6 +1004,7 @@ def update_econ_plots(interp_time, fluid, case, end_use,
         properties_CO2v2_pathname, 
         additional_properties_CO2v2_pathname,
         tmatrix_pathname,
+        model,
         is_plot_ts
     )
 
@@ -1182,6 +1211,6 @@ server = app.server
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
 if __name__ == '__main__':
-    app.run_server(port=8060, debug=False) 
+    app.run_server(port=8060, debug=True) 
     # EXAMPLE: *************
     # app.run_server(port=8050, proxy="http://127.0.0.1:8059::https://<site>/<page_name>")

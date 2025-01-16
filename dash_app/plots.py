@@ -100,7 +100,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
 
-def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale):
+def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -112,6 +112,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     #       kWe vs. time
     #
     # -----------------------------------------------------------------------------------------------------------------
+
+    if model == "HDF5":
+        sbt_version = 0
+    elif model == "SBT V1.0":
+        sbt_version = 1
+    else:
+        sbt_version = 0
 
     mean_H2O_Tout = "-"
     mean_H2O_Pout = "-"
@@ -165,7 +172,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
                 sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-    print("interp time", interp_time)
+    # print("interp time", interp_time)
     if interp_time == "True":
 
         # this doesn't impact the kWe and kWt averages
@@ -173,8 +180,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "utube":
 
             try:
-                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states(point)
-                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states(point)
+                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states(point, sbt_version)
+                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states(point, sbt_version)
                 sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
@@ -187,8 +194,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "coaxial":
 
             try:
-                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states(point)
-                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states(point)
+                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states(point, sbt_version)
+                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states(point, sbt_version)
                 sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
@@ -424,7 +431,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         # print(param_ij[0,:].shape) # (20,)
 
         point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
-        print("point for contour", point)
+        # print("point for contour", point)
         # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
         if fluid == "sCO2" and case == "utube":
@@ -552,6 +559,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
                             properties_CO2v2_pathname, 
                             additional_properties_CO2v2_pathname,
                             tmatrix_pathname,
+                            model,
                             is_plot_ts_check
                             ):
 
@@ -564,6 +572,13 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
     #       annual electricity prod vs. time
     #
     # -----------------------------------------------------------------------------------------------------------------
+
+    if model == "HDF5":
+        sbt_version = 0
+    elif model == "SBT V1.0":
+        sbt_version = 1
+    else:
+        sbt_version = 0
 
     lcoh_sCO2 = '-'
     lcoh_H2O = '-'
@@ -607,7 +622,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
 
             try:
                 teaobj_sCO2 = create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                case, end_use, fluid, 
+                                                case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
                                                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -663,7 +678,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
 
             try:
                 teaobj_H2O = create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                case, end_use, fluid, 
+                                                case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
                                                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -728,7 +743,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
 
             try:
                 teaobj_sCO2 = create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                case, end_use, fluid, 
+                                                case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
                                                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -799,7 +814,7 @@ def generate_econ_lineplots(interp_time, case, end_use, fluid,
 
             try:
                 teaobj_H2O = create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                case, end_use, fluid, 
+                                                case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
                                                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
