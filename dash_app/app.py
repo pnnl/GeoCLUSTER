@@ -1295,6 +1295,9 @@ server = app.server
 #     else:
 #         return flask.Response('Directory Not Found', status=404)
 
+# -----------------------------------------------------------------------------
+# function to capture the memory profile of a function. Not useful
+# -----------------------------------------------------------------------------
 # def capture_output(func, *args, **kwargs):
 #     output = io.StringIO()
 #     profiled_func = profile(func)
@@ -1349,7 +1352,7 @@ def handle_sigint(signum, frame):
             f.write(str(heap[index]))
     f.close()
 
-    #close all the other memory files
+    #close all instances of the memory output file
     clg_tea_module.close_mem_file()
     clgs.close_mem_file()
     dropdowns.close_mem_file()
