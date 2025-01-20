@@ -897,18 +897,21 @@ def show_hide_detailed_card(tab, fluid, end_use):
      Input(component_id="k-select", component_property="value"),
      Input(component_id='radio-graphic-control3', component_property='value'),
      Input(component_id='model-select', component_property='value'),
+     # more variables 
     ],
 )
 
-def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale, model):
+def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
+    # if HDF5:
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict = generate_subsurface_lineplots(
-        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k, scale, model
+        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model
     )
+    # if SBT:
 
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict
 
@@ -932,14 +935,14 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     ],
 )
 
-def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k):
+def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
     subplots, err_subcontour_dict = generate_subsurface_contours(
-        interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k
+        interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
     )
 
     return subplots, err_subcontour_dict
@@ -979,7 +982,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
 )
 
 def update_econ_plots(interp_time, fluid, case, end_use,
-                      mdot, L2, L1, grad, D, Tinj, k,
+                      mdot, L2, L1, grad, D, Tinj, k_m,
                       Drilling_cost_per_m, Discount_rate, Lifetime, 
                       Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
                       scale, checklist, model
@@ -996,7 +999,7 @@ def update_econ_plots(interp_time, fluid, case, end_use,
 
     economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = generate_econ_lineplots(
         interp_time, case, end_use, fluid, 
-        mdot, L2, L1, grad, D, Tinj, k,
+        mdot, L2, L1, grad, D, Tinj, k_m,
         Drilling_cost_per_m, Discount_rate, Lifetime, 
         Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
         scale, 

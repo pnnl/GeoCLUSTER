@@ -168,16 +168,54 @@ class data:
             )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            times = self.time
+
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
-            Tout = run_sbt(sbt_version=sbt_version, m=mdot, vertical_depth=L1, GeoGradient=grad, Tin=Tinj, k_m=k)
-            Tout = Tout + 273.15
-            Tout = self.reshape_output(Tout)
-            #reshaping Tout to make it match the dimensions the rest of the app expects
-            constant_pressure = 1e7 # 100 Bar in pascal
+            print("\n -------------------------------- UI -------------------------------- ")
+            print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            
+            # AB UNIT CONVERSIONS AND RENAMING
+            # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
+            L2 = L2/1000
+            L1 = L1/1000
+            Tinj = Tinj-273.15
+            print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+
+            if self.case == "coaxial":
+                case = 1
+            if self.case == "utube":
+                case = 2
+
+            if self.CP_fluid == "H20":
+                fluid = 1
+            if self.CP_fluid == "CO2":
+                fluid = 2
+            else:
+                fluid = 1 # water
+
+            print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+            times, Tout = run_sbt(
+            ## Model Specifications 
+            sbt_version=sbt_version, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
+            HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+            accuracy=1,
+
+             ## Operations
+            clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+            DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+            Diameter1=D, Diameter2=D, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3], PipeParam5=1, ## Tube Geometry
+
+            ## Geologic Properties
+            Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+            )
+
+            # self.time = times
+
+            constant_pressure = 2e7 # 200 Bar in pascal
             Pout = constant_pressure * np.ones_like(Tout)
 
-        return Tout, Pout
+        return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
         var_index = None

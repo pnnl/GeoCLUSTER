@@ -180,8 +180,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "utube":
 
             try:
-                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states(point, sbt_version)
-                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states(point, sbt_version)
+                sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version)
+                H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version)
                 sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
@@ -194,8 +194,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "coaxial":
 
             try:
-                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states(point, sbt_version)
-                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states(point, sbt_version)
+                sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version)
+                H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version)
                 sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
