@@ -136,15 +136,16 @@ class TEA:
                 self.error = 1
         return self.error
     
-    def initialize(self, u_sCO2, u_H2O, c_sCO2, c_H2O, properties_H2O_pathname, properties_CO2v2_pathname, additional_properties_CO2v2_pathname):
+    def initialize(self, TandP_dict, u_sCO2, u_H2O, c_sCO2, c_H2O, properties_H2O_pathname, properties_CO2v2_pathname, additional_properties_CO2v2_pathname):
         
         if self.Fluid == 1:
             if self.Configuration == 1:
                 self.u_H2O = u_H2O # clgs_v2.data(self.filename, "utube", "H2O")
             elif self.Configuration == 2:
                 self.u_H2O = c_H2O # clgs_v2.data(self.filename, "coaxial", "H2O")
-            self.timearray = self.u_H2O.time
-            self.timearray = self.u_H2O.time
+            # self.timearray = self.u_H2O.time
+            # self.timearray = self.u_H2O.time
+            self.timearray = np.array(TandP_dict["time"])
             self.FlowRateVector = self.u_H2O.mdot #length of 26
             self.HorizontalLengthVector = self.u_H2O.L2 #length of 20
             self.DepthVector = self.u_H2O.L1 #length of 9
@@ -158,7 +159,8 @@ class TEA:
                 self.u_sCO2 = u_sCO2 # clgs_v2.data(self.filename, "utube", "sCO2")
             elif self.Configuration == 2:
                 self.u_sCO2 = c_sCO2 # clgs_v2.data(self.filename, "coaxial", "sCO2")
-            self.timearray = self.u_sCO2.time
+            # self.timearray = self.u_sCO2.time
+            self.timearray = np.array(TandP_dict["time"])
             self.FlowRateVector = self.u_sCO2.mdot #length of 26
             self.HorizontalLengthVector = self.u_sCO2.L2 #length of 20
             self.DepthVector = self.u_sCO2.L1 #length of 9
@@ -168,6 +170,8 @@ class TEA:
             self.KrockVector = self.u_sCO2.k #length of 3   
             self.Fluid_name = 'CarbonDioxide'           
             
+        # print(self.timearray)
+        print(self.timearray.shape)
         self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
         
         
@@ -177,6 +181,7 @@ class TEA:
         #Find closests lifetime
         closestlifetime = self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]    
         self.indexclosestlifetime = np.where(self.timearray == closestlifetime)[0][0]
+        print(self.indexclosestlifetime)
 
         #load property data
         if self.Fluid == 1:
@@ -239,17 +244,30 @@ class TEA:
 
 
 
-    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O):
+    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
         
         if self.Fluid == 1:
-            self.Tout, self.Pout = self.u_H2O.interp_outlet_states(self.point)
+            # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
+            self.Tout = np.array(TandP_dict["H2O_Tout"])
+            self.Pout = np.array(TandP_dict["H2O_Pout"])
+            times = TandP_dict["time"]
+
         elif self.Fluid == 2:
-            self.Tout, self.Pout = self.u_sCO2.interp_outlet_states(self.point)
+            self.Tout = np.array(TandP_dict["sCO2_Tout"])
+            self.Pout = np.array(TandP_dict["sCO2_Pout"])
+            times = TandP_dict["time"]
+            # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
 
         #Initial time correction (Correct production temperature and pressure at time 0 (the value at time 0 [=initial condition] is not a good representation for the first few months)
         self.Tout[0] = self.Tout[1]
         self.Pout[0] = self.Pout[1]
         
+        # print(self.Pout[1:10])
+        # print(self.Tout)
+        print("first temp: ", self.Tout[1])
+        print("last temp: ", self.Tout[-1])
+        print("inj temp: ", self.TinVector)
+
         #Extract Tout and Pout over lifetime
         self.InterpolatedTemperatureArray = self.Tout[0:self.indexclosestlifetime+1]-273.15
         self.InterpolatedPressureArray = self.Pout[0:self.indexclosestlifetime+1]
@@ -260,6 +278,12 @@ class TEA:
         self.Linear_production_temperature = self.InterpolatedTemperatureArray
         self.Linear_production_pressure = self.InterpolatedPressureArray
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
+
+        print(self.Linear_production_temperature[1:10]) # AB: way too low
+        print(self.AveProductionTemperature)
+        print(self.T_in)
+        
+
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
         self.Flow_rate = self.Flow_user #Total flow rate [kg/s]
         self.calculatedrillinglength()
@@ -274,6 +298,9 @@ class TEA:
             Discount_vector = 1./np.power(1+self.Discount_rate,np.linspace(0,self.Lifetime-1,self.Lifetime))
             if self.End_use == 1:   #direct-use heating
                 self.LCOH = (self.TotalCAPEX + np.sum(self.OPEX_Plant*Discount_vector))*1e6/np.sum(self.Annual_heat_production/1e3*Discount_vector) #$/MWh
+                print(self.LCOH)
+                print("\n\n")
+
                 if self.LCOH<0:
                     self.LCOH = 9999
                     self.error_codes = np.append(self.error_codes,5000)
@@ -287,7 +314,7 @@ class TEA:
                     self.LCOE = 9999
                     self.error_codes = np.append(self.error_codes,7000)
             
-        else:  #Production temperature went below injection temperature
+        else:  #Production temperature went below injection temperature # AB HERE *****
             self.error_codes = np.append(self.error_codes,1000)
     
  
@@ -490,6 +517,7 @@ class TEA:
         if len(self.error_codes)>0:
             print(" ")
             if np.in1d(1000,self.error_codes): #plot the temperature and pressure for these
+                # TODO: ERROR HAPPENS HERE (AB)
                 print("Error: production temperature drops below injection temperature. Simulation terminated.\n")
                 
             if np.in1d(2000,self.error_codes): #plot the temperature and pressure for these

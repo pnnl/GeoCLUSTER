@@ -4,12 +4,11 @@
 # data manipulation libraries
 import numpy as np
 import h5py
-from scipy.interpolate import interpn
+from scipy.interpolate import interpn, interp1d
 import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
-from paths import absolute_path
-
+from sbt import run_sbt
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -22,7 +21,7 @@ class data:
             input_loc = "/" + case + "/" + fluid + "/input/"
             output_loc = "/" + case + "/" + fluid + "/output/"
 
-            # independent vars
+            # independent vars``
             self.mdot = file[input_loc + "mdot"][:]  # i0
             self.L2 = file[input_loc + "L2"][:]  # i1
             self.L1 = file[input_loc + "L1"][:]  # i2
@@ -47,16 +46,16 @@ class data:
             self.Tamb = file[fixed_loc + "Tamb"][()]
 
             # dim = Mdot x L2 x L1 x grad x D x Tinj x k
-            self.Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
-            self.We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
+            Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
+            We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
 
             self.GWhr = 1e6 * 3600000.0
 
             self.kWe_avg = (
-                self.We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+                We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
             )
             self.kWt_avg = (
-                self.Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+                Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
             )
 
             # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
@@ -71,11 +70,9 @@ class data:
                 len(self.time),
             )
 
-            # if you get an error that these files don't exist, run the zarr.ipynb notebook in the data directory to build these files!
-            self.Tout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Tout.zarr", mode="r")
-            self.Pout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Pout.zarr", mode="r")
-            
-            print("successfully loaded clgs")
+            # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
+            self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
+            self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
@@ -137,28 +134,91 @@ class data:
         interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
-    def interp_outlet_states(self, point):
-        points = list(
-            iter.product(
-                (point[0],),
-                (point[1],),
-                (point[2],),
-                (point[3],),
-                (point[4],),
-                (point[5],),
-                (point[6],),
-                self.time,
+    def reshape_output(self, tout):
+        NEW_SIZE = 161
+        original_indices = np.arange(tout.shape[0])
+        new_indices = np.arange(NEW_SIZE + 1,)
+        interpolator = interp1d(original_indices, tout, kind='quadratic')
+        new_data = interpolator(new_indices)
+        return new_data
+
+
+    def interp_outlet_states(self, point, sbt_version): # needs to be a callback option
+        """
+        :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
+        """
+        if sbt_version == 0:
+            points = list(
+                iter.product(
+                    (point[0],),
+                    (point[1],),
+                    (point[2],),
+                    (point[3],),
+                    (point[4],),
+                    (point[5],),
+                    (point[6],),
+                    self.time,
+                )
             )
-        )
 
-        point_to_read_around = (
-            *point,
-            "all",
-        )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
-        Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
-        Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            point_to_read_around = (
+                *point,
+                "all",
+            )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
+            Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
+            Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            times = self.time
 
-        return Tout, Pout
+        else:
+            mdot, L2, L1, grad, D , Tinj, k = point
+            # print("\n -------------------------------- UI -------------------------------- ")
+            # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            
+            # AB UNIT CONVERSIONS AND RENAMING
+            # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
+            L2 = L2/1000
+            L1 = L1/1000
+            Tinj = Tinj-273.15
+            # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+
+            if self.case == "coaxial":
+                case = 1
+            if self.case == "utube":
+                case = 2
+
+            if self.CP_fluid == "H20":
+                fluid = 1
+            if self.CP_fluid == "CO2":
+                fluid = 2
+            else:
+                fluid = 1 # water
+
+            # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+            times, Tout = run_sbt(
+            ## Model Specifications 
+            sbt_version=sbt_version, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
+            HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+            accuracy=1,
+
+             ## Operations
+            clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+            DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+            Diameter1=D, Diameter2=D, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3], PipeParam5=1, ## Tube Geometry
+
+            ## Geologic Properties
+            Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+            )
+
+            # self.time = times
+
+            constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
+            Pout = constant_pressure * np.ones_like(Tout)
+
+            times = times[14:]
+            Tout = Tout[14:]
+            Pout = Pout[14:]
+
+        return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
         var_index = None
@@ -270,7 +330,7 @@ class data:
 
         Tout = np.transpose(
             np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
-        )  # 20,26
+        )  
         Pout = np.transpose(
             np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
         )
@@ -282,15 +342,17 @@ class data:
         point,
         Tout,
         Pout,
-        Tamb=300.0,
+        Tamb=300.0, # AB: is this surface temperature? What is Tamb?
     ):
 
         mdot = point[0]
         Tinj = point[5]
+
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
         entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+
         kWe = (
             mdot
             * (enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in))
