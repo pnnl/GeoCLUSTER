@@ -9,6 +9,7 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
 from sbt import run_sbt
+from paths import absolute_path
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -71,8 +72,8 @@ class data:
             )
 
             # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
-            self.Tout = zarr.open(f"data/{case}_{fluid}_Tout.zarr", mode="r")
-            self.Pout = zarr.open(f"data/{case}_{fluid}_Pout.zarr", mode="r")
+            self.Tout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Tout.zarr", mode="r")
+            self.Pout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Pout.zarr", mode="r")
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
