@@ -114,7 +114,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     # -----------------------------------------------------------------------------------------------------------------
 
     sCO2_Tout = sCO2_Pout = H2O_Tout = H2O_Pout = sCO2_kWe = sCO2_kWt = H2O_kWe = H2O_kWt = None
-    
+
     if model == "HDF5":
         sbt_version = 0
     elif model == "SBT V1.0":
@@ -198,10 +198,12 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "coaxial":
 
             try:
-                sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version)
-                H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version)
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
+                if fluid == "sCO2" or fluid == "All":
+                    sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version)
+                    sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version)
+                    H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
@@ -652,7 +654,6 @@ def generate_econ_lineplots(TandP_dict,
                 lcoh_sCO2 = format( teaobj_sCO2.LCOH, '.2f')
 
                 # Heat Production 
-
                 fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Instantaneous_heat_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Heat Production (MWt)</b>: %{y:.3f} ',
                               line = dict(color='black', width=lw),
@@ -695,6 +696,8 @@ def generate_econ_lineplots(TandP_dict,
 
         if fluid == "H2O" or fluid == "All":
 
+            print(" ...... H20 HEATING LCOH .... ")
+
             try:
                 teaobj_H2O = create_teaobject(TandP_dict,
                                                 u_sCO2, u_H2O, c_sCO2, c_H2O,
@@ -708,7 +711,14 @@ def generate_econ_lineplots(TandP_dict,
                                                 is_H20=True, is_heating=True
                                                 )
                 lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
+                # print("Error on LCOH ... ")
+                # print(teaobj_H2O)
+                # print(lcoh_H2O)
 
+                # HERE !!!!! "'TEA' object has no attribute 'LCOH'"
+                print('here')
+                print(teaobj_H2O.Linear_time_distribution)
+ 
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Instantaneous_heat_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Heat Production (MWt)</b>: %{y:.3f} ',
@@ -833,6 +843,7 @@ def generate_econ_lineplots(TandP_dict,
 
         if fluid == "H2O" or fluid == "All":
 
+            # HERE !!!!! ATTRIBUTE "'TEA' object has no attribute 'Inst_Net_Electricity_production'"} 
             try:
                 teaobj_H2O = create_teaobject(TandP_dict,
                                                 u_sCO2, u_H2O, c_sCO2, c_H2O,
@@ -850,6 +861,11 @@ def generate_econ_lineplots(TandP_dict,
                 teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
                 lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
+
+                # print(" ********* ")
+                # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
+                # print(teaobj_H2O.Linear_time_distribution)
+                # print("\n")
 
                 # Electricity 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
@@ -910,6 +926,8 @@ def generate_econ_lineplots(TandP_dict,
 
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
+
+    print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 

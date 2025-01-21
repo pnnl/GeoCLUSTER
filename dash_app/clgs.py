@@ -212,8 +212,12 @@ class data:
 
             # self.time = times
 
-            constant_pressure = 2e7 # 200 Bar in pascal
+            constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
             Pout = constant_pressure * np.ones_like(Tout)
+
+            times = times[14:]
+            Tout = Tout[14:]
+            Pout = Pout[14:]
 
         return Tout, Pout, times
 
@@ -339,17 +343,17 @@ class data:
         point,
         Tout,
         Pout,
-        Tamb=300.0,
+        Tamb=300.0, # AB: is this surface temperature? What is Tamb?
     ):
 
         mdot = point[0]
         Tinj = point[5]
-        # print('!!!!!!!')
-        # print(Tout, Pout, self.CP_fluid)
+
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
         entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+
         kWe = (
             mdot
             * (enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in))

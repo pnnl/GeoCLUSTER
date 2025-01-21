@@ -1821,7 +1821,6 @@ def run_sbt(
         plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
-
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
     # return times[1:]/365/24/3600, Toutput[1:] + 273.15 # return in Kelvin
 
