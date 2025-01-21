@@ -172,15 +172,15 @@ class data:
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
-            print("\n -------------------------------- UI -------------------------------- ")
-            print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            # print("\n -------------------------------- UI -------------------------------- ")
+            # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
             
             # AB UNIT CONVERSIONS AND RENAMING
             # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
             L2 = L2/1000
             L1 = L1/1000
             Tinj = Tinj-273.15
-            print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
             if self.case == "coaxial":
                 case = 1
@@ -194,7 +194,7 @@ class data:
             else:
                 fluid = 1 # water
 
-            print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+            # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
             times, Tout = run_sbt(
             ## Model Specifications 
             sbt_version=sbt_version, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 

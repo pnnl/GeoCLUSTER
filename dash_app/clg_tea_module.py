@@ -239,12 +239,19 @@ class TEA:
 
 
 
-    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version):
+    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
         
         if self.Fluid == 1:
-            self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
+            # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
+            self.Tout = np.array(TandP_dict["H2O_Tout"])
+            self.Pout = np.array(TandP_dict["H2O_Pout"])
+            times = TandP_dict["time"]
+
         elif self.Fluid == 2:
-            self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
+            self.Tout = np.array(TandP_dict["sCO2_Tout"])
+            self.Pout = np.array(TandP_dict["sCO2_Pout"])
+            times = TandP_dict["time"]
+            # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
 
         #Initial time correction (Correct production temperature and pressure at time 0 (the value at time 0 [=initial condition] is not a good representation for the first few months)
         self.Tout[0] = self.Tout[1]

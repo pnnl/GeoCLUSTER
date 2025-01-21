@@ -401,6 +401,7 @@ app.layout = html.Div(
         dcc.Store(id='thermal-results-errors'),
         dcc.Store(id='thermal-contours-errors'),
         dcc.Store(id='summary-memory'),
+        dcc.Store(id='TandP-data'),
 
         # Left column
         html.Div(
@@ -589,6 +590,27 @@ def flip_to_tab(tab, btn1, btn3, end_use):
         raise PreventUpdate
 
 
+@app.callback(
+    [Output(component_id="fluid-select", component_property="value", allow_duplicate=True),
+    Output(component_id="fluid-select", component_property="options", allow_duplicate=True)
+    ],
+    [Input(component_id="model-select", component_property="value"),
+    ],
+    
+    prevent_initial_call=True
+    )
+
+def update_working_fluid(model):
+
+    if model == "SBT V1.0":
+        fluid_list = ["H2O"]
+        if ctx.triggered_id == "model-select":
+            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+        else:
+            raise PreventUpdate
+    else:
+        raise PreventUpdate
+
 
 @app.callback(
    [Output(component_id='fluid-select', component_property='options'),
@@ -597,40 +619,46 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     Output(component_id='interpolation-select', component_property='value')
    ],
    [Input(component_id="tabs", component_property="value"),
-    Input(component_id='fluid-select', component_property='value')
+    Input(component_id='fluid-select', component_property='value'),
+    Input(component_id="model-select", component_property="value")
     ])
 
-def change_dropdown(at, fluid):
+def change_dropdown(at, fluid, model):
 
-    if at == "energy-time-tab":
-        fluid_list = ["All", "H2O", "sCO2"]
-        interpol_list = ["True"]
-        return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+    if model == "HDF5":
 
-    elif at == "about-tab":
-        fluid_list = ["All", "H2O", "sCO2"]
-        interpol_list = ["True"]
-        return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
-   
-    elif at == "energy-tab":
-        fluid_list = ["H2O", "sCO2"]
-        interpol_list = ["True"]
-        if fluid != "All":
+        if at == "energy-time-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
             return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
-        else:
-            return [{"label": i, "value": i} for i in fluid_list], fluid_list[0], [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
 
+        elif at == "about-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+    
+        elif at == "energy-tab":
+            fluid_list = ["H2O", "sCO2"]
+            interpol_list = ["True"]
+            if fluid != "All":
+                return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+            else:
+                return [{"label": i, "value": i} for i in fluid_list], fluid_list[0], [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
 
-    elif at == "economics-time-tab":
-        fluid_list = ["All", "H2O", "sCO2"]
-        interpol_list = ["True"]
-        return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        elif at == "economics-time-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
 
-    elif at == "summary-tab":
-        fluid_list = ["All", "H2O", "sCO2"]
-        interpol_list = ["True"]
-        return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
-        # raise PreventUpdate
+        elif at == "summary-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+            # raise PreventUpdate
+
+    if model == "SBT V1.0":
+
+        raise PreventUpdate
 
 
 @app.callback(
@@ -883,7 +911,8 @@ def show_hide_detailed_card(tab, fluid, end_use):
      Output(component_id='thermal-memory', component_property='data'),
      Output(component_id='thermal-results-mass', component_property='data'),
      Output(component_id='thermal-results-time', component_property='data'),
-     Output(component_id='thermal-results-errors', component_property='data')
+     Output(component_id='thermal-results-errors', component_property='data'),
+     Output(component_id="TandP-data", component_property="data"),
      ],
     [Input(component_id="interpolation-select", component_property="value"),
      Input(component_id="fluid-select", component_property="value"),
@@ -908,12 +937,12 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # -----------------------------------------------------------------------------
 
     # if HDF5:
-    subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict = generate_subsurface_lineplots(
+    subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model
     )
     # if SBT:
 
-    return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict
+    return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict
 
 
 
@@ -955,7 +984,10 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      Output(component_id='econ-errors', component_property='data'),
      # Output(component_id='ts_plot', component_property='figure')
      ],
-    [Input(component_id="interpolation-select", component_property="value"),
+    [
+     Input(component_id="TandP-data", component_property="data"),
+
+     Input(component_id="interpolation-select", component_property="value"),
      Input(component_id="fluid-select", component_property="value"),
      Input(component_id="case-select", component_property="value"),
      Input(component_id="end-use-select", component_property="value"),
@@ -978,10 +1010,12 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      Input(component_id='radio-graphic-control4', component_property='value'),
      Input(component_id="checklist", component_property="value"),
      Input(component_id='model-select', component_property='value'),
+     
     ],
 )
 
-def update_econ_plots(interp_time, fluid, case, end_use,
+def update_econ_plots(TandP_dict,
+                     interp_time, fluid, case, end_use,
                       mdot, L2, L1, grad, D, Tinj, k_m,
                       Drilling_cost_per_m, Discount_rate, Lifetime, 
                       Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -998,6 +1032,7 @@ def update_econ_plots(interp_time, fluid, case, end_use,
         is_plot_ts = False
 
     economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = generate_econ_lineplots(
+        TandP_dict,
         interp_time, case, end_use, fluid, 
         mdot, L2, L1, grad, D, Tinj, k_m,
         Drilling_cost_per_m, Discount_rate, Lifetime, 

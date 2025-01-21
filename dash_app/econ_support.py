@@ -27,7 +27,8 @@ def fixed_economic_inputs():
     return O_and_M_cost_plant, Pump_efficiency, Turbine_isentropic_efficiency, Generator_efficiency, Compressor_isentropic_efficiency, T0, P0, Electricity_rate
 
 
-def create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
+def create_teaobject(TandP_dict, 
+                    u_sCO2, u_H2O, c_sCO2, c_H2O,
                      case, end_use, fluid, model,
                      Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, Tin_user, krock_user, 
                      Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -94,7 +95,7 @@ def create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
                                           additional_properties_CO2v2_pathname)
     
     # get interpolated temperature and pressure array
-    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model)
+    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
     teaobject.calculateLC()
     # teaobject.printresults()
     

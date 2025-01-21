@@ -484,8 +484,8 @@ def run_sbt(
         rho_m:                           # Rock density [kg/m3]
     """
 
-    print("\n")
-    print(" -------------------------------- SBT USER INPUTS -------------------------------- ")
+    # print("\n")
+    # print(" -------------------------------- SBT USER INPUTS -------------------------------- ")
     # all input possibilities can be placed into a dataframe at some point ...
     # Geologic properties are set at the start of run_sbt() 
     # rest of variables are "set" below
@@ -495,14 +495,14 @@ def run_sbt(
                                             PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                             )
     globals().update(tube_geometry_dict)
-    print(tube_geometry_dict.keys())
+    # print(tube_geometry_dict.keys())
 
     wellbore_geometry_dict = set_wellbore_geometry(clg_configuration=clg_configuration, 
                                                     DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
                                                     numberoflaterals=numberoflaterals
                                                     )
     globals().update(wellbore_geometry_dict)
-    print(wellbore_geometry_dict.keys())
+    # print(wellbore_geometry_dict.keys())
 
     sbt_hyperparams_dict = set_sbt_hyperparameters(sbt_version=sbt_version, clg_configuration=clg_configuration, 
                                                 accuracy=accuracy,
@@ -510,7 +510,7 @@ def run_sbt(
                                                 HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
                                                 HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
     globals().update(sbt_hyperparams_dict)
-    print(sbt_hyperparams_dict.keys())
+    # print(sbt_hyperparams_dict.keys())
 
     if is_plot:
         plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
@@ -522,14 +522,14 @@ def run_sbt(
     # Generally, nothing should be changed by the user in this section
     #------------------
 
-    print("\n")
-    print(" -------------------------------- SBT ADMIN INPUTS -------------------------------- ")
+    # print("\n")
+    # print(" -------------------------------- SBT ADMIN INPUTS -------------------------------- ")
     fluid_properties = admin_fluid_properties()
     globals().update(fluid_properties)
-    print(fluid_properties.keys())
+    # print(fluid_properties.keys())
 
-    print("\n")
-    print(" -------------------------------- COMPUTATIONS -------------------------------- ")
+    # print("\n")
+    # print(" -------------------------------- COMPUTATIONS -------------------------------- ")
 
     ### COMPUTE TUBE GEOMETRY 
     tube_geometry_dict2 = compute_tube_geometry(sbt_version=sbt_version, clg_configuration=clg_configuration, 
@@ -539,7 +539,7 @@ def run_sbt(
                                                 lateralflowallocation=lateralflowallocation)
 
     globals().update(tube_geometry_dict2)
-    print(tube_geometry_dict2.keys())
+    # print(tube_geometry_dict2.keys())
 
     ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
     interpolator_density, interpolator_enthalpy, \
