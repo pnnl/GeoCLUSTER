@@ -522,6 +522,28 @@ def toggle_collapse(n, is_open):
     return is_open
 
 @app.callback(
+   [Output(component_id="scenario1-div", component_property="style"),
+   Output(component_id="scenario3-div", component_property="style"),
+   Output(component_id="hr-break1", component_property="style"),
+   ],
+   [Input(component_id="model-select", component_property="value")
+    ],
+   prevent_initial_call=True
+   )
+
+def update_tabs(selected_model):
+
+    if selected_model == "HDF5": 
+
+        return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+
+    elif selected_model == "SBT V1.0": 
+            
+        # TODO: update tabs styline
+        return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+
+
+@app.callback(
    Output(component_id="contour-tab", component_property="style"),
    [Input(component_id="model-select", component_property="value")
     ],

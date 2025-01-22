@@ -291,7 +291,21 @@ hr {
 /*  border-right: 1px solid var(--selectedblue) !important;*/
 }
 
+/* Input Boxes
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
 
+.name-input-container {
+    display: inline-block;
+}
+.input-title {
+    float: left;
+    padding-right: 10px;
+    font-weight: bold;
+}
+
+/* .input-box {
+    width: 45px;
+} */
 
 /* Dropdowns
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -317,6 +331,9 @@ hr {
     width: 35%;
 }
 
+/* .select-dropdown {
+    width: 50% !important;
+} */
 
 /* Sliders
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -324,6 +341,7 @@ hr {
 
 #slider-container {
     display: flex;
+    position: relative;
 }
 
 #therm-sliders, #econ-sliders {
@@ -345,14 +363,36 @@ hr {
     padding: 5px 5px 0px 5px;
 }
 
+.param-class-name {
+    text-align: left;
+    padding-left: 10px;
+    color: var(--darkorange);
+    text-transform: uppercase;
+}
+
+.params-div {
+    border: solid 3px var(--darkorange);
+    border-radius: 10px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    padding-bottom: 5px;
+}
+
+#economics-params-div {
+    border-radius: 10px 10px 0px 0px;
+    border-bottom: none !important;
+}
 
 #sCO2-card {
-/*    margin-top: 10px;*/
-/*    padding-bottom: 0px;*/
-    border: solid 3px var(--darkorange);
-/*    box-shadow: inset 40px 0px 0px white, 0px 40px 0px 0px var(--darkorange), 0px 0px 1px var(--darkorange) !important;*/
-
+    margin-top: -8px;
+    /* border: solid 3px var(--darkorange); */
+    border-radius: 0px 0px 10px 10px;
+    border-top: none !important;
+    border-right: solid 3px var(--darkorange);
+    border-bottom: solid 3px var(--darkorange);
+    border-left: solid 3px var(--darkorange);
 }
+
 
 #check-visual-card {
     display: inline-block;

@@ -204,7 +204,7 @@ class data:
              ## Operations
             clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
             DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=D, Diameter2=D, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3], PipeParam5=1, ## Tube Geometry
+            Diameter1=D, Diameter2=D, PipeParam3=1, PipeParam4=[1], PipeParam5=1, ## Tube Geometry
 
             ## Geologic Properties
             Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
