@@ -171,7 +171,7 @@ class TEA:
             self.Fluid_name = 'CarbonDioxide'           
             
         # print(self.timearray)
-        print(self.timearray.shape)
+        # print(self.timearray.shape)
         self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
         
         
@@ -181,7 +181,7 @@ class TEA:
         #Find closests lifetime
         closestlifetime = self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]    
         self.indexclosestlifetime = np.where(self.timearray == closestlifetime)[0][0]
-        print(self.indexclosestlifetime)
+        # print(self.indexclosestlifetime) # HERE
 
         #load property data
         if self.Fluid == 1:
@@ -264,9 +264,9 @@ class TEA:
         
         # print(self.Pout[1:10])
         # print(self.Tout)
-        print("first temp: ", self.Tout[1])
-        print("last temp: ", self.Tout[-1])
-        print("inj temp: ", self.TinVector)
+        # print("first temp: ", self.Tout[1])
+        # print("last temp: ", self.Tout[-1])
+        # print("inj temp: ", self.TinVector)
 
         #Extract Tout and Pout over lifetime
         self.InterpolatedTemperatureArray = self.Tout[0:self.indexclosestlifetime+1]-273.15
@@ -279,9 +279,9 @@ class TEA:
         self.Linear_production_pressure = self.InterpolatedPressureArray
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
 
-        print(self.Linear_production_temperature[1:10]) # AB: way too low
-        print(self.AveProductionTemperature)
-        print(self.T_in)
+        # print(self.Linear_production_temperature[1:10]) # AB: way too low
+        # print(self.AveProductionTemperature)
+        # print(self.T_in)
         
 
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
@@ -298,8 +298,8 @@ class TEA:
             Discount_vector = 1./np.power(1+self.Discount_rate,np.linspace(0,self.Lifetime-1,self.Lifetime))
             if self.End_use == 1:   #direct-use heating
                 self.LCOH = (self.TotalCAPEX + np.sum(self.OPEX_Plant*Discount_vector))*1e6/np.sum(self.Annual_heat_production/1e3*Discount_vector) #$/MWh
-                print(self.LCOH)
-                print("\n\n")
+                # print(self.LCOH)
+                # print("\n\n")
 
                 if self.LCOH<0:
                     self.LCOH = 9999

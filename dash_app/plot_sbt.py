@@ -74,7 +74,12 @@ def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration,
 
         Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
         Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
-        Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
+        print(interconnections) # when more than one lateral [ 35  71  91 111]
+        # one lateral: [35 71]
+        if numberoflaterals == 1:
+            Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 :].shape[0]))
+        else:
+            Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
         plt.figure()
         plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
         plt.grid(True)

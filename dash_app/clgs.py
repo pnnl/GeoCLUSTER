@@ -169,6 +169,8 @@ class data:
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
             times = self.time
+            # print("TEMP OUT: -----****")
+            # print(Tout)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
@@ -204,10 +206,14 @@ class data:
              ## Operations
             clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
             DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=D, Diameter2=D, PipeParam3=1, PipeParam4=[1], PipeParam5=1, ## Tube Geometry
+            Diameter1=D, Diameter2=D, 
+            PipeParam3=1, PipeParam4=[1], 
+            # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
+            PipeParam5=1, ## Tube Geometry
 
             ## Geologic Properties
-            Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+            Tsurf=25, GeoGradient=grad, k_m=k, c_m=790.0, rho_m=2750, 
+            # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
             )
 
             # self.time = times

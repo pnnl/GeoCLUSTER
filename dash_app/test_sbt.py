@@ -33,13 +33,15 @@ run_sbt(
 
              ## Operations
             clg_configuration=2, mdot=24, Tinj=30, fluid=1, ## Operations
-            DrillingDepth_L1=3.5, HorizontalExtent_L2=10, #BoreholeDiameter=1, ## Wellbore Geometry
-            Diameter1=0.3500, Diameter2=0.3500, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3],  #0.006
+            DrillingDepth_L1=3500, HorizontalExtent_L2=10000.0, #BoreholeDiameter=1, ## Wellbore Geometry
+            Diameter1=0.3500, Diameter2=0.3500, PipeParam3=1, PipeParam4=[1],  #0.006
             PipeParam5=1, ## Tube Geometry
 
             ## Geologic Properties
-            Tsurf=20, GeoGradient=50/1000, k_m=3.00, c_m=825, rho_m=2875, 
+            Tsurf=25, GeoGradient=50/1000, k_m=3.00, c_m=790.0, rho_m=2750, 
             )
+
+            # NOTE: HDF5: fluid dependent properties assumed vs. sbt assumption is constant
 
 # start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "grad": 0.05, "D": 0.3500, "Tinj": 30.0, "k": 3.0}
 

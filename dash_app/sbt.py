@@ -177,30 +177,49 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
 
     elif clg_configuration == 2: # U-loop geometry: (x,y,z)-coordinates of centerline of injection well, production well and laterals
         # Coordinates of injection well (coordinates are provided from top to bottom in the direction of flow)
-        zinj = np.arange(0, -2000 - 100, -100).reshape(-1, 1)
+        # DrillingDepth_L1 == -2000 (default)
+        # HorizontalExtent_L2 == 1000 (default)
+        HorizontalExtent_L2_half = HorizontalExtent_L2/2
+        print(DrillingDepth_L1)
+        print(HorizontalExtent_L2) 
+        zinj = np.arange(0, -DrillingDepth_L1 - 100, -100).reshape(-1, 1) # 2k down, 100 m horizontal, 100 m up
         yinj = np.zeros((len(zinj), 1))
-        xinj = -1000 * np.ones((len(zinj), 1))
+        xinj = -HorizontalExtent_L2_half * np.ones((len(zinj), 1))
         
         # Coordinates of production well (coordinates are provided from bottom to top in the direction of flow)
-        zprod = np.arange(-2000, 0 + 100, 100).reshape(-1, 1)
+        zprod = np.arange(-DrillingDepth_L1, 0 + 100, 100).reshape(-1, 1)
         yprod = np.zeros((len(zprod), 1))
-        xprod = 1000 * np.ones((len(zprod), 1))
+        xprod = HorizontalExtent_L2_half * np.ones((len(zprod), 1))
         
         # (x, y, z)-coordinates of laterals are stored in three matrices (one each for the x, y, and z coordinates). 
         # The number of columns in each matrix corresponds to the number of laterals. The number of discretizations 
         # should be the same for each lateral. Coordinates are provided in the direction of flow; the first coordinate should match 
         # the last coordinate of the injection well, and the last coordinate should match the first coordinate of the 
         # production well
-        xlat = np.concatenate((np.array([-1000, -918, -814]), np.linspace(-706, 706, 14), np.array([814, 918, 1000]))\
-        ).reshape(-1,1)
+        # NOTE: laterals (for validation purposes, have one lateral that doesn't bend if it's 1 lateral)
+
+        xlat = np.concatenate((np.array([-1000, -918, -814])*HorizontalExtent_L2_half/1000, # -1000 x coord
+                                np.linspace(-706, 706, 14)*HorizontalExtent_L2_half/1000, 
+                                    np.array([814, 918, 1000])*HorizontalExtent_L2_half/1000)).reshape(-1,1)
+
         ylat = np.concatenate((100 * np.cos(np.linspace(-np.pi/2, 0, 3)), 100 * np.ones(14), 100 *\
-        np.cos(np.linspace(0, np.pi/2, 3)))).reshape(-1,1)
-        zlat = (-2000 * np.ones((len(xlat)))).reshape(-1,1)
+        np.cos(np.linspace(0, np.pi/2, 3)))).reshape(-1,1) # COS = curving the lateral
         
-        xlat = np.hstack((xlat,xlat,np.linspace(-1000,1000,20).reshape(-1,1)))
-        ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
-        zlat = np.hstack((zlat,zlat,zlat))
+        zlat = (-DrillingDepth_L1 * np.ones((len(xlat)))).reshape(-1,1) # -2000 y coord
         
+        if numberoflaterals == 1:
+            xlat = np.hstack((np.linspace(-HorizontalExtent_L2_half,HorizontalExtent_L2_half,20).reshape(-1,1)))
+            ylat = np.hstack((np.zeros(len(ylat)).reshape(-1,1)))
+            zlat = np.hstack((zlat)) # same as line 208
+            xlat = np.expand_dims(xlat, axis=1) 
+            ylat = np.expand_dims(ylat, axis=1) 
+            zlat = np.expand_dims(zlat, axis=1) 
+
+        else:
+            xlat = np.hstack((xlat,xlat, np.linspace(-HorizontalExtent_L2_half,HorizontalExtent_L2_half,20).reshape(-1,1)))
+            ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
+            zlat = np.hstack((zlat,zlat,zlat))
+            
         # Merge x-, y-, and z-coordinates
         x = np.concatenate((xinj, xprod))
         y = np.concatenate((yinj, yprod))
@@ -484,6 +503,8 @@ def run_sbt(
         rho_m:                           # Rock density [kg/m3]
     """
 
+    HorizontalExtent_L2 = HorizontalExtent_L2*1000
+    DrillingDepth_L1 = DrillingDepth_L1*1000
     # print("\n")
     # print(" -------------------------------- SBT USER INPUTS -------------------------------- ")
     # all input possibilities can be placed into a dataframe at some point ...
@@ -1821,6 +1842,7 @@ def run_sbt(
         plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
+    # print(Toutput + 273.15)
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
     # return times[1:]/365/24/3600, Toutput[1:] + 273.15 # return in Kelvin
 

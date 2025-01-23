@@ -696,7 +696,7 @@ def generate_econ_lineplots(TandP_dict,
 
         if fluid == "H2O" or fluid == "All":
 
-            print(" ...... H20 HEATING LCOH .... ")
+            # print(" ...... H20 HEATING LCOH .... ")
 
             try:
                 teaobj_H2O = create_teaobject(TandP_dict,
@@ -716,8 +716,8 @@ def generate_econ_lineplots(TandP_dict,
                 # print(lcoh_H2O)
 
                 # HERE !!!!! "'TEA' object has no attribute 'LCOH'"
-                print('here')
-                print(teaobj_H2O.Linear_time_distribution)
+                # print('here')
+                # print(teaobj_H2O.Linear_time_distribution)
  
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Instantaneous_heat_production/1e3,
@@ -927,7 +927,7 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    print(error_messages_dict)
+    # print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 
