@@ -93,6 +93,21 @@ precool_dict = {0: '0', 5: '', 10: '', 15: '', 20: '', 25: '', 30: '', 35: '', 4
 
 fineness_dict = {0: '0 (coarse)', 1: '', 2: '', 3: '', 4: '', 5: '5 (fine)'}
 
+# new slider labels
+# grad_dict = {0.01: '0.01', 0.1: '0.1'}
+# k_dict = {0.1: '0.1', 7.0: '7.0'} # 1.5 4.5
+Tsurf_dict = {20: '20', 400: '400'}
+c_dict = {700: '700', 1200: '1200'}
+rho_dict = {400: '400', 4000: '4000'}
+
+Tinj_dict =  {20: '20', 200: '200'}
+mdot_dict = {1: '1', 2000: '2000'}
+L2_dict = {1000: '1k', 50000: '50k'}
+L1_dict = {1000: '1k', 10000: '10k'}
+
+radius_vertical_dict = {0.2: '0.200', 0.6: '0.600'}
+radius_lateral_dict = {0.2: '0.200', 0.6: '0.600'}
+
 # ---------------------------
 # Global style element(s).
 # ---------------------------
@@ -154,9 +169,17 @@ def slider_card():
     #       drillcost, discount-rate, lifetime, kwt, kwe, precool, turb-pout
     #
     # -----------------------------------------------------------------------
-
-    start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "grad": 0.05, "D": 0.3500, "Tinj": 30.0, "k": 3.0}
-#     start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
+    
+    # TODO: need to make it general across parameters 
+    start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
+    start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.05, "D": 0.3500, "k": 3.0}
+    # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
+    start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
+                        "radius-vertical": 0.3500, "radius-lateral": 0.3500,
+                        } 
+    start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
+                        "kwe": 3000, "precool": 13, "turb-pout": 80
+                        }
 
     return html.Div(
         children=[
@@ -172,238 +195,252 @@ def slider_card():
                     dbc.CardBody(
                         children=[
 
-                            # ##
-                            # html.Div(id="slider-container",
-                            #         children=[
-                            #         html.Div(id="therm-sliders",
-                            #             children=[
-
-                            #                 html.Div(
-                            #                     id="geologic-params-div",
-                            #                     className="params-div",
-                            #                     children=[
-                            #                         html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
-                            #                         slider2(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=0.0, max_v=60.0, 
-                            #                                 mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
-                            #                         slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                            #                                 mark_dict=grad_dict, start_v=start_vals_d["grad"]),
-                            #                         slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                            #                                 mark_dict=k_dict, start_v=start_vals_d["k"]),
-                            #                         slider2(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=0, max_v=825, 
-                            #                                 mark_dict=k_dict, start_v=start_vals_d["k"]),
-                            #                         slider2(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=0, max_v=2875, 
-                            #                                 mark_dict=k_dict, start_v=start_vals_d["k"]),
-                            #                     ]
-                            #                 ),
-                                        
-                            #                 html.Div(
-                            #                     id="wellbore-params-div", # wellbore operations
-                            #                     className="params-div",
-                            #                     children=[
-                            #                         html.P("WELLBORE OPERATIONS", className="param-class-name"),
-                            #                         slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                            #                                 mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
-                            #                         slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                            #                                 mark_dict=mdot_dict, start_v=start_vals_d["mdot"]),
-                            #                         slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                            #                                 mark_dict=L2_dict, start_v=start_vals_d["L2"]),
-                            #                         slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                            #                                 mark_dict=L1_dict, start_v=start_vals_d["L1"]),
-                            #                     ]
-
-                            #                 ),
-
-                            #                 html.Div(
-                            #                     id="tube-params-div", # tube geometry 
-                            #                     className="params-div",
-                            #                     children=[
-                            #                         html.P("TUBE GEOMETRY", className="param-class-name"),
-                            #                         slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                            #                                 mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
-                            #                         slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2159, max_v=0.4445,
-                            #                                 mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
-                            #                         slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2159, max_v=0.4445,
-                            #                                 mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
-                            #                         html.Div(
-                            #                             className="name-input-container",
-                            #                             children=[
-                            #                                 html.P("Number of Laterals", className="input-title"),
-                            #                                 dcc.Input(id="n-laterals-select", value=1, type='number', min=0, max=20, step=1, className="input-box"),
-                            #                         ]),
-                            #                         html.Div(
-                            #                             className="name-input-container",
-                            #                             children=[
-                            #                                 html.P("Lateral Flow Allocation", className="input-title"),
-                            #                                 dcc.Input(id="lateral-flow-select", value=1, type='number', min=0, max=1, step=0.01, className="input-box"),
-                            #                         ]),
-                            #                         html.Div(
-                            #                             className="name-input-container",
-                            #                             children=[
-                            #                                 html.P("Lateral Flow Multiplier", className="input-title"),
-                            #                                 dcc.Input(id="lateral-multiplier-select", value=1, type='number', min=0, max=1, step=0.05, className="input-box"),
-                            #                         ]),
-
-                            #                     ]
-                            #                 ),
-
-                            #         ]),
-
-                            #         html.Div(id="econ-sliders",
-                            #             children=[
-                                        
-                            #                 html.Div(
-                            #                         id="economics-params-div",
-                            #                         className="params-div",
-                            #                         children=[
-                            #                             html.P("ECONOMIC PARAMETERS", className="param-class-name"),
-                            #                             slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
-                            #                                     mark_dict=drillcost_dict, start_v=1000),
-                            #                             slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
-                            #                                     mark_dict=discount_dict, start_v=7.0),
-                            #                             # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                            #                             #         mark_dict=lifetime_dict, start_v=30),
-                            #                             slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                            #                                     mark_dict=lifetime_dict, step_i=1, start_v=40),
-                            #                             slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
-                            #                                     mark_dict=kwt_dict, start_v=100),
-                            #                             slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
-                            #                                     mark_dict=kwe_dict, start_v=3000),
-                            #                         ]
-                            #                         ),
-                            #                 html.Div(id="sCO2-card",
-                            #                         className="params-div",
-                            #                         children=[
-                            #                             html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                            #                             slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
-                            #                                     mark_dict=precool_dict, start_v=13),
-                            #                             slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
-                            #                                     mark_dict=turb_pout_dict, start_v=80),
-                            #                             html.Div(id="check-visual-card",
-                            #                                     children=[
-                            #                                             dcc.Checklist(id="checklist",
-                            #                                                 options=[' '],
-                            #                                                 value=[' '],
-                            #                                                 inline=True
-                            #                                             ),
-                            #                                             # html.P("Display heat added or removed from the CLG system to tune for LCOE minima.", id="TS-diagram-text"),
-                            #                                             html.P("In CLGS, working fluids drive turbines to generate electricity. \
-                            #                                                 Display a cycle for sCO2 that depends on turbine cooling and turbine outlet pressure. \
-                            #                                                 Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
-                            #                                 ])
-                            #                         ]),
-
-                            #                 html.Div(
-                            #                     id="model-params-div",
-                            #                     className="params-div",
-                            #                     children=[
-                            #                         html.P("MODEL FINE-TUNING", className="param-class-name"),
-                            #                         slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=5, 
-                            #                                     mark_dict=fineness_dict, step_i=1, start_v=0),
-                            #                         slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=0, max_v=5, 
-                            #                                     mark_dict=fineness_dict, step_i=0.002,start_v=0),
-                            #                         html.Div(
-                            #                             className="name-input-container",
-                            #                             children=[
-                            #                                 html.P("Mass Flow Rate Mode", className="input-title"),
-                            #                                 dcc.Dropdown(
-                            #                                         id="mass-mode-select",
-                            #                                         options=["Constant", "Variable"],
-                            #                                         value="Variable",
-                            #                                         clearable=False,
-                            #                                         searchable=False,
-                            #                                         className="select-dropdown"
-                            #                                     ),
-                            #                         ]),
-                            #                         html.Div(
-                            #                             className="name-input-container",
-                            #                             children=[
-                            #                                 html.P("Injection Temperature Mode", className="input-title"),
-                            #                                 dcc.Dropdown(
-                            #                                         id="temp-mode-select",
-                            #                                         options=["Constant", "Variable"],
-                            #                                         value="Variable",
-                            #                                         clearable=False,
-                            #                                         searchable=False,
-                            #                                         className="select-dropdown"
-                            #                                     ),
-                            #                         ]),
-                                                    
-                            #                         # html.P("Mass Flow Rate Profile"),
-                            #                         # html.P("Injection Temperature Profile")
-                            #                     ]
-
-                            #                 ),
-                            #         ]),
-                            #     ]),
-
-
-
+                            ##
                             html.Div(id="slider-container",
                                     children=[
                                     html.Div(id="therm-sliders",
                                         children=[
 
-                                        slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                mark_dict=mdot_dict, start_v=start_vals_d["mdot"]),
-                                        slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                mark_dict=L2_dict, start_v=start_vals_d["L2"]),
-                                        slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                mark_dict=L1_dict, start_v=start_vals_d["L1"]),
-                                        slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                mark_dict=grad_dict, start_v=start_vals_d["grad"]),
-                                        # slider2(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=u_sCO2.D[0], max_v=u_sCO2.D[-1], 
-                                        #         mark_dict=D_dict, start_v=0.3500),
-                                        slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
-                                        # slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
-                                        #         mark_dict=Tinj_dict, start_v=303.15-273.15),
-                                        slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
-                                        # slider1(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30, max_v=60, 
-                                        #     mark_dict=Tinj_dict, step_i=0.2,start_v=30),
-                                        slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                mark_dict=k_dict, start_v=start_vals_d["k"])
+                                            html.Div(
+                                                id="geologic-params-div",
+                                                className="params-div",
+                                                children=[
+                                                    html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
+                                                    slider2(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=20.0, max_v=400.0, 
+                                                            mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"]),
+                                                    slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", # min_v=0.01, max_v=0.1,
+                                                                min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"]),
+                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", #min_v=0.1, max_v=7.0, 
+                                                           min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                            mark_dict=k_dict, start_v=start_vals_d["k"]),
+                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=700, max_v=1200, 
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"]),
+                                                    slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=400, max_v=4000, 
+                                                            mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"]),
+                                                ]
+                                            ),
+                                        
+                                            html.Div(
+                                                id="wellbore-params-div", # wellbore operations
+                                                className="params-div",
+                                                children=[
+                                                    html.P("WELLBORE OPERATIONS", className="param-class-name"),
+                                                    slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                        # min_v=20.0, max_v=200.0, 
+                                                            mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
+                                                    slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=1, max_v=2000,
+                                                                # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                            mark_dict=mdot_dict, start_v=start_vals_d["mdot"]),
+                                                    slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=1000, max_v=50000,
+                                                                #min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                            mark_dict=L2_dict, start_v=start_vals_d["L2"]),
+                                                    slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=1000, max_v=10000,
+                                                                #min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                            mark_dict=L1_dict, start_v=start_vals_d["L1"]),
+                                                ]
+
+                                            ),
+
+                                            html.Div(
+                                                id="tube-params-div", # tube geometry 
+                                                className="params-div",
+                                                children=[
+                                                    html.P("TUBE GEOMETRY", className="param-class-name"),
+                                                    slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                            mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
+                                                    slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"]),
+                                                    slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"]),
+                                                    html.Div(
+                                                        className="name-input-container",
+                                                        children=[
+                                                            html.P("Number of Laterals", className="input-title"),
+                                                            dcc.Input(id="n-laterals-select", 
+                                                                        disabled=True,
+                                                                        value=start_vals_hdf5["n-laterals"], type='number', min=0, max=20, step=1, className="input-box"),
+                                                    ]),
+                                                    html.Div(
+                                                        className="name-input-container",
+                                                        children=[
+                                                            html.P("Lateral Flow Allocation", className="input-title"),
+                                                            dcc.Input(id="lateral-flow-select", 
+                                                                        disabled=True,
+                                                                        value=start_vals_hdf5["lateral-flow"], type='number', min=0, max=1, step=0.01, className="input-box"),
+                                                    ]),
+                                                    html.Div(
+                                                        className="name-input-container",
+                                                        children=[
+                                                            html.P("Lateral Flow Multiplier", className="input-title"),
+                                                            dcc.Input(id="lateral-multiplier-select", 
+                                                                        disabled=True, 
+                                                                        value=start_vals_hdf5["lateral-multiplier"], type='number', min=0, max=1, step=0.05, className="input-box"),
+                                                    ]),
+
+                                                ]
+                                            ),
+
                                     ]),
 
                                     html.Div(id="econ-sliders",
-                                    children=[
+                                        children=[
+                                        
+                                            html.Div(
+                                                    id="economics-params-div",
+                                                    className="params-div",
+                                                    children=[
+                                                        html.P("ECONOMIC PARAMETERS", className="param-class-name"),
+                                                        slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
+                                                                mark_dict=drillcost_dict, start_v=start_vals_econ["drillcost"]),
+                                                        slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
+                                                                mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"]),
+                                                        # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                                                        #         mark_dict=lifetime_dict, start_v=30),
+                                                        slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                                                                mark_dict=lifetime_dict, step_i=1, start_v=start_vals_econ["lifetime"]),
+                                                        slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
+                                                                mark_dict=kwt_dict, start_v=start_vals_econ["kwt"]),
+                                                        slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
+                                                                mark_dict=kwe_dict, start_v=start_vals_econ["kwe"]),
+                                                    ]
+                                                    ),
+                                            html.Div(id="sCO2-card",
+                                                    className="params-div",
+                                                    children=[
+                                                        html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
+                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                                mark_dict=precool_dict, start_v=start_vals_econ["precool"]),
+                                                        slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
+                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"]),
+                                                        html.Div(id="check-visual-card",
+                                                                children=[
+                                                                        dcc.Checklist(id="checklist",
+                                                                            options=[' '],
+                                                                            value=[' '],
+                                                                            inline=True
+                                                                        ),
+                                                                        # html.P("Display heat added or removed from the CLG system to tune for LCOE minima.", id="TS-diagram-text"),
+                                                                        html.P("In CLGS, working fluids drive turbines to generate electricity. \
+                                                                            Display a cycle for sCO2 that depends on turbine cooling and turbine outlet pressure. \
+                                                                            Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
+                                                            ])
+                                                    ]),
 
-                                    slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
-                                            mark_dict=drillcost_dict, start_v=1000),
-                                    slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
-                                            mark_dict=discount_dict, start_v=7.0),
-                                    # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                                    #         mark_dict=lifetime_dict, start_v=30),
-                                    slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                                            mark_dict=lifetime_dict, step_i=1, start_v=40),
-                                    slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
-                                            mark_dict=kwt_dict, start_v=100),
-                                    slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
-                                            mark_dict=kwe_dict, start_v=3000),
-                                    
-                                    html.Div(id="sCO2-card",
-                                             children=[
-                                                html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                                                slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
-                                                        mark_dict=precool_dict, start_v=13),
-                                                slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
-                                                        mark_dict=turb_pout_dict, start_v=80),
-                                                html.Div(id="check-visual-card",
-                                                         children=[
-                                                                dcc.Checklist(id="checklist",
-                                                                    options=[' '],
-                                                                    value=[' '],
-                                                                    inline=True
+                                            html.Div(
+                                                id="model-params-div",
+                                                className="params-div",
+                                                children=[
+                                                    html.P("MODEL FINE-TUNING", className="param-class-name"),
+                                                    slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=5, 
+                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"]),
+                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=0, max_v=5, 
+                                                                mark_dict=fineness_dict, step_i=1,start_v=start_vals_sbt["accuracy"]),
+                                                    html.Div(
+                                                        className="name-input-container",
+                                                        children=[
+                                                            html.P("Mass Flow Rate Mode", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                    id="mass-mode-select",
+                                                                    options=["Constant", "Variable"],
+                                                                    value="Constant",
+                                                                    clearable=False,
+                                                                    searchable=False,
+                                                                    disabled=True,
+                                                                    className="select-dropdown"
                                                                 ),
-                                                                # html.P("Display heat added or removed from the CLG system to tune for LCOE minima.", id="TS-diagram-text"),
-                                                                html.P("In CLGS, working fluids drive turbines to generate electricity. \
-                                                                    Display a cycle for sCO2 that depends on turbine cooling and turbine outlet pressure. \
-                                                                    Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
-                                                    ])
-                                            ])
+                                                    ]),
+                                                    html.Div(
+                                                        className="name-input-container",
+                                                        children=[
+                                                            html.P("Injection Temperature Mode", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                    id="temp-mode-select",
+                                                                    options=["Constant", "Variable"],
+                                                                    value="Constant",
+                                                                    clearable=False,
+                                                                    searchable=False,
+                                                                    disabled=True,
+                                                                    className="select-dropdown"
+                                                                ),
+                                                    ]),
+                                                    
+                                                    # html.P("Mass Flow Rate Profile"),
+                                                    # html.P("Injection Temperature Profile")
+                                                ]
 
+                                            ),
                                     ]),
-                                ])
+                                ]),
+
+
+
+                        #     html.Div(id="slider-container",
+                        #             children=[
+                        #             html.Div(id="therm-sliders",
+                        #                 children=[
+
+                        #                 slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                        #                         mark_dict=mdot_dict, start_v=start_vals_d["mdot"]),
+                        #                 slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                        #                         mark_dict=L2_dict, start_v=start_vals_d["L2"]),
+                        #                 slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                        #                         mark_dict=L1_dict, start_v=start_vals_d["L1"]),
+                        #                 slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                        #                         mark_dict=grad_dict, start_v=start_vals_d["grad"]),
+                        #                 # slider2(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=u_sCO2.D[0], max_v=u_sCO2.D[-1], 
+                        #                 #         mark_dict=D_dict, start_v=0.3500),
+                        #                 slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                        #                         mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
+                        #                 # slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
+                        #                 #         mark_dict=Tinj_dict, start_v=303.15-273.15),
+                        #                 slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                        #                         mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
+                        #                 # slider1(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30, max_v=60, 
+                        #                 #     mark_dict=Tinj_dict, step_i=0.2,start_v=30),
+                        #                 slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                        #                         mark_dict=k_dict, start_v=start_vals_d["k"])
+                        #             ]),
+
+                        #             html.Div(id="econ-sliders",
+                        #             children=[
+
+                        #             slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
+                        #                     mark_dict=drillcost_dict, start_v=1000),
+                        #             slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
+                        #                     mark_dict=discount_dict, start_v=7.0),
+                        #             # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                        #             #         mark_dict=lifetime_dict, start_v=30),
+                        #             slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                        #                     mark_dict=lifetime_dict, step_i=1, start_v=40),
+                        #             slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
+                        #                     mark_dict=kwt_dict, start_v=100),
+                        #             slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
+                        #                     mark_dict=kwe_dict, start_v=3000),
+                                    
+                        #             html.Div(id="sCO2-card",
+                        #                      children=[
+                        #                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
+                        #                         slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                        #                                 mark_dict=precool_dict, start_v=13),
+                        #                         slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
+                        #                                 mark_dict=turb_pout_dict, start_v=80),
+                        #                         html.Div(id="check-visual-card",
+                        #                                  children=[
+                        #                                         dcc.Checklist(id="checklist",
+                        #                                             options=[' '],
+                        #                                             value=[' '],
+                        #                                             inline=True
+                        #                                         ),
+                        #                                         # html.P("Display heat added or removed from the CLG system to tune for LCOE minima.", id="TS-diagram-text"),
+                        #                                         html.P("In CLGS, working fluids drive turbines to generate electricity. \
+                        #                                             Display a cycle for sCO2 that depends on turbine cooling and turbine outlet pressure. \
+                        #                                             Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
+                        #                             ])
+                        #                     ])
+
+                        #             ]),
+                        #         ])
 
 
 

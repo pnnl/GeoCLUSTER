@@ -92,6 +92,7 @@ class data:
 
         if target == "all":
             return slice(None)  # slice all of the points
+        # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
         if target < array[0] or target > array[-1]:
             raise Exception(
                 f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
@@ -144,7 +145,9 @@ class data:
         return new_data
 
 
-    def interp_outlet_states(self, point, sbt_version): # needs to be a callback option
+    def interp_outlet_states(self, point, sbt_version, 
+                    Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                    mesh, accuracy, mass_mode, temp_mode): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -174,6 +177,7 @@ class data:
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
+
             # print("\n -------------------------------- UI -------------------------------- ")
             # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
             
@@ -195,24 +199,35 @@ class data:
                 fluid = 2
             else:
                 fluid = 1 # water
+            
+            if mass_mode == "Constant":
+                mass_mode_b = 0
+            elif mass_mode == "Variable":
+                mass_mode_b = 1
+
+            if temp_mode == "Constant":
+                temp_mode_b = 0
+            elif temp_mode == "Variable":
+                temp_mode_b = 1
 
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+
             times, Tout = run_sbt(
             ## Model Specifications 
-            sbt_version=sbt_version, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
-            HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
-            accuracy=1,
+            sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=mass_mode_b, HYPERPARAM2="MassFlowRate.xlsx", 
+            HYPERPARAM3=temp_mode_b, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+            accuracy=accuracy,
 
              ## Operations
             clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
             DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=D, Diameter2=D, 
-            PipeParam3=1, PipeParam4=[1], 
+            Diameter1=radius_vertical, Diameter2=radius_lateral, 
+            PipeParam3=n_laterals, PipeParam4=[lateral_flow], 
             # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-            PipeParam5=1, ## Tube Geometry
+            PipeParam5=lateral_multiplier, ## Tube Geometry
 
             ## Geologic Properties
-            Tsurf=25, GeoGradient=grad, k_m=k, c_m=790.0, rho_m=2750, 
+            Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
             # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
             )
 

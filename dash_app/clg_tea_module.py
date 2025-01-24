@@ -144,8 +144,8 @@ class TEA:
             elif self.Configuration == 2:
                 self.u_H2O = c_H2O # clgs_v2.data(self.filename, "coaxial", "H2O")
             # self.timearray = self.u_H2O.time
-            # self.timearray = self.u_H2O.time
-            self.timearray = np.array(TandP_dict["time"])
+            self.timearray = self.u_H2O.time
+            # self.timearray = np.array(TandP_dict["time"])
             self.FlowRateVector = self.u_H2O.mdot #length of 26
             self.HorizontalLengthVector = self.u_H2O.L2 #length of 20
             self.DepthVector = self.u_H2O.L1 #length of 9
@@ -159,8 +159,8 @@ class TEA:
                 self.u_sCO2 = u_sCO2 # clgs_v2.data(self.filename, "utube", "sCO2")
             elif self.Configuration == 2:
                 self.u_sCO2 = c_sCO2 # clgs_v2.data(self.filename, "coaxial", "sCO2")
-            # self.timearray = self.u_sCO2.time
-            self.timearray = np.array(TandP_dict["time"])
+            self.timearray = self.u_sCO2.time
+            # self.timearray = np.array(TandP_dict["time"])
             self.FlowRateVector = self.u_sCO2.mdot #length of 26
             self.HorizontalLengthVector = self.u_sCO2.L2 #length of 20
             self.DepthVector = self.u_sCO2.L1 #length of 9
@@ -170,8 +170,6 @@ class TEA:
             self.KrockVector = self.u_sCO2.k #length of 3   
             self.Fluid_name = 'CarbonDioxide'           
             
-        # print(self.timearray)
-        # print(self.timearray.shape)
         self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
         
         
@@ -181,7 +179,6 @@ class TEA:
         #Find closests lifetime
         closestlifetime = self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]    
         self.indexclosestlifetime = np.where(self.timearray == closestlifetime)[0][0]
-        # print(self.indexclosestlifetime) # HERE
 
         #load property data
         if self.Fluid == 1:
@@ -280,8 +277,8 @@ class TEA:
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
 
         # print(self.Linear_production_temperature[1:10]) # AB: way too low
-        # print(self.AveProductionTemperature)
-        # print(self.T_in)
+        print(" ---------------------------- ")
+        print(self.AveProductionTemperature)
         
 
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
@@ -331,6 +328,8 @@ class TEA:
         self.hinj = interpn((self.Pvector,self.Tvector),self.enthalpy,np.array([self.P_in,self.T_in+273.15]))
         self.Instantaneous_heat_production = self.Flow_rate*(self.hprod - self.hinj)/1000 #Heat production based on produced minus injected enthalpy [kW]
         
+        print(self.Instantaneous_heat_production.shape)
+
         #Calculate annual heat production (kWh)
         self.Annual_heat_production = 8760/5*(self.Instantaneous_heat_production[0::4][0:-1]+self.Instantaneous_heat_production[1::4]+self.Instantaneous_heat_production[2::4]+self.Instantaneous_heat_production[3::4]+self.Instantaneous_heat_production[4::4])
       

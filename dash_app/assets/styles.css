@@ -42,6 +42,8 @@
 #app-container {
     width: 100%;
     max-width: none;
+    height: 100vh;
+    overflow: auto;
 }
 
 .column, .columns {
@@ -85,11 +87,13 @@ hr {
     padding: 0rem 0rem 0rem 1rem;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 5.5rem);
+    /* min-height: calc(100vh - 5.5rem); */
+    height: 100vh;
+    overflow: auto; 
 }
 
 #logo {
-    height: 100%;
+    height: 780;
     width: 100%;
     margin-left: -20px;
 }
@@ -177,7 +181,9 @@ hr {
     width: 60%;
     background-color: var(--greylightblue); 
     padding: 0rem 1rem;
-    min-height: calc(100vh - 5.5rem);
+    /* min-height: calc(100vh - 5.5rem); */
+    height: 100vh;
+    overflow: auto;
 }
 
 #geothermal_card {
@@ -380,7 +386,7 @@ hr {
 
 #economics-params-div {
     border-radius: 10px 10px 0px 0px;
-    border-bottom: none !important;
+    border-bottom: none;
 }
 
 #sCO2-card {
@@ -391,6 +397,7 @@ hr {
     border-right: solid 3px var(--darkorange);
     border-bottom: solid 3px var(--darkorange);
     border-left: solid 3px var(--darkorange);
+    display: none;
 }
 
 
@@ -757,6 +764,7 @@ button:hover{
         width: 100%;
         margin-left: 0px;
         padding: 0.6rem 0.6rem;
+        /* height : 100vh; */
     }
 
     #right-column {

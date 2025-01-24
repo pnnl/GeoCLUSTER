@@ -180,8 +180,6 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
         # DrillingDepth_L1 == -2000 (default)
         # HorizontalExtent_L2 == 1000 (default)
         HorizontalExtent_L2_half = HorizontalExtent_L2/2
-        print(DrillingDepth_L1)
-        print(HorizontalExtent_L2) 
         zinj = np.arange(0, -DrillingDepth_L1 - 100, -100).reshape(-1, 1) # 2k down, 100 m horizontal, 100 m up
         yinj = np.zeros((len(zinj), 1))
         xinj = -HorizontalExtent_L2_half * np.ones((len(zinj), 1))
