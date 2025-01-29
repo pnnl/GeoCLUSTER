@@ -16,8 +16,6 @@ from traceback import print_stack
 
 # sourced scripts
 is_plot = False
-from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
-from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 
 #%% -------
 # 1. Input
@@ -512,10 +510,6 @@ def run_sbt(
     globals().update(sbt_hyperparams_dict)
     # print(sbt_hyperparams_dict.keys())
 
-    if is_plot:
-        plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
-                                x=x, y=y, z=z, 
-                                xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
 
     #%% ----------------
     # 2. Pre-Processing
@@ -1802,25 +1796,6 @@ def run_sbt(
 
     # line_to_print = f'Calculation time = {passedtime:.2f} s\n'
     # print(line_to_print)
-    if is_plot:
-        plot_final_fluid_temp_profile_v1(sbt_version=sbt_version, clg_configuration=clg_configuration, 
-                                        Tw_up_previous=Tw_up_previous,
-                                        Tw_down_previous=Tw_down_previous, Tfluiddownnodes=Tfluiddownnodes, 
-                                        Deltaz=Deltaz, TwMatrix=TwMatrix, 
-                                        numberoflaterals=numberoflaterals, coaxialflowtype=coaxialflowtype,
-                                        interconnections=interconnections_new,
-                                        lateralflowallocation=lateralflowallocation,
-                                        xinj=xinj, xlat=xlat, xprod=xprod)
-        
-        plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
-                                        coaxialflowtype=coaxialflowtype, 
-                                        Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
-                                        Deltaz=Deltaz)
-        
-        plot_heat_production(HeatProduction=HeatProduction, times=times)
-        plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
-        plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
-
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
     # return times[1:]/365/24/3600, Toutput[1:] + 273.15 # return in Kelvin
 
