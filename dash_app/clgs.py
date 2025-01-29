@@ -17,63 +17,63 @@ class data:
         self.fluid = fluid
         self.case = case
 
-        with h5py.File(fname, "r") as file:
-            fixed_loc = "/" + case + "/fixed_params/"
-            input_loc = "/" + case + "/" + fluid + "/input/"
-            output_loc = "/" + case + "/" + fluid + "/output/"
+        file = h5py.File(fname, "r") 
+        fixed_loc = "/" + case + "/fixed_params/"
+        input_loc = "/" + case + "/" + fluid + "/input/"
+        output_loc = "/" + case + "/" + fluid + "/output/"
 
-            # independent vars``
-            self.mdot = file[input_loc + "mdot"][:]  # i0
-            self.L2 = file[input_loc + "L2"][:]  # i1
-            self.L1 = file[input_loc + "L1"][:]  # i2
-            self.grad = file[input_loc + "grad"][:]  # i3
-            self.D = file[input_loc + "D"][:]  # i4
-            self.Tinj = file[input_loc + "T_i"][:]  # i5
-            self.k = file[input_loc + "k_rock"][:]  # i6
-            self.time = file[input_loc + "time"][:]  # i7
-            self.ivars = (
-                self.mdot,
-                self.L2,
-                self.L1,
-                self.grad,
-                self.D,
-                self.Tinj,
-                self.k,
-                self.time,
-            )
+        # independent vars
+        self.mdot = file[input_loc + "mdot"][:]  # i0
+        self.L2 = file[input_loc + "L2"][:]  # i1
+        self.L1 = file[input_loc + "L1"][:]  # i2
+        self.grad = file[input_loc + "grad"][:]  # i3
+        self.D = file[input_loc + "D"][:]  # i4
+        self.Tinj = file[input_loc + "T_i"][:]  # i5
+        self.k = file[input_loc + "k_rock"][:]  # i6
+        self.time = file[input_loc + "time"][:]  # i7
+        self.ivars = (
+            self.mdot,
+            self.L2,
+            self.L1,
+            self.grad,
+            self.D,
+            self.Tinj,
+            self.k,
+            self.time,
+        )
 
-            # fixed vars
-            self.Pinj = file[fixed_loc + "Pinj"][()]
-            self.Tamb = file[fixed_loc + "Tamb"][()]
+        # fixed vars
+        self.Pinj = file[fixed_loc + "Pinj"][()]
+        self.Tamb = file[fixed_loc + "Tamb"][()]
 
-            # dim = Mdot x L2 x L1 x grad x D x Tinj x k
-            Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
-            We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
+        # dim = Mdot x L2 x L1 x grad x D x Tinj x k
+        Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
+        We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
 
-            self.GWhr = 1e6 * 3600000.0
+        self.GWhr = 1e6 * 3600000.0
 
-            self.kWe_avg = (
-                We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-            )
-            self.kWt_avg = (
-                Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-            )
+        self.kWe_avg = (
+            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+        )
+        self.kWt_avg = (
+            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+        )
 
-            # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
-            self.shape = (
-                len(self.mdot),
-                len(self.L2),
-                len(self.L1),
-                len(self.grad),
-                len(self.D),
-                len(self.Tinj),
-                len(self.k),
-                len(self.time),
-            )
+        # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
+        self.shape = (
+            len(self.mdot),
+            len(self.L2),
+            len(self.L1),
+            len(self.grad),
+            len(self.D),
+            len(self.Tinj),
+            len(self.k),
+            len(self.time),
+        )
 
-            # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
-            self.Tout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Tout.zarr", mode="r")
-            self.Pout = zarr.open(f"{absolute_path}/data/{case}_{fluid}_Pout.zarr", mode="r")
+        # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
+        self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
+        self.Pout = file[f"/{case}/{fluid}/output/Pout_chunked"]
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
