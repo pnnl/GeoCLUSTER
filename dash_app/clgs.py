@@ -9,7 +9,7 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
 from sbt import run_sbt
-
+from paths import absolute_path
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -144,7 +144,7 @@ class data:
         return new_data
 
 
-    def interp_outlet_states(self, point, sbt_version = 1):
+    def interp_outlet_states(self, point, sbt_version): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -168,16 +168,58 @@ class data:
             )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            times = self.time
+
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
-            Tout = run_sbt(sbt_version=sbt_version, m=mdot, vertical_depth=L1, GeoGradient=grad, Tin=Tinj, k_m=k)
-            Tout = Tout + 273.15
-            Tout = self.reshape_output(Tout)
-            #reshaping Tout to make it match the dimensions the rest of the app expects
-            constant_pressure = 1e7 # 100 Bar in pascal
+            # print("\n -------------------------------- UI -------------------------------- ")
+            # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            
+            # AB UNIT CONVERSIONS AND RENAMING
+            # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
+            L2 = L2/1000
+            L1 = L1/1000
+            Tinj = Tinj-273.15
+            # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+
+            if self.case == "coaxial":
+                case = 1
+            if self.case == "utube":
+                case = 2
+
+            if self.CP_fluid == "H20":
+                fluid = 1
+            if self.CP_fluid == "CO2":
+                fluid = 2
+            else:
+                fluid = 1 # water
+
+            # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+            times, Tout = run_sbt(
+            ## Model Specifications 
+            sbt_version=sbt_version, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
+            HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+            accuracy=1,
+
+             ## Operations
+            clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+            DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+            Diameter1=D, Diameter2=D, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3], PipeParam5=1, ## Tube Geometry
+
+            ## Geologic Properties
+            Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+            )
+
+            # self.time = times
+
+            constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
             Pout = constant_pressure * np.ones_like(Tout)
 
-        return Tout, Pout
+            times = times[14:]
+            Tout = Tout[14:]
+            Pout = Pout[14:]
+
+        return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
         var_index = None
@@ -301,17 +343,17 @@ class data:
         point,
         Tout,
         Pout,
-        Tamb=300.0,
+        Tamb=300.0, # AB: is this surface temperature? What is Tamb?
     ):
 
         mdot = point[0]
         Tinj = point[5]
-        print('!!!!!!!')
-        print(Tout, Pout, self.CP_fluid)
+
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
         entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+
         kWe = (
             mdot
             * (enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in))

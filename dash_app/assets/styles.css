@@ -305,7 +305,7 @@ hr {
     /* change to inline-block for them to be stacked */
 }
 
-#dropdown-text2, #dropdown-text3, #dropdown-text4 {
+.dropdown-text {
     font-weight: bold !important;
 }
 

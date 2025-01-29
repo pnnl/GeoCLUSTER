@@ -144,6 +144,9 @@ def slider_card():
     #
     # -----------------------------------------------------------------------
 
+    start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "grad": 0.05, "D": 0.3500, "Tinj": 30.0, "k": 3.0}
+#     start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
+
     return html.Div(
         children=[
             dbc.Button(
@@ -163,25 +166,25 @@ def slider_card():
                                         children=[
 
                                         slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                mark_dict=mdot_dict, start_v=24.0),
+                                                mark_dict=mdot_dict, start_v=start_vals_d["mdot"]),
                                         slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                mark_dict=L2_dict, start_v=10000),
+                                                mark_dict=L2_dict, start_v=start_vals_d["L2"]),
                                         slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                mark_dict=L1_dict, start_v=3500),
+                                                mark_dict=L1_dict, start_v=start_vals_d["L1"]),
                                         slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                mark_dict=grad_dict, start_v=0.05),
+                                                mark_dict=grad_dict, start_v=start_vals_d["grad"]),
                                         # slider2(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=u_sCO2.D[0], max_v=u_sCO2.D[-1], 
                                         #         mark_dict=D_dict, start_v=0.3500),
                                         slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                mark_dict=D_dict, step_i=0.002, start_v=0.3500),
+                                                mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"]),
                                         # slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
                                         #         mark_dict=Tinj_dict, start_v=303.15-273.15),
                                         slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                mark_dict=Tinj_dict, start_v=30.0),
+                                                mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"]),
                                         # slider1(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30, max_v=60, 
                                         #     mark_dict=Tinj_dict, step_i=0.2,start_v=30),
                                         slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                mark_dict=k_dict, start_v=3.0)
+                                                mark_dict=k_dict, start_v=start_vals_d["k"])
                                     ]),
 
                                     html.Div(id="econ-sliders",

@@ -27,8 +27,9 @@ def fixed_economic_inputs():
     return O_and_M_cost_plant, Pump_efficiency, Turbine_isentropic_efficiency, Generator_efficiency, Compressor_isentropic_efficiency, T0, P0, Electricity_rate
 
 
-def create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                     case, end_use, fluid, 
+def create_teaobject(TandP_dict, 
+                    u_sCO2, u_H2O, c_sCO2, c_H2O,
+                     case, end_use, fluid, model,
                      Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, Tin_user, krock_user, 
                      Drilling_cost_per_m, Discount_rate, Lifetime, 
                      Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
@@ -74,29 +75,38 @@ def create_teaobject(u_sCO2, u_H2O, c_sCO2, c_H2O,
 
 
     # create object
+    # print(u_sCO2, u_H2O, c_sCO2, c_H2O)
     teaobject = clg_tea_module_v3.TEA(u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                          Fluid, End_use, Configuration, 
-                                          Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, 
-                                          Tin_user,krock_user, Drilling_cost_per_m, O_and_M_cost_plant, 
-                                          Discount_rate, Pump_efficiency, Lifetime, Direct_use_heat_cost_per_kWth, 
-                                          Electricity_rate, Power_plant_cost_per_kWe, T0, P0, 
-                                          Turbine_isentropic_efficiency, Generator_efficiency, 
-                                          Compressor_isentropic_efficiency, Pre_Cooling_Delta_T, 
-                                          Turbine_outlet_pressure,
-                                          properties_H2O_pathname, 
-                                          properties_CO2v2_pathname, 
-                                          additional_properties_CO2v2_pathname)
+                                          Fluid, End_use, Configuration, # user
+                                          Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, # user  
+                                          Tin_user, krock_user, # user 
+                                          Drilling_cost_per_m, # user
+                                          O_and_M_cost_plant, 
+                                          Discount_rate, # user
+                                          Pump_efficiency, 
+                                          Lifetime, # user 
+                                          Direct_use_heat_cost_per_kWth, # user
+                                          Electricity_rate, 
+                                          Power_plant_cost_per_kWe, # user
+                                          T0, P0, # initialized
+                                          Turbine_isentropic_efficiency, Generator_efficiency, # initialized
+                                          Compressor_isentropic_efficiency, 
+                                          Pre_Cooling_Delta_T, # user
+                                          Turbine_outlet_pressure, # user
+                                          properties_H2O_pathname, # read in 
+                                          properties_CO2v2_pathname, # read in 
+                                          additional_properties_CO2v2_pathname # read in
+                                          )
 
     # load case and property data
-    teaobject.initialize(u_sCO2, u_H2O, c_sCO2, c_H2O, 
+    teaobject.initialize(TandP_dict, u_sCO2, u_H2O, c_sCO2, c_H2O, 
                                           properties_H2O_pathname, 
                                           properties_CO2v2_pathname, 
                                           additional_properties_CO2v2_pathname)
-    
     # get interpolated temperature and pressure array
-    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O)
-    teaobject.calculateLC()
-    # teaobject.printresults()
+    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict) # ERROR BASED ON NUMEBRS?
+    teaobject.calculateLC() # ERROR STARTS HERE
+    # teaobject.printresults() # uncomment to debug
     
     return teaobject
     

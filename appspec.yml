@@ -1,0 +1,10 @@
+version: 0.0
+os: linux
+files:
+  - source: /
+    destination: /www/GeoCLUSTER.new/
+hooks:
+  AfterInstall:
+    - location: afterinstall.sh
+      timeout: 300
+  

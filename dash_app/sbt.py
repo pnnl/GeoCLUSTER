@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import time
 #import tensorflow as tf
 import scipy.special as sp
@@ -12,330 +14,33 @@ from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
+# sourced scripts
+is_plot = False
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
+from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
+
 #%% -------
 # 1. Input
 # Generally, the user should only make changes to this section
 #---------
-def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1000, k_f=0.68, mu_f=600*10**-6, Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875, vertical_depth=2000):
+
+def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_fineness, fluid, HYPERPARAM1, HYPERPARAM2, HYPERPARAM3, HYPERPARAM4, HYPERPARAM5):
+
+    """ 
+        ## SBT Model Specifications
+        sbt_version:                  # Must be 1 or 2. 1 means SBT v1 (Temperature only); 2 means SBT v2 (Temperature and Pressure including allowing TP dependent fluid properties)
+        
     """
-    Runs the SBT Model
-    Args:
-        clg_configuration:                                           #Must be 1 or 2. "1" mean co-axial, "2" U-loop
-        sbt_version:                                       #Must be 1 or 2. 1 means SBT v1 (Temperature only); 2 means SBT v2 (Temperature and Pressure including allowing TP dependent fluid properties)
-        m:                                                          #Total fluid mass flow rate [kg/s]. m must be provided if the user sets variableflowrate to 0.
-        Tin:                                                        #Constant injection temperature [deg.C]
-        cp_f:                                                     #Fluid specific heat capacity [J/kgK]
-        rho_f:                                                    #Fluid density [kg/m3]
-        k_f:                                                      #Fluid heat conductivity [W/m.K]
-        mu_f:                                               #Fluid dynamic viscosity [Pa.s]
-        Tsurf:                                                      #Surface temperature [deg C]
-        GeoGradient:                                           #Geothermal gradient [C/m]
-        k_m:                                                      #Rock thermal conductivity [W/m.K]
-        c_m:                                                       #Rock specific heat capacity [J/kgK]
-        rho_m:                                                    #Rock density [kg/m3]
-    """
-    tic = time.time()  # start clock to measure computation time
-    #co-axial geometry (required if clg_configuration is 1)
-    radius = 0.2286/2                                               #Wellbore radius [m] (everything is assumed open-hole)
-    radiuscenterpipe = 0.127/2                                      #Inner radius of inner pipe [m]
-    thicknesscenterpipe = 0.0127                                    #Thickness of inner pipe [m]
-    k_center_pipe = 0.006                                           #Thermal conductivity of insulation of center pipe wall [W/m/K]
-    coaxialflowtype = 1                                             #1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
+    # TODO: Really this function should be able the speed and accuracy of the SBT model
 
-    #U-loop geometry (required if clg_configuration is 2)
-    radiusvertical = 0.15                                           #Radius of "vertical" injection and production well (open hole assumed for heat transfer) [m] (it is labeled here as vertical but it is allowed to be deviated)
-    radiuslateral = 0.30                                            #Radius of laterals (open hole assumed for heat transfer) [m]
-    numberoflaterals = 3                                            #Number of laterals (must be integer) [-]
-    lateralflowallocation = [1/3, 1/3, 1/3]                         #Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
-    lateralflowmultiplier = 1                                       #Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
+    ## FINETUNE ACROSS V1 AND V2 (simulation and SBT algorithm settings)
 
+    # accuracy = 1                          # Must be 1,2,3,4 or 5 with 1 lowest accuracy and 5 highest accuracy. Lowest accuracy runs fastest. Accuracy level impacts number of discretizations for numerical integration and decision tree thresholds in SBT algorithm.
+    FMM = 1                               # if 1, use fast multi-pole methold-like approach (i.e., combine old heat pulses to speed up simulation)
+    FMMtriggertime = 3600*24*10           # threshold time beyond which heat pulses can be combined with others [s]
+    # mesh_fineness = 0                   # AVB: less mesh (0), finer mesh (1), finest mesh (2): SEE DETAILS BELOW FOR KOENRAAD'S BREAKDOWN
 
-    ## SBT v1 specific settings
-    variableflowrate = 0                                            #Must be 0 or 1. "0" means the user provides a constant mass flow rate m. "1" means the user provides an excel file with a mass flow rate profile. [only works in SBT v1]
-    flowratefilename = 'MassFlowRate.xlsx'                          #Name of excel file with mass flow rate profile. Must be provided if user sets variableflowrate to 1. First column stores time in seconds, second column stores mass flow rate in kg/s. Time must start with 0 and end with the final simulation time chosen (as specified in the array times"). [only works in SBT v1]
-    variableinjectiontemperature = 0                                #Must be 0 or 1. "0" means the user provides a constant injection temperature Tin. "1" means the user provides an excel file with an injection temperature profile. [only works in SBT v1]
-    injectiontemperaturefilename = 'InjectionTemperatures.xlsx'     #Name of excel file with injection temperature profile. Must be provided if user sets variableinjectiontemperature to 1. First column stores time in seconds, second column stores injection temperature in degrees C. Time must start with 0 and end with the final simulation time chosen (as specified in the array times"). [only works in SBT v1]
-
-    ## SBT v2 specific settings
-    fluid = 1                                                       #Heat transfer fluid selection: 1 = H2O; 2 = CO2
-    Pin = 100                                                       #Fluid input pressure [bar]
-    piperoughness = 1e-6                                           #Pipe/borehole roughness to calculate friction pressure drop [m]
-    variablefluidproperties = 1                                     #Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
-
-    ## Simulation and SBT algorithm settings
-    print("here")
-    times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) #simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
-    print(times.shape)
-    #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
-    #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
-    #times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
-    #Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
-    #times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
-    fullyimplicit = 1                                               #Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
-    accuracy = 1                                                    #Must be 1,2,3,4 or 5 with 1 lowest accuracy and 5 highest accuracy. Lowest accuracy runs fastest. Accuracy level impacts number of discretizations for numerical integration and decision tree thresholds in SBT algorithm.
-    FMM = 1                                                        #if 1, use fast multi-pole methold-like approach (i.e., combine old heat pulses to speed up simulation)
-    FMMtriggertime = 3600*24*10                                     #threshold time beyond which heat pulses can be combined with others [s]
-
-    #converge parameters for SBT v2
-    reltolerance = 1e-5                                             #Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
-    maxnumberofiterations = 15                                      #Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
-
-
-    #(x,y,z) geometry of CLG heat exchanger
-    #The vectors storing the x-, y- and z-coordinates should be column vectors
-    #To obtain smooth results, abrupt changes in segment lengths should be avoided.
-
-    if clg_configuration == 1: #co-axial geometry: (x,y,z)-coordinates of centerline of co-axial heat exchanger [m]
-        #Example 1: 2 km vertical well
-        # TODO: we need link this to depth
-        # NOTE: option for speeidng up, change step size here
-        max_dim_1 = -1 * (vertical_depth + 1)
-        z = np.arange(0, max_dim_1, -100).reshape(-1, 1)
-        x = np.zeros((len(z), 1))
-        y = np.zeros((len(z), 1))
-        
-    elif clg_configuration == 2: #U-loop geometry: (x,y,z)-coordinates of centerline of injection well, production well and laterals
-        # Coordinates of injection well (coordinates are provided from top to bottom in the direction of flow)
-        zinj = np.arange(0, -2000 - 100, -100).reshape(-1, 1)
-        yinj = np.zeros((len(zinj), 1))
-        xinj = -1000 * np.ones((len(zinj), 1))
-        
-        # Coordinates of production well (coordinates are provided from bottom to top in the direction of flow)
-        zprod = np.arange(-2000, 0 + 100, 100).reshape(-1, 1)
-        yprod = np.zeros((len(zprod), 1))
-        xprod = 1000 * np.ones((len(zprod), 1))
-        
-        # (x, y, z)-coordinates of laterals are stored in three matrices (one each for the x, y, and z coordinates). 
-        # The number of columns in each matrix corresponds to the number of laterals. The number of discretizations 
-        # should be the same for each lateral. Coordinates are provided in the direction of flow; the first coordinate should match 
-        # the last coordinate of the injection well, and the last coordinate should match the first coordinate of the 
-        # production well
-        xlat = np.concatenate((np.array([-1000, -918, -814]), np.linspace(-706, 706, 14), np.array([814, 918, 1000]))\
-        ).reshape(-1,1)
-        ylat = np.concatenate((100 * np.cos(np.linspace(-np.pi/2, 0, 3)), 100 * np.ones(14), 100 *\
-        np.cos(np.linspace(0, np.pi/2, 3)))).reshape(-1,1)
-        zlat = (-2000 * np.ones((len(xlat)))).reshape(-1,1)
-        
-        xlat = np.hstack((xlat,xlat,np.linspace(-1000,1000,20).reshape(-1,1)))
-        ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
-        zlat = np.hstack((zlat,zlat,zlat))
-        
-        # Merge x-, y-, and z-coordinates
-        x = np.concatenate((xinj, xprod))
-        y = np.concatenate((yinj, yprod))
-        z = np.concatenate((zinj, zprod))
-        
-        for i in range(numberoflaterals):
-            x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
-            y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
-            z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
-    
-    # Make 3D figure of borehole geometry to make sure it looks correct
-    # plt.close('all') #close all curent figures
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection='3d')
-
-    # if clg_configuration == 1: #co-axial geometry
-    #     ax.plot(x, y, z, 'k-o', linewidth=2)
-    #     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-    #     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-    #     ax.set_zlim([np.min(z) - 500, 0])
-    #     ax.set_zlabel('Depth (m)')
-    #     ax.set_xlabel('x (m)')
-    #     ax.set_ylabel('y (m)')
-    # elif clg_configuration == 2: #U-loop geometry
-    #     ax.plot(xinj, yinj, zinj, 'b-o', linewidth=2)
-    #     #ax.axis('equal') # Uncomment this next line to set the plotted geometry to correct scale with equal axis unit spacing
-    #     ax.plot(xprod, yprod, zprod, 'r-o', linewidth=2)
-    #     for i in range(numberoflaterals):
-    #         ax.plot(xlat[:, i], ylat[:, i], zlat[:, i], 'k-o', linewidth=2)
-    #     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-    #     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-    #     ax.set_zlim([np.min(z) - 500, 0])
-    #     ax.set_zlabel('Depth (m)')
-    #     ax.set_xlabel('x (m)')
-    #     ax.set_ylabel('y (m)')
-    #     ax.legend(['Injection Well', 'Production Well', 'Lateral(s)'])
-
-    # plt.show()
-
-
-    #%% ----------------
-    # 2. Pre-Processing
-    # Generally, nothing should be changed by the user in this section
-    #------------------
-    g = 9.81                       #Gravitational acceleration [m/s^2]
-    gamma = 0.577215665  # Euler's constant
-    alpha_f = k_f / rho_f / cp_f  # Fluid thermal diffusivity [m2/s]
-    Pr_f = mu_f / rho_f / alpha_f  # Fluid Prandtl number [-]
-    alpha_m = k_m / rho_m / c_m  # Thermal diffusivity medium [m2/s]
-
-    if clg_configuration == 1: #co-axial geometry
-        outerradiuscenterpipe = radiuscenterpipe+thicknesscenterpipe #Outer radius of inner pipe [m]
-        A_flow_annulus = math.pi*(radius**2-outerradiuscenterpipe**2)       #Flow area of annulus pipe [m^2]
-        A_flow_centerpipe = math.pi*radiuscenterpipe**2         #Flow area of center pipe [m^2]
-        Dh_annulus = 2*(radius-outerradiuscenterpipe) #Hydraulic diameter of annulus [m]    
-        if sbt_version == 2:
-            eps_annulus = Dh_annulus*piperoughness            #Relative roughness annulus [-]
-            eps_centerpipe = 2*radiuscenterpipe*piperoughness #Relative roughness inner pipe [-]
-        
-    elif clg_configuration == 2: #U-loop geometry
-        interconnections = np.concatenate((np.array([len(xinj)],dtype=int), np.array([len(xprod)],dtype=int), (np.ones(numberoflaterals - 1, dtype=int) * len(xlat))))
-        interconnections = np.cumsum(interconnections)  # lists the indices of interconnections between inj, prod, and laterals (this will used to take care of the duplicate coordinates of the start and end points of the laterals)
-        radiusvector = np.concatenate([np.ones(len(xinj) + len(xprod) - 2) * radiusvertical, np.ones(numberoflaterals * len(xlat) - numberoflaterals) * radiuslateral])  # Stores radius of each element in a vector [m]
-        Dvector = radiusvector * 2  # Diameter of each element [m]
-        lateralflowallocation = lateralflowallocation / np.sum(lateralflowallocation)  # Ensure the sum equals 1   
-
-    if sbt_version == 2:
-        if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
-            # Define vectors for pressure and temperature
-            Pvector = [1, 1e9]
-            Tvector = [1, 1e4]
-        
-            # Create 2x2 arrays with constant fluid properties
-            density = [[rho_f] * 2] * 2
-            heatcapacity = [[cp_f] * 2] * 2
-            thermalconductivity = [[k_f] * 2] * 2
-            viscosity = [[mu_f] * 2] * 2
-            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
-        else:  # If variable fluid properties, import pre-generated tables
-            print('Loading fluid properties...')
-            if fluid == 1:  # H2O
-                try:
-                    mat = scipy.io.loadmat('properties_H2O.mat') 
-                    Pvector = mat['Pvector']
-                    print("pVector", Pvector)
-                    Tvector = mat['Tvector']
-                    density = mat['density']
-                    enthalpy = mat['enthalpy']
-                    entropy = mat['entropy']
-                    heatcapacity = mat['heatcapacity']
-                    phase = mat['phase']
-                    thermalconductivity = mat['thermalconductivity']
-                    thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']
-                    print('Fluid properties for water loaded successfully')
-                except Exception as e:
-                    print(f"Error loading properties for water: {e}")
-                    raise
-            elif fluid == 2:  #CO2
-                try:
-                    mat = scipy.io.loadmat('properties_CO2.mat') 
-                    Pvector = mat['Pvector']
-                    Tvector = mat['Tvector']
-                    density = mat['density']
-                    enthalpy = mat['enthalpy']
-                    entropy = mat['entropy']
-                    heatcapacity = mat['heatcapacity']
-                    phase = mat['phase']
-                    thermalconductivity = mat['thermalconductivity']
-                    thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']                
-                    print('Fluid properties for CO2 loaded successfully')
-                except Exception as e:
-                    print(f"Error loading properties for CO2: {e}")
-                    raise
-            else:
-                print('No valid fluid selected')
-                exit()
-        #Prepare interpolators
-        Pvector_1d = Pvector.ravel()
-        Tvector_1d = Tvector.ravel()
-        interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-        interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-        interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
-        interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-        interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
-        interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
-        interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
-        interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
-
-    Deltaz = np.sqrt((x[1:] - x[:-1]) ** 2 + (y[1:] - y[:-1]) ** 2 + (z[1:] - z[:-1]) ** 2)  # Length of each segment [m]
-    Deltaz = Deltaz.reshape(-1)
-    if clg_configuration == 2:
-        Deltaz = np.delete(Deltaz, interconnections - 1)  # Removes the phantom elements due to duplicate coordinates
-    TotalLength = np.sum(Deltaz)  # Total length of all elements (for informational purposes only) [m]
-
-    # Quality Control
-    if clg_configuration == 1: #co-axial geometry
-        LoverR = Deltaz / radius  # Ratio of pipe segment length to radius along the wellbore [-]
-    elif clg_configuration == 2: #U-loop geometry
-        LoverR = Deltaz / radiusvector  # Ratio of pipe segment length to radius along the wellbore [-]
-    smallestLoverR = np.min(LoverR)  # Smallest ratio of pipe segment length to pipe radius. This ratio should be larger than 10. [-]
-
-    if smallestLoverR < 10:
-        print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
-
-    if clg_configuration == 1: #co-axial geometry
-        RelativeLengthChanges = (Deltaz[1:] - Deltaz[:-1]) / Deltaz[:-1]
-    elif clg_configuration == 2: #U-loop geometry
-        if numberoflaterals > 1:
-            DeltazOrdered = np.concatenate((Deltaz[0:(interconnections[0]-1)], Deltaz[(interconnections[1]-2):(interconnections[2]-3)], Deltaz[(interconnections[0]-1):(interconnections[1]-2)]))
-        else:
-            DeltazOrdered = np.concatenate((Deltaz[0:interconnections[0] - 1], Deltaz[interconnections[1] - 1:-1], Deltaz[interconnections[0]:interconnections[1] - 2]))
-        RelativeLengthChanges = (DeltazOrdered[1:] - DeltazOrdered[:-1]) / DeltazOrdered[:-1]
-
-    if max(abs(RelativeLengthChanges)) > 0.5:
-        print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
-
-    if clg_configuration == 2: #additional quality control for U-loop geometry
-        for dd in range(1, numberoflaterals + 1):
-            if abs(xinj[-1] - xlat[0][dd - 1]) > 1e-12 or abs(yinj[-1] - ylat[0][dd - 1]) > 1e-12 or abs(zinj[-1] - zlat[0][dd - 1]) > 1e-12:
-                print(f'Error: Coordinate mismatch between bottom of injection well and start of lateral #{dd}')
-            if abs(xprod[0] - xlat[-1][dd - 1]) > 1e-12 or abs(yprod[0] - ylat[-1][dd - 1]) > 1e-12 or abs(zprod[0] - zlat[-1][dd - 1]) > 1e-12:
-                print(f'Error: Coordinate mismatch between bottom of production well and end of lateral #{dd}')
-        if len(lateralflowallocation) != numberoflaterals:
-            print('Error: Length of array "lateralflowallocation" does not match the number of laterals')
-    
-    # Read injection temperature profile if provided
-    Tinstore = np.zeros(len(times))
-    if variableinjectiontemperature == 1 and sbt_version == 1:
-        # User has provided injection temperature in an Excel spreadsheet. (can currently only be used with sbt version 1)
-        num = pd.read_excel(injectiontemperaturefilename)
-        Tintimearray = np.array(num.iloc[:, 0])
-        Tintemperaturearray = np.array(num.iloc[:, 1])
-        # Quality control
-        if len(Tintimearray) < 2:
-            print('Error: Provided injection temperature profile should have at least 2 values')
-        
-        if Tintimearray[0] != 0:
-            print('Error: First time value in the user-provided injection temperature profile does not equal 0 s')
-        
-        if abs(Tintimearray[-1] - times[-1]) > 1e-5:
-            print('Error: Last time value in the user-provided injection temperature profile does not equal the final value in the "times" array')
-    
-        else:
-            Tintimearray[-1] = times[-1]  # Ensure final time values "exactly" match to prevent interpolation issues at the final time step
-        Tinstore[0] = Tintemperaturearray[0]
-    else:
-        Tinstore[0] = Tin
-
-    # Read mass flow rate profile if provided
-    mstore = np.zeros(len(times))  # The value for m used at each time step is stored in this array (is either constant or interpolated from a user-provided mass flow rate profile)
-
-    if variableflowrate == 1 and sbt_version == 1:  # User has provided mass flow rate in an Excel spreadsheet. (can currently only be used with sbt version 1)
-        data = pd.read_excel(flowratefilename)
-        mtimearray = data.iloc[:, 0].values  # This array has the times provided by the user
-        mflowratearray = data.iloc[:, 1].values  # This array has the injection temperatures provided by the user
-
-        # Quality control
-        if len(mtimearray) < 2:
-            print('Error: Provided flow rate profile should have at least 2 values')
-        
-        if mtimearray[0] != 0:
-            print('Error: First time value in user-provided flow rate profile does not equal to 0 s')
-            
-        if abs(mtimearray[-1] - times[-1]) > 1e-5:
-            print('Error: Last time value in user-provided flow rate profile does not equal to final value in "times" array')
-        
-        else:
-            mtimearray[-1] = times[-1]  # Ensure final time values "exactly" match to prevent interpolation issues at the final time step
-
-        mstore[0] = mflowratearray[0]
-    else:
-        mstore[0] = m
-
-    #load accuracy parameters    
+    # load accuracy parameters    
     if accuracy == 1:
         NoArgumentsFinitePipeCorrection = 25
         NoDiscrFinitePipeCorrection = 200
@@ -392,6 +97,469 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
         LimitSoverL = 9
         M = 20
 
+
+    if mesh_fineness == 0:
+        times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) # simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
+        #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
+    elif mesh_fineness == 1:
+        #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
+        times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
+    elif mesh_fineness == 2:
+        #Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
+        times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
+    
+    fullyimplicit = None
+    if clg_configuration == 2:
+        fullyimplicit = 1            # Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
+
+
+    variablefluidproperties = None
+    ## SBT ASSUMPTIONS FOR V1 v.s. V2
+    if sbt_version == 1: ## SBT v1 specific settings (ONLY WATER)
+        
+        variableflowrate = HYPERPARAM1 #0                                            # Must be 0 or 1. "0" means the user provides a constant mass flow rate m. "1" means the user provides an excel file with a mass flow rate profile. [only works in SBT v1]
+        flowratefilename = HYPERPARAM2 # 'MassFlowRate.xlsx'                         # Name of excel file with mass flow rate profile. Must be provided if user sets variableflowrate to 1. First column stores time in seconds, second column stores mass flow rate in kg/s. Time must start with 0 and end with the final simulation time chosen (as specified in the array times"). [only works in SBT v1]
+        variableinjectiontemperature = HYPERPARAM3 # 0                               # Must be 0 or 1. "0" means the user provides a constant injection temperature Tin. "1" means the user provides an excel file with an injection temperature profile. [only works in SBT v1]
+        injectiontemperaturefilename = HYPERPARAM4 # 'InjectionTemperatures.xlsx'    # Name of excel file with injection temperature profile. Must be provided if user sets variableinjectiontemperature to 1. First column stores time in seconds, second column stores injection temperature in degrees C. Time must start with 0 and end with the final simulation time chosen (as specified in the array times"). [only works in SBT v1]
+        HYPERPARAM5 = None
+
+        if fluid == 2:
+            print("ERROR!! CAN'T DO sCO2 for SBT V1.0") #will always only be able to run H20 and NOT sCO2 || # Heat transfer fluid selection: 1 = H2O; 2 = CO2
+
+    if sbt_version == 2: ## SBT v2 specific settings
+        
+        Pin = HYPERPARAM1 # 100                             # Fluid input pressure [bar]
+        piperoughness = HYPERPARAM2 # 1e-6                  # Pipe/borehole roughness to calculate friction pressure drop [m]
+        variablefluidproperties = HYPERPARAM3 # 1           # Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
+        
+        # converge parameters
+        reltolerance = HYPERPARAM4 # 1e-5                   # Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
+        maxnumberofiterations = HYPERPARAM5 #15             # Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
+
+    return locals()
+
+
+def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_L2, numberoflaterals):
+
+    """ 
+        ## Wellbore Geometry
+        "vertical_depth" and Depth (L1): # L1 works for pure vertical wells as well (HorizontalExtent (L2) = 0)
+        HorizontalExtent (L2): 
+
+        #( x,y,z) geometry of CLG heat exchanger
+        # The vectors storing the x-, y- and z-coordinates should be column vectors
+        # To obtain smooth results, abrupt changes in segment lengths should be avoided.
+    """
+
+    x = y = z = None
+    xinj = yinj = zinj = zprod = yprod = xprod = xlat = ylat = zlat = None
+
+    if clg_configuration == 1: # co-axial geometry: (x,y,z)-coordinates of centerline of co-axial heat exchanger [m]
+        # Example 1: 2 km vertical well
+        # TODO: we need link this to depth
+        # NOTE: option for speeding up, change step size here
+
+        # NOTE: new code by Koenraad
+        verticaldepthsection = np.arange(0, -DrillingDepth_L1*1000-1, -100)
+        horizontalextentsection = np.arange(100, HorizontalExtent_L2*1000+1, 100)
+        z = np.concatenate((verticaldepthsection, 
+                            verticaldepthsection[-1]*np.ones(len(horizontalextentsection)))
+                            ).reshape(-1, 1)
+        x = np.concatenate((np.zeros(len(verticaldepthsection)),horizontalextentsection)).reshape(-1, 1)
+        y = np.zeros((len(z), 1))
+
+        # NOTE: old code by Koenraad (another way to get the geometry just on Vertical Depth alone)
+        # vertical_depth = 2000
+        # max_dim_1 = -1 * (vertical_depth + 1)
+        # z = np.arange(0, max_dim_1, -100).reshape(-1, 1)
+        # x = np.zeros((len(z), 1))
+        # y = np.zeros((len(z), 1))
+
+    elif clg_configuration == 2: # U-loop geometry: (x,y,z)-coordinates of centerline of injection well, production well and laterals
+        # Coordinates of injection well (coordinates are provided from top to bottom in the direction of flow)
+        zinj = np.arange(0, -2000 - 100, -100).reshape(-1, 1)
+        yinj = np.zeros((len(zinj), 1))
+        xinj = -1000 * np.ones((len(zinj), 1))
+        
+        # Coordinates of production well (coordinates are provided from bottom to top in the direction of flow)
+        zprod = np.arange(-2000, 0 + 100, 100).reshape(-1, 1)
+        yprod = np.zeros((len(zprod), 1))
+        xprod = 1000 * np.ones((len(zprod), 1))
+        
+        # (x, y, z)-coordinates of laterals are stored in three matrices (one each for the x, y, and z coordinates). 
+        # The number of columns in each matrix corresponds to the number of laterals. The number of discretizations 
+        # should be the same for each lateral. Coordinates are provided in the direction of flow; the first coordinate should match 
+        # the last coordinate of the injection well, and the last coordinate should match the first coordinate of the 
+        # production well
+        xlat = np.concatenate((np.array([-1000, -918, -814]), np.linspace(-706, 706, 14), np.array([814, 918, 1000]))\
+        ).reshape(-1,1)
+        ylat = np.concatenate((100 * np.cos(np.linspace(-np.pi/2, 0, 3)), 100 * np.ones(14), 100 *\
+        np.cos(np.linspace(0, np.pi/2, 3)))).reshape(-1,1)
+        zlat = (-2000 * np.ones((len(xlat)))).reshape(-1,1)
+        
+        xlat = np.hstack((xlat,xlat,np.linspace(-1000,1000,20).reshape(-1,1)))
+        ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
+        zlat = np.hstack((zlat,zlat,zlat))
+        
+        # Merge x-, y-, and z-coordinates
+        x = np.concatenate((xinj, xprod))
+        y = np.concatenate((yinj, yprod))
+        z = np.concatenate((zinj, zprod))
+        
+        for i in range(numberoflaterals):
+            x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
+            y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
+            z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
+
+    return locals()
+    
+
+def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5):
+   
+    """ 
+        ## Tube Geometry
+        Diameter1                        # If coaxial: radius, radiuscenterpipe and If U-loop: radiusvertical and radiuscenterpipe
+        Diameter2                        #
+    """
+
+    radius = radiuscenterpipe = thicknesscenterpipe = coaxialflowtype = None # coaxial
+    numberoflaterals = radiuslateral = lateralflowallocation =  None # uloop
+    
+    if clg_configuration == 1:  # co-axial geometry (1)
+        radius = Diameter1/2  # 0.2286/2                # Wellbore radius [m] (everything is assumed open-hole)
+        radiuscenterpipe = Diameter2/2  # 0.127/2       # Inner radius of inner pipe [m]
+        thicknesscenterpipe = PipeParam3 # 0.0127       # Thickness of inner pipe [m]
+        k_center_pipe = PipeParam4 # 0.006                                           # Thermal conductivity of insulation of center pipe wall [W/m/K]
+        coaxialflowtype = PipeParam5 # 1                                             # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
+
+    elif clg_configuration == 2: # U-loop geometry (2)
+
+        radiusvertical = Diameter1/2 # 0.15                         # Radius of "vertical" injection and production well (open hole assumed for heat transfer) [m] (it is labeled here as vertical but it is allowed to be deviated)
+        radiuslateral = Diameter2/2 # 0.30                          # Radius of laterals (open hole assumed for heat transfer) [m]
+        
+        numberoflaterals = PipeParam3 # 3                                            # Number of laterals (must be integer) [-]
+        lateralflowallocation = PipeParam4 # [1/3, 1/3, 1/3]                         # Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
+        lateralflowmultiplier = PipeParam5 # 1                                       # Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
+
+    return locals()
+
+
+def admin_fluid_properties():
+
+    """
+        # NOT editable by the user 
+        cp_f:                            # Fluid specific heat capacity [J/kgK]
+        rho_f:                           # Fluid density [kg/m3]
+        k_f:                             # Fluid heat conductivity [W/m.K]
+        mu_f:                            # Fluid dynamic viscosity [Pa.s]
+    """
+
+    cp_f=4200
+    rho_f=1000
+    k_f=0.68
+    mu_f=600*10**-6
+
+    g = 9.81                       # Gravitational acceleration [m/s^2]
+    gamma = 0.577215665            # Euler's constant
+    alpha_f = k_f / rho_f / cp_f   # Fluid thermal diffusivity [m2/s]
+    Pr_f = mu_f / rho_f / alpha_f  # Fluid Prandtl number [-]
+
+    return locals()
+
+
+def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thicknesscenterpipe, 
+                                xinj, xprod, xlat, numberoflaterals, radiuslateral, lateralflowallocation):
+
+    interconnections = None
+    Deltaz = np.sqrt((x[1:] - x[:-1]) ** 2 + (y[1:] - y[:-1]) ** 2 + (z[1:] - z[:-1]) ** 2)  # Length of each segment [m]
+    Deltaz = Deltaz.reshape(-1)
+
+    if clg_configuration == 1: # COAXIAL
+
+        outerradiuscenterpipe = radiuscenterpipe+thicknesscenterpipe    # Outer radius of inner pipe [m]
+        A_flow_annulus = math.pi*(radius**2-outerradiuscenterpipe**2)   # Flow area of annulus pipe [m^2]
+        A_flow_centerpipe = math.pi*radiuscenterpipe**2                 # Flow area of center pipe [m^2]
+        Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]    
+        if sbt_version == 2:
+            eps_annulus = Dh_annulus*piperoughness                      # Relative roughness annulus [-]
+            eps_centerpipe = 2*radiuscenterpipe*piperoughness           # Relative roughness inner pipe [-]
+        LoverR = Deltaz / radius                                        # Ratio of pipe segment length to radius along the wellbore [-]
+        RelativeLengthChanges = (Deltaz[1:] - Deltaz[:-1]) / Deltaz[:-1]
+        
+    elif clg_configuration == 2: # U-LOOP
+
+        interconnections = np.concatenate((np.array([len(xinj)],dtype=int), np.array([len(xprod)],dtype=int), (np.ones(numberoflaterals - 1, dtype=int) * len(xlat))))
+        interconnections = np.cumsum(interconnections)  # lists the indices of interconnections between inj, prod, and laterals (this will used to take care of the duplicate coordinates of the start and end points of the laterals)
+        radiusvector = np.concatenate([np.ones(len(xinj) + len(xprod) - 2) * radiusvertical, np.ones(numberoflaterals * len(xlat) - numberoflaterals) * radiuslateral])  # Stores radius of each element in a vector [m]
+        Dvector = radiusvector * 2  # Diameter of each element [m]
+        lateralflowallocation_norm = lateralflowallocation / np.sum(lateralflowallocation)  # Ensure the sum equals 1   
+        Deltaz = np.delete(Deltaz, interconnections - 1)  # Removes the phantom elements due to duplicate coordinates
+        LoverR = Deltaz / radiusvector  # Ratio of pipe segment length to radius along the wellbore [-]
+        if numberoflaterals > 1:
+            DeltazOrdered = np.concatenate((Deltaz[0:(interconnections[0]-1)], Deltaz[(interconnections[1]-2):(interconnections[2]-3)], Deltaz[(interconnections[0]-1):(interconnections[1]-2)]))
+        else:
+            DeltazOrdered = np.concatenate((Deltaz[0:interconnections[0] - 1], Deltaz[interconnections[1] - 1:-1], Deltaz[interconnections[0]:interconnections[1] - 2]))
+        RelativeLengthChanges = (DeltazOrdered[1:] - DeltazOrdered[:-1]) / DeltazOrdered[:-1]
+
+        # QUALITY CONTROL U-LOOP
+        for dd in range(1, numberoflaterals + 1):
+            if abs(xinj[-1] - xlat[0][dd - 1]) > 1e-12 or abs(yinj[-1] - ylat[0][dd - 1]) > 1e-12 or abs(zinj[-1] - zlat[0][dd - 1]) > 1e-12:
+                print(f'Error: Coordinate mismatch between bottom of injection well and start of lateral #{dd}')
+            if abs(xprod[0] - xlat[-1][dd - 1]) > 1e-12 or abs(yprod[0] - ylat[-1][dd - 1]) > 1e-12 or abs(zprod[0] - zlat[-1][dd - 1]) > 1e-12:
+                print(f'Error: Coordinate mismatch between bottom of production well and end of lateral #{dd}')
+        if len(lateralflowallocation_norm) != numberoflaterals:
+            print('Error: Length of array "lateralflowallocation" does not match the number of laterals')
+
+    TotalLength = np.sum(Deltaz)  # Total length of all elements (for informational purposes only) [m]
+    smallestLoverR = np.min(LoverR)  # Smallest ratio of pipe segment length to pipe radius. This ratio should be larger than 10. [-]
+    
+    # QUALITY CONTROL
+    if smallestLoverR < 10:
+        print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
+    if max(abs(RelativeLengthChanges)) > 0.5:
+        print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
+
+    return locals()
+
+
+def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
+
+    interpolator_density = interpolator_enthalpy = interpolator_entropy = None
+    interpolator_heatcapacity = interpolator_heatcapacity = interpolator_phase = None 
+    interpolator_thermalconductivity = interpolator_thermalexpansion = interpolator_viscosity = None
+
+    if sbt_version == 2:
+
+        if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
+            # Define vectors for pressure and temperature
+            Pvector = [1, 1e9]
+            Tvector = [1, 1e4]
+        
+            # Create 2x2 arrays with constant fluid properties
+            density = [[rho_f] * 2] * 2
+            heatcapacity = [[cp_f] * 2] * 2
+            thermalconductivity = [[k_f] * 2] * 2
+            viscosity = [[mu_f] * 2] * 2
+            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
+        else:  # If variable fluid properties, import pre-generated tables
+            print('Loading fluid properties...')
+            if fluid == 1:  # H2O
+                try:
+                    mat = scipy.io.loadmat('properties_H2O.mat') 
+                    Pvector = mat['Pvector']
+                    print("pVector", Pvector)
+                    Tvector = mat['Tvector']
+                    density = mat['density']
+                    enthalpy = mat['enthalpy']
+                    entropy = mat['entropy']
+                    heatcapacity = mat['heatcapacity']
+                    phase = mat['phase']
+                    thermalconductivity = mat['thermalconductivity']
+                    thermalexpansion = mat['thermalexpansion']
+                    viscosity = mat['viscosity']
+                    print('Fluid properties for water loaded successfully')
+                except Exception as e:
+                    print(f"Error loading properties for water: {e}")
+                    raise
+            elif fluid == 2:  #CO2
+                try:
+                    mat = scipy.io.loadmat('properties_CO2.mat') 
+                    Pvector = mat['Pvector']
+                    Tvector = mat['Tvector']
+                    density = mat['density']
+                    enthalpy = mat['enthalpy']
+                    entropy = mat['entropy']
+                    heatcapacity = mat['heatcapacity']
+                    phase = mat['phase']
+                    thermalconductivity = mat['thermalconductivity']
+                    thermalexpansion = mat['thermalexpansion']
+                    viscosity = mat['viscosity']                
+                    print('Fluid properties for CO2 loaded successfully')
+                except Exception as e:
+                    print(f"Error loading properties for CO2: {e}")
+                    raise
+            else:
+                print('No valid fluid selected')
+                exit()
+        
+        # Prepare interpolators
+        Pvector_1d = Pvector.ravel()
+        Tvector_1d = Tvector.ravel()
+        interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
+        interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
+        interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
+        interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
+        interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
+        interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
+        interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
+        interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
+    
+    return interpolator_density, interpolator_enthalpy, \
+                interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
+                    interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity
+
+
+def get_profiles(sbt_version, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot):
+
+    # Read injection temperature profile if provided
+    Tinstore = np.zeros(len(times))
+    if variableinjectiontemperature == 1 and sbt_version == 1:
+        # User has provided injection temperature in an Excel spreadsheet. (can currently only be used with sbt version 1)
+        num = pd.read_excel(injectiontemperaturefilename)
+        Tintimearray = np.array(num.iloc[:, 0])
+        Tintemperaturearray = np.array(num.iloc[:, 1])
+        # Quality control
+        if len(Tintimearray) < 2:
+            print('Error: Provided injection temperature profile should have at least 2 values')
+        
+        if Tintimearray[0] != 0:
+            print('Error: First time value in the user-provided injection temperature profile does not equal 0 s')
+        
+        if abs(Tintimearray[-1] - times[-1]) > 1e-5:
+            print('Error: Last time value in the user-provided injection temperature profile does not equal the final value in the "times" array')
+    
+        else:
+            Tintimearray[-1] = times[-1]  # Ensure final time values "exactly" match to prevent interpolation issues at the final time step
+        Tinstore[0] = Tintemperaturearray[0]
+    else:
+        Tinstore[0] = Tinj
+
+    # Read mass flow rate profile if provided
+    mstore = np.zeros(len(times))  # The value for m used at each time step is stored in this array (is either constant or interpolated from a user-provided mass flow rate profile)
+
+    if variableflowrate == 1 and sbt_version == 1:  # User has provided mass flow rate in an Excel spreadsheet. (can currently only be used with sbt version 1)
+        data = pd.read_excel(flowratefilename)
+        mtimearray = data.iloc[:, 0].values  # This array has the times provided by the user
+        mflowratearray = data.iloc[:, 1].values  # This array has the injection temperatures provided by the user
+
+        # Quality control
+        if len(mtimearray) < 2:
+            print('Error: Provided flow rate profile should have at least 2 values')
+        
+        if mtimearray[0] != 0:
+            print('Error: First time value in user-provided flow rate profile does not equal to 0 s')
+            
+        if abs(mtimearray[-1] - times[-1]) > 1e-5:
+            print('Error: Last time value in user-provided flow rate profile does not equal to final value in "times" array')
+        
+        else:
+            mtimearray[-1] = times[-1]  # Ensure final time values "exactly" match to prevent interpolation issues at the final time step
+
+        mstore[0] = mflowratearray[0]
+    else:
+        mstore[0] = mdot
+    
+    return Tinstore, mstore
+
+
+
+def run_sbt(
+            ## Model Specifications 
+            sbt_version=1, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
+            HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+            accuracy=1,
+
+             ## Operations
+            clg_configuration=2, mdot=20, Tinj=20, fluid=1, ## Operations
+            DrillingDepth_L1=2, HorizontalExtent_L2=1, #BoreholeDiameter=1, ## Wellbore Geometry
+            Diameter1=0.2286, Diameter2=0.2286, PipeParam3=3, PipeParam4=[1/3, 1/3, 1/3], PipeParam5=1, ## Tube Geometry
+
+            ## Geologic Properties
+            Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875, 
+            ):
+    """
+    Runs the SBT Model
+    EDITABLE BY A USER:
+
+        ## Operations
+        clg_configuration:               # Must be 1 or 2. "1" mean co-axial, "2" U-loop
+        mdot:                            # Total fluid mass flow rate [kg/s]. m must be provided if the user sets variableflowrate to 0.
+        Tinj:                            # Constant injection temperature [deg.C]
+        
+        ## Geologic Properties
+        Tsurf:                           # Surface temperature [deg C]
+        GeoGradient:                     # Geothermal gradient [C/m]
+        k_m:                             # Rock thermal conductivity [W/m.K]
+        c_m:                             # Rock specific heat capacity [J/kgK]
+        rho_m:                           # Rock density [kg/m3]
+    """
+
+    # print("\n")
+    # print(" -------------------------------- SBT USER INPUTS -------------------------------- ")
+    # all input possibilities can be placed into a dataframe at some point ...
+    # Geologic properties are set at the start of run_sbt() 
+    # rest of variables are "set" below
+
+    tube_geometry_dict = set_tube_geometry(clg_configuration=clg_configuration, 
+                                            Diameter1=Diameter1, Diameter2=Diameter2, 
+                                            PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
+                                            )
+    globals().update(tube_geometry_dict)
+    # print(tube_geometry_dict.keys())
+
+    wellbore_geometry_dict = set_wellbore_geometry(clg_configuration=clg_configuration, 
+                                                    DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
+                                                    numberoflaterals=numberoflaterals
+                                                    )
+    globals().update(wellbore_geometry_dict)
+    # print(wellbore_geometry_dict.keys())
+
+    sbt_hyperparams_dict = set_sbt_hyperparameters(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                                accuracy=accuracy,
+                                                mesh_fineness=mesh_fineness, fluid=fluid, 
+                                                HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
+                                                HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
+    globals().update(sbt_hyperparams_dict)
+    # print(sbt_hyperparams_dict.keys())
+
+    if is_plot:
+        plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
+                                x=x, y=y, z=z, 
+                                xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
+
+    #%% ----------------
+    # 2. Pre-Processing
+    # Generally, nothing should be changed by the user in this section
+    #------------------
+
+    # print("\n")
+    # print(" -------------------------------- SBT ADMIN INPUTS -------------------------------- ")
+    fluid_properties = admin_fluid_properties()
+    globals().update(fluid_properties)
+    # print(fluid_properties.keys())
+
+    # print("\n")
+    # print(" -------------------------------- COMPUTATIONS -------------------------------- ")
+
+    ### COMPUTE TUBE GEOMETRY 
+    tube_geometry_dict2 = compute_tube_geometry(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                                radiuscenterpipe=radiuscenterpipe, thicknesscenterpipe=thicknesscenterpipe, 
+                                                xinj=xinj, xprod=xprod, xlat=xlat, numberoflaterals=numberoflaterals, 
+                                                radiuslateral=radiuslateral, 
+                                                lateralflowallocation=lateralflowallocation)
+
+    globals().update(tube_geometry_dict2)
+    # print(tube_geometry_dict2.keys())
+
+    ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
+    interpolator_density, interpolator_enthalpy, \
+                interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
+                    interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity = \
+                    prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
+                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
+
+    ### GET TEMPERATURE AND MASS FLOW RATE PROFILES
+    Tinstore, mstore = get_profiles(sbt_version=sbt_version, variableinjectiontemperature=variableinjectiontemperature, 
+                                variableflowrate=variableflowrate, flowratefilename=flowratefilename, 
+                                Tinj=Tinj, mdot=mdot)
+
+    
+    ### FLUID TEMPERATURE AND PRESSURE COMPUTATIONS
+    Tw_down_previous = Tw_up_previous = Tfluiddownnodes = TwMatrix = None
+    Pfluiddownnodes = Pfluidupnodes = None
+
+    # accuracy params
+    alpha_m = k_m / rho_m / c_m    # Thermal diffusivity medium [m2/s]
     timeforpointssource = max(Deltaz)**2 / alpha_m * LimitPointSourceModel  # Calculates minimum time step size when point source model becomes applicable [s]
     if clg_configuration == 1: #co-axial geometry
         timeforlinesource = radius**2 / alpha_m * LimitCylinderModelRequired  # Calculates minimum time step size when line source model becomes applicable [s]
@@ -430,8 +598,8 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     N = len(Deltaz)  # Number of elements
     elementcenters = 0.5 * np.column_stack((x[1:], y[1:], z[1:])) + 0.5 * np.column_stack((x[:-1], y[:-1], z[:-1]))  # Matrix that stores the mid point coordinates of each element
     if clg_configuration == 2: #U-loop geometry
-        interconnections = interconnections - 1
-        elementcenters = np.delete(elementcenters, interconnections.reshape(-1,1), axis=0)  # Remove duplicate coordinates
+        interconnections_new = interconnections - 1
+        elementcenters = np.delete(elementcenters, interconnections_new.reshape(-1,1), axis=0)  # Remove duplicate coordinates
 
     SMatrix = np.zeros((N, N))  # Initializes the spacing matrix, which holds the distance between center points of each element [m]
     SoverL = np.zeros((N, N))  # Initializes the ratio of spacing to element length matrix
@@ -461,7 +629,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
         previouswaterelements[0:] = np.arange(-1,N-1)
         
         for i in range(numberoflaterals):
-            previouswaterelements[interconnections[i + 1] - i-1] = len(xinj) - 2
+            previouswaterelements[interconnections_new[i + 1] - i-1] = len(xinj) - 2
         
         previouswaterelements[len(xinj) - 1] = 0
         
@@ -501,9 +669,9 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
 
     if clg_configuration == 2: #U-loop geometry
         # Remove duplicates
-        distributionx = np.delete(distributionx, interconnections, axis=0)
-        distributiony = np.delete(distributiony, interconnections, axis=0)
-        distributionz = np.delete(distributionz, interconnections, axis=0)
+        distributionx = np.delete(distributionx, interconnections_new, axis=0)
+        distributiony = np.delete(distributiony, interconnections_new, axis=0)
+        distributionz = np.delete(distributionz, interconnections_new, axis=0)
         
         
 
@@ -660,10 +828,6 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     combinedtimes3rdlevel = np.array([0])
     timesFMM = 0
     QFMM = 0
-    
-    toc = time.time()
-    passedtime = toc-tic
-    print(f"preprocessing time = {passedtime:.2f}" )
 
     #%% -------------
     # 3. Calculating
@@ -673,15 +837,15 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     for i in range(1, len(times)):
         Deltat = times[i] - times[i - 1]  # Current time step size [s]
 
-        # If the user has provided an injection temperature profile, current value of Tin is calculated (only allowed in sbt version 1)
+        # If the user has provided an injection temperature profile, current value of Tinj is calculated (only allowed in sbt version 1)
         if variableinjectiontemperature == 1 and sbt_version == 1:
-            Tin = np.interp(times[i], Tintimearray, Tintemperaturearray)
-        Tinstore[i] = Tin  # Value that is used for Tin at each time step gets stored for postprocessing purposes
+            Tinj = np.interp(times[i], Tintimearray, Tintemperaturearray)
+        Tinstore[i] = Tinj  # Value that is used for Tinj at each time step gets stored for postprocessing purposes
 
         # If the user has provided a flow rate profile, current value of m is calculated (only allowed in sbt version 1)
         if variableflowrate == 1 and sbt_version == 1:
             m = np.interp(times[i], mtimearray, mflowratearray)
-        mstore[i] = m  # Value that is used for m at each time step gets stored for postprocessing purposes
+        mstore[i] = mdot  # Value that is used for m at each time step gets stored for postprocessing purposes
 
 
         # ------------------------------------
@@ -936,11 +1100,11 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
             # Velocities and thermal resistances are calculated each time step as the flow rate is allowed to vary each time step
             if clg_configuration == 1: #co-axial geometry 
                 if coaxialflowtype == 1: #CXA
-                    u_down = m/rho_f/A_flow_annulus               # Downgoing fluid velocity in annulus [m/s]
-                    u_up = m/rho_f/A_flow_centerpipe              # Upgoing fluid velocity in center pipe [m/s]
+                    u_down = mdot/rho_f/A_flow_annulus               # Downgoing fluid velocity in annulus [m/s]
+                    u_up = mdot/rho_f/A_flow_centerpipe              # Upgoing fluid velocity in center pipe [m/s]
                 elif coaxialflowtype == 2: #CXC
-                    u_up = m/rho_f/A_flow_annulus                 # Upgoing fluid velocity in annulus [m/s]
-                    u_down = m/rho_f/A_flow_centerpipe            # Downgoing fluid velocity in center pipe [m/s]
+                    u_up = mdot/rho_f/A_flow_annulus                 # Upgoing fluid velocity in annulus [m/s]
+                    u_down = mdot/rho_f/A_flow_centerpipe            # Downgoing fluid velocity in center pipe [m/s]
         
         
                 if coaxialflowtype == 1: #CXA (injection in annulus; production from center pipe)
@@ -954,7 +1118,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                         Nu_down_o = 5                             # Laminar flow annulus Nusselt number for outer wall (approximate; see Table 8.2 and 8.3 in Bergman (2011)
                         Nu_down_i = 6                             # Laminar flow annulus Nusselt number for inner wall (approximate; see Table 8.2 and 8.3 in Bergman (2011)
                     
-                    if m < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt numbers get set to 1 to represent thermal conduction.
+                    if mdot < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt numbers get set to 1 to represent thermal conduction.
                         Nu_down_o = 1
                         Nu_down_i = 1
                     
@@ -972,7 +1136,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                         Nu_up = Nulam_up
                     
                     
-                    if m < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt number is set to 1 to represent thermal conduction.
+                    if mdot < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt number is set to 1 to represent thermal conduction.
                         Nu_up = 1
                     
                     h_up = Nu_up*k_f/(2*radiuscenterpipe)
@@ -989,7 +1153,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                         Nu_up_o = 5                               # Laminar flow annulus Nusselt number for outer wall (approximate; see Table 8.2 and 8.3 in Bergman (2011)
                         Nu_up_i = 6                               # Laminar flow annulus Nusselt number for inner wall (approximate; see Table 8.2 and 8.3 in Bergman (2011)
                     
-                    if m < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt numbers get set to 1 to represent thermal conduction.
+                    if mdot < 0.1: # We assume at very low flow rates, we are actually simulating well shut-in. The Nusselt numbers get set to 1 to represent thermal conduction.
                         Nu_up_o = 1
                         Nu_up_i = 1
                     
@@ -1015,14 +1179,14 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
             
             elif clg_configuration == 2: #U-loop geometry  
         
-                uvertical = m / rho_f / (np.pi * radiusvertical ** 2)  # Fluid velocity in vertical injector and producer [m/s]
-                ulateral = m / rho_f / (np.pi * radiuslateral ** 2) * lateralflowallocation * lateralflowmultiplier  # Fluid velocity in each lateral [m/s]
+                uvertical = mdot / rho_f / (np.pi * radiusvertical ** 2)  # Fluid velocity in vertical injector and producer [m/s]
+                ulateral = mdot / rho_f / (np.pi * radiuslateral ** 2) * lateralflowallocation_norm * lateralflowmultiplier  # Fluid velocity in each lateral [m/s]
                 uvector = np.hstack((uvertical * np.ones(len(xinj) + len(xprod) - 2)))
             
                 for dd in range(numberoflaterals):
                     uvector = np.hstack((uvector, ulateral[dd] * np.ones(len(xlat[:, 0]) - 1)))
             
-                if m > 0.1:
+                if mdot > 0.1:
                     Revertical = rho_f * uvertical * (2 * radiusvertical) / mu_f  # Fluid Reynolds number in injector and producer [-]
                     Nuvertical = 0.023 * Revertical ** (4 / 5) * Pr_f ** 0.4  # Nusselt Number in injector and producer (we assume turbulent flow) [-]
                 else:
@@ -1032,7 +1196,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                 hvertical = Nuvertical * k_f / (2 * radiusvertical)  # Heat transfer coefficient in injector and producer [W/m2/K]
                 Rtvertical = 1 / (np.pi * hvertical * 2 * radiusvertical)  # Thermal resistance in injector and producer (open-hole assumed)
             
-                if m > 0.1:
+                if mdot > 0.1:
                     Relateral = rho_f * ulateral * (2 * radiuslateral) / mu_f  # Fluid Reynolds number in lateral [-]
                     Nulateral = 0.023 * Relateral ** (4 / 5) * Pr_f ** 0.4  # Nusselt Number in lateral (we assume turbulent flow) [-]
                 else:
@@ -1046,9 +1210,9 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                 
                 for dd in range(1, numberoflaterals + 1):
                     if dd < numberoflaterals:
-                        Rtvector[interconnections[dd] - dd : interconnections[dd + 1] - dd] = Rtlateral[dd - 1] * np.ones(len(xlat[:, 0]))
+                        Rtvector[interconnections_new[dd] - dd : interconnections_new[dd + 1] - dd] = Rtlateral[dd - 1] * np.ones(len(xlat[:, 0]))
                     else:
-                        Rtvector[interconnections[dd] - numberoflaterals:] = Rtlateral[dd - 1] * np.ones(len(xlat[:, 0]) - 1)
+                        Rtvector[interconnections_new[dd] - numberoflaterals:] = Rtlateral[dd - 1] * np.ones(len(xlat[:, 0]) - 1)
         
         
         
@@ -1059,7 +1223,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                     L[0,0] = 1 / Deltat + u_down / Deltaz[0]*2  + 1/R_cp/(A_flow_annulus*rho_f*cp_f)
                     L[0,2] = -1 / (A_flow_annulus*rho_f*cp_f)
                     L[0,3] = -1 / R_cp / (A_flow_annulus*rho_f*cp_f)
-                    R[0,0] = 1 / Deltat*Tw_down_previous[0] + u_down/Deltaz[0]*Tin*2
+                    R[0,0] = 1 / Deltat*Tw_down_previous[0] + u_down/Deltaz[0]*Tinj*2
                     
                     #Populate L and R for rock temperature equation for first element
                     L[1,0] = 1
@@ -1164,7 +1328,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                 #Populate L and R for fluid heat balance for first element (which has the injection temperature specified)
                 L[0, 0] = 1 / Deltat + uvector[0] / Deltaz[0] * (fullyimplicit) * 2
                 L[0, 2] = -4 / np.pi / Dvector[0]**2 / rho_f / cp_f
-                R[0, 0] = 1 / Deltat * Twprevious[0] + uvector[0] / Deltaz[0] * Tin * 2 - uvector[0] / Deltaz[0] * Twprevious[0] * (1 - fullyimplicit) * 2
+                R[0, 0] = 1 / Deltat * Twprevious[0] + uvector[0] / Deltaz[0] * Tinj * 2 - uvector[0] / Deltaz[0] * Twprevious[0] * (1 - fullyimplicit) * 2
             
                 #Populate L and R for rock temperature equation for first element   
                 L[1, 0] = 1
@@ -1185,7 +1349,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                         for j in range(len(lateralendpoints)):
                             L[0+ (iiii - 1) * 3, 0 + (lateralendpoints[j]) * 3] = -ulateral[j] / Deltaz[iiii-1] / 2 / lateralflowmultiplier * (fullyimplicit) * 2 * (radiuslateral/radiusvertical)**2
                             R[0+(iiii - 1) * 3, 0] = 1 / Deltat * Twprevious[iiii-1] + uvector[iiii-1] / Deltaz[iiii-1] * (
-                                    -Twprevious[iiii-1] + (radiuslateral/radiusvertical)**2*np.sum(lateralflowallocation[j] * Twprevious[lateralendpoints[j]])) / 2 * (
+                                    -Twprevious[iiii-1] + (radiuslateral/radiusvertical)**2*np.sum(lateralflowallocation_norm[j] * Twprevious[lateralendpoints[j]])) / 2 * (
                                                             1 - fullyimplicit) * 2
                     else:
                         L[0+(iiii-1) * 3, 0 + (int(previouswaterelements[iiii-1])) * 3] = -uvector[iiii-1] / Deltaz[iiii-1] / 2 * (
@@ -1331,13 +1495,13 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                     L[0,2] = -1*Deltaz[0]
                     L[0,3] = -1/R_cp[0]*Deltaz[0]/2
                     L[0,3+4] = -1/R_cp[0]*Deltaz[0]/2
-                    R[0,0] = m*heatcapacityfluiddownmidpoints[0]*Tin - 1/R_cp[0]*Deltaz[0]/2*Tin - m*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - m*g*verticalchange[0] - m*Deltahstardown[0]
+                    R[0,0] = m*heatcapacityfluiddownmidpoints[0]*Tinj - 1/R_cp[0]*Deltaz[0]/2*Tinj - m*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - m*g*verticalchange[0] - m*Deltahstardown[0]
                     
                     #Populate L and R for rock temperature equation for first element
                     L[1,0] = 1/2
                     L[1,1] = -1
                     L[1,2] = Rt[0]
-                    R[1,0] = -1/2*Tin
+                    R[1,0] = -1/2*Tinj
                     
                     #Populate L and R for SBT algorithm for first element
                     L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
@@ -1391,7 +1555,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                     L[0,4] = -m*heatcapacityfluidupmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
                     L[0,2] = -1*Deltaz[0]
                     L[0,3] = -1/R_cp[0]*Deltaz[0]/2
-                    R[0,0] = 1/R_cp[0]*Deltaz[0]/2*Tin - m*0.5*(velocityfluidupnodes[0]**2-velocityfluidupnodes[1]**2) + m*g*verticalchange[0] - m*Deltahstarup[0]
+                    R[0,0] = 1/R_cp[0]*Deltaz[0]/2*Tinj - m*0.5*(velocityfluidupnodes[0]**2-velocityfluidupnodes[1]**2) + m*g*verticalchange[0] - m*Deltahstarup[0]
                     
                     #Populate L and R for rock temperature equation for first element
                     L[1,0] = 1/2
@@ -1408,7 +1572,7 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                     L[3,3] = m*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
                     L[3,0] = -1/R_cp[0]*Deltaz[0]/2
                     L[3,4] = -1/R_cp[0]*Deltaz[0]/2
-                    R[3,0] = m*heatcapacityfluiddownmidpoints[0]*Tin - 1/R_cp[0]*Deltaz[0]/2*Tin - m*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - m*g*verticalchange[0]-m*Deltahstardown[0]           
+                    R[3,0] = m*heatcapacityfluiddownmidpoints[0]*Tinj - 1/R_cp[0]*Deltaz[0]/2*Tinj - m*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - m*g*verticalchange[0]-m*Deltahstardown[0]           
                     
                     for iiii in range(2, N+1): #Populate L and R for remaining elements (1:Tup; 2:Tr; 3:Q; 4:Tdown)
                         #Energy balance equation for upflowing fluid
@@ -1452,10 +1616,10 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
                 # Solving the linear system of equations
                 Sol = np.linalg.solve(L, R)  
                 if coaxialflowtype == 1: #CXA
-                    Tfluiddownnodes = np.concatenate(([Tin], Sol.ravel()[0::4]))
+                    Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
                     Tfluidupnodes =  np.concatenate((Sol.ravel()[3::4],[Tfluiddownnodes[-1]]))
                 elif coaxialflowtype == 2: #CXC
-                    Tfluiddownnodes = np.concatenate(([Tin], Sol.ravel()[3::4]))
+                    Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[3::4]))
                     Tfluidupnodes = np.concatenate((Sol.ravel()[0::4],[Tfluiddownnodes[-1]]))
                 
                 Tfluiddownmidpoints = 0.5*Tfluiddownnodes[1:]+0.5*Tfluiddownnodes[:-1]
@@ -1631,128 +1795,33 @@ def run_sbt(clg_configuration=2, sbt_version=1, m=20, Tin=20, cp_f=4200, rho_f=1
     AverageProductionTemperature = np.sum((times[1:] - times[:-1]) * Toutput[1:]) / times[-1]  # Calculates the weighted-average production temperature [deg.C]
     AverageHeatProduction = np.sum((times[1:] - times[:-1]) * HeatProduction[1:]) / times[-1]  # Calculates the weighted-average heat production [MW]
     line_to_print = f'Average production temperature = {AverageProductionTemperature:.2f} °C\n'
-    print(line_to_print, end='')
+    # print(line_to_print, end='')
 
     line_to_print = f'Average heat production = {AverageHeatProduction:.2f} MWt\n'
-    print(line_to_print, end='')
+    # print(line_to_print, end='')
 
-    toc = time.time()
-    passedtime = toc-tic
-    line_to_print = f'Calculation time = {passedtime:.2f} s\n'
-    print(line_to_print)
-    return Toutput
-
-    #end time
-
-    #Plot final fluid temperature profile
-    # if clg_configuration == 1: #co-axial geometry 
-    #     plt.figure()
-    #     if sbt_version == 1:
-    #         plt.plot(Tw_down_previous,-np.cumsum(Deltaz))
-    #         plt.plot(Tw_up_previous,-np.cumsum(Deltaz))
-    #     elif sbt_version == 2:
-    #         plt.plot(Tfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))))
-    #         plt.plot(Tfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))))        
-    #     plt.grid(True)
-    #     plt.xlabel('Fluid Temperature [°C]', fontsize=12)
-    #     plt.ylabel('Measured Depth [m]', fontsize=12)
-    #     plt.xticks(fontsize=12)
-    #     plt.yticks(fontsize=12)
-    #     plt.title('Final Fluid Temperature')
-    #     if coaxialflowtype == 1:
-    #         plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='upper left')
-    #     elif coaxialflowtype == 2:
-    #         plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
-    #     plt.show()
-
-    # elif clg_configuration == 2: #U-loop geometry 
-    #     Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
-    #     Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
-    #     Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
-    #     plt.figure()
-    #     plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
-    #     plt.grid(True)
-    #     plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
-    #     plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
+    # line_to_print = f'Calculation time = {passedtime:.2f} s\n'
+    # print(line_to_print)
+    if is_plot:
+        plot_final_fluid_temp_profile_v1(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                        Tw_up_previous=Tw_up_previous,
+                                        Tw_down_previous=Tw_down_previous, Tfluiddownnodes=Tfluiddownnodes, 
+                                        Deltaz=Deltaz, TwMatrix=TwMatrix, 
+                                        numberoflaterals=numberoflaterals, coaxialflowtype=coaxialflowtype,
+                                        interconnections=interconnections_new,
+                                        lateralflowallocation=lateralflowallocation,
+                                        xinj=xinj, xlat=xlat, xprod=xprod)
         
-    #     for kk in range(numberoflaterals):
-    #         if kk < numberoflaterals-1:
-    #             Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
-                
-    #         else:
-    #             Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
-    #         if(kk==0):
-    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
-    #         if (kk==1):
-    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
-    #         if (kk==2):
-    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
-    #     plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
-    #             np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
+        plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
+                                        coaxialflowtype=coaxialflowtype, 
+                                        Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
+                                        Deltaz=Deltaz)
         
-    #     plt.ylabel('Fluid Temperature [°C]', fontsize=12)
-    #     plt.xlabel('Position along flow path [-]', fontsize=12)
-    #     plt.xticks(fontsize=12)
-    #     plt.yticks(fontsize=12)
-    #     plt.title('Final Fluid Temperature')
-    #     plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
-    #     plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
-    #     plt.show()  
+        plot_heat_production(HeatProduction=HeatProduction, times=times)
+        plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
+        plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
-    # #Plot final fluid temperature profile (SBT v2 only)\
-    # if sbt_version == 2:
-    #     plt.figure()
-    #     plt.plot(Pfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))))
-    #     plt.plot(Pfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))))        
-    #     plt.grid(True)
-    #     plt.xlabel('Fluid Pressure [bar]', fontsize=12)
-    #     plt.ylabel('Measured Depth [m]', fontsize=12)
-    #     plt.xticks(fontsize=12)
-    #     plt.yticks(fontsize=12)
-    #     plt.title('Final Fluid Pressure')
-    #     if coaxialflowtype == 1:
-    #         plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='upper left')
-    #     elif coaxialflowtype == 2:
-    #         plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
-    #     plt.show()    
+    return times/365/24/3600, Toutput + 273.15 # return in Kelvin
+    # return times[1:]/365/24/3600, Toutput[1:] + 273.15 # return in Kelvin
 
-    # # Plot heat production
-    # plt.figure()
-    # plt.plot(times[1:]/3600/24/365, HeatProduction[1:], linewidth=2, color='green')
-    # plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
-    # plt.xlabel('Time [years]', fontsize=12)
-    # plt.ylabel('Heat Production [MWt]', fontsize=12)
-    # plt.gca().set_facecolor((1, 1, 1))
-    # plt.grid(True)
-    # plt.xticks(fontsize=12)
-    # plt.yticks(fontsize=12)
-    # plt.show()
 
-    # # Plot production temperature with linear time scale
-    # plt.figure()
-    # plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='blue', label='Production Temperature')
-    # plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
-    # plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='black', label='Injection Temperature')
-    # plt.xlabel('Time [years]', fontsize=12)
-    # plt.ylabel('Temperature [°C]', fontsize=12)
-    # plt.gca().set_facecolor((1, 1, 1))
-    # plt.grid(True)
-    # plt.legend()
-    # plt.xticks(fontsize=12)
-    # plt.yticks(fontsize=12)
-    # plt.show()
-
-    # # Plot production temperature with logarithmic time scale
-    # plt.figure()
-    # plt.semilogx(times[1:], Toutput[1:], linewidth=2, color='blue')
-    # plt.axis([10**2, times[-1], 0, max(Toutput)+10])
-    # plt.xlabel('Time [s]', fontsize=12)
-    # plt.ylabel('Production Temperature [°C]', fontsize=12)
-    # plt.gca().set_facecolor((1, 1, 1))
-    # plt.grid(True)
-    # plt.xticks(fontsize=12)
-    # plt.yticks(fontsize=12)
-    # plt.show()
-        
-if __name__ == "__main__":
-    Tout = run_sbt(sbt_version=1, clg_configuration=1, m=24, Tin=30, GeoGradient=0.05, k_m=3)
