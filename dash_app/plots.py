@@ -20,6 +20,14 @@ from econ_support import create_teaobject
 from plots_support import * 
 import traceback
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
 # -----------------------
 # Read in data.
 # -----------------------
@@ -39,6 +47,7 @@ lw = 1.4 # line width
 # THERMAL PERFORMANCE PLOTS
 # --------------------------------------------------------------------------------------------------------------------
 
+@profile(stream=memory_profile_file)
 def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
 
     arg_mdot_v, arg_mdot_i = find_nearest(u_sCO2.mdot, arg_mdot) 
@@ -53,6 +62,7 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
 
 
+@profile(stream=memory_profile_file)
 def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i):
 
     # --------------------------------------------------------------------------------------------------------------
@@ -100,6 +110,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
 
+@profile(stream=memory_profile_file)
 def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model,
             Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             mesh, accuracy, mass_mode, temp_mode):
@@ -366,6 +377,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
 
 
+@profile(stream=memory_profile_file)
 def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -579,6 +591,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 # --------------------------------------------------------------------------------------------------------------------
 
 
+@profile(stream=memory_profile_file)
 def generate_econ_lineplots(TandP_dict,
                             interp_time, case, end_use, fluid,
                             mdot, L2, L1, grad, D, Tinj, k,
@@ -944,6 +957,7 @@ def generate_econ_lineplots(TandP_dict,
 
 
 
+@profile(stream=memory_profile_file)
 def CO2_isobaric_lines(tmatrix_pathname):
 
     # CO2 isobaric lines data for Ts diagram
@@ -963,6 +977,7 @@ def CO2_isobaric_lines(tmatrix_pathname):
 
     return pvectorforTS, svectorforTS, tmatrix, sdome, Tdome
 
+@profile(stream=memory_profile_file)
 def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
 
     error_dict = {}

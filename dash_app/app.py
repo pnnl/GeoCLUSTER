@@ -25,6 +25,14 @@ import dash_daq as daq                  # Adds more data acquisition (DAQ) and c
 import dash_bootstrap_components as dbc # Adds bootstrap components for more web themes and templates
 from dash.exceptions import PreventUpdate
 
+# memory analysis libraries
+import os
+import signal
+from memory_profiler import profile
+import tracemalloc
+from guppy import hpy
+import io
+
 # sourced scripts
 from paths import inpath_dict
 from write2excel import write_excelsheet
@@ -32,6 +40,26 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+
+# import all other files for memory profiling
+import clg_tea_module
+import clgs
+import dropdowns
+import econ_support
+import plot_sbt
+import plots_support
+import plots
+import reader
+import sbt
+import sliders
+import tables
+
+# set output file for memory profile analysis (memory_profiler library)
+memory_profile_file = open('./memory_analysis/memory_profile_output.txt', 'a', encoding='utf-8')
+# start memory tracer (tracemalloc library)
+tracemalloc.start()
+# set up heap class (guppy library)
+h = hpy()
 
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
@@ -105,7 +133,7 @@ carousel_image_style = {'objectFit': 'contain'}
 # -----------------------------------------------
 # HTML components.
 # -----------------------------------------------
-
+@profile(stream=memory_profile_file)
 def description_card():
 
     # -----------------------------------------------------------------------
@@ -120,6 +148,7 @@ def description_card():
         ],
     )
 
+@profile(stream=memory_profile_file)
 def generate_control_card():
 
     # -----------------------------------------------------------------------
@@ -167,6 +196,7 @@ def generate_control_card():
 
 
 
+@profile(stream=memory_profile_file)
 def graph_guidance_card(btnID, cardID, dropdown_children):
 
     # -----------------------------------------------------------------------
@@ -448,6 +478,7 @@ app.layout = html.Div(
     prevent_initial_call=True,
 )
 
+@profile(stream=memory_profile_file)
 def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
 
     if "btn_xlsx" == ctx.triggered_id:
@@ -464,6 +495,7 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
     [Input(component_id="collapse-button", component_property="n_clicks")],
     [State(component_id="collapse", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -479,6 +511,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button2", component_property="n_clicks")],
     [State(component_id="collapse2", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -495,6 +528,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button3", component_property="n_clicks")],
     [State(component_id="collapse3", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -511,6 +545,7 @@ def toggle_collapse(n, is_open):
     [Input(component_id="collapse-button4", component_property="n_clicks")],
     [State(component_id="collapse4", component_property="is_open")],
 )
+@profile(stream=memory_profile_file)
 def toggle_collapse(n, is_open):
 
     # ----------------------------------------------
@@ -531,6 +566,7 @@ def toggle_collapse(n, is_open):
    prevent_initial_call=True
    )
 
+@profile(stream=memory_profile_file)
 def update_tabs(selected_model):
 
     if selected_model == "HDF5": 
@@ -550,6 +586,7 @@ def update_tabs(selected_model):
    prevent_initial_call=True
    )
 
+@profile(stream=memory_profile_file)
 def update_tabs(selected_model):
 
     if selected_model == "HDF5": 
@@ -572,6 +609,7 @@ def update_tabs(selected_model):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def retain_entry_between_tabs(tab, btn1, btn3, fluid):
 
     if tab != "energy-tab" and fluid == "All":
@@ -596,6 +634,7 @@ def retain_entry_between_tabs(tab, btn1, btn3, fluid):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def flip_to_tab(tab, btn1, btn3, end_use):
 
     if tab != "energy-tab" and end_use == "All":
@@ -622,6 +661,7 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def update_working_fluid(model):
 
     if model == "SBT V1.0":
@@ -645,6 +685,7 @@ def update_working_fluid(model):
     Input(component_id="model-select", component_property="value")
     ])
 
+@profile(stream=memory_profile_file)
 def change_dropdown(at, fluid, model):
 
     if model == "HDF5":
@@ -691,6 +732,7 @@ def change_dropdown(at, fluid, model):
      Input(component_id='btn-nclicks-3', component_property='n_clicks')
      ])
 
+@profile(stream=memory_profile_file)
 def flip_to_tab(tab, btn1, btn3):
 
     if tab == "about-tab":
@@ -749,6 +791,7 @@ def flip_to_tab(tab, btn1, btn3):
      ]
 )
 
+@profile(stream=memory_profile_file)
 def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
 
     # ----------------------------------------------------------------------------------------------
@@ -832,6 +875,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
    [Input(component_id="model-select", component_property="value")]
     )
 
+@profile(stream=memory_profile_file)
 def show_model_hyperparameters(model):
 
     if model == "HDF5":
@@ -856,6 +900,7 @@ def show_model_hyperparameters(model):
     prevent_initial_call=True
     )
 
+@profile(stream=memory_profile_file)
 def show_model_params(model):
 
     b = {'display': 'block'}
@@ -907,6 +952,7 @@ def show_model_params(model):
     prevent_initial_call=True,
     )
 
+@profile(stream=memory_profile_file)
 def show_hide_element(visibility_state, at, fluid, end_use, model):
 
     # ----------------------------------------------------------------------------------------------
@@ -1017,6 +1063,7 @@ def show_hide_element(visibility_state, at, fluid, end_use, model):
     Input(component_id="end-use-select", component_property="value")
     ])
 
+@profile(stream=memory_profile_file)
 def show_hide_detailed_card(tab, fluid, end_use):
 
     # TODO fix CSS
@@ -1077,6 +1124,7 @@ def show_hide_detailed_card(tab, fluid, end_use):
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
                         Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                         mesh, accuracy, mass_mode, temp_mode):
@@ -1115,6 +1163,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m):
 
     # -----------------------------------------------------------------------------
@@ -1165,6 +1214,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_econ_plots(TandP_dict,
                      interp_time, fluid, case, end_use,
                       mdot, L2, L1, grad, D, Tinj, k_m,
@@ -1209,6 +1259,7 @@ def update_econ_plots(TandP_dict,
     ]
     )
 
+@profile(stream=memory_profile_file)
 def update_plot_title(fluid, end_use, checklist):
 
     if checklist == [' ']:
@@ -1258,6 +1309,7 @@ def update_plot_title(fluid, end_use, checklist):
     ],
 )
 
+@profile(stream=memory_profile_file)
 def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Drilling_cost_per_m, Discount_rate, Lifetime, 
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
@@ -1284,6 +1336,7 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
     ]
 )
 
+@profile(stream=memory_profile_file)
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
     
     # print(err_sub_dict)
@@ -1364,6 +1417,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
     Input(component_id='econ-memory', component_property='data'),
 )
 
+@profile(stream=memory_profile_file)
 def update_error_divs(levelized_cost_dict):
     
     warning_div3 = html.Div(style={'display': 'none'})
@@ -1399,6 +1453,86 @@ def update_error_divs(levelized_cost_dict):
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
+@profile(stream=memory_profile_file)
+def run_server():
+    app.run_server(port=8060, debug=False)
+
+def handle_sigint(signum, frame):
+
+    #close the memory_profile_file
+    memory_profile_file.close()
+
+    # take snapshot and list top consuming
+    mem_snapshot2 = tracemalloc.take_snapshot()
+    top_stats_snapshot2 = mem_snapshot2.statistics('lineno')
+    with open('./memory_analysis/top_10_consuming_lines.txt', 'w', encoding='utf-8') as f:
+        f.write("[ TOP 10 MEMORY CONSUMING LINES ]")
+        for stat in top_stats_snapshot2[:10]:
+            f.write(str(stat) + '\n')
+    f.close()
+
+    #compare snapshoto the the one before running the server
+    top_stats = mem_snapshot2.compare_to(mem_snapshot1, 'lineno')
+    with open('./memory_analysis/top_10_mem_cdifferences.txt', 'w', encoding='utf-8') as f:
+        f.write("[ TOP 10 DIFFERENCES ]")
+        for stat in top_stats[:10]:
+            f.write(str(stat) + '\n')
+    f.close()
+
+    # look at heap memory before terminating server
+    with open('./memory_analysis/end_heap_summary.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n" + str(h.heap()))
+    f.close()
+
+    heap = h.heap()
+    with open('./memory_analysis/end_heap_output_full.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n")
+        for index in range(0,1422):
+            f.write(str(heap[index]))
+    f.close()
+
+    #close all the other memory files
+    clg_tea_module.close_mem_file()
+    clgs.close_mem_file()
+    dropdowns.close_mem_file()
+    econ_support.close_mem_file()
+    plot_sbt.close_mem_file()
+    plots_support.close_mem_file()
+    plots.close_mem_file()
+    reader.close_mem_file()
+    sbt.close_mem_file()
+    sliders.close_mem_file()
+    tables.close_mem_file()
+
+    #stop the server
+    exit(0)
+#register signal handler
+signal.signal(signal.SIGINT, handle_sigint)
+
+if __name__ == '__main__':
+    with open('./memory_analysis/initial_trace_malloc.txt', 'w', encoding='utf-8') as f:
+        f.write(f'INITIAL MEMORY USAGE: {tracemalloc.get_traced_memory()[1] / 1024 / 1024:.2f} MiB')
+    f.close()
+
+    with open('./memory_analysis/initial_heap_summary.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n" + str(h.heap()))
+    f.close()
+
+    heap = h.heap()
+    with open('./memory_analysis/initial_heap_output_full.txt', 'w', encoding='utf-8') as f:
+        f.write("Heap Summary:\n")
+        for index in range(0,968):
+            f.write(str(heap[index]))
+    f.close()
+
+    global mem_snapshot1
+    mem_snapshot1 = tracemalloc.take_snapshot()
+    # Capture the memory profile of the run_server function and handle SIGINT
+    try:
+        run_server()
+    except KeyboardInterrupt:
+        # This will ensure we save any necessary data before exiting if KeyboardInterrupt wasn't handled
+        handle_sigint(None, None)
 if __name__ == '__main__':
     app.run_server(port=8060, debug=True) 
     # EXAMPLE: *************

@@ -4,6 +4,14 @@
 # web app and interactive graphics libraries 
 from dash import dcc, html
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
 # ---------------------------
 # Define dropdown options.
 # ---------------------------
@@ -19,6 +27,7 @@ param_list = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradie
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 
+@profile(stream=memory_profile_file)
 def dropdown_card():
 
     # -----------------------------------------------------------------------

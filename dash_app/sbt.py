@@ -19,11 +19,20 @@ is_plot = False
 from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
 from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
 #%% -------
 # 1. Input
 # Generally, the user should only make changes to this section
 #---------
 
+@profile(stream=memory_profile_file)
 def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_fineness, fluid, HYPERPARAM1, HYPERPARAM2, HYPERPARAM3, HYPERPARAM4, HYPERPARAM5):
 
     """ 
@@ -139,6 +148,7 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
     return locals()
 
 
+@profile(stream=memory_profile_file)
 def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_L2, numberoflaterals):
 
     """ 
@@ -231,6 +241,7 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
     return locals()
     
 
+@profile(stream=memory_profile_file)
 def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5):
    
     """ 
@@ -261,6 +272,7 @@ def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeP
     return locals()
 
 
+@profile(stream=memory_profile_file)
 def admin_fluid_properties():
 
     """
@@ -284,6 +296,7 @@ def admin_fluid_properties():
     return locals()
 
 
+@profile(stream=memory_profile_file)
 def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thicknesscenterpipe, 
                                 xinj, xprod, xlat, numberoflaterals, radiuslateral, lateralflowallocation):
 
@@ -339,6 +352,7 @@ def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thic
     return locals()
 
 
+@profile(stream=memory_profile_file)
 def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
 
     interpolator_density = interpolator_enthalpy = interpolator_entropy = None
@@ -416,6 +430,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity
 
 
+@profile(stream=memory_profile_file)
 def get_profiles(sbt_version, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot):
 
     # Read injection temperature profile if provided
@@ -470,6 +485,7 @@ def get_profiles(sbt_version, variableinjectiontemperature, variableflowrate, fl
 
 
 
+@profile(stream=memory_profile_file)
 def run_sbt(
             ## Model Specifications 
             sbt_version=1, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 

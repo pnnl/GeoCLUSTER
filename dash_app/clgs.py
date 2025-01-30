@@ -10,8 +10,16 @@ import itertools as iter
 import zarr
 from sbt import run_sbt
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
 
 class data:
+    @profile(stream=memory_profile_file)
     def __init__(self, fname, case, fluid):
 
         self.fluid = fluid
@@ -79,6 +87,7 @@ class data:
         if fluid == "H2O":
             self.CP_fluid = "H2O"
 
+    @profile(stream=memory_profile_file)
     def get_parameter_indices(self, array, target):
         """
         returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
@@ -103,6 +112,7 @@ class data:
             if value > target:
                 return slice(i - 1, i + 1)
 
+    @profile(stream=memory_profile_file)
     def read_values_around_point_for_interpolation(
         self, zarr_array, point, parameter_values
     ):
@@ -120,6 +130,7 @@ class data:
         ]  # need to convert into into a tuple or zarr thinks we're doing fancy indexing
         return indices, data
 
+    @profile(stream=memory_profile_file)
     def interpolate_points(self, zarr_array, point_to_read_around, points):
         """
         Reads in only the data directly around points_to_read_around from zarr_array and interpolates the passed in points on that data.
@@ -136,6 +147,7 @@ class data:
         interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
+    @profile(stream=memory_profile_file)
     def reshape_output(self, tout):
         NEW_SIZE = 161
         original_indices = np.arange(tout.shape[0])
@@ -145,6 +157,7 @@ class data:
         return new_data
 
 
+    @profile(stream=memory_profile_file)
     def interp_outlet_states(self, point, sbt_version, 
                     Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                     mesh, accuracy, mass_mode, temp_mode): # needs to be a callback option
@@ -242,6 +255,7 @@ class data:
 
         return Tout, Pout, times
 
+    @profile(stream=memory_profile_file)
     def interp_outlet_states_contour(self, param, point):
         var_index = None
         if param == "Horizontal Extent (m)":
@@ -359,6 +373,7 @@ class data:
 
         return Tout, Pout
 
+    @profile(stream=memory_profile_file)
     def interp_kW(
         self,
         point,
@@ -384,6 +399,7 @@ class data:
 
         return kWe, kWt
 
+    @profile(stream=memory_profile_file)
     def interp_kW_contour(self, param, point, Tout, Pout, Tamb=300.0):
 
         mdot = self.mdot
@@ -433,6 +449,7 @@ class data:
 
         return kWe, kWt
 
+    @profile(stream=memory_profile_file)
     def interp_kWe_avg(self, point):
         ivars = self.ivars[:-1]
         return (
@@ -441,6 +458,7 @@ class data:
             / (1000.0 * self.time[-1] * 86400.0 * 365.0)
         )
 
+    @profile(stream=memory_profile_file)
     def interp_kWt_avg(self, point):
         ivars = self.ivars[:-1]
         return (
@@ -449,6 +467,7 @@ class data:
             / (1000.0 * self.time[-1] * 86400.0 * 365.0)
         )
 
+    @profile(stream=memory_profile_file)
     def compute_kW(self, index, Tamb=300.0):
         mdot = self.mdot[index[0]]
         Tinj = self.Tinj[index[5]]

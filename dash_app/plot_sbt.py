@@ -4,6 +4,15 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
+@profile(stream=memory_profile_file)
 def plot_borehole_geometry(clg_configuration, numberoflaterals, x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat):
 
     # Make 3D figure of borehole geometry to make sure it looks correct
@@ -38,6 +47,7 @@ def plot_borehole_geometry(clg_configuration, numberoflaterals, x, y, z, xinj, y
 
 
 
+@profile(stream=memory_profile_file)
 def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration, 
                                     Tw_up_previous, Tw_down_previous, Tfluiddownnodes, 
                                     Deltaz, TwMatrix, 
@@ -111,6 +121,7 @@ def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration,
         plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
         plt.show()  
 
+@profile(stream=memory_profile_file)
 def plot_final_fluid_temp_profile_v2(sbt_version, coaxialflowtype, Pfluiddownnodes, Pfluidupnodes, 
                                             Deltaz
                                             ):
@@ -132,6 +143,7 @@ def plot_final_fluid_temp_profile_v2(sbt_version, coaxialflowtype, Pfluiddownnod
             plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
         plt.show()    
 
+@profile(stream=memory_profile_file)
 def plot_heat_production(HeatProduction, times):
 
     # Plot heat production
@@ -146,6 +158,7 @@ def plot_heat_production(HeatProduction, times):
     plt.yticks(fontsize=12)
     plt.show()
 
+@profile(stream=memory_profile_file)
 def plot_production_temperature_linear(Toutput, Tinstore, times):
 
     # Plot production temperature with linear time scale
@@ -162,6 +175,7 @@ def plot_production_temperature_linear(Toutput, Tinstore, times):
     plt.yticks(fontsize=12)
     plt.show()
 
+@profile(stream=memory_profile_file)
 def plot_production_tempterature_log(Toutput, Tinstore, times):
 
     # Plot production temperature with logarithmic time scale

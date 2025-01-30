@@ -6,6 +6,15 @@ import clgs as clgs
 from paths import inpath_dict
 from pympler import asizeof
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
+@profile(stream=memory_profile_file)
 def initialize_data():
 
 	filename = inpath_dict["h5_filepath"]
@@ -20,6 +29,7 @@ def initialize_data():
 	return u_sCO2, u_H2O, c_sCO2, c_H2O
 
 
+@profile(stream=memory_profile_file)
 def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 
 	param_dict = {("utube", "sCO2", "mdot"): u_sCO2.mdot,

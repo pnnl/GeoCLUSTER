@@ -6,10 +6,19 @@ import numpy as np
 import scipy.io
 from scipy.interpolate import interpn
 
+# memory analysis libraries
+from memory_profiler import profile
+from guppy import hpy
+
 # sourced scripts
 # import clgs as clgs_v2
 
+memory_profile_file = open('memory_profile_output.txt', 'a', encoding='utf-8')
+def close_mem_file():
+    memory_profile_file.close()
+
 class TEA:
+    @profile(stream=memory_profile_file)
     def __init__(self, u_sCO2, u_H2O, c_sCO2, c_H2O,
                     Fluid, End_use, Configuration, Flow_user, Hor_length_user, Depth_user, Gradient_user, 
                     Diameter_user, Tin_user, krock_user, Drilling_cost_per_m, O_and_M_cost_plant, Discount_rate,
@@ -54,6 +63,7 @@ class TEA:
         self.P_in = 2e7         #Constant Injection pressure [Pa]
         self.T_in = Tin_user-273.15   #Injection temperature [deg.C]
         
+    @profile(stream=memory_profile_file)
     def verify(self): #Verify inputs are within allowable bounds
         self.error = 0 
         if self.Fluid != 1 and self.Fluid !=2:
@@ -136,6 +146,7 @@ class TEA:
                 self.error = 1
         return self.error
     
+    @profile(stream=memory_profile_file)
     def initialize(self, TandP_dict, u_sCO2, u_H2O, c_sCO2, c_H2O, properties_H2O_pathname, properties_CO2v2_pathname, additional_properties_CO2v2_pathname):
         
         if self.Fluid == 1:
@@ -241,6 +252,7 @@ class TEA:
 
 
 
+    @profile(stream=memory_profile_file)
     def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
         
         if self.Fluid == 1:
@@ -271,6 +283,7 @@ class TEA:
         
         
         
+    @profile(stream=memory_profile_file)
     def calculateLC(self):
         self.Linear_production_temperature = self.InterpolatedTemperatureArray
         self.Linear_production_pressure = self.InterpolatedPressureArray
@@ -315,12 +328,14 @@ class TEA:
             self.error_codes = np.append(self.error_codes,1000)
     
  
+    @profile(stream=memory_profile_file)
     def calculatedrillinglength(self):
         if self.Configuration == 1:
             self.Drilling_length = self.Hor_length_user + 2*self.Depth_user  #Total drilling depth of both wells and lateral in U-loop [m]
         elif self.Configuration == 2:
             self.Drilling_length = self.Hor_length_user + self.Depth_user  #Total drilling depth of well and lateral in co-axial case [m]        
     
+    @profile(stream=memory_profile_file)
     def calculateheatproduction(self):
         #Calculate instantaneous heat production
         self.Average_fluid_density = interpn((self.Pvector,self.Tvector),self.density,np.dstack((0.5*self.P_in + 0.5*self.Linear_production_pressure,0.5*self.T_in + 0.5*self.Linear_production_temperature+273.15))[0])
@@ -345,6 +360,7 @@ class TEA:
         self.calculatepumpingpower()
         
         
+    @profile(stream=memory_profile_file)
     def calculateelectricityproduction(self):
         
         #Calculate instantaneous exergy production, exergy extraction, and electricity generation (MW) and annual electricity generation [kWh]
@@ -456,12 +472,14 @@ class TEA:
         self.FirstYearElectricityProduction = self.Annual_electricity_production[0] #kWh
         self.Inst_Net_Electricity_production = self.Inst_electricity_production-self.PumpingPower #[kW]
 
+    @profile(stream=memory_profile_file)
     def calculatepumpingpower(self):
         #Calculate pumping power
         self.PumpingPower = (self.P_in-self.Linear_production_pressure)*self.Flow_rate/self.Average_fluid_density/self.Pump_efficiency/1e3 #Pumping power [kW]
         self.PumpingPower[self.PumpingPower<0] = 0 #Set negative values to zero (if the production pressure is above the injection pressure, we throttle the fluid)
         self.Annual_pumping_power = 8760/5*(self.PumpingPower[0::4][0:-1]+self.PumpingPower[1::4]+self.PumpingPower[2::4]+self.PumpingPower[3::4]+self.PumpingPower[4::4]) #kWh
             
+    @profile(stream=memory_profile_file)
     def calculatecapex(self):
         self.CAPEX_Drilling = self.Drilling_length*self.Drilling_cost_per_m/1e6 #Drilling capital cost [M$]
         if self.End_use == 1:   #direct-use heating
@@ -474,6 +492,7 @@ class TEA:
         
         self.TotalCAPEX = self.CAPEX_Drilling + self.CAPEX_Surface_Plant           #Total system capital cost (only includes drilling and surface plant cost) [M$]
         
+    @profile(stream=memory_profile_file)
     def calculatopex(self):
         #Calculate OPEX
         if self.End_use == 1: #direct-use heating
@@ -482,6 +501,7 @@ class TEA:
             self.OPEX_Plant = self.O_and_M_cost_plant*self.CAPEX_Surface_Plant  #Annual plant O&M cost [M$/year]
         self.AverageOPEX_Plant = np.average(self.OPEX_Plant)
     
+    @profile(stream=memory_profile_file)
     def printresults(self):
         ### Print results to screen
         print('##################')
