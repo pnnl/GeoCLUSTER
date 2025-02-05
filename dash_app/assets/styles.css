@@ -42,6 +42,8 @@
 #app-container {
     width: 100%;
     max-width: none;
+    height: 100vh;
+    overflow: auto;
 }
 
 .column, .columns {
@@ -85,11 +87,13 @@ hr {
     padding: 0rem 0rem 0rem 1rem;
     display: flex;
     flex-direction: column;
-    min-height: calc(100vh - 5.5rem);
+    /* min-height: calc(100vh - 5.5rem); */
+    height: 100vh;
+    overflow: auto; 
 }
 
 #logo {
-    height: 100%;
+    height: 780;
     width: 100%;
     margin-left: -20px;
 }
@@ -177,7 +181,9 @@ hr {
     width: 60%;
     background-color: var(--greylightblue); 
     padding: 0rem 1rem;
-    min-height: calc(100vh - 5.5rem);
+    /* min-height: calc(100vh - 5.5rem); */
+    height: 100vh;
+    overflow: auto;
 }
 
 #geothermal_card {
@@ -291,7 +297,21 @@ hr {
 /*  border-right: 1px solid var(--selectedblue) !important;*/
 }
 
+/* Input Boxes
+–––––––––––––––––––––––––––––––––––––––––––––––––– */
 
+.name-input-container {
+    display: inline-block;
+}
+.input-title {
+    float: left;
+    padding-right: 10px;
+    font-weight: bold;
+}
+
+/* .input-box {
+    width: 45px;
+} */
 
 /* Dropdowns
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -317,6 +337,9 @@ hr {
     width: 35%;
 }
 
+/* .select-dropdown {
+    width: 50% !important;
+} */
 
 /* Sliders
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
@@ -324,6 +347,7 @@ hr {
 
 #slider-container {
     display: flex;
+    position: relative;
 }
 
 #therm-sliders, #econ-sliders {
@@ -345,14 +369,37 @@ hr {
     padding: 5px 5px 0px 5px;
 }
 
+.param-class-name {
+    text-align: left;
+    padding-left: 10px;
+    color: var(--darkorange);
+    text-transform: uppercase;
+}
+
+.params-div {
+    border: solid 3px var(--darkorange);
+    border-radius: 10px;
+    margin-bottom: 5px;
+    margin-right: 5px;
+    padding-bottom: 5px;
+}
+
+#economics-params-div {
+    border-radius: 10px 10px 0px 0px;
+    border-bottom: none;
+}
 
 #sCO2-card {
-/*    margin-top: 10px;*/
-/*    padding-bottom: 0px;*/
-    border: solid 3px var(--darkorange);
-/*    box-shadow: inset 40px 0px 0px white, 0px 40px 0px 0px var(--darkorange), 0px 0px 1px var(--darkorange) !important;*/
-
+    margin-top: -8px;
+    /* border: solid 3px var(--darkorange); */
+    border-radius: 0px 0px 10px 10px;
+    border-top: none !important;
+    border-right: solid 3px var(--darkorange);
+    border-bottom: solid 3px var(--darkorange);
+    border-left: solid 3px var(--darkorange);
+    display: none;
 }
+
 
 #check-visual-card {
     display: inline-block;
@@ -717,6 +764,7 @@ button:hover{
         width: 100%;
         margin-left: 0px;
         padding: 0.6rem 0.6rem;
+        /* height : 100vh; */
     }
 
     #right-column {

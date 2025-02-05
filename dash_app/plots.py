@@ -100,7 +100,9 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
 
-def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model):
+def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model,
+            Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+            mesh, accuracy, mass_mode, temp_mode):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -182,10 +184,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 if fluid == "sCO2" or fluid == "All":
-                    sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version)
+                    sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
+                                                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                        mesh, accuracy, mass_mode, temp_mode)
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
-                    H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version)
+                    H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
+                                                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                        mesh, accuracy, mass_mode, temp_mode)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -198,10 +204,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 if fluid == "sCO2" or fluid == "All":
-                    sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version)
+                    sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
+                                                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                        mesh, accuracy, mass_mode, temp_mode)
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
-                    H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version)
+                    H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
+                                                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                        mesh, accuracy, mass_mode, temp_mode)
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
             except ValueError as e:
@@ -696,9 +706,10 @@ def generate_econ_lineplots(TandP_dict,
 
         if fluid == "H2O" or fluid == "All":
 
-            print(" ...... H20 HEATING LCOH .... ")
+            # print(" ...... H20 HEATING LCOH .... ")
 
             try:
+                # TODO: update D ... based on radial
                 teaobj_H2O = create_teaobject(TandP_dict,
                                                 u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                 case, end_use, fluid, sbt_version,
@@ -716,8 +727,8 @@ def generate_econ_lineplots(TandP_dict,
                 # print(lcoh_H2O)
 
                 # HERE !!!!! "'TEA' object has no attribute 'LCOH'"
-                print('here')
-                print(teaobj_H2O.Linear_time_distribution)
+                # print('here')
+                # print(teaobj_H2O.Linear_time_distribution)
  
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Instantaneous_heat_production/1e3,
@@ -927,7 +938,7 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    print(error_messages_dict)
+    # print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 

@@ -522,6 +522,28 @@ def toggle_collapse(n, is_open):
     return is_open
 
 @app.callback(
+   [Output(component_id="scenario1-div", component_property="style"),
+   Output(component_id="scenario3-div", component_property="style"),
+   Output(component_id="hr-break1", component_property="style"),
+   ],
+   [Input(component_id="model-select", component_property="value")
+    ],
+   prevent_initial_call=True
+   )
+
+def update_tabs(selected_model):
+
+    if selected_model == "HDF5": 
+
+        return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+
+    elif selected_model == "SBT V1.0": 
+            
+        # TODO: update tabs styline
+        return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+
+
+@app.callback(
    Output(component_id="contour-tab", component_property="style"),
    [Input(component_id="model-select", component_property="value")
     ],
@@ -704,6 +726,16 @@ def flip_to_tab(tab, btn1, btn3):
      Output(component_id='kwe-select', component_property='value'),
      Output(component_id='precool-select', component_property='value'),
      Output(component_id='turb-pout-select', component_property='value'),
+     
+     Output(component_id='Tsurf-select', component_property='value'),
+     Output(component_id='c-select', component_property='value'),
+     Output(component_id='rho-select', component_property='value'),
+    #  Output(component_id='radius-vertical-select', component_property='value'),
+    #  Output(component_id='radius-lateral-select', component_property='value'),
+     Output(component_id='n-laterals-select', component_property='value'),
+     Output(component_id='lateral-flow-select', component_property='value'),
+     Output(component_id='lateral-multiplier-select', component_property='value'),
+
    ],
     [Input(component_id='btn-nclicks-1', component_property='n_clicks'),
      # Input(component_id='btn-nclicks-2', component_property='n_clicks'),
@@ -711,11 +743,13 @@ def flip_to_tab(tab, btn1, btn3):
      Input(component_id="tabs", component_property="value"),
      Input(component_id='case-select', component_property='value'),
      Input(component_id='fluid-select', component_property='value'),
-     Input(component_id='end-use-select', component_property='value')
+     Input(component_id='end-use-select', component_property='value'),
+
+     Input(component_id='model-select', component_property='value')
      ]
 )
 
-def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
+def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
 
     # ----------------------------------------------------------------------------------------------
     # Defines scenario button values when clicked.  
@@ -729,57 +763,109 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
     #
     # ----------------------------------------------------------------------------------------------
 
-    # output = ('utube', 24, 10000, 3500, 0.050, 0.35, 30, 3, 1000, 7.0, 40, 100, 3000, 13, 80) # return to default
+    default_output = (25, # Tsurf
+                      790, # c
+                      2750, # rho
+                      1, # n-laterals
+                      1, # lateral-flow
+                      1 # lateral-multiplier
+                      )
 
-    if "btn-nclicks-1" == ctx.triggered_id:
-        output = (24, 10000, 2500, 0.050, 0.30, 40, 3.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-        return output
-    
-    # elif "btn-nclicks-2" == ctx.triggered_id: 
-    #     if case == 'coaxial':
-    #         output = (77, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-    #         return output
-    #     if case == "utube":
-    #         output = (100, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-    #         return output
+    if model == "HDF5":
+        # output = ('utube', 24, 10000, 3500, 0.050, 0.35, 30, 3, 1000, 7.0, 40, 100, 3000, 13, 80) # return to default
 
-    elif "btn-nclicks-3" == ctx.triggered_id:
+        if "btn-nclicks-1" == ctx.triggered_id:
+            output = (24, 10000, 2500, 0.050, 0.30, 40, 3.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+            return output + default_output
+        
+        # elif "btn-nclicks-2" == ctx.triggered_id: 
+        #     if case == 'coaxial':
+        #         output = (77, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+        #         return output
+        #     if case == "utube":
+        #         output = (100, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+        #         return output
 
-        if case == 'coaxial' and fluid == "H2O" or fluid == "All":
+        elif "btn-nclicks-3" == ctx.triggered_id:
 
-            if end_use == "Electricity":
-                output = (39.2, 20000, 5000, 0.070, 0.444, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            if end_use == "Heating" or end_use == "All":
-                output = (73.4, 13000, 5000, 0.070, 0.444, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            return output
+            if case == 'coaxial' and fluid == "H2O" or fluid == "All":
 
-        if case == 'utube' and fluid == "H2O" or fluid == "All":
+                if end_use == "Electricity":
+                    output = (39.2, 20000, 5000, 0.070, 0.444, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                if end_use == "Heating" or end_use == "All":
+                    output = (73.4, 13000, 5000, 0.070, 0.444, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                return output + default_output
 
-            if end_use == "Electricity":
-                output = (43, 20000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            if end_use == "Heating" or end_use == "All":
-                output = (100, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            return output
+            if case == 'utube' and fluid == "H2O" or fluid == "All":
 
-        if case == 'coaxial' and fluid == "sCO2":
-            
-            if end_use == "Electricity":
-                output = (69.6, 13000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            if end_use == "Heating" or end_use == "All":
-                output = (69.6, 6000, 5000, 0.070, 0.44, 45, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            return output
-            
-        if case == 'utube' and fluid == "sCO2":
-            
-            if end_use == "Electricity":
-                output = (100, 20000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            if end_use == "Heating" or end_use == "All":
-                output = (100, 11000, 5000, 0.070, 0.44, 45, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-            return output
+                if end_use == "Electricity":
+                    output = (43, 20000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                if end_use == "Heating" or end_use == "All":
+                    output = (100, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                return output + default_output
 
-    else:
+            if case == 'coaxial' and fluid == "sCO2":
+                
+                if end_use == "Electricity":
+                    output = (69.6, 13000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                if end_use == "Heating" or end_use == "All":
+                    output = (69.6, 6000, 5000, 0.070, 0.44, 45, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                return output + default_output
+                
+            if case == 'utube' and fluid == "sCO2":
+                
+                if end_use == "Electricity":
+                    output = (100, 20000, 5000, 0.070, 0.44, 60, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                if end_use == "Heating" or end_use == "All":
+                    output = (100, 11000, 5000, 0.070, 0.44, 45, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
+                return output + default_output
+
+        else:
+            raise PreventUpdate
+
+    elif model == "SBT V1.0":
         raise PreventUpdate
 
+
+@app.callback(
+   Output(component_id='model-params-div', component_property='style'), 
+   [Input(component_id="model-select", component_property="value")]
+    )
+
+def show_model_hyperparameters(model):
+
+    if model == "HDF5":
+        return {'display': 'none'}
+        is_title_show = True
+    elif model == "SBT V1.0":
+        return {'display': 'block'}
+
+@app.callback(
+    [Output(component_id="Tsurf-select-div", component_property="style"),
+    Output(component_id="c-select-div", component_property="style"),
+    Output(component_id="rho-select-div", component_property="style"),
+    Output(component_id="radius-vertical-select-div", component_property="style"),
+    Output(component_id="radius-lateral-select-div", component_property="style"),
+    Output(component_id="diameter-select-div", component_property="style"),
+    Output(component_id="n-laterals-select", component_property="style"),
+    Output(component_id="lateral-flow-select", component_property="style"),
+    Output(component_id="lateral-multiplier-select", component_property="style"),
+    ],
+   [Input(component_id="model-select", component_property="value"),
+    ],
+    prevent_initial_call=True
+    )
+
+def show_model_params(model):
+
+    b = {'display': 'block'}
+    n = {'display': 'none'}
+
+    if model == "HDF5":
+        return n, n, n, n, n, b, n, n, n
+
+    if model == "SBT V1.0":
+        return b, b, b, b, b, b, b, b, b
 
 
 @app.callback(
@@ -787,7 +873,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
     Output(component_id='L2-select-div', component_property='style'),
     Output(component_id='L1-select-div', component_property='style'),
     Output(component_id='grad-select-div', component_property='style'),
-    Output(component_id='diameter-select-div', component_property='style'),
+    Output(component_id='diameter-select-div', component_property='style', allow_duplicate=True),
     Output(component_id='Tinj-select-div', component_property='style'),
     Output(component_id='k-select-div', component_property='style'),
 
@@ -798,85 +884,127 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use):
     Output(component_id='kwe-div', component_property='style'),
     Output(component_id='precool-div', component_property='style'),
     Output(component_id='turb-pout-div', component_property='style'),
+    Output(component_id='economics-params-div', component_property='style'),
+    # Output(component_id='sCO2-card', component_property='style', allow_duplicate=True),
+    
+
+    #  Output(component_id='Tsurf-select-div', component_property='style'),
+    #  Output(component_id='c-select-div', component_property='style'),
+    #  Output(component_id='rho-select-div', component_property='style'),
+    #  Output(component_id='radius-vertical-select-div', component_property='style'),
+    #  Output(component_id='radius-lateral-select-div', component_property='style'),
+    #  Output(component_id='n-laterals-select-div', component_property='style'),
+    #  Output(component_id='lateral-flow-select-div', component_property='style'),
+    #  Output(component_id='lateral-multiplier-select-div', component_property='style'),
 
    ],
    [Input(component_id='param-select', component_property='value'),
     Input(component_id="tabs", component_property="value"),
     Input(component_id="fluid-select", component_property="value"),
-    Input(component_id="end-use-select", component_property="value")
-    ])
+    Input(component_id="end-use-select", component_property="value"),
+    Input(component_id="model-select", component_property="value")
+    ],
+    prevent_initial_call=True,
+    )
 
-def show_hide_element(visibility_state, at, fluid, end_use):
+def show_hide_element(visibility_state, at, fluid, end_use, model):
 
     # ----------------------------------------------------------------------------------------------
     # Reveals or hides sliders depending on which tab selected and which dropdowns.
     # ----------------------------------------------------------------------------------------------
 
+    b = {'display': 'block'}
+    n = {'display': 'none'}
+
+    econ_parms_div_style = {
+        'display': 'block',
+        "border": "solid 3px #c4752f",
+        "border-radius": "10px",
+        "margin-bottom": "5px",
+        "margin-right": "5px",
+        "padding-bottom": "5px",
+    }
+
+    econ_parms_div_style_2 = {
+        'display': 'block',
+        "border": "solid 3px #c4752f",
+        "border-radius": "10px 10px 0px 0px",
+        "margin-bottom": "5px",
+        "margin-right": "5px",
+        "padding-bottom": "5px",
+        "border-bottom": "none"
+    }
+
+    # if model == "HDF5":
     if at == "about-tab":
         if fluid == "H2O" or end_use == "Heating":
-            return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'},\
-                    {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
+            return b, b, b, b, b, b, b,\
+                    b, b, b, b, b, n, n, econ_parms_div_style
         else:
-            return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'},\
-                    {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+            return b, b, b, b, b, b, b,\
+                    b, b, b, b, b, b, b, econ_parms_div_style_2
     
     elif at == "energy-time-tab":
-        return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+        return b, b, b, b, b, b, b, \
+                n, n, n, n, n, n, n, n
     
     elif at == "energy-tab":
-
+        
         if visibility_state == param_list[0]:
-            return {'display': 'none'}, {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, n, b, b, b, b, b, \
+                    n, n, n, n, n, n, n, n
         if visibility_state == param_list[1]:
-            return {'display': 'none'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, b, n, b, b, b, b, \
+                    n, n, n, n, n, n, n, n
         if visibility_state == param_list[2]:
-            return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, b, b, n, b, b, b, \
+                    n, n, n, n, n, n, n, n
         if visibility_state == param_list[3]:
-            return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, b, b, b, n, b, b, \
+                    n, n, n, n, n, n, n, n
         if visibility_state == param_list[4]:
-            return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, b, b, b, b, n, b, \
+                    n, n, n, n, n, n, n, n
         if visibility_state == param_list[5]:
-            return {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, \
-                    {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+            return n, b, b, b, b, b, n, \
+                    n, n, n, n, n, n, n, n
     
     elif at == "economics-time-tab":
         if fluid == "H2O":
             if end_use == "All":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, b, b, n, n, econ_parms_div_style
             if end_use == "Heating":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, b, n, n, n, econ_parms_div_style
             if end_use == "Electricity":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, n, b, n, n, econ_parms_div_style
 
         else:
             if end_use == "All":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, b, b, b, b, econ_parms_div_style_2
             if end_use == "Heating":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, b, n, n, n, econ_parms_div_style
             if end_use == "Electricity":
-                return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                        {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+                return b, b, b, b, b, b, b, \
+                        b, b, b, n, b, b, b, econ_parms_div_style_2
 
     elif at == "summary-tab":
         if fluid == "H2O":
-            return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'none'}, {'display': 'none'}
+            return b, b, b, b, b, b, b, \
+                    b, b, b, b, b, n, n, econ_parms_div_style
         else:
-            return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, \
-                    {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+            return b, b, b, b, b, b, b, \
+                    b, b, b, b, b, b, b, econ_parms_div_style_2
     else:
         raise PreventUpdate
+
+    # elif model == "SBT V1.0":
+    #     raise PreventUpdate
+
 
 @app.callback(
    [Output(component_id='sCO2-card', component_property='style'),
@@ -891,15 +1019,19 @@ def show_hide_element(visibility_state, at, fluid, end_use):
 
 def show_hide_detailed_card(tab, fluid, end_use):
 
+    # TODO fix CSS
+
     if tab == "energy-time-tab" or tab == "energy-tab":
         return {'border': 'solid 0px white'}, {'display': 'none'}, {'display': 'none'}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
 
         if fluid == "H2O" or end_use == "Heating":
+            # print('h20 heat')
             return {'border': 'solid 0px white'}, {'display': 'none'}, {'display': 'none'}
         else:
-            return {'border': 'solid 3px #c4752f'}, {'display': 'block'}, {'display': 'inline-block'}
+            # print('all other options')
+            return {'border': 'solid 3px #c4752f', 'display': 'block'}, {'display': 'block'}, {'display': 'inline-block'}
         
 
 # -----------------------------------------------------------------------------
@@ -926,11 +1058,28 @@ def show_hide_detailed_card(tab, fluid, end_use):
      Input(component_id="k-select", component_property="value"),
      Input(component_id='radio-graphic-control3', component_property='value'),
      Input(component_id='model-select', component_property='value'),
+     
      # more variables 
+     Input(component_id='Tsurf-select', component_property='value'),
+     Input(component_id='c-select', component_property='value'),
+     Input(component_id='rho-select', component_property='value'),
+     Input(component_id='radius-vertical-select', component_property='value'),
+     Input(component_id='radius-lateral-select', component_property='value'),
+     Input(component_id='n-laterals-select', component_property='value'),
+     Input(component_id='lateral-flow-select', component_property='value'),
+     Input(component_id='lateral-multiplier-select', component_property='value'),
+
+     Input(component_id='mesh-select', component_property='value'),
+     Input(component_id='accuracy-select', component_property='value'),
+     Input(component_id='mass-mode-select', component_property='value'),
+     Input(component_id='temp-mode-select', component_property='value'),
+
     ],
 )
 
-def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model):
+def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
+                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                        mesh, accuracy, mass_mode, temp_mode):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -938,7 +1087,9 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
 
     # if HDF5:
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
-        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model
+        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
+        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+        mesh, accuracy, mass_mode, temp_mode
     )
     # if SBT:
 
