@@ -1,0 +1,10 @@
+[ TOP 10 DIFFERENCES ]/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:505: size=710 KiB (+710 KiB), count=7051 (+7051), average=103 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:498: size=330 KiB (+330 KiB), count=7048 (+7048), average=48 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:193: size=330 KiB (+330 KiB), count=7047 (+7047), average=48 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:499: size=324 KiB (+324 KiB), count=3 (+3), average=108 KiB
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:558: size=269 KiB (+269 KiB), count=4538 (+4537), average=61 B
+<frozen importlib._bootstrap_external>:752: size=963 KiB (+184 KiB), count=8959 (+1701), average=110 B
+/Users/bern700/git_repositories/VENV/GLOBAL/lib/python3.12/site-packages/guppy/heapy/Classifiers.py:115: size=15.8 KiB (-166 KiB), count=138 (-2946), average=117 B
+<frozen posixpath>:88: size=149 KiB (+148 KiB), count=1027 (+1022), average=148 B
+/Users/bern700/git_repositories/VENV/GLOBAL/lib/python3.12/site-packages/guppy/heapy/Part.py:672: size=0 B (-121 KiB), count=0 (-1719)
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:502: size=47.8 KiB (+47.8 KiB), count=1531 (+1531), average=32 B

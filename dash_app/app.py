@@ -885,12 +885,12 @@ def show_model_hyperparameters(model):
         return {'display': 'block'}
 
 @app.callback(
-    [Output(component_id="Tsurf-select", component_property="style"),
-    Output(component_id="c-select", component_property="style"),
-    Output(component_id="rho-select", component_property="style"),
-    Output(component_id="radius-vertical-select", component_property="style"),
-    Output(component_id="radius-lateral-select", component_property="style"),
-    Output(component_id="diameter-select", component_property="style"),
+    [Output(component_id="Tsurf-select-div", component_property="style"),
+    Output(component_id="c-select-div", component_property="style"),
+    Output(component_id="rho-select-div", component_property="style"),
+    Output(component_id="radius-vertical-select-div", component_property="style"),
+    Output(component_id="radius-lateral-select-div", component_property="style"),
+    Output(component_id="diameter-select-div", component_property="style", allow_duplicate=True),
     Output(component_id="n-laterals-select", component_property="style"),
     Output(component_id="lateral-flow-select", component_property="style"),
     Output(component_id="lateral-multiplier-select", component_property="style"),
@@ -1455,7 +1455,7 @@ server = app.server
 
 @profile(stream=memory_profile_file)
 def run_server():
-    app.run_server(port=8060, debug=False)
+    app.run_server(port=8060, debug=True)
 
 def handle_sigint(signum, frame):
 

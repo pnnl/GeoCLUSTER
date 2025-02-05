@@ -1,0 +1,14 @@
+Heap Summary:
+Partition of a set of 834365 objects. Total size = 141113475 bytes.
+ Index  Count   %     Size   % Cumulative  % Kind (class / dict of class)
+     0 248728  30 35090339  25  35090339  25 str
+     1  50892   6 20374600  14  55464939  39 types.CodeType
+     2    318   0 20294130  14  75759069  54 numpy.ndarray
+     3 183022  22 14091640  10  89850709  64 tuple
+     4 104174  12  8830117   6  98680826  70 bytes
+     5  48204   6  7712640   5 106393466  75 function
+     6   5558   1  7359648   5 113753114  81 type
+     7  13917   2  4001680   3 117754794  83 dict (no owner)
+     8   2535   0  2569872   2 120324666  85 dict of module
+     9   5413   1  2074896   1 122399562  87 dict of type
+<1700 more rows. Type e.g. '_.more' to view.>

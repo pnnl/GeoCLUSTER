@@ -1,0 +1,10 @@
+[ TOP 10 MEMORY CONSUMING LINES ]/Users/bern700/git_repositories/VENV/GLOBAL/lib/python3.12/site-packages/guppy/heapy/ImpSet.py:20: size=32.2 MiB, count=1971, average=16.8 KiB
+<frozen importlib._bootstrap_external>:752: size=3854 KiB, count=20862, average=189 B
+<frozen os>:373: size=1859 KiB, count=33677, average=57 B
+/Users/bern700/git_repositories/VENV/GLOBAL/lib/python3.12/site-packages/guppy/heapy/Classifiers.py:35: size=1000 KiB, count=15992, average=64 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:498: size=859 KiB, count=18319, average=48 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:193: size=859 KiB, count=18318, average=48 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/linecache.py:137: size=789 KiB, count=7972, average=101 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:505: size=749 KiB, count=11071, average=69 B
+<frozen abc>:123: size=567 KiB, count=5420, average=107 B
+/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/tracemalloc.py:558: size=429 KiB, count=7630, average=58 B
