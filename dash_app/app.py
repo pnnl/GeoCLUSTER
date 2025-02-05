@@ -841,12 +841,12 @@ def show_model_hyperparameters(model):
         return {'display': 'block'}
 
 @app.callback(
-    [Output(component_id="Tsurf-select", component_property="style"),
-    Output(component_id="c-select", component_property="style"),
-    Output(component_id="rho-select", component_property="style"),
-    Output(component_id="radius-vertical-select", component_property="style"),
-    Output(component_id="radius-lateral-select", component_property="style"),
-    Output(component_id="diameter-select", component_property="style"),
+    [Output(component_id="Tsurf-select-div", component_property="style"),
+    Output(component_id="c-select-div", component_property="style"),
+    Output(component_id="rho-select-div", component_property="style"),
+    Output(component_id="radius-vertical-select-div", component_property="style"),
+    Output(component_id="radius-lateral-select-div", component_property="style"),
+    Output(component_id="diameter-select-div", component_property="style"),
     Output(component_id="n-laterals-select", component_property="style"),
     Output(component_id="lateral-flow-select", component_property="style"),
     Output(component_id="lateral-multiplier-select", component_property="style"),
@@ -873,7 +873,7 @@ def show_model_params(model):
     Output(component_id='L2-select-div', component_property='style'),
     Output(component_id='L1-select-div', component_property='style'),
     Output(component_id='grad-select-div', component_property='style'),
-    Output(component_id='diameter-select-div', component_property='style'),
+    Output(component_id='diameter-select-div', component_property='style', allow_duplicate=True),
     Output(component_id='Tinj-select-div', component_property='style'),
     Output(component_id='k-select-div', component_property='style'),
 
