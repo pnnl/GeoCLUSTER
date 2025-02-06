@@ -722,6 +722,7 @@ def generate_econ_lineplots(TandP_dict,
                                                 is_H20=True, is_heating=True
                                                 )
                 lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
+                # print(lcoh_H2O)
                 # print("Error on LCOH ... ")
                 # print(teaobj_H2O)
                 # print(lcoh_H2O)
@@ -854,7 +855,6 @@ def generate_econ_lineplots(TandP_dict,
 
         if fluid == "H2O" or fluid == "All":
 
-            # HERE !!!!! ATTRIBUTE "'TEA' object has no attribute 'Inst_Net_Electricity_production'"} 
             try:
                 teaobj_H2O = create_teaobject(TandP_dict,
                                                 u_sCO2, u_H2O, c_sCO2, c_H2O,

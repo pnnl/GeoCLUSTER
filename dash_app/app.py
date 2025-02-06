@@ -535,12 +535,20 @@ def update_tabs(selected_model):
 
     if selected_model == "HDF5": 
 
+        print(" ----------------------------- ")
+        print("HDF5")
+
         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
 
     elif selected_model == "SBT V1.0": 
-            
+        
+        print(" ----------------------------- ")
+        print("SBT")
         # TODO: update tabs styline
         return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+
+    else:
+        raise PreventUpdate
 
 
 @app.callback(
@@ -1085,6 +1093,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
+    print('subsurface')
     # if HDF5:
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
@@ -1121,6 +1130,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
+    print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
     )
@@ -1176,6 +1186,8 @@ def update_econ_plots(TandP_dict,
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the economic results.
     # -----------------------------------------------------------------------------
+
+    print('economics')
 
     if checklist == [' ']:
         is_plot_ts = True

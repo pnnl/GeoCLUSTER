@@ -168,7 +168,9 @@ class TEA:
             self.DiameterVector = self.u_sCO2.D #length of 3
             self.TinVector = self.u_sCO2.Tinj #length of 3
             self.KrockVector = self.u_sCO2.k #length of 3   
-            self.Fluid_name = 'CarbonDioxide'           
+            self.Fluid_name = 'CarbonDioxide'     
+
+   
             
         self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
         
@@ -259,8 +261,6 @@ class TEA:
         self.Tout[0] = self.Tout[1]
         self.Pout[0] = self.Pout[1]
         
-        # print(self.Pout[1:10])
-        # print(self.Tout)
         # print("first temp: ", self.Tout[1])
         # print("last temp: ", self.Tout[-1])
         # print("inj temp: ", self.TinVector)
@@ -277,9 +277,25 @@ class TEA:
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
 
         # print(self.Linear_production_temperature[1:10]) # AB: way too low
-        print(" ---------------------------- ")
-        print(self.AveProductionTemperature)
         
+        if self.Fluid_name == "Water":
+            # print(self.Linear_time_distribution) # ok
+            # print(self.timearray) # ok
+                # print(self.FlowRateVector) # same
+                # print(self.HorizontalLengthVector, self.DepthVector, self.GradientVector, self.DiameterVector, self.TinVector, self.KrockVector) #same
+            if self.End_use == 2:
+                print("TEA START")
+                print(self.Fluid_name, self.End_use)
+                print("avg prod temp: ", self.AveProductionTemperature)
+                print("Pout: ", self.Pout[1:10])
+                print("Tout: ", self.Tout[1:10])
+                print(self.Tout.shape)
+                print(self.timearray.shape)
+                # print(self.indexclosestlifetime) # same
+                # print(self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]) # closest lifetime # same
+                # print(self.Lifetime) # same 
+                # self.Tout[0:self.indexclosestlifetime+1]-273.15 # same 
+                print("Interp Temp Array: ", self.InterpolatedTemperatureArray[1:10])        
 
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
         self.Flow_rate = self.Flow_user #Total flow rate [kg/s]
@@ -328,7 +344,7 @@ class TEA:
         self.hinj = interpn((self.Pvector,self.Tvector),self.enthalpy,np.array([self.P_in,self.T_in+273.15]))
         self.Instantaneous_heat_production = self.Flow_rate*(self.hprod - self.hinj)/1000 #Heat production based on produced minus injected enthalpy [kW]
         
-        print(self.Instantaneous_heat_production.shape)
+        # print(self.Instantaneous_heat_production.shape)
 
         #Calculate annual heat production (kWh)
         self.Annual_heat_production = 8760/5*(self.Instantaneous_heat_production[0::4][0:-1]+self.Instantaneous_heat_production[1::4]+self.Instantaneous_heat_production[2::4]+self.Instantaneous_heat_production[3::4]+self.Instantaneous_heat_production[4::4])
