@@ -104,6 +104,7 @@ def create_teaobject(TandP_dict,
                                           properties_H2O_pathname, 
                                           properties_CO2v2_pathname, 
                                           additional_properties_CO2v2_pathname)
+
     # get interpolated temperature and pressure array
     teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
     teaobject.calculateLC() # ERROR STARTS HERE

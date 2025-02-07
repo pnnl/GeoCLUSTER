@@ -33,7 +33,8 @@ run_sbt(
 
              ## Operations
             clg_configuration=2, mdot=24, Tinj=30, fluid=1, ## Operations
-            DrillingDepth_L1=3500, HorizontalExtent_L2=10000.0, #BoreholeDiameter=1, ## Wellbore Geometry
+            DrillingDepth_L1=3.5, HorizontalExtent_L2=10.0, #BoreholeDiameter=1, ## Wellbore Geometry
+            # DrillingDepth_L1=3500, HorizontalExtent_L2=10000.0, #BoreholeDiameter=1, ## Wellbore Geometry
             Diameter1=0.3500, Diameter2=0.3500, PipeParam3=1, PipeParam4=[1],  #0.006
             PipeParam5=1, ## Tube Geometry
 

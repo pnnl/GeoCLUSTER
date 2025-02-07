@@ -524,7 +524,7 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsF
         SMatrix[i, :] = np.sqrt((elementcenters[i, 0] - elementcenters[:, 0])**2 + (elementcenters[i, 1] - elementcenters[:, 1])**2 + (elementcenters[i, 2] - elementcenters[:, 2])**2)
         SoverL[i, :] = SMatrix[i, :] / Deltaz[i] #Calculates the ratio of spacing between two elements and element length
     
-    return Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new
+    return Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new, finitecorrectiony
 
 
 
@@ -647,7 +647,7 @@ def run_sbt(
     ### PRECALCULATIONS (model accuracy parameters integrated here)
     # precalculate the thermal response with a line and cylindrical heat source. Precalculating allows to speed up the SBT algorithm.
     # precalculate finite pipe correction
-    Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new = precalculations(
+    Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new, finitecorrectiony = precalculations(
                                                                 clg_configuration=clg_configuration, 
                                                                 Deltaz=Deltaz, alpha_m=alpha_m, k_m=k_m, 
                                                                 times=times, 

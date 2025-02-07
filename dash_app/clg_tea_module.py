@@ -4,7 +4,8 @@
 # data manipulation libraries
 import numpy as np
 import scipy.io
-from scipy.interpolate import interpn
+from scipy.interpolate import interpn, interp1d
+# import pdb
 
 # sourced scripts
 # import clgs as clgs_v2
@@ -245,16 +246,57 @@ class TEA:
 
     def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
         
+        hdf5_times = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 
+                        2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75,
+                        5, 5.25, 5.5, 5.75, 6, 6.25, 6.5, 6.75, 7, 7.25, 
+                        7.5, 7.75, 8, 8.25, 8.5, 8.75, 9, 9.25, 9.5, 9.75, 
+                        10, 10.25, 10.5, 10.75, 11, 11.25, 11.5, 11.75,
+                        12, 12.25, 12.5, 12.75, 13, 13.25, 13.5, 13.75, 
+                        14, 14.25, 14.5, 14.75, 15, 15.25, 15.5, 15.75, 
+                        16, 16.25, 16.5, 16.75, 17, 17.25, 17.5, 17.75, 18, 
+                        18.25, 18.5, 18.75, 19, 19.25, 19.5, 19.75, 20, 20.25, 
+                        20.5, 20.75, 21, 21.25, 21.5, 21.75, 22, 22.25, 22.5, 
+                        22.75, 23, 23.25, 23.5, 23.75, 24, 24.25, 24.5, 24.75, 
+                        25, 25.25, 25.5, 25.75, 26, 26.25, 26.5, 26.75, 27, 
+                        27.25, 27.5, 27.75, 28, 28.25, 28.5, 28.75, 29, 29.25, 29.5, 
+                        29.75, 30, 30.25, 30.5, 30.75, 31, 31.25, 31.5, 31.75, 32, 32.25,
+                        32.5, 32.75, 33, 33.25, 33.5, 33.75, 34, 34.25, 34.5, 34.75, 35,
+                        35.25, 35.5, 35.75, 36, 36.25, 36.5, 36.75, 37, 37.25, 37.5,
+                        37.75, 38, 38.25, 38.5, 38.75, 39, 39.25, 39.5, 39.75, 40]
+  
         if self.Fluid == 1:
+            print("HERE")
             # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
-            self.Tout = np.array(TandP_dict["H2O_Tout"])
+            # self.Tout = np.array(TandP_dict["H2O_Tout"])
             self.Pout = np.array(TandP_dict["H2O_Pout"])
-            times = TandP_dict["time"]
+            # pdb.set_trace()
+            # print(hdf5_times)
+            print(" ****************** ")
+            print(np.array(hdf5_times))
+            print(TandP_dict["time"])
+            print(TandP_dict["H2O_Tout"])
+            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+            print(f)
+            try:
+                self.Tout = f(np.array(hdf5_times))
+            except Exception as e:
+                print(e)
+            print("YES")
+            print(self.Tout)
+            
+
+            # self.Tout = interp1d(np.array(hdf5_times), np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"])) # np.interp1d
+            # self.timearray = SBT_newtime #TandP_dict["time"]
+            # times = TandP_dict["time"]
 
         elif self.Fluid == 2:
-            self.Tout = np.array(TandP_dict["sCO2_Tout"])
+            # self.Tout = np.array(TandP_dict["sCO2_Tout"])
+            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+            self.Tout = f(np.array(hdf5_times))
             self.Pout = np.array(TandP_dict["sCO2_Pout"])
-            times = TandP_dict["time"]
+            
+            # times = TandP_dict["time"]
+            # self.timearray = TandP_dict["time"]
             # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
 
         #Initial time correction (Correct production temperature and pressure at time 0 (the value at time 0 [=initial condition] is not a good representation for the first few months)
@@ -285,14 +327,17 @@ class TEA:
                 # print(self.HorizontalLengthVector, self.DepthVector, self.GradientVector, self.DiameterVector, self.TinVector, self.KrockVector) #same
             if self.End_use == 2:
                 print("TEA START")
+                print(self.timearray)
+                # print(times)
+                print("----------")
                 print(self.Fluid_name, self.End_use)
                 print("avg prod temp: ", self.AveProductionTemperature)
                 print("Pout: ", self.Pout[1:10])
                 print("Tout: ", self.Tout[1:10])
                 print(self.Tout.shape)
                 print(self.timearray.shape)
-                # print(self.indexclosestlifetime) # same
-                # print(self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]) # closest lifetime # same
+                print(self.indexclosestlifetime) # same
+                print(self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]) # closest lifetime # same
                 # print(self.Lifetime) # same 
                 # self.Tout[0:self.indexclosestlifetime+1]-273.15 # same 
                 print("Interp Temp Array: ", self.InterpolatedTemperatureArray[1:10])        
