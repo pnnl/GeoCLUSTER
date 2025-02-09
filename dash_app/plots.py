@@ -938,7 +938,7 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    print(error_messages_dict)
+    # print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 

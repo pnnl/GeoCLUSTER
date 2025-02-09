@@ -265,36 +265,24 @@ class TEA:
                         37.75, 38, 38.25, 38.5, 38.75, 39, 39.25, 39.5, 39.75, 40]
   
         if self.Fluid == 1:
-            print("HERE")
             # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
             # self.Tout = np.array(TandP_dict["H2O_Tout"])
             self.Pout = np.array(TandP_dict["H2O_Pout"])
-            # pdb.set_trace()
-            # print(hdf5_times)
-            print(" ****************** ")
-            print(np.array(hdf5_times))
-            print(TandP_dict["time"])
-            print(TandP_dict["H2O_Tout"])
             f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
-            print(f)
             try:
                 self.Tout = f(np.array(hdf5_times))
             except Exception as e:
                 print(e)
-            print("YES")
-            print(self.Tout)
-            
-
-            # self.Tout = interp1d(np.array(hdf5_times), np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"])) # np.interp1d
-            # self.timearray = SBT_newtime #TandP_dict["time"]
             # times = TandP_dict["time"]
 
         elif self.Fluid == 2:
             # self.Tout = np.array(TandP_dict["sCO2_Tout"])
             f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
-            self.Tout = f(np.array(hdf5_times))
+            try:
+                self.Tout = f(np.array(hdf5_times))
+            except Exception as e:
+                print(e)
             self.Pout = np.array(TandP_dict["sCO2_Pout"])
-            
             # times = TandP_dict["time"]
             # self.timearray = TandP_dict["time"]
             # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
@@ -303,15 +291,9 @@ class TEA:
         self.Tout[0] = self.Tout[1]
         self.Pout[0] = self.Pout[1]
         
-        # print("first temp: ", self.Tout[1])
-        # print("last temp: ", self.Tout[-1])
-        # print("inj temp: ", self.TinVector)
-
         #Extract Tout and Pout over lifetime
         self.InterpolatedTemperatureArray = self.Tout[0:self.indexclosestlifetime+1]-273.15
         self.InterpolatedPressureArray = self.Pout[0:self.indexclosestlifetime+1]
-        
-        
         
     def calculateLC(self):
         self.Linear_production_temperature = self.InterpolatedTemperatureArray
@@ -320,27 +302,27 @@ class TEA:
 
         # print(self.Linear_production_temperature[1:10]) # AB: way too low
         
-        if self.Fluid_name == "Water":
-            # print(self.Linear_time_distribution) # ok
-            # print(self.timearray) # ok
-                # print(self.FlowRateVector) # same
-                # print(self.HorizontalLengthVector, self.DepthVector, self.GradientVector, self.DiameterVector, self.TinVector, self.KrockVector) #same
-            if self.End_use == 2:
-                print("TEA START")
-                print(self.timearray)
-                # print(times)
-                print("----------")
-                print(self.Fluid_name, self.End_use)
-                print("avg prod temp: ", self.AveProductionTemperature)
-                print("Pout: ", self.Pout[1:10])
-                print("Tout: ", self.Tout[1:10])
-                print(self.Tout.shape)
-                print(self.timearray.shape)
-                print(self.indexclosestlifetime) # same
-                print(self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]) # closest lifetime # same
-                # print(self.Lifetime) # same 
-                # self.Tout[0:self.indexclosestlifetime+1]-273.15 # same 
-                print("Interp Temp Array: ", self.InterpolatedTemperatureArray[1:10])        
+        # if self.Fluid_name == "Water":
+        #     # print(self.Linear_time_distribution) # ok
+        #     # print(self.timearray) # ok
+        #         # print(self.FlowRateVector) # same
+        #         # print(self.HorizontalLengthVector, self.DepthVector, self.GradientVector, self.DiameterVector, self.TinVector, self.KrockVector) #same
+        #     if self.End_use == 2:
+        #         print("TEA START")
+        #         print(self.timearray)
+        #         # print(times)
+        #         print("----------")
+        #         print(self.Fluid_name, self.End_use)
+        #         print("avg prod temp: ", self.AveProductionTemperature)
+        #         print("Pout: ", self.Pout[1:10])
+        #         print("Tout: ", self.Tout[1:10])
+        #         print(self.Tout.shape)
+        #         print(self.timearray.shape)
+        #         print(self.indexclosestlifetime) # same
+        #         print(self.timearray.flat[np.abs(self.timearray - self.Lifetime).argmin()]) # closest lifetime # same
+        #         # print(self.Lifetime) # same 
+        #         # self.Tout[0:self.indexclosestlifetime+1]-273.15 # same 
+        #         print("Interp Temp Array: ", self.InterpolatedTemperatureArray[1:10])        
 
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
         self.Flow_rate = self.Flow_user #Total flow rate [kg/s]

@@ -92,6 +92,7 @@ discount_dict = {0: '0', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '',
 precool_dict = {0: '0', 5: '', 10: '', 15: '', 20: '', 25: '', 30: '', 35: '', 40: '40'}
 
 fineness_dict = {0: '0 (coarse)', 1: '', 2: '', 3: '', 4: '', 5: '5 (fine)'}
+accuracy_dict = {1: '1 (coarse)', 2: '', 3: '', 4: '', 5: '5 (fine)'}
 
 # new slider labels
 # grad_dict = {0.01: '0.01', 0.1: '0.1'}
@@ -334,8 +335,8 @@ def slider_card():
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=5, 
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"]),
-                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=0, max_v=5, 
-                                                                mark_dict=fineness_dict, step_i=1,start_v=start_vals_sbt["accuracy"]),
+                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
+                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"]),
                                                     html.Div(
                                                         className="name-input-container",
                                                         children=[
