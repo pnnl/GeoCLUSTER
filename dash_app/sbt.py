@@ -15,8 +15,9 @@ from traceback import print_stack
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
 # sourced scripts
-is_plot = True
+is_plot = False
 is_app = True
+from plot_sbt_plotly import plot_borehole_geometry_plotly
 from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
 from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 
@@ -600,10 +601,10 @@ def run_sbt(
     globals().update(sbt_hyperparams_dict)
     # print(sbt_hyperparams_dict.keys())
 
-    if is_plot:
-        plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
-                                x=x, y=y, z=z, 
-                                xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
+    # if is_plot:
+    plot_borehole_geometry_plotly(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
+                            x=x, y=y, z=z, 
+                            xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
 
     #%% ----------------
     # 2. Pre-Processing
