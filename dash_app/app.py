@@ -17,6 +17,8 @@
 # print(installed_packages_list)
 # print(help("modules"))
 
+import time
+
 # web app and interactive graphics libraries 
 import dash
 from dash.dependencies import Input, Output, State
@@ -261,42 +263,25 @@ energy_time_tab = dcc.Tab(label='Subsurface Results',
                             graph_guidance_card(btnID="collapse-button2", cardID="collapse2", dropdown_children=html.P(dropdown_text1)),
                             html.Div(id="error_block_div1"), 
                             html.Br(),
-                            # TODO: Experiment more on skeleton loading
-                            # dcc.Loading(
-                            #     type='circle',
-                            #     children=[
-                            #             html.Div(id="graphics-container",
-                            #                 children=[
-                            #                         dcc.Graph(id="geothermal_time_plots",
-                            #                                 config=plotly_config),
-                            #                         dbc.RadioItems(
-                            #                                 options=[
-                            #                                     {"label": "Auto Scale", "value": 1},
-                            #                                     {"label": "Full Scale", "value": 2},
-                            #                                 ],
-                            #                                 value=1,
-                            #                                 id="radio-graphic-control3",
-                            #                             ),
-                            #                 ]
-
-                            #         )
-                            #     ]
-                            # ),
-                            html.Div(id="graphics-container",
+                            html.Div(
+                                    id="graphics-parent",
                                     children=[
-                                            dcc.Graph(id="geothermal_time_plots",
-                                                    config=plotly_config),
-                                            dbc.RadioItems(
-                                                    options=[
-                                                        {"label": "Auto Scale", "value": 1},
-                                                        {"label": "Full Scale", "value": 2},
-                                                    ],
-                                                    value=1,
-                                                    id="radio-graphic-control3",
-                                                ),
-                                    ]
+                                            html.Div(id="graphics-container",
+                                            children=[
+                                                    dcc.Graph(id="geothermal_time_plots",
+                                                            config=plotly_config),
+                                                    dbc.RadioItems(
+                                                            options=[
+                                                                {"label": "Auto Scale", "value": 1},
+                                                                {"label": "Full Scale", "value": 2},
+                                                            ],
+                                                            value=1,
+                                                            id="radio-graphic-control3",
+                                                        ),
+                                            ]
 
-                                )
+                                        )
+                                ])
 
                 ])
 
@@ -349,25 +334,29 @@ economics_time_tab = dcc.Tab(label='Economic Results',
                             html.Div(id="warning_block_div3"),
                             html.Div(id="error_block_div3"), 
                             html.Br(),
-                            html.Div(id="graphics-container-econ",
+                            html.Div(
+                                    id="graphics-parent-econ",
                                     children=[
-                                        dcc.Graph(id="econ_plots",
-                                                    config=plotly_config),
-                                        dbc.RadioItems(
-                                                    options=[
-                                                        {"label": "Auto Scale", "value": 1},
-                                                        {"label": "Full Scale", "value": 2},
-                                                    ],
-                                                    value=1,
-                                                    id="radio-graphic-control4",
-                                                ),
-                                        html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-                                        # html.P("sCO2 only", id="ts-subtext")
-                                        # dcc.Graph(id="ts_plot",
-                                        #             config=plotly_config),
-                                    ]
+                                        html.Div(id="graphics-container-econ",
+                                                children=[
+                                                    dcc.Graph(id="econ_plots",
+                                                                config=plotly_config),
+                                                    dbc.RadioItems(
+                                                                options=[
+                                                                    {"label": "Auto Scale", "value": 1},
+                                                                    {"label": "Full Scale", "value": 2},
+                                                                ],
+                                                                value=1,
+                                                                id="radio-graphic-control4",
+                                                            ),
+                                                    html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
+                                                    # html.P("sCO2 only", id="ts-subtext")
+                                                    # dcc.Graph(id="ts_plot",
+                                                    #             config=plotly_config),
+                                                ]
 
-                                )
+                                            )
+                                    ])
 
                 ])
 
@@ -535,12 +524,133 @@ def update_tabs(selected_model):
 
     if selected_model == "HDF5": 
 
+        print(" ----------------------------- ")
+        print("HDF5")
+
         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
 
     elif selected_model == "SBT V1.0": 
-            
+        
+        print(" ----------------------------- ")
+        print("SBT")
         # TODO: update tabs styline
         return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+#    [
+    Output(component_id="graphics-parent", component_property="children"),
+    # Output(component_id="graphics-parent-econ", component_property="children"),
+#    ],
+   Input(component_id="model-select", component_property="value"),
+   prevent_initial_call=True
+   )
+
+def update_loading(selected_model):
+
+    if selected_model == "HDF5": 
+
+        return html.Div(id="graphics-container",
+                                            children=[
+                                                    dcc.Graph(id="geothermal_time_plots",
+                                                            config=plotly_config),
+                                                    dbc.RadioItems(
+                                                            options=[
+                                                                {"label": "Auto Scale", "value": 1},
+                                                                {"label": "Full Scale", "value": 2},
+                                                            ],
+                                                            value=1,
+                                                            id="radio-graphic-control3",
+                                                        ),
+                                            ]
+                                        )
+
+    elif selected_model == "SBT V1.0": 
+        
+        return dcc.Loading(
+                parent_className="loader-wrapper",
+                type='circle',
+                children=[
+                        html.Div(id="graphics-container",
+                            children=[
+                                    dcc.Graph(id="geothermal_time_plots",
+                                            config=plotly_config),
+                                    dbc.RadioItems(
+                                            options=[
+                                                {"label": "Auto Scale", "value": 1},
+                                                {"label": "Full Scale", "value": 2},
+                                            ],
+                                            value=1,
+                                            id="radio-graphic-control3",
+                                        ),
+                            ]
+
+                    )
+                ]
+            )
+    else:
+        raise PreventUpdate
+
+
+# @app.callback(
+#    Output(component_id="graphics-parent-econ", component_property="children"),
+#    Input(component_id="model-select", component_property="value"),
+#    )
+
+# def update_loading(selected_model):
+
+#     if selected_model == "HDF5": 
+
+#         return html.Div(id="graphics-container-econ",
+#                                             children=[
+#                                                 dcc.Graph(id="econ_plots",
+#                                                             config=plotly_config),
+#                                                 dbc.RadioItems(
+#                                                             options=[
+#                                                                 {"label": "Auto Scale", "value": 1},
+#                                                                 {"label": "Full Scale", "value": 2},
+#                                                             ],
+#                                                             value=1,
+#                                                             id="radio-graphic-control4",
+#                                                         ),
+#                                                 html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
+#                                             ]
+
+#                                         )
+
+#     elif selected_model == "SBT V1.0": 
+        
+#         time.sleep(7)
+
+#         return dcc.Loading(
+#                 parent_className="loader-wrapper",
+#                 type='circle',
+#                 children=[
+#                         html.Div(id="graphics-container-econ",
+#                                  children=[
+#                                     dcc.Graph(id="econ_plots",
+#                                                 config=plotly_config),
+#                                     dbc.RadioItems(
+#                                                 options=[
+#                                                     {"label": "Auto Scale", "value": 1},
+#                                                     {"label": "Full Scale", "value": 2},
+#                                                 ],
+#                                                 value=1,
+#                                                 id="radio-graphic-control4",
+#                                             ),
+#                                     html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
+#                                 ]
+
+#                             )
+#                         ]
+#                     )
+#     else:
+#         raise PreventUpdate
+
+
 
 
 @app.callback(
@@ -828,19 +938,6 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
 
 
 @app.callback(
-   Output(component_id='model-params-div', component_property='style'), 
-   [Input(component_id="model-select", component_property="value")]
-    )
-
-def show_model_hyperparameters(model):
-
-    if model == "HDF5":
-        return {'display': 'none'}
-        is_title_show = True
-    elif model == "SBT V1.0":
-        return {'display': 'block'}
-
-@app.callback(
     [Output(component_id="Tsurf-select-div", component_property="style"),
     Output(component_id="c-select-div", component_property="style"),
     Output(component_id="rho-select-div", component_property="style"),
@@ -874,7 +971,7 @@ def show_model_params(model):
     Output(component_id='L1-select-div', component_property='style'),
     Output(component_id='grad-select-div', component_property='style'),
     Output(component_id='diameter-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='Tinj-select-div', component_property='style'),
+    Output(component_id='Tinj-select-div', component_property='style'), # AB DEBUG HERE
     Output(component_id='k-select-div', component_property='style'),
 
     Output(component_id='drillcost-div', component_property='style'),
@@ -1034,6 +1131,178 @@ def show_hide_detailed_card(tab, fluid, end_use):
             return {'border': 'solid 3px #c4752f', 'display': 'block'}, {'display': 'block'}, {'display': 'inline-block'}
         
 
+
+
+##### HERE NEED TO GET DIFFERENCE BETWEEN HDF5 AND SBT VIA CSS CHANGES AND UPDATING CHILDREN 
+@app.callback(
+   [
+    Output(component_id='model-params-div', component_property='style', allow_duplicate=True),
+    Output(component_id='Tinj-select-div', component_property='style', allow_duplicate=True),
+    Output(component_id='c-select-div', component_property='style', allow_duplicate=True),
+    Output(component_id='rho-select-div', component_property='style', allow_duplicate=True),
+    Output(component_id='num-lat-div', component_property='style'),
+    Output(component_id='lat-allocation-div', component_property='style'),
+    Output(component_id='lat-flow-mul-div', component_property='style'),
+    Output(component_id='radius-vertical-select-div', component_property='style', allow_duplicate=True),
+    Output(component_id='radius-lateral-select-div', component_property='style', allow_duplicate=True),
+   ],
+   [Input(component_id="model-select", component_property="value")],
+   prevent_initial_call=True
+    )
+
+def update_system_values(model):
+
+    b = {'display': 'block'}
+    n = {'display': 'none'}
+    # is_title_show = True
+    
+    if model == "HDF5":
+        # gotta make the default be hidden on the default LAYOUT ******
+        ##### for now can continue testing
+
+        # remove model-params
+        # null out rock specific heat (hide for now)
+        # null out rock density (hide for now)
+        # null out surface temperature  (hide for now)
+        return n, n, n, n, n, n, n, n, n
+        
+    elif model == "SBT V1.0":
+        return b, b, b, b, b, b, b, b, b
+    
+    else:
+        raise PreventUpdate
+
+@app.callback(
+   [
+    Output(component_id='grad-container', component_property='children', allow_duplicate=True),
+    Output(component_id='k-container', component_property='children', allow_duplicate=True),
+    Output(component_id='Tinj-container', component_property='children', allow_duplicate=True),
+    Output(component_id='mdot-container', component_property='children', allow_duplicate=True),
+    Output(component_id='diameter-container', component_property='children'),
+    Output(component_id='L2-container', component_property='children'),
+    Output(component_id='L1-container', component_property='children'),
+   ],
+   [Input(component_id="model-select", component_property="value")],
+   prevent_initial_call=True
+    )
+
+def update_sliders(model):
+
+    grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
+    k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
+    D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
+
+    if model == "HDF5":
+
+        Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
+        mdot_dict = create_steps(arg_arr=u_sCO2.mdot, str_round_place='{:.1f}', val_round_place=1)
+        L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_place=0)
+        L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
+        
+
+        grad_container = slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
+        k_container = slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
+        # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
+        #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
+        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style)
+        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
+        diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
+        L2_container =  slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
+        L1_container = slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)                       
+                                
+        return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
+        
+    elif model == "SBT V1.0":
+
+        Tsurf_dict = {20: '20', 400: '400'}
+        c_dict = {700: '700', 1200: '1200'}
+        rho_dict = {400: '400', 4000: '4000'}
+
+        Tinj_dict =  {20: '20', 200: '200'}
+        mdot_dict = {1: '1', 2000: '2000'}
+        L2_dict = {1000: '1k', 50000: '50k'}
+        L1_dict = {1000: '1k', 10000: '10k'}
+
+        radius_vertical_dict = {0.2: '0.200', 0.6: '0.600'}
+        radius_lateral_dict = {0.2: '0.200', 0.6: '0.600'}
+
+        grad_container = slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", # min_v=0.01, max_v=0.1,
+                                                                        min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                                    mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
+        k_container = slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", #min_v=0.1, max_v=7.0, 
+                                                                        min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
+        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                                    # min_v=20.0, max_v=200.0, 
+                                                                        mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"], div_style=div_block_style)
+        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=1, max_v=2000,
+                                                                            # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                                        mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
+        diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
+        L2_container =  slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=1000, max_v=50000,
+                                                                            #min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
+        L1_container = slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=1000, max_v=10000,
+                                                                            #min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
+
+        return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
+    
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
+    Output(component_id='wellbore-params-div', component_property='style'),
+    [Input(component_id="param-select", component_property="value"),
+    Input(component_id="tabs", component_property="value"),
+    ]
+    )
+
+def remove_empty_div_container(param, tab):
+    
+    b = {'display': 'block'}
+    n = {'display': 'none'}
+    
+    if tab != "energy-tab":
+        # TODO: be sure that this is not interferring with other callbacks
+        return b
+    elif param == "Injection Temperature (˚C)":
+        return n
+
+
+# @app.callback(
+# #    [
+#     Output(component_id='slider-container', component_property='children'),
+# #    ],
+#    [
+#     Input(component_id="model-select", component_property="value")
+#     ])
+
+# def update_system_values(selected_model):
+
+#     if selected_model == "HDF5": 
+
+#         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
+
+#     elif selected_model == "SBT V1.0": 
+        
+#         print(" ----------------------------- ")
+#         print("SBT")
+#         # TODO: update tabs styline
+#         return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
+
+#     else:
+#         raise PreventUpdate
+
 # -----------------------------------------------------------------------------
 # Define dash app plotting callbacks.
 # -----------------------------------------------------------------------------
@@ -1085,6 +1354,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
+    # print('subsurface')
     # if HDF5:
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
@@ -1121,6 +1391,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
+    # print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
     )
@@ -1176,6 +1447,8 @@ def update_econ_plots(TandP_dict,
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the economic results.
     # -----------------------------------------------------------------------------
+
+    # print('economics')
 
     if checklist == [' ']:
         is_plot_ts = True

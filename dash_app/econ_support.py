@@ -42,7 +42,7 @@ def create_teaobject(TandP_dict,
     # ------------------------------------------
     # Create TEA object for economic results.
     # ------------------------------------------
-    print(Flow_user, Gradient_user, Diameter_user, Tin_user, krock_user)
+    # print(Flow_user, Gradient_user, Diameter_user, Tin_user, krock_user)
 
     # Gradient_user = Gradient_user / 1000
     Tin_user = Tin_user + to_kelvin_factor # to kelvin
@@ -104,8 +104,9 @@ def create_teaobject(TandP_dict,
                                           properties_H2O_pathname, 
                                           properties_CO2v2_pathname, 
                                           additional_properties_CO2v2_pathname)
+
     # get interpolated temperature and pressure array
-    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict) # ERROR BASED ON NUMEBRS?
+    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
     teaobject.calculateLC() # ERROR STARTS HERE
     # teaobject.printresults() # uncomment to debug
     

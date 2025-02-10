@@ -385,8 +385,12 @@ hr {
 }
 
 #economics-params-div {
-    border-radius: 10px 10px 0px 0px;
-    border-bottom: none;
+    /* border-radius: 10px 10px 0px 0px;
+    border-bottom: none; */
+}
+
+.loader-wrapper > div {
+    visibility: visible !important;
 }
 
 #sCO2-card {

@@ -234,6 +234,7 @@ class data:
             # self.time = times
 
             constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
+            constant_pressure = 22228604.37405011
             Pout = constant_pressure * np.ones_like(Tout)
 
             times = times[14:]

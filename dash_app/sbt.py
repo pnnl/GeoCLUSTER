@@ -16,9 +16,10 @@ from traceback import print_stack
 
 # sourced scripts
 is_plot = False
+is_app = True
+# from plot_sbt_plotly import plot_borehole_geometry_plotly
 # from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
 # from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
-
 
 #%% -------
 # 1. Input
@@ -161,8 +162,8 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
         # NOTE: option for speeding up, change step size here
 
         # NOTE: new code by Koenraad
-        verticaldepthsection = np.arange(0, -DrillingDepth_L1*1000-1, -100)
-        horizontalextentsection = np.arange(100, HorizontalExtent_L2*1000+1, 100)
+        verticaldepthsection = np.arange(0, -DrillingDepth_L1-1, -100) #removed *1000 on DrillingDepth_L1
+        horizontalextentsection = np.arange(100, HorizontalExtent_L2+1, 100) #removed *1000 on HorizontalExtent_L2
         z = np.concatenate((verticaldepthsection, 
                             verticaldepthsection[-1]*np.ones(len(horizontalextentsection)))
                             ).reshape(-1, 1)
@@ -261,7 +262,6 @@ def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeP
 
     return locals()
 
-
 def admin_fluid_properties():
 
     """
@@ -288,7 +288,7 @@ def admin_fluid_properties():
 def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thicknesscenterpipe, 
                                 xinj, xprod, xlat, numberoflaterals, radiuslateral, lateralflowallocation):
 
-    interconnections = None
+    interconnections = radiusvector = None
     Deltaz = np.sqrt((x[1:] - x[:-1]) ** 2 + (y[1:] - y[:-1]) ** 2 + (z[1:] - z[:-1]) ** 2)  # Length of each segment [m]
     Deltaz = Deltaz.reshape(-1)
 
@@ -338,6 +338,20 @@ def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thic
         print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
 
     return locals()
+
+def calc_tube_min_time_steps(clg_configuration, radius, radiusvector, alpha_m, Deltaz, LimitPointSourceModel, LimitCylinderModelRequired, LimitInfiniteModel):
+
+    timeforpointssource = max(Deltaz)**2 / alpha_m * LimitPointSourceModel  # Calculates minimum time step size when point source model becomes applicable [s]
+
+    if clg_configuration == 1: # co-axial geometry (1)
+        timeforlinesource = radius**2 / alpha_m * LimitCylinderModelRequired  # Calculates minimum time step size when line source model becomes applicable [s]
+
+    elif clg_configuration == 2: # U-loop geometry (2)
+        timeforlinesource = max(radiusvector)**2 / alpha_m * LimitCylinderModelRequired  # Calculates minimum time step size when line source model becomes applicable [s]
+
+    timeforfinitelinesource = max(Deltaz)**2 / alpha_m * LimitInfiniteModel  # Calculates minimum time step size when finite line source model should be considered [s]
+
+    return timeforpointssource, timeforlinesource, timeforfinitelinesource,
 
 
 def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
@@ -469,6 +483,59 @@ def get_profiles(sbt_version, variableinjectiontemperature, variableflowrate, fl
     
     return Tinstore, mstore
 
+def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsFinitePipeCorrection, NoDiscrFinitePipeCorrection,
+                    timeforlinesource, radius, radiusvector, interconnections):
+
+    interconnections_new = None
+
+    fpcminarg = min(Deltaz)**2 / (4 * alpha_m * times[-1])
+    fpcmaxarg = max(Deltaz)**2 / (4 * alpha_m * (min(times[1:] - times[:-1])))
+    Amin1vector = np.logspace(np.log10(fpcminarg) - 0.1, np.log10(fpcmaxarg) + 0.1, NoArgumentsFinitePipeCorrection)
+    finitecorrectiony = np.zeros(NoArgumentsFinitePipeCorrection)
+    
+    for i, Amin1 in enumerate(Amin1vector):
+        Amax1 = (16)**2
+        if Amin1 > Amax1:
+            Amax1 = 10 * Amin1
+        Adomain1 = np.logspace(np.log10(Amin1), np.log10(Amax1), NoDiscrFinitePipeCorrection)
+        finitecorrectiony[i] = np.trapz(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
+
+    #precalculate besselintegration for infinite cylinder
+    if clg_configuration == 1: # co-axial geometry (1)
+        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / radius**2
+        besselmaxarg = alpha_m * timeforlinesource / radius**2
+
+    
+    elif clg_configuration == 2: # U-loop geometry (2)
+        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / max(radiusvector)**2
+        besselmaxarg = alpha_m * timeforlinesource / min(radiusvector)**2
+    
+    deltazbessel = np.logspace(-10, 8, NoDiscrInfCylIntegration)
+    argumentbesselvec = np.logspace(np.log10(besselminarg) - 0.5, np.log10(besselmaxarg) + 0.5, NoArgumentsInfCylIntegration)
+    besselcylinderresult = np.zeros(NoArgumentsInfCylIntegration)
+
+    for i, argumentbessel in enumerate(argumentbesselvec):
+        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * np.trapz((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
+
+    N = len(Deltaz)  # Number of elements
+    elementcenters = 0.5 * np.column_stack((x[1:], y[1:], z[1:])) + 0.5 * np.column_stack((x[:-1], y[:-1], z[:-1]))  # Matrix that stores the mid point coordinates of each element
+    if clg_configuration == 2: # U-loop geometry (2)
+        interconnections_new = interconnections - 1
+        elementcenters = np.delete(elementcenters, interconnections_new.reshape(-1,1), axis=0)  # Remove duplicate coordinates
+    
+    # print("Elements in the tube: ", elementcenters.shape) # for coaxial it's (30000, 3) and for uloop it's (89, 3) at the moment
+    # print(elementcenters)
+
+    SMatrix = np.zeros((N, N))  # Initializes the spacing matrix, which holds the distance between center points of each element [m]
+    SoverL = np.zeros((N, N))  # Initializes the ratio of spacing to element length matrix
+    for i in range(N):
+        SMatrix[i, :] = np.sqrt((elementcenters[i, 0] - elementcenters[:, 0])**2 + (elementcenters[i, 1] - elementcenters[:, 1])**2 + (elementcenters[i, 2] - elementcenters[:, 2])**2)
+        SoverL[i, :] = SMatrix[i, :] / Deltaz[i] #Calculates the ratio of spacing between two elements and element length
+    
+    return Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new, finitecorrectiony
+
+
+
 
 
 def run_sbt(
@@ -502,8 +569,10 @@ def run_sbt(
         rho_m:                           # Rock density [kg/m3]
     """
 
-    HorizontalExtent_L2 = HorizontalExtent_L2*1000
-    DrillingDepth_L1 = DrillingDepth_L1*1000
+    if is_app: 
+        HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
+        DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
+
     # print("\n")
     # print(" -------------------------------- SBT USER INPUTS -------------------------------- ")
     # all input possibilities can be placed into a dataframe at some point ...
@@ -532,6 +601,10 @@ def run_sbt(
     globals().update(sbt_hyperparams_dict)
     # print(sbt_hyperparams_dict.keys())
 
+    # if is_plot:
+    # plot_borehole_geometry_plotly(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
+    #                         x=x, y=y, z=z, 
+    #                         xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
 
     #%% ----------------
     # 2. Pre-Processing
@@ -544,7 +617,6 @@ def run_sbt(
     globals().update(fluid_properties)
     # print(fluid_properties.keys())
 
-    # print("\n")
     # print(" -------------------------------- COMPUTATIONS -------------------------------- ")
 
     ### COMPUTE TUBE GEOMETRY 
@@ -553,7 +625,6 @@ def run_sbt(
                                                 xinj=xinj, xprod=xprod, xlat=xlat, numberoflaterals=numberoflaterals, 
                                                 radiuslateral=radiuslateral, 
                                                 lateralflowallocation=lateralflowallocation)
-
     globals().update(tube_geometry_dict2)
     # print(tube_geometry_dict2.keys())
 
@@ -564,70 +635,44 @@ def run_sbt(
                     prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
                                 fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
 
-    ### GET TEMPERATURE AND MASS FLOW RATE PROFILES
+    ### GET INJECTION TEMPERATURE as an array AND MASS FLOW RATE PROFILES as an array
+    # e.g. [30.  0.  0.  0.  0. ....] or similar
     Tinstore, mstore = get_profiles(sbt_version=sbt_version, variableinjectiontemperature=variableinjectiontemperature, 
                                 variableflowrate=variableflowrate, flowratefilename=flowratefilename, 
                                 Tinj=Tinj, mdot=mdot)
-
     
     ### FLUID TEMPERATURE AND PRESSURE COMPUTATIONS
     Tw_down_previous = Tw_up_previous = Tfluiddownnodes = TwMatrix = None
     Pfluiddownnodes = Pfluidupnodes = None
 
-    # accuracy params
+    ### MINIMUM TIME STEPS (model accuracy parameters integrated here)
     alpha_m = k_m / rho_m / c_m    # Thermal diffusivity medium [m2/s]
-    timeforpointssource = max(Deltaz)**2 / alpha_m * LimitPointSourceModel  # Calculates minimum time step size when point source model becomes applicable [s]
-    if clg_configuration == 1: #co-axial geometry
-        timeforlinesource = radius**2 / alpha_m * LimitCylinderModelRequired  # Calculates minimum time step size when line source model becomes applicable [s]
-    elif clg_configuration == 2: #U-loop geometry
-        timeforlinesource = max(radiusvector)**2 / alpha_m * LimitCylinderModelRequired  # Calculates minimum time step size when line source model becomes applicable [s]
-    timeforfinitelinesource = max(Deltaz)**2 / alpha_m * LimitInfiniteModel  # Calculates minimum time step size when finite line source model should be considered [s]
+    timeforpointssource, timeforlinesource, timeforfinitelinesource = calc_tube_min_time_steps(
+                                                                            clg_configuration=clg_configuration, radius=radius, radiusvector=radiusvector,
+                                                                            alpha_m=alpha_m, Deltaz=Deltaz, 
+                                                                            LimitPointSourceModel=LimitPointSourceModel, 
+                                                                            LimitCylinderModelRequired=LimitCylinderModelRequired, 
+                                                                            LimitInfiniteModel=LimitInfiniteModel
+                                                                            )
+    ### PRECALCULATIONS (model accuracy parameters integrated here)
+    # precalculate the thermal response with a line and cylindrical heat source. Precalculating allows to speed up the SBT algorithm.
+    # precalculate finite pipe correction
+    Amin1vector, argumentbesselvec, besselcylinderresult, elementcenters, SMatrix, SoverL, N, interconnections_new, finitecorrectiony = precalculations(
+                                                                clg_configuration=clg_configuration, 
+                                                                Deltaz=Deltaz, alpha_m=alpha_m, k_m=k_m, 
+                                                                times=times, 
+                                                                NoArgumentsFinitePipeCorrection=NoArgumentsFinitePipeCorrection, 
+                                                                NoDiscrFinitePipeCorrection=NoDiscrFinitePipeCorrection,
+                                                                timeforlinesource=timeforlinesource, radius=radius, radiusvector=radiusvector,
+                                                                interconnections=interconnections
+                                                                )
 
-    #precalculate the thermal response with a line and cylindrical heat source. Precalculating allows to speed up the SBT algorithm.
-    #precalculate finite pipe correction
-    fpcminarg = min(Deltaz)**2 / (4 * alpha_m * times[-1])
-    fpcmaxarg = max(Deltaz)**2 / (4 * alpha_m * (min(times[1:] - times[:-1])))
-    Amin1vector = np.logspace(np.log10(fpcminarg) - 0.1, np.log10(fpcmaxarg) + 0.1, NoArgumentsFinitePipeCorrection)
-    finitecorrectiony = np.zeros(NoArgumentsFinitePipeCorrection)
 
-    for i, Amin1 in enumerate(Amin1vector):
-        Amax1 = (16)**2
-        if Amin1 > Amax1:
-            Amax1 = 10 * Amin1
-        Adomain1 = np.logspace(np.log10(Amin1), np.log10(Amax1), NoDiscrFinitePipeCorrection)
-        finitecorrectiony[i] = np.trapz(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
-
-    #precalculate besselintegration for infinite cylinder
-    if clg_configuration == 1: #co-axial geometry
-        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / radius**2
-        besselmaxarg = alpha_m * timeforlinesource / radius**2
-    elif clg_configuration == 2: #U-loop geometry
-        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / max(radiusvector)**2
-        besselmaxarg = alpha_m * timeforlinesource / min(radiusvector)**2
-    deltazbessel = np.logspace(-10, 8, NoDiscrInfCylIntegration)
-    argumentbesselvec = np.logspace(np.log10(besselminarg) - 0.5, np.log10(besselmaxarg) + 0.5, NoArgumentsInfCylIntegration)
-    besselcylinderresult = np.zeros(NoArgumentsInfCylIntegration)
-
-    for i, argumentbessel in enumerate(argumentbesselvec):
-        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * np.trapz((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
-
-    N = len(Deltaz)  # Number of elements
-    elementcenters = 0.5 * np.column_stack((x[1:], y[1:], z[1:])) + 0.5 * np.column_stack((x[:-1], y[:-1], z[:-1]))  # Matrix that stores the mid point coordinates of each element
-    if clg_configuration == 2: #U-loop geometry
-        interconnections_new = interconnections - 1
-        elementcenters = np.delete(elementcenters, interconnections_new.reshape(-1,1), axis=0)  # Remove duplicate coordinates
-
-    SMatrix = np.zeros((N, N))  # Initializes the spacing matrix, which holds the distance between center points of each element [m]
-    SoverL = np.zeros((N, N))  # Initializes the ratio of spacing to element length matrix
-    for i in range(N):
-        SMatrix[i, :] = np.sqrt((elementcenters[i, 0] - elementcenters[:, 0])**2 + (elementcenters[i, 1] - elementcenters[:, 1])**2 + (elementcenters[i, 2] - elementcenters[:, 2])**2)
-        SoverL[i, :] = SMatrix[i, :] / Deltaz[i] #Calculates the ratio of spacing between two elements and element length
-
-    #Element ranking based on spacinng is required for SBT algorithm as elements in close proximity to each other use different analytical heat transfer models than elements far apart
+    # Element ranking based on spacinng is required for SBT algorithm as elements in close proximity to each other use different analytical heat transfer models than elements far apart
+    # print(Deltaz) # Length of each segment [m]
     SortedIndices = np.argsort(SMatrix, axis=1, kind = 'stable') # Getting the indices of the sorted elements
     SMatrixSorted = np.take_along_axis(SMatrix, SortedIndices, axis=1)  # Sorting the spacing matrix 
     SoverLSorted = SMatrixSorted / Deltaz
-
     #filename = 'smatrixpython.mat'
     #scipy.io.savemat(filename, dict(SortedIndicesPython=SortedIndices,SMatrixSortedPython=SMatrixSorted))
 
@@ -659,6 +704,7 @@ def run_sbt(
         Tfluiddownnodes =  Tsurf-GeoGradient*(z)   #initial temperature of downflowing fluid at nodes [degC]
         Tfluiddownmidpoints = 0.5*Tfluiddownnodes[1:]+0.5*Tfluiddownnodes[:-1] #initial midpoint temperature of downflowing fluid [deg.C]
         Tfluidupmidpoints = 0.5*Tfluidupnodes[1:]+0.5*Tfluidupnodes[:-1] #initial midpoint temperature of upflowing fluid [deg.C]
+
 
 
     MaxSMatrixSorted = np.max(SMatrixSorted, axis=0)
@@ -1837,7 +1883,10 @@ def run_sbt(
     #     plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
     #     plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
+    # print(Toutput + 273.15)
+    # print(times[14:].shape)
+    # print(Toutput[14:].shape)
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
-    # return times[1:]/365/24/3600, Toutput[1:] + 273.15 # return in Kelvin
+    # return times[13:]/365/24/3600, Toutput[13:] + 273.15 # return in Kelvin # already done in clgs.py
 
 
