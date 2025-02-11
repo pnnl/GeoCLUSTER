@@ -146,7 +146,9 @@ class data:
 
 
     def interp_outlet_states(self, point, sbt_version, 
-                    Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                    Tsurf, c_m, rho_m, 
+                    # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                    Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                     mesh, accuracy, mass_mode, temp_mode): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
@@ -208,18 +210,23 @@ class data:
             # TODO: !!! ***
             if self.case == "coaxial":
                 case = 1
-                Diameter1 = radius # Diameter1/2
-                Diameter2 = radiuscenterpipe # Diameter2/2
-                PipeParam3 = thicknesscenterpipe
-                PipeParam4 = k_center_pipe
-                PipeParam5 = coaxialflowtype
+                if PipeParam5 == "Inject in Annulus":
+                    PipeParam5 = 1
+                if PipeParam5 == "Inject in Center Pipe":
+                    PipeParam5 = 2
+                # print(PipeParam5)
+            #     Diameter1 = radius_vertical #radius # Diameter1/2
+            #     Diameter2 = radius_lateral #radiuscenterpipe # Diameter2/2
+            #     PipeParam3 = n_laterals #thicknesscenterpipe
+            #     PipeParam4 = lateral_flow # k_center_pipe
+            #     PipeParam5 = lateral_multiplier # coaxialflowtype
             if self.case == "utube":
                 case = 2
-                Diameter1 = radius_vertical
-                Diameter2 = radius_lateral
-                PipeParam3 = n_laterals
-                PipeParam4 = [lateral_flow]
-                PipeParam5 = lateral_multiplier
+                # Diameter1 = radius_vertical
+                # Diameter2 = radius_lateral
+                # PipeParam3 = n_laterals
+                PipeParam4 = [PipeParam4]
+                # PipeParam5 = lateral_multiplier
 
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
 
@@ -245,7 +252,7 @@ class data:
             # self.time = times
 
             constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
-            constant_pressure = 22228604.37405011
+            # constant_pressure = 22228604.37405011
             Pout = constant_pressure * np.ones_like(Tout)
 
             times = times[14:]

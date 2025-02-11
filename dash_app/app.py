@@ -962,7 +962,7 @@ def show_model_params(model):
         return n, n, n, n, n, b, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, b, b, b
+        return b, b, b, b, b, n, b, b, b
 
 
 @app.callback(
@@ -1010,6 +1010,8 @@ def show_hide_element(visibility_state, at, fluid, end_use, model):
     # Reveals or hides sliders depending on which tab selected and which dropdowns.
     # ----------------------------------------------------------------------------------------------
 
+    # TODO ****
+    
     b = {'display': 'block'}
     n = {'display': 'none'}
 
@@ -1032,75 +1034,72 @@ def show_hide_element(visibility_state, at, fluid, end_use, model):
         "border-bottom": "none"
     }
 
-    # if model == "HDF5":
-    if at == "about-tab":
-        if fluid == "H2O" or end_use == "Heating":
-            return b, b, b, b, b, b, b,\
-                    b, b, b, b, b, n, n, econ_parms_div_style
-        else:
-            return b, b, b, b, b, b, b,\
-                    b, b, b, b, b, b, b, econ_parms_div_style_2
-    
-    elif at == "energy-time-tab":
-        return b, b, b, b, b, b, b, \
-                n, n, n, n, n, n, n, n
-    
-    elif at == "energy-tab":
+    if model == "HDF5":
+        if at == "about-tab":
+            if fluid == "H2O" or end_use == "Heating":
+                return b, b, b, b, b, b, b,\
+                        b, b, b, b, b, n, n, econ_parms_div_style
+            else:
+                return b, b, b, b, b, b, b,\
+                        b, b, b, b, b, b, b, econ_parms_div_style_2
         
-        if visibility_state == param_list[0]:
-            return n, n, b, b, b, b, b, \
+        elif at == "energy-time-tab":
+            return b, b, b, b, b, b, b, \
                     n, n, n, n, n, n, n, n
-        if visibility_state == param_list[1]:
-            return n, b, n, b, b, b, b, \
-                    n, n, n, n, n, n, n, n
-        if visibility_state == param_list[2]:
-            return n, b, b, n, b, b, b, \
-                    n, n, n, n, n, n, n, n
-        if visibility_state == param_list[3]:
-            return n, b, b, b, n, b, b, \
-                    n, n, n, n, n, n, n, n
-        if visibility_state == param_list[4]:
-            return n, b, b, b, b, n, b, \
-                    n, n, n, n, n, n, n, n
-        if visibility_state == param_list[5]:
-            return n, b, b, b, b, b, n, \
-                    n, n, n, n, n, n, n, n
-    
-    elif at == "economics-time-tab":
-        if fluid == "H2O":
-            if end_use == "All":
+        
+        elif at == "energy-tab":
+            
+            if visibility_state == param_list[0]:
+                return n, n, b, b, b, b, b, \
+                        n, n, n, n, n, n, n, n
+            if visibility_state == param_list[1]:
+                return n, b, n, b, b, b, b, \
+                        n, n, n, n, n, n, n, n
+            if visibility_state == param_list[2]:
+                return n, b, b, n, b, b, b, \
+                        n, n, n, n, n, n, n, n
+            if visibility_state == param_list[3]:
+                return n, b, b, b, n, b, b, \
+                        n, n, n, n, n, n, n, n
+            if visibility_state == param_list[4]:
+                return n, b, b, b, b, n, b, \
+                        n, n, n, n, n, n, n, n
+            if visibility_state == param_list[5]:
+                return n, b, b, b, b, b, n, \
+                        n, n, n, n, n, n, n, n
+        
+        elif at == "economics-time-tab":
+            if fluid == "H2O":
+                if end_use == "All":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, b, n, n, econ_parms_div_style
+                if end_use == "Heating":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, n, n, n, econ_parms_div_style
+                if end_use == "Electricity":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, b, n, n, econ_parms_div_style
+
+            else:
+                if end_use == "All":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, b, b, b, econ_parms_div_style_2
+                if end_use == "Heating":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, n, n, n, econ_parms_div_style
+                if end_use == "Electricity":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, b, b, b, econ_parms_div_style_2
+
+        elif at == "summary-tab":
+            if fluid == "H2O":
                 return b, b, b, b, b, b, b, \
                         b, b, b, b, b, n, n, econ_parms_div_style
-            if end_use == "Heating":
-                return b, b, b, b, b, b, b, \
-                        b, b, b, b, n, n, n, econ_parms_div_style
-            if end_use == "Electricity":
-                return b, b, b, b, b, b, b, \
-                        b, b, b, n, b, n, n, econ_parms_div_style
-
-        else:
-            if end_use == "All":
+            else:
                 return b, b, b, b, b, b, b, \
                         b, b, b, b, b, b, b, econ_parms_div_style_2
-            if end_use == "Heating":
-                return b, b, b, b, b, b, b, \
-                        b, b, b, b, n, n, n, econ_parms_div_style
-            if end_use == "Electricity":
-                return b, b, b, b, b, b, b, \
-                        b, b, b, n, b, b, b, econ_parms_div_style_2
-
-    elif at == "summary-tab":
-        if fluid == "H2O":
-            return b, b, b, b, b, b, b, \
-                    b, b, b, b, b, n, n, econ_parms_div_style
-        else:
-            return b, b, b, b, b, b, b, \
-                    b, b, b, b, b, b, b, econ_parms_div_style_2
     else:
         raise PreventUpdate
-
-    # elif model == "SBT V1.0":
-    #     raise PreventUpdate
 
 
 @app.callback(
@@ -1192,7 +1191,7 @@ def update_sliders(model):
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
     D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
 
-    if model == "HDF5":
+    if model == "HDF5": # hide the other params (happens in the next callback)
 
         Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
         mdot_dict = create_steps(arg_arr=u_sCO2.mdot, str_round_place='{:.1f}', val_round_place=1)
@@ -1246,7 +1245,7 @@ def update_sliders(model):
                                                                             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
                                                                         mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
         diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_none_style)
         L2_container =  slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=1000, max_v=50000,
                                                                             #min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
                                                                         mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
@@ -1274,9 +1273,6 @@ def update_sliders(model):
     )
 def update_sliders_case(model, case):
 
-    radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier = None
-    radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype = None
-
     if model == "SBT V1.0":
 
         if case == "utube":
@@ -1298,17 +1294,39 @@ def update_sliders_case(model, case):
 
             radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
+            
             radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
-                                                                mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
-            thicknesscenterpipe = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.0027, max_v=0.0927,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style)
-            k_center_pipe = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
+            
+            thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.0027, max_v=0.050,
+                                                                mark_dict=thickness_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style)
+            
+            k_center_pipe = slider1(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.2, max_v=0.6,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
-            coaxialflowtype = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=1, max_v=2,
-                                                                mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
+            coaxialflowtype = dropdown_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
+                                                                    options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style),
+            # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
+                                                                # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
                                                      
             return radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype
+
+            # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
     
+    elif model == "HDF5":
+
+        radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
+        radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
+        n_laterals = input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
+        lateral_flow = input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
+        lateral_multiplier = input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+
+        return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+
     else:
         raise PreventUpdate
 
@@ -1426,8 +1444,8 @@ def remove_empty_div_container(param, tab):
 
 def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
                         Tsurf, c_m, rho_m, 
-                        radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-                        # Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                         mesh, accuracy, mass_mode, temp_mode):
 
     # -----------------------------------------------------------------------------
@@ -1438,7 +1456,9 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # if HDF5:
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
-        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+        Tsurf, c_m, rho_m, 
+        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
         mesh, accuracy, mass_mode, temp_mode
     )
     # if SBT:

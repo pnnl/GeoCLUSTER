@@ -302,7 +302,16 @@ hr {
 
 .name-input-container {
     display: inline-block;
+    padding-left: 10px;
+    padding-top: 5px;
+    padding-bottom: 5px;
 }
+.name-input-container-dd {
+    display: inline-block;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
 .input-title {
     float: left;
     padding-right: 10px;
@@ -670,8 +679,6 @@ button:hover{
     border-radius: 3px 3px 3px 3px;
     position: sticky;
 }
-
-
 
 /* Graphs
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
