@@ -1219,7 +1219,7 @@ def update_sliders(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0":
+    elif model == "SBT V1.0": # TODO: HIDE BOREHOLE
 
         Tsurf_dict = {20: '20', 400: '400'}
         c_dict = {700: '700', 1200: '1200'}
@@ -1258,6 +1258,83 @@ def update_sliders(model):
     
     else:
         raise PreventUpdate
+
+
+@app.callback(
+   [
+     Output(component_id='Diameter1-container', component_property='children'), # Diameter1
+     Output(component_id='Diameter2-container', component_property='children'), # Diameter2
+     Output(component_id='num-lat-container', component_property='children'), # PipeParam3
+     Output(component_id='lat-allo-container', component_property='children'), # PipeParam4
+     Output(component_id='lat-flow-container', component_property='children'), # PipeParam5
+   ],
+   [Input(component_id="model-select", component_property="value"),
+    Input(component_id="case-select", component_property="value")],
+   prevent_initial_call=True
+    )
+def update_sliders_case(model, case):
+
+    radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier = None
+    radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype = None
+
+    if model == "SBT V1.0":
+
+        if case == "utube":
+
+            radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_block_style)
+            radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_block_style)
+            n_laterals = input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                    min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_block_style)
+            lateral_flow = input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_block_style)
+            lateral_multiplier = input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
+
+            return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+        
+        elif case == "coaxial":
+
+            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
+            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
+                                                                mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
+            thicknesscenterpipe = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.0027, max_v=0.0927,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style)
+            k_center_pipe = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
+            coaxialflowtype = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=1, max_v=2,
+                                                                mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
+                                                     
+            return radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype
+    
+    else:
+        raise PreventUpdate
+
+### HERE
+
+# @app.callback(
+#    [
+#     Output(component_id='diameter-container', component_property='children', allow_duplicate=True),
+#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
+#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
+#     Output(component_id='HYPERPARAM', component_property='children', allow_duplicate=True),
+#     Output(component_id='HYPERPARAM', component_property='children'),
+#     Output(component_id='HYPERPARAM', component_property='children'),
+#     Output(component_id='HYPERPARAM', component_property='children'),
+#    ],
+#    [Input(component_id="model-select", component_property="value"),
+#     Input(component_id="case-select", component_property="value")],
+#    prevent_initial_call=True
+#     )
+
+# def update_sliders(model, case):
+
+#     if case == "utube":
+#     elif case == "coaxial":
+#     else:
+#         raise PreventUpdate
 
 
 @app.callback(
@@ -1332,11 +1409,12 @@ def remove_empty_div_container(param, tab):
      Input(component_id='Tsurf-select', component_property='value'),
      Input(component_id='c-select', component_property='value'),
      Input(component_id='rho-select', component_property='value'),
-     Input(component_id='radius-vertical-select', component_property='value'),
-     Input(component_id='radius-lateral-select', component_property='value'),
-     Input(component_id='n-laterals-select', component_property='value'),
-     Input(component_id='lateral-flow-select', component_property='value'),
-     Input(component_id='lateral-multiplier-select', component_property='value'),
+
+     Input(component_id='radius-vertical-select', component_property='value'), # diameter1
+     Input(component_id='radius-lateral-select', component_property='value'), # diameter2
+     Input(component_id='n-laterals-select', component_property='value'), # PipeParam3
+     Input(component_id='lateral-flow-select', component_property='value'), # PipeParam4
+     Input(component_id='lateral-multiplier-select', component_property='value'), # PipeParam5
 
      Input(component_id='mesh-select', component_property='value'),
      Input(component_id='accuracy-select', component_property='value'),
@@ -1347,7 +1425,9 @@ def remove_empty_div_container(param, tab):
 )
 
 def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
-                        Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                        Tsurf, c_m, rho_m, 
+                        radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                        # Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                         mesh, accuracy, mass_mode, temp_mode):
 
     # -----------------------------------------------------------------------------

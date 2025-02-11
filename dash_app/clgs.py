@@ -188,11 +188,6 @@ class data:
             Tinj = Tinj-273.15
             # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
-            if self.case == "coaxial":
-                case = 1
-            if self.case == "utube":
-                case = 2
-
             if self.CP_fluid == "H20":
                 fluid = 1
             if self.CP_fluid == "CO2":
@@ -210,6 +205,22 @@ class data:
             elif temp_mode == "Variable":
                 temp_mode_b = 1
 
+            # TODO: !!! ***
+            if self.case == "coaxial":
+                case = 1
+                Diameter1 = radius # Diameter1/2
+                Diameter2 = radiuscenterpipe # Diameter2/2
+                PipeParam3 = thicknesscenterpipe
+                PipeParam4 = k_center_pipe
+                PipeParam5 = coaxialflowtype
+            if self.case == "utube":
+                case = 2
+                Diameter1 = radius_vertical
+                Diameter2 = radius_lateral
+                PipeParam3 = n_laterals
+                PipeParam4 = [lateral_flow]
+                PipeParam5 = lateral_multiplier
+
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
 
             times, Tout = run_sbt(
@@ -221,10 +232,10 @@ class data:
              ## Operations
             clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
             DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=radius_vertical, Diameter2=radius_lateral, 
-            PipeParam3=n_laterals, PipeParam4=[lateral_flow], 
+            Diameter1=Diameter1, Diameter2=Diameter2, 
+            PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
             # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-            PipeParam5=lateral_multiplier, ## Tube Geometry
+            PipeParam5=PipeParam5, ## Tube Geometry
 
             ## Geologic Properties
             Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 

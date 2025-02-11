@@ -115,6 +115,11 @@ start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,
+                    "radius": 0.2286,
+                    "radiuscenterpipe": 0.127, 
+                    "thicknesscenterpipe": 0.0127,
+                    "k_center_pipe": 0.006,
+                    "coaxialflowtype": 1,
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
                     "kwe": 3000, "precool": 13, "turb-pout": 80
@@ -168,6 +173,19 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style):
                        ),
                        ]
                     )
+
+
+def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
+
+    return html.Div(
+            id=DivID,
+            style=div_style,
+            className="name-input-container",
+            children=[
+                html.P(ptitle, className="input-title"),
+                dcc.Input(id=ID, disabled=True,
+                            value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
+        ])
 
 
 def slider_card():
@@ -265,11 +283,20 @@ def slider_card():
                                                                 slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
                                                                         mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
                                                             ]),
-                                                    slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
-                                                            mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style),
-                                                    slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
-                                                            mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style),
-                                                    
+                                                    html.Div(
+                                                            id="Diameter1-container",
+                                                            className="params-div",
+                                                            children=[
+                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
+                                                            ]),
+                                                    html.Div(
+                                                            id="Diameter2-container",
+                                                            className="params-div",
+                                                            children=[
+                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
+                                                            ]),
                                                     html.Div(
                                                             id="L2-container",
                                                             children=[ 
@@ -283,35 +310,53 @@ def slider_card():
                                                                         mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
                                                             ]),
                                                     html.Div(
-                                                        id="num-lat-div",
-                                                        style=div_none_style,
-                                                        className="name-input-container",
-                                                        children=[
-                                                            html.P("Number of Laterals", className="input-title"),
-                                                            dcc.Input(id="n-laterals-select", 
-                                                                        disabled=True,
-                                                                        value=start_vals_hdf5["n-laterals"], type='number', min=0, max=20, step=1, className="input-box"),
-                                                    ]),
+                                                            id="num-lat-container",
+                                                            children=[ 
+                                                                input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
+                                                            ]),
                                                     html.Div(
-                                                        id="lat-allocation-div",
-                                                        style=div_none_style,
-                                                        className="name-input-container",
-                                                        children=[
-                                                            html.P("Lateral Flow Allocation", className="input-title"),
-                                                            dcc.Input(id="lateral-flow-select", 
-                                                                        disabled=True,
-                                                                        value=start_vals_hdf5["lateral-flow"], type='number', min=0, max=1, step=0.01, className="input-box"),
-                                                    ]),
+                                                            id="lat-allo-container",
+                                                            children=[ 
+                                                                input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
+                                                            ]),
                                                     html.Div(
-                                                        id="lat-flow-mul-div",
-                                                        style=div_none_style,
-                                                        className="name-input-container",
-                                                        children=[
-                                                            html.P("Lateral Flow Multiplier", className="input-title"),
-                                                            dcc.Input(id="lateral-multiplier-select", 
-                                                                        disabled=True, 
-                                                                        value=start_vals_hdf5["lateral-multiplier"], type='number', min=0, max=1, step=0.05, className="input-box"),
-                                                    ]),
+                                                            id="lat-flow-container",
+                                                            children=[
+                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+                                                            ]),
+                                                    # html.Div(
+                                                    #     id="num-lat-div",
+                                                    #     style=div_none_style,
+                                                    #     className="name-input-container",
+                                                    #     children=[
+                                                    #         html.P("Number of Laterals", className="input-title"),
+                                                    #         dcc.Input(id="n-laterals-select", 
+                                                    #                     disabled=True,
+                                                    #                     value=start_vals_hdf5["n-laterals"], type='number', min=0, max=20, step=1, className="input-box"),
+                                                    # ]),
+                                                    # html.Div(
+                                                    #     id="lat-allocation-div",
+                                                    #     style=div_none_style,
+                                                    #     className="name-input-container",
+                                                    #     children=[
+                                                    #         html.P("Lateral Flow Allocation", className="input-title"),
+                                                    #         dcc.Input(id="lateral-flow-select", 
+                                                    #                     disabled=True,
+                                                    #                     value=start_vals_hdf5["lateral-flow"], type='number', min=0, max=1, step=0.01, className="input-box"),
+                                                    # ]),
+                                                    # html.Div(
+                                                    #     id="lat-flow-mul-div",
+                                                    #     style=div_none_style,
+                                                    #     className="name-input-container",
+                                                    #     children=[
+                                                    #         html.P("Lateral Flow Multiplier", className="input-title"),
+                                                    #         dcc.Input(id="lateral-multiplier-select", 
+                                                    #                     disabled=True, 
+                                                    #                     value=start_vals_hdf5["lateral-multiplier"], type='number', min=0, max=1, step=0.05, className="input-box"),
+                                                    # ]),
 
                                                 ]
                                             ),
