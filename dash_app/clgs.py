@@ -146,7 +146,9 @@ class data:
 
 
     def interp_outlet_states(self, point, sbt_version, 
-                    Tsurf, c_m, rho_m, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                    Tsurf, c_m, rho_m, 
+                    # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                    Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                     mesh, accuracy, mass_mode, temp_mode): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
@@ -188,11 +190,6 @@ class data:
             Tinj = Tinj-273.15
             # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
-            if self.case == "coaxial":
-                case = 1
-            if self.case == "utube":
-                case = 2
-
             if self.CP_fluid == "H20":
                 fluid = 1
             if self.CP_fluid == "CO2":
@@ -210,6 +207,27 @@ class data:
             elif temp_mode == "Variable":
                 temp_mode_b = 1
 
+            # TODO: !!! ***
+            if self.case == "coaxial":
+                case = 1
+                if PipeParam5 == "Inject in Annulus":
+                    PipeParam5 = 1
+                if PipeParam5 == "Inject in Center Pipe":
+                    PipeParam5 = 2
+                # print(PipeParam5)
+            #     Diameter1 = radius_vertical #radius # Diameter1/2
+            #     Diameter2 = radius_lateral #radiuscenterpipe # Diameter2/2
+            #     PipeParam3 = n_laterals #thicknesscenterpipe
+            #     PipeParam4 = lateral_flow # k_center_pipe
+            #     PipeParam5 = lateral_multiplier # coaxialflowtype
+            if self.case == "utube":
+                case = 2
+                # Diameter1 = radius_vertical
+                # Diameter2 = radius_lateral
+                # PipeParam3 = n_laterals
+                PipeParam4 = [PipeParam4]
+                # PipeParam5 = lateral_multiplier
+
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
 
             times, Tout = run_sbt(
@@ -221,10 +239,10 @@ class data:
              ## Operations
             clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
             DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=radius_vertical, Diameter2=radius_lateral, 
-            PipeParam3=n_laterals, PipeParam4=[lateral_flow], 
+            Diameter1=Diameter1, Diameter2=Diameter2, 
+            PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
             # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-            PipeParam5=lateral_multiplier, ## Tube Geometry
+            PipeParam5=PipeParam5, ## Tube Geometry
 
             ## Geologic Properties
             Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
@@ -234,7 +252,7 @@ class data:
             # self.time = times
 
             constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
-            constant_pressure = 22228604.37405011
+            # constant_pressure = 22228604.37405011
             Pout = constant_pressure * np.ones_like(Tout)
 
             times = times[14:]

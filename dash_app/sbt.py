@@ -102,14 +102,19 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
 
     if mesh_fineness == 0:
         times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) # simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
+        # print(type(times))
         #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
     elif mesh_fineness == 1:
         #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
         times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
+        times = np.array(times)
+        # print(times)
     elif mesh_fineness == 2:
         #Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
         times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
-    
+        times = np.array(times)
+        # print(times)
+
     fullyimplicit = None
     if clg_configuration == 2:
         fullyimplicit = 1            # Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
@@ -435,6 +440,7 @@ def get_profiles(sbt_version, variableinjectiontemperature, variableflowrate, fl
 
     # Read injection temperature profile if provided
     Tinstore = np.zeros(len(times))
+    # print(variableinjectiontemperature)
     if variableinjectiontemperature == 1 and sbt_version == 1:
         # User has provided injection temperature in an Excel spreadsheet. (can currently only be used with sbt version 1)
         num = pd.read_excel(injectiontemperaturefilename)
@@ -487,9 +493,11 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsF
                     timeforlinesource, radius, radiusvector, interconnections):
 
     interconnections_new = None
+    delta_times = [t2 - t1 for t1, t2 in zip(times[:-1], times[1:])]
+    fpcmaxarg = max(Deltaz)**2 / (4 * alpha_m * min(delta_times))
 
     fpcminarg = min(Deltaz)**2 / (4 * alpha_m * times[-1])
-    fpcmaxarg = max(Deltaz)**2 / (4 * alpha_m * (min(times[1:] - times[:-1])))
+    # fpcmaxarg = max(Deltaz)**2 / (4 * alpha_m * (min(times[1:] - times[:-1])))
     Amin1vector = np.logspace(np.log10(fpcminarg) - 0.1, np.log10(fpcmaxarg) + 0.1, NoArgumentsFinitePipeCorrection)
     finitecorrectiony = np.zeros(NoArgumentsFinitePipeCorrection)
     
@@ -502,12 +510,14 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsF
 
     #precalculate besselintegration for infinite cylinder
     if clg_configuration == 1: # co-axial geometry (1)
-        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / radius**2
+        besselminarg = alpha_m * min(delta_times) / radius**2
+        # besselminarg = alpha_m * (min(times[1:] - times[:-1])) / radius**2
         besselmaxarg = alpha_m * timeforlinesource / radius**2
 
     
     elif clg_configuration == 2: # U-loop geometry (2)
-        besselminarg = alpha_m * (min(times[1:] - times[:-1])) / max(radiusvector)**2
+        besselminarg = alpha_m * min(delta_times) / max(radiusvector)**2
+        # besselminarg = alpha_m * (min(times[1:] - times[:-1])) / max(radiusvector)**2
         besselmaxarg = alpha_m * timeforlinesource / min(radiusvector)**2
     
     deltazbessel = np.logspace(-10, 8, NoDiscrInfCylIntegration)
@@ -666,7 +676,6 @@ def run_sbt(
                                                                 timeforlinesource=timeforlinesource, radius=radius, radiusvector=radiusvector,
                                                                 interconnections=interconnections
                                                                 )
-
 
     # Element ranking based on spacinng is required for SBT algorithm as elements in close proximity to each other use different analytical heat transfer models than elements far apart
     # print(Deltaz) # Length of each segment [m]
@@ -830,7 +839,6 @@ def run_sbt(
             elif coaxialflowtype == 2:  # CXC
                 Refluiddownmidpoints = densityfluiddownmidpoints * velocityfluiddownmidpoints * (2 * radiuscenterpipe) / viscosityfluiddownmidpoints
                 Refluidupmidpoints = densityfluidupmidpoints * velocityfluidupmidpoints * Dh_annulus / viscosityfluidupmidpoints
-        
 
     # Initialize SBT algorithm linear system of equation matrices
     if clg_configuration == 1: #co-axial geometry
@@ -1845,6 +1853,7 @@ def run_sbt(
     # 4. Post-Processing
     # The user can modify this section depending on the desired figures and simulation results
     #-------------------
+        
     if sbt_version == 1:    
         HeatProduction = mstore * cp_f * (Toutput - Tinstore) / 1e6  # Calculates the heat production [MW]
     elif sbt_version == 2:
