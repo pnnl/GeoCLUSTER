@@ -797,9 +797,6 @@ button:hover{
         overflow: hidden;
     }
 
-    #graphics-container {
-        width: 100%;
-    }
     #geothermal_card > b {
         line-height: 1.75;
         font-size: var(--small-fontsize);
@@ -808,6 +805,23 @@ button:hover{
 }
 
 @media only screen and (max-width: 800px) { /* 900 */
+
+    #left-column, #right-column {
+        width: 100%;
+        margin-left: 0px;
+        padding: 0.6rem 0.6rem;
+        min-height: calc(180vh - 5.5rem);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        /* height : 100vh; */
+    }
+
+    #right-column {
+        padding: 0rem 0.5rem;
+        min-height: calc(155vh - 5.5rem);
+        overflow: hidden;
+    }
 
     .extra-space {
         margin: 19rem 0rem 0rem 0rem;
