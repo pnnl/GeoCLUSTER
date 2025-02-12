@@ -810,7 +810,7 @@ button:hover{
         width: 100%;
         margin-left: 0px;
         padding: 0.6rem 0.6rem;
-        min-height: calc(180vh - 5.5rem);
+        min-height: calc(225vh - 5.5rem);
         display: flex;
         flex-direction: column;
         overflow: hidden;
@@ -819,9 +819,10 @@ button:hover{
 
     #right-column {
         padding: 0rem 0.5rem;
-        min-height: calc(155vh - 5.5rem);
+        min-height: calc(180vh - 5.5rem);
         overflow: hidden;
     }
+
 
     .extra-space {
         margin: 19rem 0rem 0rem 0rem;
