@@ -188,6 +188,7 @@ hr {
 
 #geothermal_card {
     background-color: white;
+    width: 100%;
     padding: 1rem;
     margin: auto;
     margin-top: 8px;
@@ -771,17 +772,34 @@ button:hover{
 
 @media only screen and (max-width: 975px) { /* 900 */
     
+    #app-container {
+        width: 100%;
+        max-width: none;
+        /* overflow: hidden; */
+        /* height: 100vh;
+        overflow: auto; */
+    }
+
     #left-column, #right-column {
         width: 100%;
         margin-left: 0px;
         padding: 0.6rem 0.6rem;
+        min-height: calc(180vh - 5.5rem);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
         /* height : 100vh; */
     }
 
     #right-column {
         padding: 0rem 0.5rem;
+        min-height: calc(130vh - 5.5rem);
+        overflow: hidden;
     }
 
+    #graphics-container {
+        width: 100%;
+    }
     #geothermal_card > b {
         line-height: 1.75;
         font-size: var(--small-fontsize);
