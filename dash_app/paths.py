@@ -1,3 +1,4 @@
+from os import getenv
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -5,7 +6,8 @@ localpath = ""
 internal_pnnl_path = "/var/www/html/dash_app/"
 aws_path = "/www/GeoCLUSTER/dash_app/"
 
-absolute_path = aws_path
+deployment_group_name = getenv("DEPLOYMENT_GROUP_NAME", None)
+absolute_path = aws_path if deployment_group_name else localpath
 
 inpath_dict = {
 
