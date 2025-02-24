@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -6,11 +7,10 @@ localpath = ""
 internal_pnnl_path = "/var/www/html/dash_app/"
 aws_path = "/www/GeoCLUSTER/dash_app/"
 
-deployment_group_name = os.getenv("DEPLOYMENT_GROUP_NAME", None)
-print("!!!!")
-print(deployment_group_name)
+load_dotenv()
 print(os.environ)
-absolute_path = aws_path 
+deployment_type = os.getenv("deployment_type", "aws")
+absolute_path = localpath if deployment_type == "local" else aws_path
 
 inpath_dict = {
 
