@@ -4,11 +4,17 @@
 # sourced scripts
 import clgs as clgs
 from paths import inpath_dict
-from pympler import asizeof
+from data.decompress_hdf5 import decompress__hdf5
+import os
 
 def initialize_data():
 
-	filename = inpath_dict["h5_filepath"]
+	filename = inpath_dict["decompressed_h5_filepath"]
+	need_to_make_decompressed_hdf5 = not (os.path.exists(filename))
+	if need_to_make_decompressed_hdf5:
+		#if running locally, decompress it
+		if os.getenv("deployment_type", "aws") == "local":
+			decompress__hdf5()
 
 	u_sCO2 = clgs.data(filename, "utube", "sCO2")
 	u_H2O = clgs.data(filename, "utube", "H2O")
