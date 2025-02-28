@@ -97,19 +97,19 @@ accuracy_dict = {1: '1 (coarse)', 2: '', 3: '', 4: '', 5: '5 (fine)'}
 # new slider labels
 # grad_dict = {0.01: '0.01', 0.1: '0.1'}
 # k_dict = {0.1: '0.1', 7.0: '7.0'} # 1.5 4.5
-Tsurf_dict = {20: '20', 100: '100'}
-c_dict = {700: '700', 1200: '1200'}
-rho_dict = {400: '400', 4000: '4000'}
+Tsurf_dict = {0: '0', 40: '40'}
+c_dict = {500: '500', 2000: '2000'}
+rho_dict = {1000: '1000', 3500: '3500'}
 
 # Tinj_dict =  {20: '20', 200: '200'}
 # mdot_dict = {1: '1', 2000: '2000'}
 # L2_dict = {1000: '1k', 50000: '50k'}
 # L1_dict = {1000: '1k', 10000: '10k'}
 
-radius_vertical_dict = {0.2: '0.200', 0.6: '0.600'}
-radius_lateral_dict = {0.2: '0.200', 0.6: '0.600'}
+radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 radius_centerpipe_dict = {0.001: '0.001', 0.010: '0.010'}
-thickness_centerpipe_dict = {0.0027: '0.0027', 0.050: '0.050'}
+thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
@@ -247,7 +247,7 @@ def slider_card():
                                                 className="params-div",
                                                 children=[
                                                     html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
-                                                    slider2(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=20.0, max_v=100.0, 
+                                                    slider2(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=0, max_v=40.0, 
                                                             mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style),
                                                    
                                                     html.Div(
@@ -264,9 +264,9 @@ def slider_card():
                                                                             mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
                                                                     
                                                             ]),
-                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=700, max_v=1200, 
+                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
                                                             mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style),
-                                                    slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=400, max_v=4000, 
+                                                    slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
                                                             mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style),
                                                 ]
                                             ),
@@ -307,13 +307,13 @@ def slider_card():
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
                                                                         mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
                                                             ]),
                                                     html.Div(
