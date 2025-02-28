@@ -1220,28 +1220,30 @@ def update_sliders(model):
         
     elif model == "SBT V1.0": # TODO: HIDE BOREHOLE
 
-        Tsurf_dict = {20: '20', 400: '400'}
+        # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
         rho_dict = {400: '400', 4000: '4000'}
 
-        Tinj_dict =  {20: '20', 200: '200'}
-        mdot_dict = {1: '1', 2000: '2000'}
+        Tinj_dict =  {30: '30', 100: '100'}
+        grad_dict =  {0.015: '0.015', 0.2: '0.200'}
+        mdot_dict = {5: '5', 300: '300'}
         L2_dict = {1000: '1k', 50000: '50k'}
         L1_dict = {1000: '1k', 10000: '10k'}
+        k_dict = {0.4: '0.4', 5: '5.0'}
 
-        radius_vertical_dict = {0.2: '0.200', 0.6: '0.600'}
-        radius_lateral_dict = {0.2: '0.200', 0.6: '0.600'}
+        radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+        radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 
         grad_container = slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", # min_v=0.01, max_v=0.1,
-                                                                        min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                                        min_v=0.015, max_v=0.200, 
                                                                     mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
         k_container = slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", #min_v=0.1, max_v=7.0, 
-                                                                        min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                                        min_v=0.4, max_v=5.0, 
                                                                             mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
-        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=100.0, 
                                                                     # min_v=20.0, max_v=200.0, 
                                                                         mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"], div_style=div_block_style)
-        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=1, max_v=2000,
+        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=5, max_v=300,
                                                                             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
                                                                         mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
         diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
@@ -1277,9 +1279,9 @@ def update_sliders_case(model, case):
 
         if case == "utube":
 
-            radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+            radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_block_style)
-            radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+            radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_block_style)
             n_laterals = input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
                                     min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_block_style)
@@ -1292,17 +1294,19 @@ def update_sliders_case(model, case):
         
         elif case == "coaxial":
 
+            insulation_thermal_k_dict = {0.025: '0.025', 0.50: '0.5'}
+
             radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
             
             radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
                                                                 mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
             
-            thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.0027, max_v=0.050,
+            thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
                                                                 mark_dict=thickness_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style)
             
-            k_center_pipe = slider1(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.2, max_v=0.6,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
+            k_center_pipe = slider1(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
+                                                                mark_dict=insulation_thermal_k_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
             coaxialflowtype = dropdown_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
                                                                     options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style),
             # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
