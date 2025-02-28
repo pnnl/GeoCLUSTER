@@ -1,25 +1,36 @@
-def main():
+import h5py
+from paths import inpath_dict
+import numpy as np
+
+def copy_hdf5(source_path, destination_path):
+    """Copies an HDF5 file from source to destination."""
+    with h5py.File(source_path, 'r') as source_file, h5py.File(destination_path, 'w') as destination_file:
+        for name in source_file:
+            source_file.copy(name, destination_file)
+
+def decompress__hdf5():
     #uncompressing hdf5 files and saving them as chunked files if they dont' exist
-    import numpy as np
-    import h5py
-    filename = "./clgs_results_final_float32.h5"
+    print("decompressing hdf5...")
+
+    # copy hdf5 
+    in_filename = inpath_dict["h5_filepath"]
+    out_filename = inpath_dict["decompressed_h5_filepath"]
+    copy_hdf5(source_path=in_filename, destination_path=out_filename)
+
     shape = (26, 20, 9, 5, 3, 3, 3, 161)
     shapes = ["utube", "coaxial"]
     fluids = ["H2O", "sCO2"]
     types = ["Tout", "Pout"]
-    with h5py.File(filename, "r+") as file:
+    with h5py.File(out_filename, "r+") as file:
         for tube_shape in shapes:
             for fluid in fluids:
-                for type in types:
-                    output_location = f"/{tube_shape}/{fluid}/output/{type}_chunked"
-                    if output_location in file:
-                        print("hdf5 file already decompressed")
-                        exit()
+                for output_type in types:
+                    output_location = f"/{tube_shape}/{fluid}/output/{output_type}_chunked"
 
                     We = file[f"/{tube_shape}/{fluid}/output/We"][:]
-                    U = file[f"/{tube_shape}/{fluid}/output/{type}" + "/" + "U"][:]
-                    sigma = file[f"/{tube_shape}/{fluid}/output/{type}" + "/" + "sigma"][:]
-                    Vt = file[f"/{tube_shape}/{fluid}/output/{type}" + "/" + "Vt"][:]
+                    U = file[f"/{tube_shape}/{fluid}/output/{output_type}" + "/" + "U"][:]
+                    sigma = file[f"/{tube_shape}/{fluid}/output/{output_type}" + "/" + "sigma"][:]
+                    Vt = file[f"/{tube_shape}/{fluid}/output/{output_type}" + "/" + "Vt"][:]
 
                     M_k = np.dot(U, np.dot(np.diag(sigma), Vt))
 
@@ -32,6 +43,7 @@ def main():
                     chunk_size = (26, 1, 1, 1, 1, 1, 1, 161)
                     file.create_dataset(output_location, ans.shape, chunks=chunk_size, data=ans)
         file.close()
+    print("finished decompressing hdf5!")
 
 if __name__ == "__main__":
-    main()
+    decompress__hdf5()
