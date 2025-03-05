@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import spsolve
 import pandas as pd
 import time
 #import tensorflow as tf
@@ -12,6 +14,7 @@ import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
+import cProfile
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
 # sourced scripts
@@ -578,7 +581,6 @@ def run_sbt(
         c_m:                             # Rock specific heat capacity [J/kgK]
         rho_m:                           # Rock density [kg/m3]
     """
-
     if is_app: 
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
@@ -1440,7 +1442,9 @@ def run_sbt(
             
             
             # Solving the linear system of equations
-            Sol = np.linalg.solve(L, R)    
+            L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+            Sol = spsolve(L_sparse, R)
+            # Sol = np.linalg.solve(L, R)    
         
         elif sbt_version == 2: #we need to perform iterative convergence for pressure, temperature, and fluid properties
             kk = 1
@@ -1684,7 +1688,9 @@ def run_sbt(
                         
                 
                 # Solving the linear system of equations
-                Sol = np.linalg.solve(L, R)  
+                L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+                Sol = spsolve(L_sparse, R)
+
                 if coaxialflowtype == 1: #CXA
                     Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
                     Tfluidupnodes =  np.concatenate((Sol.ravel()[3::4],[Tfluiddownnodes[-1]]))
@@ -1899,3 +1905,6 @@ def run_sbt(
     # return times[13:]/365/24/3600, Toutput[13:] + 273.15 # return in Kelvin # already done in clgs.py
 
 
+if __name__ == "__main__":
+    cProfile.run("run_sbt()")
+    # run_sbt()
