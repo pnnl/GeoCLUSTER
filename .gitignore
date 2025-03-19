@@ -2,3 +2,4 @@ venv/*
 **/**/__pycache__/*
 .DS_Store
 dash_app/data/decompressed_clgs_results_final_float32.h5
+*.mat
