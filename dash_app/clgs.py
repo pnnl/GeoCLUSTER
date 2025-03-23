@@ -9,6 +9,7 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
 from sbt import run_sbt
+import time
 
 
 class data:
@@ -229,7 +230,7 @@ class data:
                 # PipeParam5 = lateral_multiplier
 
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
-
+            start = time.time()
             times, Tout = run_sbt(
             ## Model Specifications 
             sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=mass_mode_b, HYPERPARAM2="MassFlowRate.xlsx", 
@@ -248,7 +249,8 @@ class data:
             Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
             # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
             )
-
+            end = time.time()
+            print("sbt function run: ", end-start)
             # self.time = times
 
             constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 

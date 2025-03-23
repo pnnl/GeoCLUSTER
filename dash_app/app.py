@@ -1458,6 +1458,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
 
     # print('subsurface')
     # if HDF5:
+    # start = time.time()
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
         Tsurf, c_m, rho_m, 
@@ -1466,6 +1467,8 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         mesh, accuracy, mass_mode, temp_mode
     )
     # if SBT:
+    # end = time.time()
+    # print("run generate_subsurface_lineplots:", end - start)
 
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict
 

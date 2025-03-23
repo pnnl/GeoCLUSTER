@@ -7,12 +7,16 @@ import time
 #import tensorflow as tf
 import scipy.special as sp
 from scipy.special import erf,erfc, jv, yv,exp1
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import spsolve
 import pdb
 import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
+# import cProfile
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
+# 0.0952076912 to run just the new sparse matrix code but there is another like 0.5-0.6 seconds 
 
 # sourced scripts
 is_plot = False
@@ -20,6 +24,7 @@ is_app = True
 from plot_sbt_plotly import plot_borehole_geometry_plotly
 from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
 from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
+from plot_sbt import plot_production_temperature
 
 #%% -------
 # 1. Input
@@ -102,18 +107,15 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
 
     if mesh_fineness == 0:
         times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(40*365*24*3600), 75))) # simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
-        # print(type(times))
         #times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
     elif mesh_fineness == 1:
         #Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
         times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
         times = np.array(times)
-        # print(times)
     elif mesh_fineness == 2:
         #Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
         times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
         times = np.array(times)
-        # print(times)
 
     fullyimplicit = None
     if clg_configuration == 2:
@@ -163,10 +165,7 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
 
     if clg_configuration == 1: # co-axial geometry: (x,y,z)-coordinates of centerline of co-axial heat exchanger [m]
         # Example 1: 2 km vertical well
-        # TODO: we need link this to depth
         # NOTE: option for speeding up, change step size here
-
-        # NOTE: new code by Koenraad
         verticaldepthsection = np.arange(0, -DrillingDepth_L1-1, -100) #removed *1000 on DrillingDepth_L1
         horizontalextentsection = np.arange(100, HorizontalExtent_L2+1, 100) #removed *1000 on HorizontalExtent_L2
         z = np.concatenate((verticaldepthsection, 
@@ -224,16 +223,20 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
             xlat = np.hstack((xlat,xlat, np.linspace(-HorizontalExtent_L2_half,HorizontalExtent_L2_half,20).reshape(-1,1)))
             ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
             zlat = np.hstack((zlat,zlat,zlat))
-            
+
         # Merge x-, y-, and z-coordinates
-        x = np.concatenate((xinj, xprod))
-        y = np.concatenate((yinj, yprod))
-        z = np.concatenate((zinj, zprod))
-        
-        for i in range(numberoflaterals):
-            x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
-            y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
-            z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
+        # x = np.concatenate((xinj, xprod))
+        # y = np.concatenate((yinj, yprod))
+        # z = np.concatenate((zinj, zprod))
+
+        # for i in range(numberoflaterals):
+        #     x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
+        #     y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
+        #     z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
+
+        x = np.vstack([xinj, xprod, xlat[:, :numberoflaterals]])
+        y = np.vstack([yinj, yprod, ylat[:, :numberoflaterals]])
+        z = np.vstack([zinj, zprod, zlat[:, :numberoflaterals]])
 
     return locals()
     
@@ -295,7 +298,8 @@ def compute_tube_geometry(sbt_version, clg_configuration, radiuscenterpipe, thic
 
     interconnections = radiusvector = None
     Deltaz = np.sqrt((x[1:] - x[:-1]) ** 2 + (y[1:] - y[:-1]) ** 2 + (z[1:] - z[:-1]) ** 2)  # Length of each segment [m]
-    Deltaz = Deltaz.reshape(-1)
+    # Deltaz = Deltaz.reshape(-1) # AB update
+    Deltaz = Deltaz.ravel() 
 
     if clg_configuration == 1: # COAXIAL
 
@@ -1440,7 +1444,9 @@ def run_sbt(
             
             
             # Solving the linear system of equations
-            Sol = np.linalg.solve(L, R)    
+            # Sol = np.linalg.solve(L, R) 
+            L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+            Sol = spsolve(L_sparse, R)   
         
         elif sbt_version == 2: #we need to perform iterative convergence for pressure, temperature, and fluid properties
             kk = 1
@@ -1684,7 +1690,9 @@ def run_sbt(
                         
                 
                 # Solving the linear system of equations
-                Sol = np.linalg.solve(L, R)  
+                # Sol = np.linalg.solve(L, R)
+                L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+                Sol = spsolve(L_sparse, R)  
                 if coaxialflowtype == 1: #CXA
                     Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
                     Tfluidupnodes =  np.concatenate((Sol.ravel()[3::4],[Tfluiddownnodes[-1]]))
@@ -1694,7 +1702,8 @@ def run_sbt(
                 
                 Tfluiddownmidpoints = 0.5*Tfluiddownnodes[1:]+0.5*Tfluiddownnodes[:-1]
                 Tfluidupmidpoints = 0.5*Tfluidupnodes[1:]+0.5*Tfluidupnodes[:-1]
-                        
+                
+                start = time.time()
                 #Update fluid properties
                 densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)]))
                 densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidupnodes, Tfluidupnodes + 273.15)]))
@@ -1712,6 +1721,8 @@ def run_sbt(
                 thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
                 Prandtlfluiddownmidpoints = viscosityfluiddownmidpoints/densityfluiddownmidpoints/alphafluiddownmidpoints
                 Prandtlfluidupmidpoints = viscosityfluidupmidpoints/densityfluidupmidpoints/alphafluidupmidpoints
+                end = time.time()
+                print("Area to improve sbt 2?: ", end - start)
 
                 if coaxialflowtype == 1: #CXA
                     Refluiddownmidpoints = densityfluiddownmidpoints*velocityfluiddownmidpoints*(Dh_annulus)/viscosityfluiddownmidpoints
@@ -1733,8 +1744,9 @@ def run_sbt(
                     velocityfluidupnodes = m/A_flow_annulus/densityfluidupnodes
 
                 maxrelativechange = np.max(np.concatenate([np.abs(Tfluidupnodes - TfluidupnodesOld) / Tfluidupnodes, np.abs(Tfluiddownnodes - TfluiddownnodesOld) / Tfluiddownnodes]))
-                linetoprint = f"Step = {i} | Iteration = {kk} | Max Rel Change = {maxrelativechange}"
-                print(linetoprint)
+                # AB: removed print statements
+                # linetoprint = f"Step = {i} | Iteration = {kk} | Max Rel Change = {maxrelativechange}"
+                # print(linetoprint)
                 TfluidupnodesOld = Tfluidupnodes
                 TfluiddownnodesOld = Tfluiddownnodes
                 kk = kk+1
@@ -1888,8 +1900,10 @@ def run_sbt(
                                         Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
                                         Deltaz=Deltaz)
         
-        plot_heat_production(HeatProduction=HeatProduction, times=times)
-        plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
+        plot_heat_production(clg_configuration=clg_configuration, HeatProduction=HeatProduction, times=times)
+        if sbt_version == 2:
+            plot_production_temperature(sbt_version=sbt_version, Poutput=Poutput, Pin=Pin, times=times)
+        plot_production_temperature_linear(clg_configuration=clg_configuration, Toutput=Toutput, Tinstore=Tinstore, times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
     # print(Toutput + 273.15)
@@ -1899,3 +1913,8 @@ def run_sbt(
     # return times[13:]/365/24/3600, Toutput[13:] + 273.15 # return in Kelvin # already done in clgs.py
 
 
+# if __name__ == "__main__":
+#      cProfile.run("run_sbt()")
+#      # run_sbt()
+
+# dropped from 1.5 seconds to 0.6 seconds (about a second drop)
