@@ -15,8 +15,8 @@ import math
 from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
 # import cProfile
-#has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
-# 0.0952076912 to run just the new sparse matrix code but there is another like 0.5-0.6 seconds 
+# has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
+# 0.0952076912 to run just the new sparse matrix code but there is another like 0.5-0.6 seconds taking up other compute
 
 # sourced scripts
 is_plot = False
@@ -141,6 +141,7 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
         piperoughness = HYPERPARAM2 # 1e-6                  # Pipe/borehole roughness to calculate friction pressure drop [m]
         variablefluidproperties = HYPERPARAM3 # 1           # Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
         
+        # AB: should these be editable to the user?
         # converge parameters
         reltolerance = HYPERPARAM4 # 1e-5                   # Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
         maxnumberofiterations = HYPERPARAM5 #15             # Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
@@ -225,23 +226,24 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
             zlat = np.hstack((zlat,zlat,zlat))
 
         # Merge x-, y-, and z-coordinates
-        # x = np.concatenate((xinj, xprod))
-        # y = np.concatenate((yinj, yprod))
-        # z = np.concatenate((zinj, zprod))
+        x = np.concatenate((xinj, xprod))
+        y = np.concatenate((yinj, yprod))
+        z = np.concatenate((zinj, zprod))
 
-        # for i in range(numberoflaterals):
-        #     x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
-        #     y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
-        #     z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
+        for i in range(numberoflaterals):
+            x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
+            y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
+            z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
 
-        x = np.vstack([xinj, xprod, xlat[:, :numberoflaterals]])
-        y = np.vstack([yinj, yprod, ylat[:, :numberoflaterals]])
-        z = np.vstack([zinj, zprod, zlat[:, :numberoflaterals]])
+        # this could be slightly faster but not tested for accuracy
+        # x = np.vstack([xinj, xprod, xlat[:, :numberoflaterals]])
+        # y = np.vstack([yinj, yprod, ylat[:, :numberoflaterals]])
+        # z = np.vstack([zinj, zprod, zlat[:, :numberoflaterals]])
 
     return locals()
     
 
-def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5):
+def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5):
    
     """ 
         ## Tube Geometry
@@ -249,8 +251,8 @@ def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeP
         Diameter2                        #
     """
 
-    radius = radiuscenterpipe = thicknesscenterpipe = coaxialflowtype = None # coaxial
-    numberoflaterals = radiuslateral = lateralflowallocation =  None # uloop
+    radius = radiuscenterpipe = thicknesscenterpipe = coaxialflowtype = autoadjustlateralflowrates = None # coaxial
+    numberoflaterals = radiuslateral = lateralflowallocation =  None # uloop 
     
     if clg_configuration == 1:  # co-axial geometry (1)
         radius = Diameter1/2  # 0.2286/2                # Wellbore radius [m] (everything is assumed open-hole)
@@ -268,6 +270,11 @@ def set_tube_geometry(clg_configuration, Diameter1, Diameter2, PipeParam3, PipeP
         lateralflowallocation = PipeParam4 # [1/3, 1/3, 1/3]                         # Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
         lateralflowmultiplier = PipeParam5 # 1                                       # Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
 
+        # TODO: ADD NEW PARAMETER (required if clg_configuration is 2)
+        # USER EDITABLE? (v27)
+        if sbt_version == 2:
+            autoadjustlateralflowrates = 0               # Only used in SBT v2 U-loop. Must be 0 or 1. "0" means the flow rate in each lateral remains constant with a distribution as specified in lateralflowallocation. "1" means that the flow rate in each lateral is adjusted over time to ensure matching fluid pressures at the exit of each lateral. Sometimes this can cause convergence issues.
+
     return locals()
 
 def admin_fluid_properties():
@@ -282,7 +289,7 @@ def admin_fluid_properties():
 
     cp_f=4200
     rho_f=1000
-    k_f=0.68
+    k_f=0.68 # k_f = 0.667 
     mu_f=600*10**-6
 
     g = 9.81                       # Gravitational acceleration [m/s^2]
@@ -593,7 +600,8 @@ def run_sbt(
     # Geologic properties are set at the start of run_sbt() 
     # rest of variables are "set" below
 
-    tube_geometry_dict = set_tube_geometry(clg_configuration=clg_configuration, 
+    tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
+                                            clg_configuration=clg_configuration, 
                                             Diameter1=Diameter1, Diameter2=Diameter2, 
                                             PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                             )
@@ -615,15 +623,13 @@ def run_sbt(
     globals().update(sbt_hyperparams_dict)
     # print(sbt_hyperparams_dict.keys())
 
-    # if is_plot:
     plot_borehole_geometry_plotly(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
                             x=x, y=y, z=z, 
                             xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
 
-    #%% ----------------
-    # 2. Pre-Processing
-    # Generally, nothing should be changed by the user in this section
-    #------------------
+    # -------------------------------------------------------------------------------------
+    # Generally, nothing should be changed by the user beyond here
+    # -------------------------------------------------------------------------------------
 
     # print("\n")
     # print(" -------------------------------- SBT ADMIN INPUTS -------------------------------- ")
@@ -1861,7 +1867,7 @@ def run_sbt(
         # if i>1:
         #     scipy.io.savemat(filename, dict(timestep=i,LPython=L,RPython=R,CPCPPython=CPCP,CPOPPython=CPOP,NPCPPython=NPCP,NPOPPython=NPOP,SolPython = Sol))
         
-    #%% -----------------
+    # -----------------
     # 4. Post-Processing
     # The user can modify this section depending on the desired figures and simulation results
     #-------------------

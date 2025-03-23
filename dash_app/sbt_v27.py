@@ -6,29 +6,31 @@ import time
 import scipy.special as sp
 from scipy.special import erf,erfc, jv, yv,exp1
 from scipy.sparse import csc_matrix
- from scipy.sparse.linalg import spsolve
+from scipy.sparse.linalg import spsolve
 import pdb
 import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
 #v27 has SBT v1 for co-axial and U-loop, SBT v2 for co-axial and U-loop,as well as FMM algorithm
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
+from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
+from plot_sbt import plot_production_temperature
 
-#%% -------
-# 1. Input
+from sbt import set_wellbore_geometry, set_tube_geometry, set_sbt_hyperparameters, admin_fluid_properties
+from sbt import compute_tube_geometry
+
+is_plot = True
+
+######################################################### Inputs ################################################################
 # Generally, the user should only make changes to this section
-#---------
 
 ## SBT bodel settings
-clg_configuration = 2                                           #Must be 1 or 2. "1" mean co-axial, "2" U-loop
-sbt_version = 2                                                 #Must be 1 or 2. 1 means SBT v1 (Temperature only); 2 means SBT v2 (Temperature and Pressure including allowing TP dependent fluid properties)
+clg_configuration = 1                                           #Must be 1 or 2. "1" mean co-axial, "2" U-loop
+sbt_version = 1                                                 #Must be 1 or 2. 1 means SBT v1 (Temperature only); 2 means SBT v2 (Temperature and Pressure including allowing TP dependent fluid properties)
 
 ## Scenario settings applicable in both SBT v1 and v2
 m = 20                                                          #Total fluid mass flow rate [kg/s]. m must be provided if the user sets variableflowrate to 0.
 Tin = 20                                                        #Constant injection temperature [deg.C]
-cp_f = 4200                                                     #Fluid specific heat capacity [J/kgK]
-rho_f = 1000                                                    #Fluid density [kg/m3]
-k_f = 0.667                                                     #Fluid heat conductivity [W/m.K]
-mu_f = 600*10**-6                                               #Fluid dynamic viscosity [Pa.s]
 Tsurf = 20                                                      #Surface temperature [deg C]
 GeoGradient = 90/1000                                           #Geothermal gradient [C/m]
 k_m = 2.83                                                      #Rock thermal conductivity [W/m.K]
@@ -36,8 +38,6 @@ c_m = 825                                                       #Rock specific h
 rho_m = 2875                                                    #Rock density [kg/m3]
 
 #co-axial geometry (required if clg_configuration is 1)
-radius = 0.2286/2                                               #Wellbore radius [m] (everything is assumed open-hole)
-radiuscenterpipe = 0.127/2                                      #Inner radius of inner pipe [m]
 thicknesscenterpipe = 0.0127                                    #Thickness of inner pipe [m]
 k_center_pipe = 0.006                                           #Thermal conductivity of insulation of center pipe wall [W/m/K]
 coaxialflowtype = 1                                             #1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
@@ -48,7 +48,7 @@ radiuslateral = 0.15                                            #Radius of later
 numberoflaterals = 3                                            #Number of laterals (must be integer) [-]
 lateralflowallocation = [1/3, 1/3, 1/3]                         #Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
 lateralflowmultiplier = 1                                       #Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
-autoadjustlateralflowrates = 0                                  #Only used in SBT v2 U-loop. Must be 0 or 1. "0" means the flow rate in each lateral remains constant with a distribution as specified in lateralflowallocation. "1" means that the flow rate in each lateral is adjusted over time to ensure matching fluid pressures at the exit of each lateral. Sometimes this can cause convergence issues.
+# autoadjustlateralflowrates = 0                                  #Only used in SBT v2 U-loop. Must be 0 or 1. "0" means the flow rate in each lateral remains constant with a distribution as specified in lateralflowallocation. "1" means that the flow rate in each lateral is adjusted over time to ensure matching fluid pressures at the exit of each lateral. Sometimes this can cause convergence issues.
 
 ## SBT v1 specific settings
 variableflowrate = 0                                            #Must be 0 or 1. "0" means the user provides a constant mass flow rate m. "1" means the user provides an excel file with a mass flow rate profile. [only works in SBT v1]
@@ -63,116 +63,96 @@ piperoughness = 1e-6                                           #Pipe/borehole ro
 variablefluidproperties = 1                                     #Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
 
 ## Simulation and SBT algorithm settings
-times = np.concatenate((np.linspace(0,9900,100), np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))) #simulation times [s] (must start with 0; to obtain smooth results, abrupt changes in time step size should be avoided. logarithmic spacing is recommended)
-#times = np.concatenate((np.linspace(0,9900,100),  np.linspace(10000, int(20*3.1*10**7), num=(int(20*3.1*10**7) - 10000) // 3600 + 1)))
-#Note 1: When providing a variable injection temperature or flow rate, a finer time grid may be required. Below is an example with long term time steps of about 36 days.
-#times = [0] + list(range(100, 10000, 100)) + list(np.logspace(np.log10(100*100), np.log10(0.1*365*24*3600), 40)) + list(np.arange(0.2*365*24*3600, 20*365*24*3600, 0.1*365*24*3600))
-#Note 2: To capture the start-up effects, several small time steps are taken during the first 10,000 seconds in the time vector considered. To speed up the simulation, this can be avoided with limited impact on the long-term results. For example, an alternative time vector would be:
-#times = [0] + list(range(100, 1000, 100)) + list(range(1000, 10000, 1000)) + list(np.logspace(np.log10(100*100), np.log10(20*365*24*3600), 75))
-fullyimplicit = 1                                               #Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
 accuracy = 5                                                    #Must be 1,2,3,4 or 5 with 1 lowest accuracy and 5 highest accuracy. Lowest accuracy runs fastest. Accuracy level impacts number of discretizations for numerical integration and decision tree thresholds in SBT algorithm.
-FMM = 0                                                        #if 1, use fast multi-pole methold-like approach (i.e., combine old heat pulses to speed up simulation)
-FMMtriggertime = 3600*24*10                                     #threshold time beyond which heat pulses can be combined with others [s]
-
-#converge parameters for SBT v2
 reltolerance = 1e-5                                             #Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
 maxnumberofiterations = 15                                      #Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
 
 
-#(x,y,z) geometry of CLG heat exchanger
-#The vectors storing the x-, y- and z-coordinates should be column vectors
-#To obtain smooth results, abrupt changes in segment lengths should be avoided.
+######################################################### Input Settings ################################################################
+DrillingDepth_L1=3500
+HorizontalExtent_L2=10000.0
+wellbore_geometry_dict = set_wellbore_geometry(clg_configuration=clg_configuration, 
+                                                    DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
+                                                    numberoflaterals=numberoflaterals
+                                                    )
+globals().update(wellbore_geometry_dict)                                                    
 
-if clg_configuration == 1: #co-axial geometry: (x,y,z)-coordinates of centerline of co-axial heat exchanger [m]
-    #Example 1: 2 km vertical well
-    z = np.arange(0, -2001, -50).reshape(-1, 1)
-    x = np.zeros((len(z), 1))
-    y = np.zeros((len(z), 1))
-    
-    # #Example 2: 2 km vertical well + 1km horizontal extent
-    # Depth = 2 #provided here in km
-    # HorizontalExtent = 1 #provided here in km
-    # verticaldepthsection = np.arange(0, -Depth*1000-1, -100)
-    # horizontalextentsection = np.arange(100, HorizontalExtent*1000+1, 100)
-    # z = np.concatenate((verticaldepthsection, verticaldepthsection[-1]*np.ones(len(horizontalextentsection)))).reshape(-1, 1)
-    # x = np.concatenate((np.zeros(len(verticaldepthsection)),horizontalextentsection)).reshape(-1, 1)
-    # y = np.zeros((len(z), 1))
-    
-elif clg_configuration == 2: #U-loop geometry: (x,y,z)-coordinates of centerline of injection well, production well and laterals
-    # Coordinates of injection well (coordinates are provided from top to bottom in the direction of flow)
-    zinj = np.arange(0, -2000 - 100, -100).reshape(-1, 1)
-    yinj = np.zeros((len(zinj), 1))
-    xinj = -1000 * np.ones((len(zinj), 1))
-    
-    # Coordinates of production well (coordinates are provided from bottom to top in the direction of flow)
-    zprod = np.arange(-2000, 0 + 100, 100).reshape(-1, 1)
-    yprod = np.zeros((len(zprod), 1))
-    xprod = 1000 * np.ones((len(zprod), 1))
-    
-    # (x, y, z)-coordinates of laterals are stored in three matrices (one each for the x, y, and z coordinates). 
-    # The number of columns in each matrix corresponds to the number of laterals. The number of discretizations 
-    # should be the same for each lateral. Coordinates are provided in the direction of flow; the first coordinate should match 
-    # the last coordinate of the injection well, and the last coordinate should match the first coordinate of the 
-    # production well
-    xlat = np.concatenate((np.array([-1000, -918, -814]), np.linspace(-706, 706, 14), np.array([814, 918, 1000]))\
-    ).reshape(-1,1)
-    ylat = np.concatenate((100 * np.cos(np.linspace(-np.pi/2, 0, 3)), 100 * np.ones(14), 100 *\
-    np.cos(np.linspace(0, np.pi/2, 3)))).reshape(-1,1)
-    zlat = (-2000 * np.ones((len(xlat)))).reshape(-1,1)
-    
-    xlat = np.hstack((xlat,xlat,np.linspace(-1000,1000,20).reshape(-1,1)))
-    ylat = np.hstack((ylat,-ylat, np.zeros(len(ylat)).reshape(-1,1)))
-    zlat = np.hstack((zlat,zlat,zlat))
-    
-    # Merge x-, y-, and z-coordinates
-    x = np.concatenate((xinj, xprod))
-    y = np.concatenate((yinj, yprod))
-    z = np.concatenate((zinj, zprod))
-    
-    for i in range(numberoflaterals):
-        x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
-        y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
-        z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
-   
-# Make 3D figure of borehole geometry to make sure it looks correct
-plt.close('all') #close all curent figures
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
+Diameter1 = 0.2286
+Diameter2 = 0.127
+radius = Diameter1/2  # 0.2286/2                # Wellbore radius [m] (everything is assumed open-hole)
+radiuscenterpipe = Diameter2/2  # 0.127/2       # Inner radius of inner pipe [m]
 
-# AB: already in plot_sbt.py
-# if clg_configuration == 1: #co-axial geometry
-#     ax.plot(x, y, z, 'k-o', linewidth=2)
-#     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-#     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-#     ax.set_zlim([np.min(z) - 500, 0])
-#     ax.set_zlabel('Depth (m)')
-#     ax.set_xlabel('x (m)')
-#     ax.set_ylabel('y (m)')
-# elif clg_configuration == 2: #U-loop geometry
-#     ax.plot(xinj, yinj, zinj, 'b-o', linewidth=2)    
-#     ax.plot(xprod, yprod, zprod, 'r-o', linewidth=2)        
-#     for i in range(numberoflaterals):
-#         ax.plot(xlat[:, i], ylat[:, i], zlat[:, i], 'k-o', linewidth=2)
-#     #ax.axis('equal') # Uncomment this line to set the plotted geometry to correct scale with equal axis unit spacing
-#     ax.set_xlim([np.min(x) - 200, np.max(x) + 200])
-#     ax.set_ylim([np.min(y) - 200, np.max(y) + 200])
-#     ax.set_zlim([np.min(z) - 500, 0])
-#     ax.set_zlabel('Depth (m)')
-#     ax.set_xlabel('x (m)')
-#     ax.set_ylabel('y (m)')
-#     ax.legend(['Injection Well', 'Production Well', 'Lateral(s)'])
+if clg_configuration==1:
+    PipeParam3 = thicknesscenterpipe
+    PipeParam4 = k_center_pipe
+    PipeParam5 = coaxialflowtype 
+if clg_configuration==2:
+    PipeParam3 = numberoflaterals
+    PipeParam4 = lateralflowallocation
+    PipeParam5 = lateralflowmultiplier 
 
-# plt.show()
+tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
+                                            clg_configuration=clg_configuration, 
+                                            Diameter1=Diameter1, Diameter2=Diameter2, 
+                                            PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
+                                            )
+globals().update(tube_geometry_dict)
 
+mesh_fineness = 0
+## SBT ASSUMPTIONS FOR V1 v.s. V2
+if sbt_version == 1: ## SBT v1 specific settings (ONLY WATER)
+    
+    HYPERPARAM1 = variableflowrate
+    HYPERPARAM2 = flowratefilename
+    HYPERPARAM3 = variableinjectiontemperature
+    HYPERPARAM4 = injectiontemperaturefilename
+    HYPERPARAM5 = None
+
+    if fluid == 2:
+        print("ERROR!! CAN'T DO sCO2 for SBT V1.0") #will always only be able to run H20 and NOT sCO2 || # Heat transfer fluid selection: 1 = H2O; 2 = CO2
+
+if sbt_version == 2: ## SBT v2 specific settings
+    
+    HYPERPARAM1 = Pin 
+    HYPERPARAM2 = piperoughness
+    HYPERPARAM3 = variablefluidproperties
+    # AB: should these be editable to the user?
+    # converge parameters
+    HYPERPARAM4 = reltolerance
+    HYPERPARAM5 = maxnumberofiterations
+
+sbt_hyperparams_dict = set_sbt_hyperparameters(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                                accuracy=accuracy,
+                                                mesh_fineness=mesh_fineness, fluid=fluid, 
+                                                HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
+                                                HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
+globals().update(sbt_hyperparams_dict)
+
+if is_plot:
+    plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
+                            x=x, y=y, z=z, 
+                            xinj=xinj, yinj=yinj, zinj=zinj, xprod=xprod, yprod=yprod, zprod=zprod, xlat=xlat, ylat=ylat, zlat=zlat)
+
+fluid_properties = admin_fluid_properties()
+globals().update(fluid_properties)
+
+######################################################### COMPUTE ################################################################
+
+# tube_geometry_dict2 = compute_tube_geometry(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+#                                             radiuscenterpipe=radiuscenterpipe, thicknesscenterpipe=thicknesscenterpipe, 
+#                                             xinj=xinj, xprod=xprod, xlat=xlat, numberoflaterals=numberoflaterals, 
+#                                             radiuslateral=radiuslateral, 
+#                                             lateralflowallocation=lateralflowallocation)
+# globals().update(tube_geometry_dict2)
 
 #%% ----------------
 # 2. Pre-Processing
 # Generally, nothing should be changed by the user in this section
 #------------------
-g = 9.81                       #Gravitational acceleration [m/s^2]
-gamma = 0.577215665  # Euler's constant
-alpha_f = k_f / rho_f / cp_f  # Fluid thermal diffusivity [m2/s]
-Pr_f = mu_f / rho_f / alpha_f  # Fluid Prandtl number [-]
+# g = 9.81                       #Gravitational acceleration [m/s^2]
+# gamma = 0.577215665  # Euler's constant
+# alpha_f = k_f / rho_f / cp_f  # Fluid thermal diffusivity [m2/s]
+# Pr_f = mu_f / rho_f / alpha_f  # Fluid Prandtl number [-]
 alpha_m = k_m / rho_m / c_m  # Thermal diffusivity medium [m2/s]
 
 if clg_configuration == 1: #co-axial geometry
@@ -309,6 +289,13 @@ if clg_configuration == 2: #additional quality control for U-loop geometry
     if len(lateralflowallocation) != numberoflaterals:
         print('Error: Length of array "lateralflowallocation" does not match the number of laterals')
   
+
+
+
+
+
+######################################################### ___ ################################################################
+
 # Read injection temperature profile if provided
 Tinstore = np.zeros(len(times))
 if variableinjectiontemperature == 1 and sbt_version == 1:
@@ -357,64 +344,68 @@ if variableflowrate == 1 and sbt_version == 1:  # User has provided mass flow ra
 else:
     mstore[0] = m
 
+
 #load accuracy parameters 
-print("Load accuracy parameters ...")
-if accuracy == 1:
-    NoArgumentsFinitePipeCorrection = 25
-    NoDiscrFinitePipeCorrection = 200
-    NoArgumentsInfCylIntegration = 25
-    NoDiscrInfCylIntegration = 200
-    LimitPointSourceModel = 1.5
-    LimitCylinderModelRequired = 25
-    LimitInfiniteModel = 0.05
-    LimitNPSpacingTime = 0.1
-    LimitSoverL = 1.5
-    M = 3
-elif accuracy == 2:
-    NoArgumentsFinitePipeCorrection = 50
-    NoDiscrFinitePipeCorrection = 400
-    NoArgumentsInfCylIntegration = 50
-    NoDiscrInfCylIntegration = 400
-    LimitPointSourceModel = 2.5
-    LimitCylinderModelRequired = 50
-    LimitInfiniteModel = 0.01
-    LimitNPSpacingTime = 0.04
-    LimitSoverL = 2
-    M = 4
-elif accuracy == 3:
-    NoArgumentsFinitePipeCorrection = 100
-    NoDiscrFinitePipeCorrection = 500
-    NoArgumentsInfCylIntegration = 100
-    NoDiscrInfCylIntegration = 500
-    LimitPointSourceModel = 5
-    LimitCylinderModelRequired = 100
-    LimitInfiniteModel = 0.004
-    LimitNPSpacingTime = 0.02
-    LimitSoverL = 3
-    M = 5
-elif accuracy == 4:
-    NoArgumentsFinitePipeCorrection = 200
-    NoDiscrFinitePipeCorrection = 1000
-    NoArgumentsInfCylIntegration = 200
-    NoDiscrInfCylIntegration = 1000
-    LimitPointSourceModel = 10
-    LimitCylinderModelRequired = 200
-    LimitInfiniteModel = 0.002
-    LimitNPSpacingTime = 0.01
-    LimitSoverL = 5
-    M = 10
-elif accuracy == 5:
-    NoArgumentsFinitePipeCorrection = 400
-    NoDiscrFinitePipeCorrection = 2000
-    NoArgumentsInfCylIntegration = 400
-    NoDiscrInfCylIntegration = 2000
-    LimitPointSourceModel = 20
-    LimitCylinderModelRequired = 400
-    LimitInfiniteModel = 0.001
-    LimitNPSpacingTime = 0.005
-    LimitSoverL = 9
-    M = 20
-print("Accuracy parameters loaded successfully")
+# print("Load accuracy parameters ...")
+# if accuracy == 1:
+#     NoArgumentsFinitePipeCorrection = 25
+#     NoDiscrFinitePipeCorrection = 200
+#     NoArgumentsInfCylIntegration = 25
+#     NoDiscrInfCylIntegration = 200
+#     LimitPointSourceModel = 1.5
+#     LimitCylinderModelRequired = 25
+#     LimitInfiniteModel = 0.05
+#     LimitNPSpacingTime = 0.1
+#     LimitSoverL = 1.5
+#     M = 3
+# elif accuracy == 2:
+#     NoArgumentsFinitePipeCorrection = 50
+#     NoDiscrFinitePipeCorrection = 400
+#     NoArgumentsInfCylIntegration = 50
+#     NoDiscrInfCylIntegration = 400
+#     LimitPointSourceModel = 2.5
+#     LimitCylinderModelRequired = 50
+#     LimitInfiniteModel = 0.01
+#     LimitNPSpacingTime = 0.04
+#     LimitSoverL = 2
+#     M = 4
+# elif accuracy == 3:
+#     NoArgumentsFinitePipeCorrection = 100
+#     NoDiscrFinitePipeCorrection = 500
+#     NoArgumentsInfCylIntegration = 100
+#     NoDiscrInfCylIntegration = 500
+#     LimitPointSourceModel = 5
+#     LimitCylinderModelRequired = 100
+#     LimitInfiniteModel = 0.004
+#     LimitNPSpacingTime = 0.02
+#     LimitSoverL = 3
+#     M = 5
+# elif accuracy == 4:
+#     NoArgumentsFinitePipeCorrection = 200
+#     NoDiscrFinitePipeCorrection = 1000
+#     NoArgumentsInfCylIntegration = 200
+#     NoDiscrInfCylIntegration = 1000
+#     LimitPointSourceModel = 10
+#     LimitCylinderModelRequired = 200
+#     LimitInfiniteModel = 0.002
+#     LimitNPSpacingTime = 0.01
+#     LimitSoverL = 5
+#     M = 10
+# elif accuracy == 5:
+#     NoArgumentsFinitePipeCorrection = 400
+#     NoDiscrFinitePipeCorrection = 2000
+#     NoArgumentsInfCylIntegration = 400
+#     NoDiscrInfCylIntegration = 2000
+#     LimitPointSourceModel = 20
+#     LimitCylinderModelRequired = 400
+#     LimitInfiniteModel = 0.001
+#     LimitNPSpacingTime = 0.005
+#     LimitSoverL = 9
+#     M = 20
+# print("Accuracy parameters loaded successfully")
+
+
+
 
 #Precalculate SBT distribution
 print("Precalculate SBT distributions ...")
@@ -2072,202 +2063,28 @@ passedtime = toc-tic
 line_to_print = f'Calculation time = {passedtime:.2f} s\n'
 print(line_to_print)
 
-#AB: Already in plot_sbt.py
-# #Plot final fluid temperature profile
-# if clg_configuration == 1: #co-axial geometry 
-#     plt.figure()
-#     if sbt_version == 1:
-#         plt.plot(Tw_down_previous,-np.cumsum(Deltaz),'b-')
-#         plt.plot(Tw_up_previous,-np.cumsum(Deltaz),'r-')
-#     elif sbt_version == 2:
-#         plt.plot(Tfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))),'b-')
-#         plt.plot(Tfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))),'r-')        
-#     plt.grid(True)
-#     plt.xlabel('Fluid Temperature [°C]', fontsize=12)
-#     plt.ylabel('Measured Depth [m]', fontsize=12)
-#     plt.xticks(fontsize=12)
-#     plt.yticks(fontsize=12)
-#     plt.title('Final Fluid Temperature')
-#     if coaxialflowtype == 1:
-#         plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='best')
-#     elif coaxialflowtype == 2:
-#         plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='best')
-#     plt.show()
+raise SystemExit
 
-# elif clg_configuration == 2: #U-loop geometry 
-#     if sbt_version == 1:
-#         Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
-#         Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
-#         Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
-#         plt.figure()
-#         plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
-#         plt.grid(True)
-#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
-#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
-        
-#         for kk in range(numberoflaterals):
-#             if kk < numberoflaterals-1:
-#                 Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
-                
-#             else:
-#                 Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
-#             if(kk==0):
-#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
-#             if (kk==1):
-#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
-#             if (kk==2):
-#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
-#         plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
-#                  np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
-        
-#         plt.ylabel('Fluid Temperature [°C]', fontsize=12)
-#         plt.xlabel('Position along flow path [-]', fontsize=12)
-#         plt.xticks(fontsize=12)
-#         plt.yticks(fontsize=12)
-#         plt.title('Final Fluid Temperature')
-#         plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
-#         plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
-#         plt.show()  
-#     elif sbt_version == 2:
-#         Tw_final_injector = Tfluidnodes[:interconnections[0]+1]  # Final fluid temperature profile in injection well [°C]
-#         Tw_final_producer = Tfluidnodes[interconnections[0]+1:interconnections[1]+1]  # Final fluid temperature profile in production well [°C]
-#         plt.figure()
-#         plt.plot(range(1, interconnections[0] + 2), Tw_final_injector, 'b-', linewidth=2, label='Injection Well')
-#         plt.grid(True)
-#         #Dummy plot for legend purposes
-#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral(s)')
-#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Production Well')
-#         for dd in range(numberoflaterals):
-#             Tw_final_lateral = np.concatenate([
-#                 [Tfluidnodes[interconnections[0]]],
-#                 Tfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
-#                 [Tfluidlateralexitstore[dd, -1]]
-#             ])  # Final fluid temperature profile in lateral dd [°C]
-        
-#             lateral_x = range(len(xinj), len(xinj) + len(xlat))
-#             plt.plot(lateral_x, Tw_final_lateral, 'k-', linewidth=2)
-#         producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
-#         plt.plot(producer_x, Tw_final_producer, 'r-', linewidth=2)
-#         plt.ylabel('Fluid Temperature [°C]', fontsize=12)
-#         plt.xlabel('Position along flow path [-]', fontsize=12)
-#         plt.title('Final Fluid Temperature', fontsize=14)
-#         plt.gca().tick_params(labelsize=12)
-#         plt.legend(loc='upper left')
-#         x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
-#         y_min = min(Tfluidnodes) - 1
-#         y_max = max(Tfluidnodes) + 1
-#         plt.axis([0, x_axis_limit, y_min, y_max])
+if is_plot:
+    plot_final_fluid_temp_profile_v1(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                    # Tw_up_previous=Tw_up_previous, # ???
+                                    Tw_up_previous=Twprevious,
+                                    Tw_down_previous=Tw_down_previous, 
+                                    Tfluiddownnodes=Tfluiddownnodes, 
+                                    Deltaz=Deltaz, TwMatrix=TwMatrix, 
+                                    numberoflaterals=numberoflaterals, coaxialflowtype=coaxialflowtype,
+                                    interconnections=interconnections_new,
+                                    lateralflowallocation=lateralflowallocation,
+                                    xinj=xinj, xlat=xlat, xprod=xprod)
+    
+    plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
+                                    coaxialflowtype=coaxialflowtype, 
+                                    Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
+                                    Deltaz=Deltaz)
+    
+    plot_heat_production(clg_configuration=clg_configuration, HeatProduction=HeatProduction, times=times)
+    if sbt_version == 2:
+        plot_production_temperature(sbt_version=sbt_version, Poutput=Poutput, Pin=Pin, times=times)
+    plot_production_temperature_linear(clg_configuration=clg_configuration, Toutput=Toutput, Tinstore=Tinstore, times=times)
+    plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
-# #Plot final fluid pressure profile (SBT v2 only)
-# if sbt_version == 2:
-#     if clg_configuration == 1: #co-axial geometry 
-#         plt.figure()
-#         plt.plot(Pfluiddownnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'b-')
-#         plt.plot(Pfluidupnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'r-')        
-#         plt.grid(True)
-#         plt.xlabel('Fluid Pressure [bar]', fontsize=12)
-#         plt.ylabel('Measured Depth [m]', fontsize=12)
-#         plt.xticks(fontsize=12)
-#         plt.yticks(fontsize=12)
-#         plt.title('Final Fluid Pressure')
-#         if coaxialflowtype == 1:
-#             plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='best')
-#         elif coaxialflowtype == 2:
-#             plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='best')
-#         plt.show()    
-        
-#     elif clg_configuration == 2: #U-loop geometry 
-#         Pw_final_injector = np.array(Pfluidnodes[:interconnections[0]+1]) / 1e5  # Final fluid pressure profile in injection well [bar]
-#         Pw_final_producer = np.array(Pfluidnodes[interconnections[0]+1:interconnections[1]+1]) / 1e5  # Final fluid pressure profile in production well [bar]
-#         plt.figure()
-#         plt.plot(range(1, interconnections[0] + 2), Pw_final_injector, 'b-', linewidth=2, label='Injector')
-#         plt.grid(True)
-#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral')  # Dummy plot for legend
-#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Producer')  # Dummy plot for legend
-#         for dd in range(numberoflaterals):
-#             Pw_final_lateral = np.concatenate([
-#                 [Pfluidnodes[interconnections[0]]],
-#                 Pfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
-#                 [Pfluidlateralexit[dd]]
-#             ]) / 1e5  # Final fluid pressure profile in lateral dd [bar]
-        
-#             lateral_x = range(len(xinj), len(xinj) + len(xlat))
-#             plt.plot(lateral_x, Pw_final_lateral, 'k-', linewidth=2)
-        
-#         producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
-#         plt.plot(producer_x, Pw_final_producer, 'r-', linewidth=2, label='Producer')
-#         plt.ylabel('Fluid Pressure [bar]', fontsize=12)
-#         plt.xlabel('Position along flow path [-]', fontsize=12)
-#         plt.title('Final Fluid Pressure', fontsize=14)
-#         plt.gca().tick_params(labelsize=12)
-#         plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='best')
-#         x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
-#         y_min = min(Pfluidnodes) / 1e5 - 10
-#         y_max = max(Pfluidnodes) / 1e5 + 10
-#         plt.axis([0, x_axis_limit, y_min, y_max])
-#         plt.show()
-                
-
-#AB: Already in plot_sbt.py
-# Plot heat production
-# plt.figure()
-# plt.plot(times[1:]/3600/24/365, HeatProduction[1:], linewidth=2, color='green')
-# if clg_configuration == 1: #co-axial geometry
-#     plt.axis([0, times[-1]/3600/24/365, 0, 5*AverageHeatProduction])
-# elif clg_configuration == 2: #U-loop geometry
-#     plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
-# plt.xlabel('Time [years]', fontsize=12)
-# plt.ylabel('Heat Production [MWt]', fontsize=12)
-# plt.gca().set_facecolor((1, 1, 1))
-# plt.grid(True)
-# plt.xticks(fontsize=12)
-# plt.yticks(fontsize=12)
-# plt.show()
-
-# AB: added to plot_sbt.py
-# Plot production pressure
-# if sbt_version == 2:
-#     time_years = np.array(times[1:]) / (365 * 24 * 3600)
-#     plt.figure()
-#     plt.plot(time_years, Poutput[1:], linewidth=2, color='red', label='Production Pressure')
-#     plt.axis([0, times[-1] / (365 * 24 * 3600), Pin - 10, max(Poutput) + 10])
-#     plt.plot([0, times[-1] / (365 * 24 * 3600)], [Pin, Pin], linewidth=2, color='blue', label='Injection Pressure')
-#     plt.xlabel('Time [years]', fontsize=12)
-#     plt.ylabel('Pressure [bar]', fontsize=12)
-#     plt.grid(True)
-#     plt.gca().tick_params(labelsize=12)
-#     plt.legend(fontsize=12)
-#     plt.gcf().set_facecolor('white')
-#     plt.show()
-
-# AB: Already in plot_sbt.py
-# Plot production temperature with linear time scale
-# plt.figure()
-# plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='red', label='Production Temperature')
-# if clg_configuration == 1: #co-axial geometry
-#     plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, AverageProductionTemperature+5*(AverageProductionTemperature-min(Tinstore))])
-# elif clg_configuration == 2: #U-loop geometry
-#     plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
-# plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='blue', label='Injection Temperature')
-# plt.xlabel('Time [years]', fontsize=12)
-# plt.ylabel('Temperature [°C]', fontsize=12)
-# plt.gca().set_facecolor((1, 1, 1))
-# plt.grid(True)
-# plt.legend()
-# plt.xticks(fontsize=12)
-# plt.yticks(fontsize=12)
-# plt.show()
-
-# AB: Already in plot_sbt.py
-# # Plot production temperature with logarithmic time scale
-# plt.figure()
-# plt.semilogx(times[1:], Toutput[1:], linewidth=2, color='red')
-# plt.axis([10**2, times[-1], 0, max(Toutput)+10])
-# plt.xlabel('Time [s]', fontsize=12)
-# plt.ylabel('Production Temperature [°C]', fontsize=12)
-# plt.gca().set_facecolor((1, 1, 1))
-# plt.grid(True)
-# plt.xticks(fontsize=12)
-# plt.yticks(fontsize=12)
-# plt.show()
-        
