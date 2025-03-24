@@ -529,7 +529,7 @@ def update_tabs(selected_model):
 
         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0" : 
         
         print(" ----------------------------- ")
         print("SBT")
@@ -568,7 +568,7 @@ def update_loading(selected_model):
                                             ]
                                         )
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0": 
         
         return dcc.Loading(
                 parent_className="loader-wrapper",
@@ -666,7 +666,7 @@ def update_tabs(selected_model):
 
         return {'display': 'block'}
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0" : 
             
         # TODO: update tabs styline
         return {'display': 'none'}
@@ -734,7 +734,13 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 
 def update_working_fluid(model):
 
-    if model == "SBT V1.0":
+    if model == "SBT V2.0": # TODO: check
+        fluid_list = ["All", "H2O", "sCO2"]
+        if ctx.triggered_id == "model-select":
+            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+        else:
+            raise PreventUpdate
+    elif model == "SBT V1.0":
         fluid_list = ["H2O"]
         if ctx.triggered_id == "model-select":
             return "H2O", [{"label": i, "value": i} for i in fluid_list]

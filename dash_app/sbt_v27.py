@@ -14,7 +14,7 @@ from scipy.interpolate import RegularGridInterpolator
 #v27 has SBT v1 for co-axial and U-loop, SBT v2 for co-axial and U-loop,as well as FMM algorithm
 
 # sourced scripts
-is_plot = True
+is_plot = False
 is_app = True
 is_print = False
 is_save = False
@@ -132,6 +132,7 @@ def run_sbt(
     Twprevious = None
     Tw_up_previous = None
     Tfluidupnodes = None
+    Poutput = None
     # print(globals().keys())
     # raise SystemExit
 
@@ -311,10 +312,11 @@ def run_sbt(
             densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)])) #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
             densityfluidupnodes = np.copy(densityfluiddownnodes) #Upflowing and downflowing fluid have the same initial density distribution at time 0
             
-            if maxrelativechange < reltolerance:
-                print("Initial pressure field calculated successfully")
-            else:
-                print("Initial pressure field calculated but maximum relative tolerance not met")
+            if is_print:
+                if maxrelativechange < reltolerance:
+                    print("Initial pressure field calculated successfully")
+                else:
+                    print("Initial pressure field calculated but maximum relative tolerance not met")
             
             # Calculate velocity field
             if coaxialflowtype == 1:  # CXA
@@ -1840,5 +1842,5 @@ def run_sbt(
                                                 times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
     
-    return times/365/24/3600, Toutput + 273.15 #, Poutput # return in Kelvin
+    return times/365/24/3600, Toutput + 273.15, Poutput # return in Kelvin
 

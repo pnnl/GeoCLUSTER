@@ -123,6 +123,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 
@@ -617,6 +619,8 @@ def generate_econ_lineplots(TandP_dict,
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 

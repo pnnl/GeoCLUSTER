@@ -13,9 +13,10 @@ from sbt_v27 import run_sbt as run_sbt_final
 #                Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875)
 
 is_v27 = True
-# is_config = "coaxial" # good to go for sbt v1, and v2!!!
-sbt_version = 1
-is_config = "uloop"  # good to go for sbt v1
+is_config = "coaxial" # good to go for sbt v1, and v2!!!
+sbt_version = 2
+# is_config = "uloop"  # good to go for sbt v1
+fluid = 1 # h2o is 1 sco2 is 2
 
 start = time.time()
 if is_v27:
@@ -28,7 +29,7 @@ if is_v27:
                         accuracy=1,
 
                         ## Operations
-                        clg_configuration=1, mdot=20, Tinj=20, fluid=1, ## Operations
+                        clg_configuration=1, mdot=20, Tinj=20, fluid=fluid, ## Operations
                         DrillingDepth_L1=3.5, HorizontalExtent_L2=10.0, #BoreholeDiameter=1, ## Wellbore Geometry
                         Diameter1=0.2286, Diameter2=0.127, PipeParam3=0.0127, PipeParam4=0.006,
                         PipeParam5=1, ## Tube Geometry
@@ -46,7 +47,7 @@ if is_v27:
 
                         ## Operations
                         clg_configuration=2, # coaxial = 1 and uloop = 2
-                        mdot=24, Tinj=30, fluid=1, ## Operations
+                        mdot=24, Tinj=30, fluid=fluid, ## Operations
                         DrillingDepth_L1=3.5, HorizontalExtent_L2=10.0, #BoreholeDiameter=1, ## Wellbore Geometry
                         # DrillingDepth_L1=3500, HorizontalExtent_L2=10000.0, #BoreholeDiameter=1, ## Wellbore Geometry
                         Diameter1=0.3500, Diameter2=0.3500, PipeParam3=1, PipeParam4=[1],  #0.006

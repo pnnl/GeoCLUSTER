@@ -9,6 +9,7 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 import zarr
 from sbt import run_sbt
+from sbt_v27 import run_sbt as run_sbt_final
 import time
 
 
@@ -231,31 +232,34 @@ class data:
 
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
             start = time.time()
-            times, Tout = run_sbt(
-            ## Model Specifications 
-            sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=mass_mode_b, HYPERPARAM2="MassFlowRate.xlsx", 
-            HYPERPARAM3=temp_mode_b, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
-            accuracy=accuracy,
 
-             ## Operations
-            clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
-            DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-            Diameter1=Diameter1, Diameter2=Diameter2, 
-            PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
-            # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-            PipeParam5=PipeParam5, ## Tube Geometry
+            times, Tout, Pout = run_sbt_final(
+                    ## Model Specifications 
+                    sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=mass_mode_b, HYPERPARAM2="MassFlowRate.xlsx", 
+                    HYPERPARAM3=temp_mode_b, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+                    accuracy=accuracy,
 
-            ## Geologic Properties
-            Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
-            # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+                    ## Operations
+                    clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+                    DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+                    Diameter1=Diameter1, Diameter2=Diameter2, 
+                    PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
+                    # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
+                    PipeParam5=PipeParam5, ## Tube Geometry
+
+                    ## Geologic Properties
+                    Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
+                    # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
             )
+            
+            if Pout is None:
+                constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
+                # constant_pressure = 22228604.37405011
+                Pout = constant_pressure * np.ones_like(Tout)
+                
             end = time.time()
             print("sbt function run: ", end-start)
             # self.time = times
-
-            constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
-            # constant_pressure = 22228604.37405011
-            Pout = constant_pressure * np.ones_like(Tout)
 
             times = times[14:]
             Tout = Tout[14:]
