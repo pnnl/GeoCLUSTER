@@ -14,14 +14,14 @@ from scipy.interpolate import RegularGridInterpolator
 #v27 has SBT v1 for co-axial and U-loop, SBT v2 for co-axial and U-loop,as well as FMM algorithm
 
 # sourced scripts
-is_plot = False
+is_plot = True
 is_app = True
 is_print = False
 is_save = False
 from sbt_utils import set_wellbore_geometry, set_tube_geometry, set_sbt_hyperparameters, admin_fluid_properties
 from sbt_utils import compute_tube_geometry, prepare_interpolators, get_profiles, calc_tube_min_time_steps, precalculations
 
-from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1
 from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 from plot_sbt import plot_production_temperature
 
@@ -114,8 +114,28 @@ def run_sbt(
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
     globals().update(tube_geometry_dict2)
-    mlateral = tube_geometry_dict2["mlateral"] # TODO: why is this param not working in globals?
-    mlateralold = tube_geometry_dict2["mlateralold"] # TODO: why is this param not working in globals?
+    
+    mlateral = globals().get("mlateral") 
+    mlateralold = globals().get("mlateralold")
+    Tw_down_previous = globals().get("Tw_down_previous") 
+    Tfluiddownnodes = globals().get("Tfluiddownnodes")
+    TwMatrix =  globals().get("TwMatrix")
+    coaxialflowtype = globals().get("coaxialflowtype")
+    Tfluidnodes = None
+    Pfluidnodes = None
+    Pfluidlateralexit = None
+    lateralnodalstartpoints = None
+    lateralnodalendpoints = None
+    Tfluidlateralexitstore = None
+    Pfluiddownnodes = None
+    Pfluidupnodes = None
+    Twprevious = None
+    Tw_up_previous = None
+    Tfluidupnodes = None
+    # print(globals().keys())
+    # raise SystemExit
+
+
 
     ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
     interpolator_density, interpolator_enthalpy, \
@@ -494,7 +514,8 @@ def run_sbt(
     combinedtimes3rdlevel = np.array([0])
     timesFMM = 0
     QFMM = 0
-    print('Pre-processing completed successfully. Starting simulation ...')
+    if is_print:
+        print('Pre-processing completed successfully. Starting simulation ...')
 
     #%% -------------
     # 3. Calculating
@@ -1770,31 +1791,54 @@ def run_sbt(
     #end time
     toc = time.time()
     passedtime = toc-tic
-    line_to_print = f'Calculation time = {passedtime:.2f} s\n'
-    print(line_to_print)
+    if is_print:
+        line_to_print = f'Calculation time = {passedtime:.2f} s\n'
+        print(line_to_print)
 
-    # if is_plot:
-    #     plot_final_fluid_temp_profile_v1(sbt_version=sbt_version, clg_configuration=clg_configuration, 
-    #                                     # Tw_up_previous=Tw_up_previous, # ???
-    #                                     Tw_up_previous=Twprevious,
-    #                                     Tw_down_previous=Tw_down_previous, 
-    #                                     Tfluiddownnodes=Tfluiddownnodes, 
-    #                                     Deltaz=Deltaz, TwMatrix=TwMatrix, 
-    #                                     numberoflaterals=numberoflaterals, coaxialflowtype=coaxialflowtype,
-    #                                     interconnections=interconnections_new,
-    #                                     lateralflowallocation=lateralflowallocation,
-    #                                     xinj=xinj, xlat=xlat, xprod=xprod)
+    # print(Tfluidnodes) # filled 
+    # print(Pfluidnodes) # filled 
+    # print(Pfluidlateralexit) # filled
+    # print(lateralnodalstartpoints) # filled
+    # print(lateralnodalendpoints) # filled
+    # print(Tfluidlateralexitstore) # filled
+    # print(Pfluiddownnodes) # NONE if uloop (good)
+    # print(Pfluidupnodes) # NONE if uloop (good)
+    # print(Twprevious) # filled
+    # print(Tfluidupnodes) # ONE if uloop (good)
+
+    if is_plot:
         
-    #     plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
-    #                                     coaxialflowtype=coaxialflowtype, 
-    #                                     Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
-    #                                     Deltaz=Deltaz)
+        plot_final_fluid_temp_profile_v1(sbt_version=sbt_version, clg_configuration=clg_configuration, 
+                                        Tw_up_previous=Tw_up_previous,
+                                        Tw_down_previous=Tw_down_previous, 
+                                        Tfluiddownnodes=Tfluiddownnodes, 
+                                        Tfluidupnodes=Tfluidupnodes,
+                                        Tfluidnodes=Tfluidnodes,
+                                        Pfluidnodes=Pfluidnodes,
+                                        Pfluidlateralexit=Pfluidlateralexit,
+                                        Pfluiddownnodes=Pfluiddownnodes,
+                                        Pfluidupnodes=Pfluidupnodes,
+                                        lateralnodalstartpoints=lateralnodalstartpoints,
+                                        lateralnodalendpoints=lateralnodalendpoints,
+                                        Tfluidlateralexitstore=Tfluidlateralexitstore,
+                                        Deltaz=Deltaz, TwMatrix=TwMatrix, 
+                                        numberoflaterals=numberoflaterals, coaxialflowtype=coaxialflowtype,
+                                        interconnections=interconnections_new,
+                                        lateralflowallocation=lateralflowallocation,
+                                        xinj=xinj, xlat=xlat, xprod=xprod)
         
-    #     plot_heat_production(clg_configuration=clg_configuration, HeatProduction=HeatProduction, times=times)
-    #     if sbt_version == 2:
-    #         plot_production_temperature(sbt_version=sbt_version, Poutput=Poutput, Pin=Pin, times=times)
-    #     plot_production_temperature_linear(clg_configuration=clg_configuration, Toutput=Toutput, Tinstore=Tinstore, times=times)
-    #     plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
+        
+        plot_heat_production(clg_configuration=clg_configuration, 
+                                AverageHeatProduction=AverageHeatProduction, 
+                                HeatProduction=HeatProduction, 
+                                times=times)
+        if sbt_version == 2:
+            plot_production_temperature(sbt_version=sbt_version, Poutput=Poutput, Pin=Pin, times=times)
+        plot_production_temperature_linear(clg_configuration=clg_configuration, 
+                                                AverageProductionTemperature=AverageProductionTemperature,
+                                                Toutput=Toutput, Tinstore=Tinstore, 
+                                                times=times)
+        plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
     
     return times/365/24/3600, Toutput + 273.15 #, Poutput # return in Kelvin
 

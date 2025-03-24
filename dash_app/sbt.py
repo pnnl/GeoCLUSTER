@@ -24,7 +24,7 @@ is_app = True
 from sbt_utils import set_wellbore_geometry, set_tube_geometry, set_sbt_hyperparameters, admin_fluid_properties
 from sbt_utils import compute_tube_geometry, prepare_interpolators, get_profiles, calc_tube_min_time_steps, precalculations
 from plot_sbt_plotly import plot_borehole_geometry_plotly
-from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1
 from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 from plot_sbt import plot_production_temperature
 

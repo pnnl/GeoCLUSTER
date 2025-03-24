@@ -42,7 +42,16 @@ def plot_borehole_geometry(clg_configuration, numberoflaterals, x, y, z, xinj, y
 
 
 def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration, 
-                                    Tw_up_previous, Tw_down_previous, Tfluiddownnodes, 
+                                    Tw_up_previous, Tw_down_previous, Tfluiddownnodes,
+                                    Tfluidnodes, 
+                                    Tfluidupnodes,
+                                    Pfluidnodes,
+                                    Pfluidlateralexit,
+                                    Pfluiddownnodes,
+                                    Pfluidupnodes,
+                                    lateralnodalstartpoints,
+                                    lateralnodalendpoints,
+                                    Tfluidlateralexitstore,
                                     Deltaz, TwMatrix, 
                                     numberoflaterals, coaxialflowtype,
                                     interconnections,
@@ -232,28 +241,7 @@ def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration,
             plt.show()
             
 
-def plot_final_fluid_temp_profile_v2(sbt_version, coaxialflowtype, Pfluiddownnodes, Pfluidupnodes, 
-                                            Deltaz
-                                            ):
-
-    #Plot final fluid temperature profile (SBT v2 only)\
-    if sbt_version == 2:
-        plt.figure()
-        plt.plot(Pfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))))
-        plt.plot(Pfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))))        
-        plt.grid(True)
-        plt.xlabel('Fluid Pressure [bar]', fontsize=12)
-        plt.ylabel('Measured Depth [m]', fontsize=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.title('Final Fluid Pressure')
-        if coaxialflowtype == 1:
-            plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='upper left')
-        elif coaxialflowtype == 2:
-            plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
-        plt.show()    
-
-def plot_heat_production(clg_configuration, HeatProduction, times):
+def plot_heat_production(clg_configuration, AverageHeatProduction, HeatProduction, times):
 
     # Plot heat production
     # plt.figure()
@@ -298,7 +286,7 @@ def plot_production_temperature(sbt_version, Poutput, Pin, times):
         plt.gcf().set_facecolor('white')
         plt.show()
 
-def plot_production_temperature_linear(clg_configuration, Toutput, Tinstore, times):
+def plot_production_temperature_linear(clg_configuration, AverageProductionTemperature, Toutput, Tinstore, times):
 
     # Plot production temperature with linear time scale
     # plt.figure()

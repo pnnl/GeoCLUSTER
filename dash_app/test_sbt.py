@@ -14,7 +14,7 @@ from sbt_v27 import run_sbt as run_sbt_final
 
 is_v27 = True
 # is_config = "coaxial" # good to go for sbt v1, and v2!!!
-sbt_version = 2
+sbt_version = 1
 is_config = "uloop"  # good to go for sbt v1
 
 start = time.time()
