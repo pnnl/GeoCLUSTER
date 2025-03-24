@@ -16,6 +16,8 @@ from scipy.interpolate import RegularGridInterpolator
 # sourced scripts
 is_plot = False
 is_app = True
+is_print = False
+is_save = False
 from sbt_utils import set_wellbore_geometry, set_tube_geometry, set_sbt_hyperparameters, admin_fluid_properties
 from sbt_utils import compute_tube_geometry, prepare_interpolators, get_profiles, calc_tube_min_time_steps, precalculations
 
@@ -107,19 +109,20 @@ def run_sbt(
                                                 xlat=xlat, ylat=ylat, zlat=zlat,
                                                 mdot=mdot, 
                                                 piperoughness=piperoughness,
-                                                variablefluidproperties=variablefluidproperties,
                                                 numberoflaterals=numberoflaterals, 
                                                 radiuslateral=radiuslateral, radiusvertical=radiusvertical,
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
     globals().update(tube_geometry_dict2)
+    mlateral = tube_geometry_dict2["mlateral"] # TODO: why is this param not working in globals?
+    mlateralold = tube_geometry_dict2["mlateralold"] # TODO: why is this param not working in globals?
 
     ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
-    # interpolator_density, interpolator_enthalpy, \
-    #             interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
-    #                 interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity = \
-    #                 prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
-    #                             fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
+    interpolator_density, interpolator_enthalpy, \
+                interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
+                    interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity = \
+                    prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
+                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
 
     ### GET INJECTION TEMPERATURE as an array AND MASS FLOW RATE PROFILES as an array
     # e.g. [30.  0.  0.  0.  0. ....] or similar
@@ -502,15 +505,20 @@ def run_sbt(
     for i in range(1, len(times)):
         #print current simulation time
         if times[i] < 60:
-            print('Time = ' + str(round(times[i]*100)/100) + ' seconds')
+            if is_print:
+                print('Time = ' + str(round(times[i]*100)/100) + ' seconds')
         elif times[i] < 3600:
-            print('Time = ' + str(round(times[i]/60*100)/100) + ' minutes')  
+            if is_print:
+                print('Time = ' + str(round(times[i]/60*100)/100) + ' minutes')  
         elif times[i] < 24*3600:
-            print('Time = ' + str(round(times[i]/3600*100)/100) + ' hours')          
+            if is_print:
+                print('Time = ' + str(round(times[i]/3600*100)/100) + ' hours')          
         elif times[i] < 365*24*3600:
-            print('Time = ' + str(round(times[i]/3600/24*100)/100) + ' days')        
+            if is_print:
+                print('Time = ' + str(round(times[i]/3600/24*100)/100) + ' days')        
         else:
-            print('Time = ' + str(round(times[i]/3600/24/365*100)/100) + ' years')    
+            if is_print:
+                print('Time = ' + str(round(times[i]/3600/24/365*100)/100) + ' years')    
         
         Deltat = times[i] - times[i - 1]  # Current time step size [s]
 
@@ -1598,8 +1606,9 @@ def run_sbt(
                     TfluidnodesOld = Tfluidnodes.copy()
                     mlateralold = mlateral.copy()
                 
-                linetoprint = f"Step = {i} | Iteration = {kk} | Max Rel Change = {maxrelativechange}"
-                print(linetoprint)
+                if is_print:
+                    linetoprint = f"Step = {i} | Iteration = {kk} | Max Rel Change = {maxrelativechange}"
+                    print(linetoprint)
                 kk = kk+1
                             
                 
@@ -1712,12 +1721,13 @@ def run_sbt(
             timesFMM = times[0:i+1]
     
             
-        
-        print('Outlet Temperature = ' + str(round(Toutput[i],1)) + ' °C')
+        if is_print:
+            print('Outlet Temperature = ' + str(round(Toutput[i],1)) + ' °C')
         filename = 'python'+str(i)+'.mat'
-        if i>1:
-            scipy.io.savemat(filename, dict(timestep=i,LPython=L,RPython=R,CPCPPython=CPCP,CPOPPython=CPOP,NPCPPython=NPCP,NPOPPython=NPOP,SolPython = Sol))
-    
+        if is_save:
+            if i>1:
+                scipy.io.savemat(filename, dict(timestep=i,LPython=L,RPython=R,CPCPPython=CPCP,CPOPPython=CPOP,NPCPPython=NPCP,NPOPPython=NPOP,SolPython = Sol))
+        
     #%% -----------------
     # 4. Post-Processing
     # The user can modify this section depending on the desired figures and simulation results

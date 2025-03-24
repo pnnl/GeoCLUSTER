@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+import time
+
 from sbt import run_sbt
 from sbt_v27 import run_sbt as run_sbt_final
 
@@ -11,18 +13,18 @@ from sbt_v27 import run_sbt as run_sbt_final
 #                Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875)
 
 is_v27 = True
-is_config = "coaxial" # good to go for sbt v1
-sbt_version = 1
-# is_config = "uloop"  # good to go for sbt v1
+# is_config = "coaxial" # good to go for sbt v1, and v2!!!
+sbt_version = 2
+is_config = "uloop"  # good to go for sbt v1
 
+start = time.time()
 if is_v27:
     if sbt_version == 2:
         if is_config == "coaxial":
-
             run_sbt_final(
                         ## Model Specifications 
-                        sbt_version=2, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
-                        HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+                        sbt_version=2, mesh_fineness=0, HYPERPARAM1=100, HYPERPARAM2=1e-6,
+                        HYPERPARAM3=1, HYPERPARAM4=1e-5, HYPERPARAM5=15, 
                         accuracy=1,
 
                         ## Operations
@@ -38,8 +40,8 @@ if is_v27:
         if is_config == "uloop":
             run_sbt_final(
                         ## Model Specifications 
-                        sbt_version=1, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
-                        HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+                        sbt_version=2, mesh_fineness=0, HYPERPARAM1=100, HYPERPARAM2=1e-6,
+                        HYPERPARAM3=1, HYPERPARAM4=1e-5, HYPERPARAM5=15, 
                         accuracy=1,
 
                         ## Operations
@@ -63,7 +65,7 @@ if is_v27:
 
             run_sbt_final(
                         ## Model Specifications 
-                        sbt_version=2, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
+                        sbt_version=1, mesh_fineness=0, HYPERPARAM1=0, HYPERPARAM2="MassFlowRate.xlsx", 
                         HYPERPARAM3=0, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
                         accuracy=1,
 
@@ -150,3 +152,6 @@ else:
     #             DrillingDepth_L1=L1, HorizontalExtent_L2=L2,
     #             Diameter1=D, Diameter2=D,  
     #             )
+
+end = time.time()
+print("TOTAL TIME: ", end - start)

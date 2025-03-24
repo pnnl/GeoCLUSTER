@@ -1,4 +1,3 @@
-
 def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
 
     interpolator_density = interpolator_enthalpy = interpolator_entropy = None
@@ -9,22 +8,21 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
 
         if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
             # Define vectors for pressure and temperature
-            Pvector = [1, 1e9]
-            Tvector = [1, 1e4]
+            Pvector = np.array([[1, 1e9]])
+            Tvector = np.array([[1, 1e4]])
         
             # Create 2x2 arrays with constant fluid properties
-            density = [[rho_f] * 2] * 2
-            heatcapacity = [[cp_f] * 2] * 2
-            thermalconductivity = [[k_f] * 2] * 2
-            viscosity = [[mu_f] * 2] * 2
-            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
+            density = np.array([[rho_f] * 2] * 2)
+            heatcapacity = np.array([[cp_f] * 2] * 2)
+            thermalconductivity = np.array([[k_f] * 2] * 2)
+            viscosity = np.array([[mu_f] * 2] * 2)
+            thermalexpansion = np.array([[0] * 2] * 2)  # Incompressible fluid has zero thermal expansion coefficient
         else:  # If variable fluid properties, import pre-generated tables
             print('Loading fluid properties...')
             if fluid == 1:  # H2O
                 try:
                     mat = scipy.io.loadmat('properties_H2O.mat') 
                     Pvector = mat['Pvector']
-                    print("pVector", Pvector)
                     Tvector = mat['Tvector']
                     density = mat['density']
                     enthalpy = mat['enthalpy']
@@ -63,15 +61,15 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
         Pvector_1d = Pvector.ravel()
         Tvector_1d = Tvector.ravel()
         interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-        interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-        interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
         interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-        interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
         interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
         interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
         interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
+        if variablefluidproperties == 1:
+            interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
+            interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
+            interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
     
     return interpolator_density, interpolator_enthalpy, \
                 interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity
-

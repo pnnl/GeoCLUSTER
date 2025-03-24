@@ -2,9 +2,12 @@
 # SBT inputs and computing functions
 # -------------------------------------------
 
-import numpy as np
-from scipy.special import erfc, jv, yv
 import math
+import pandas as pd
+import numpy as np
+import scipy.io
+from scipy.special import erfc, jv, yv
+from scipy.interpolate import RegularGridInterpolator
 
 def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_fineness, fluid, HYPERPARAM1, HYPERPARAM2, HYPERPARAM3, HYPERPARAM4, HYPERPARAM5):
 
@@ -96,7 +99,7 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
     if clg_configuration == 2:
         fullyimplicit = 1            # Should be between 0 and 1. Only required when clg_configuration is 2. Most stable is setting it to 1 which results in a fully implicit Euler scheme when calculting the fluid temperature at each time step. With a value of 0, the convective term is modelled using explicit Euler. A value of 0.5 would model the convective term 50% explicit and 50% implicit, which may be slightly more accurate than fully implicit.
 
-    variablefluidproperties = piperoughness = None
+    variablefluidproperties = piperoughness = variableinjectiontemperature = variableflowrate = flowratefilename = None
 
     ## SBT ASSUMPTIONS FOR V1 v.s. V2
     if sbt_version == 1: ## SBT v1 specific settings (ONLY WATER)
@@ -119,7 +122,7 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
         # AB: should these be editable to the user?
         # converge parameters
         reltolerance = HYPERPARAM4 # 1e-5                   # Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
-        maxnumberofiterations = HYPERPARAM5 #15             # Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
+        maxnumberofiterations = HYPERPARAM5 # 15            # Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
 
     return locals()
 
@@ -280,10 +283,10 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
                                 x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat,
                                 mdot,
                                 piperoughness,
-                                variablefluidproperties,
                                 numberoflaterals, radiuslateral, radiusvertical, lateralflowmultiplier, lateralflowallocation):
 
     interconnections = radiusvector = None
+    mlateral = mlateralold = None
     Deltaz = np.sqrt((x[1:] - x[:-1]) ** 2 + (y[1:] - y[:-1]) ** 2 + (z[1:] - z[:-1]) ** 2)  # Length of each segment [m]
     Deltaz = Deltaz.reshape(-1)
 
@@ -294,8 +297,6 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         A_flow_centerpipe = math.pi*radiuscenterpipe**2                 # Flow area of center pipe [m^2]
         Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]    
         if sbt_version == 2:
-            print(piperoughness)
-            print(Dh_annulus)
             eps_annulus = Dh_annulus*piperoughness                      # Relative roughness annulus [-]
             eps_centerpipe = 2*radiuscenterpipe*piperoughness           # Relative roughness inner pipe [-]
         LoverR = Deltaz / radius                                        # Ratio of pipe segment length to radius along the wellbore [-]
@@ -344,72 +345,6 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         if len(lateralflowallocation_norm) != numberoflaterals:
             print('Error: Length of array "lateralflowallocation" does not match the number of laterals')
 
-
-    if sbt_version == 2:
-        
-        if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
-            # Define vectors for pressure and temperature
-            Pvector = np.array([[1, 1e9]])
-            Tvector = np.array([[1, 1e4]])
-        
-            # Create 2x2 arrays with constant fluid properties
-            density = np.array([[rho_f] * 2] * 2)
-            heatcapacity = np.array([[cp_f] * 2] * 2)
-            thermalconductivity = np.array([[k_f] * 2] * 2)
-            viscosity = np.array([[mu_f] * 2] * 2)
-            thermalexpansion = np.array([[0] * 2] * 2)  # Incompressible fluid has zero thermal expansion coefficient
-        else:  # If variable fluid properties, import pre-generated tables
-            print('Loading fluid properties...')
-            if fluid == 1:  # H2O
-                try:
-                    mat = scipy.io.loadmat('properties_H2O.mat') 
-                    Pvector = mat['Pvector']
-                    Tvector = mat['Tvector']
-                    density = mat['density']
-                    enthalpy = mat['enthalpy']
-                    entropy = mat['entropy']
-                    heatcapacity = mat['heatcapacity']
-                    phase = mat['phase']
-                    thermalconductivity = mat['thermalconductivity']
-                    thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']
-                    print('Fluid properties for water loaded successfully')
-                except Exception as e:
-                    print(f"Error loading properties for water: {e}")
-                    raise
-            elif fluid == 2:  #CO2
-                try:
-                    mat = scipy.io.loadmat('properties_CO2.mat') 
-                    Pvector = mat['Pvector']
-                    Tvector = mat['Tvector']
-                    density = mat['density']
-                    enthalpy = mat['enthalpy']
-                    entropy = mat['entropy']
-                    heatcapacity = mat['heatcapacity']
-                    phase = mat['phase']
-                    thermalconductivity = mat['thermalconductivity']
-                    thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']                
-                    print('Fluid properties for CO2 loaded successfully')
-                except Exception as e:
-                    print(f"Error loading properties for CO2: {e}")
-                    raise
-            else:
-                print('No valid fluid selected')
-                exit()
-        #Prepare interpolators
-        Pvector_1d = Pvector.ravel()
-        Tvector_1d = Tvector.ravel()
-        interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-        interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-        interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
-        interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
-        interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
-        if variablefluidproperties == 1:
-            interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-            interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
-            interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
-
     TotalLength = np.sum(Deltaz)  # Total length of all elements (for informational purposes only) [m]
     smallestLoverR = np.min(LoverR)  # Smallest ratio of pipe segment length to pipe radius. This ratio should be larger than 10. [-]
     
@@ -418,7 +353,7 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
     if max(abs(RelativeLengthChanges)) > 0.5:
         print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
-
+        
     return locals()
 
 
@@ -462,7 +397,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                 try:
                     mat = scipy.io.loadmat('properties_H2O.mat') 
                     Pvector = mat['Pvector']
-                    print("pVector", Pvector)
+                    # print("pVector", Pvector)
                     Tvector = mat['Tvector']
                     density = mat['density']
                     enthalpy = mat['enthalpy']
