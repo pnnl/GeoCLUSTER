@@ -96,9 +96,11 @@ class data:
             return slice(None)  # slice all of the points
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
         if target < array[0] or target > array[-1]:
-            raise Exception(
-                f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-            )
+            lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+            print(lineprint)
+            # raise Exception(
+            #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+            # )
         for i, value in enumerate(array):
             if value == target:
                 return slice(i, i + 1)
@@ -268,119 +270,126 @@ class data:
         return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
-        var_index = None
-        if param == "Horizontal Extent (m)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    self.L2,
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                )
-            )
-            var_index = 1
-        if param == "Vertical Extent (m)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    (point[0],),
-                    self.L1,
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                )
-            )
-            var_index = 2
-        if param == "Geothermal Gradient (K/m)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    (point[0],),
-                    (point[1],),
-                    self.grad,
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                )
-            )
-            var_index = 3
-        if param == "Borehole Diameter (m)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    self.D,
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                )
-            )
-            var_index = 4
-        if param == "Injection Temperature (˚C)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    self.Tinj,
-                    (point[5],),
-                    (point[6],),
-                )
-            )
-            var_index = 5
-        if param == "Rock Thermal Conductivity (W/m-K)":
-            points = list(
-                iter.product(
-                    self.mdot,
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    self.k,
-                    (point[6],),
-                )
-            )
-            var_index = 6
 
-        N_DIMENSIONS = 8
-        points_to_read_around = [None] * N_DIMENSIONS
-        point_index = 0
-        # the passed in point contains the coordinate of the value we're slicing over in conjuction with mass flow rate.
-        # we don't want to include that point the points to fetch, so we're removing it from the list of parameters to read at a point
-        # and replacing that with "all", so the function will slice over that entire dimension
-        parameters_to_read_from_point = list(point)
-        del parameters_to_read_from_point[var_index - 1]
-        for i in range(len(points_to_read_around)):
-            if i == 0 or i == var_index:
-                points_to_read_around[i] = "all"
-            else:
-                points_to_read_around[i] = parameters_to_read_from_point[point_index]
-                point_index += 1
-        points_to_read_around = tuple(
-            points_to_read_around
-        )  # interpolate_points expects this to be a tuple so converting it
+        try:
+            var_index = None
+            if param == "Horizontal Extent (m)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        self.L2,
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                    )
+                )
+                var_index = 1
+            if param == "Vertical Extent (m)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        (point[0],),
+                        self.L1,
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                    )
+                )
+                var_index = 2
+            if param == "Geothermal Gradient (K/m)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        (point[0],),
+                        (point[1],),
+                        self.grad,
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                    )
+                )
+                var_index = 3
+            if param == "Borehole Diameter (m)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        self.D,
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                    )
+                )
+                var_index = 4
+            if param == "Injection Temperature (˚C)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        self.Tinj,
+                        (point[5],),
+                        (point[6],),
+                    )
+                )
+                var_index = 5
+            if param == "Rock Thermal Conductivity (W/m-K)":
+                points = list(
+                    iter.product(
+                        self.mdot,
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        self.k,
+                        (point[6],),
+                    )
+                )
+                var_index = 6
 
-        Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
-        Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
+            N_DIMENSIONS = 8
+            points_to_read_around = [None] * N_DIMENSIONS
+            point_index = 0
+            # the passed in point contains the coordinate of the value we're slicing over in conjuction with mass flow rate.
+            # we don't want to include that point the points to fetch, so we're removing it from the list of parameters to read at a point
+            # and replacing that with "all", so the function will slice over that entire dimension
+            parameters_to_read_from_point = list(point)
+            del parameters_to_read_from_point[var_index - 1]
+            for i in range(len(points_to_read_around)):
+                if i == 0 or i == var_index:
+                    points_to_read_around[i] = "all"
+                else:
+                    points_to_read_around[i] = parameters_to_read_from_point[point_index]
+                    point_index += 1
+            points_to_read_around = tuple(
+                points_to_read_around
+            )  # interpolate_points expects this to be a tuple so converting it
 
-        Tout = np.transpose(
-            np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
-        )  
-        Pout = np.transpose(
-            np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
-        )
+            Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
+            Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
+
+            Tout = np.transpose(
+                np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
+            )  
+            Pout = np.transpose(
+                np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
+            )
+        except Exception:
+            print("Flag: Check if SBT model selected")
+            # AB: Dummy data for the contours:
+            Tout = np.full((20, 26), 365)
+            Pout = np.full((20, 26), 22228604)
 
         return Tout, Pout
 

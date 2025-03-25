@@ -440,9 +440,9 @@ def slider_card():
                                                                                 options=["Constant", "Variable"], disabled=True, div_style=div_block_style),
                                                     dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
                                                                                 options=["Constant", "Variable"], disabled=True, div_style=div_block_style),
+                                                    dropdown_box(DivID="hyperparam5-div", ID="hyperparam5-select", ptitle="Fluid Properties Mode", 
+                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style),
                                                     
-                                                    # html.P("Mass Flow Rate Profile"),
-                                                    # html.P("Injection Temperature Profile")
                                                 ]
 
                                             ),

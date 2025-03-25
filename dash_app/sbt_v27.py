@@ -1784,11 +1784,12 @@ def run_sbt(
             
     AverageProductionTemperature = np.sum((times[1:] - times[:-1]) * Toutput[1:]) / times[-1]  # Calculates the weighted-average production temperature [deg.C]
     AverageHeatProduction = np.sum((times[1:] - times[:-1]) * HeatProduction[1:]) / times[-1]  # Calculates the weighted-average heat production [MW]
-    line_to_print = f'Average production temperature = {AverageProductionTemperature:.2f} °C\n'
-    print(line_to_print, end='')
+    if is_print:
+        line_to_print = f'Average production temperature = {AverageProductionTemperature:.2f} °C\n'
+        print(line_to_print, end='')
 
-    line_to_print = f'Average heat production = {AverageHeatProduction:.2f} MWt\n'
-    print(line_to_print, end='')
+        line_to_print = f'Average heat production = {AverageHeatProduction:.2f} MWt\n'
+        print(line_to_print, end='')
 
     #end time
     toc = time.time()

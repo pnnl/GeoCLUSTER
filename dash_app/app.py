@@ -595,64 +595,6 @@ def update_loading(selected_model):
         raise PreventUpdate
 
 
-# @app.callback(
-#    Output(component_id="graphics-parent-econ", component_property="children"),
-#    Input(component_id="model-select", component_property="value"),
-#    )
-
-# def update_loading(selected_model):
-
-#     if selected_model == "HDF5": 
-
-#         return html.Div(id="graphics-container-econ",
-#                                             children=[
-#                                                 dcc.Graph(id="econ_plots",
-#                                                             config=plotly_config),
-#                                                 dbc.RadioItems(
-#                                                             options=[
-#                                                                 {"label": "Auto Scale", "value": 1},
-#                                                                 {"label": "Full Scale", "value": 2},
-#                                                             ],
-#                                                             value=1,
-#                                                             id="radio-graphic-control4",
-#                                                         ),
-#                                                 html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-#                                             ]
-
-#                                         )
-
-#     elif selected_model == "SBT V1.0": 
-        
-#         time.sleep(7)
-
-#         return dcc.Loading(
-#                 parent_className="loader-wrapper",
-#                 type='circle',
-#                 children=[
-#                         html.Div(id="graphics-container-econ",
-#                                  children=[
-#                                     dcc.Graph(id="econ_plots",
-#                                                 config=plotly_config),
-#                                     dbc.RadioItems(
-#                                                 options=[
-#                                                     {"label": "Auto Scale", "value": 1},
-#                                                     {"label": "Full Scale", "value": 2},
-#                                                 ],
-#                                                 value=1,
-#                                                 id="radio-graphic-control4",
-#                                             ),
-#                                     html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-#                                 ]
-
-#                             )
-#                         ]
-#                     )
-#     else:
-#         raise PreventUpdate
-
-
-
-
 @app.callback(
    Output(component_id="contour-tab", component_property="style"),
    [Input(component_id="model-select", component_property="value")
@@ -734,10 +676,10 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 
 def update_working_fluid(model):
 
-    if model == "SBT V2.0": # TODO: check
+    if model == "SBT V2.0":
         fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
-            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+            return "All", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     elif model == "SBT V1.0":
@@ -794,7 +736,7 @@ def change_dropdown(at, fluid, model):
             return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
             # raise PreventUpdate
 
-    if model == "SBT V1.0":
+    if model == "SBT V1.0" or model == "SBT V2.0":
 
         raise PreventUpdate
 
@@ -939,20 +881,27 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         else:
             raise PreventUpdate
 
-    elif model == "SBT V1.0":
+    elif model == "SBT V1.0" or model == "SBT V2.0":
         raise PreventUpdate
 
-
 @app.callback(
-    [Output(component_id="Tsurf-select-div", component_property="style"),
+    [
+    Output(component_id='model-params-div', component_property='style'),
+    Output(component_id="Tsurf-select-div", component_property="style"),
     Output(component_id="c-select-div", component_property="style"),
     Output(component_id="rho-select-div", component_property="style"),
     Output(component_id="radius-vertical-select-div", component_property="style"),
     Output(component_id="radius-lateral-select-div", component_property="style"),
-    Output(component_id="diameter-select-div", component_property="style"),
-    Output(component_id="n-laterals-select", component_property="style"),
-    Output(component_id="lateral-flow-select", component_property="style"),
-    Output(component_id="lateral-multiplier-select", component_property="style"),
+    Output(component_id="diameter-select-div", component_property="style"), # show HDF5, hide SBT
+    
+    # Output(component_id="n-laterals-select", component_property="style"),
+    # Output(component_id="lateral-flow-select", component_property="style"),
+    # Output(component_id="lateral-multiplier-select", component_property="style"),
+
+    Output(component_id="hyperparam5-div", component_property="style"), # hide HDF5 and v1, show v2
+    Output(component_id='num-lat-div', component_property='style'),
+    Output(component_id='lat-allocation-div', component_property='style'),
+    Output(component_id='lat-flow-mul-div', component_property='style'),
     ],
    [Input(component_id="model-select", component_property="value"),
     ],
@@ -965,11 +914,14 @@ def show_model_params(model):
     n = {'display': 'none'}
 
     if model == "HDF5":
-        return n, n, n, n, n, b, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, n, b, b, b
-
+        return b, b, b, b, b, b, n, b, b, n, n
+    
+    if model == "SBT V2.0":
+        return b, b, b, b, b, b, n, b, b, n, b
+    
 
 @app.callback(
    [Output(component_id='mdot-select-div', component_property='style'),
@@ -1138,45 +1090,6 @@ def show_hide_detailed_card(tab, fluid, end_use):
 
 
 
-##### HERE NEED TO GET DIFFERENCE BETWEEN HDF5 AND SBT VIA CSS CHANGES AND UPDATING CHILDREN 
-@app.callback(
-   [
-    Output(component_id='model-params-div', component_property='style', allow_duplicate=True),
-    Output(component_id='Tinj-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='c-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='rho-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='num-lat-div', component_property='style'),
-    Output(component_id='lat-allocation-div', component_property='style'),
-    Output(component_id='lat-flow-mul-div', component_property='style'),
-    Output(component_id='radius-vertical-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='radius-lateral-select-div', component_property='style', allow_duplicate=True),
-   ],
-   [Input(component_id="model-select", component_property="value")],
-   prevent_initial_call=True
-    )
-
-def update_system_values(model):
-
-    b = {'display': 'block'}
-    n = {'display': 'none'}
-    # is_title_show = True
-    
-    if model == "HDF5":
-        # gotta make the default be hidden on the default LAYOUT ******
-        ##### for now can continue testing
-
-        # remove model-params
-        # null out rock specific heat (hide for now)
-        # null out rock density (hide for now)
-        # null out surface temperature  (hide for now)
-        return n, n, n, n, n, n, n, n, n
-        
-    elif model == "SBT V1.0":
-        return b, b, b, b, b, b, b, b, b
-    
-    else:
-        raise PreventUpdate
-
 @app.callback(
    [
     Output(component_id='grad-container', component_property='children', allow_duplicate=True),
@@ -1224,7 +1137,7 @@ def update_sliders(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0": # TODO: HIDE BOREHOLE
+    elif model == "SBT V1.0": 
 
         # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
