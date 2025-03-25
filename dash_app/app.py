@@ -898,7 +898,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     # Output(component_id="lateral-flow-select", component_property="style"),
     # Output(component_id="lateral-multiplier-select", component_property="style"),
 
-    Output(component_id="hyperparam5-div", component_property="style"), # hide HDF5 and v1, show v2
+    Output(component_id="fluid-mode-div", component_property="style"), # hide HDF5 and v1, show v2
     Output(component_id='num-lat-div', component_property='style'),
     Output(component_id='lat-allocation-div', component_property='style'),
     Output(component_id='lat-flow-mul-div', component_property='style'),
@@ -1104,7 +1104,7 @@ def show_hide_detailed_card(tab, fluid, end_use):
    prevent_initial_call=True
     )
 
-def update_sliders(model):
+def update_slider_ranges(model):
 
     grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
@@ -1137,7 +1137,7 @@ def update_sliders(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0": 
+    elif model == "SBT V1.0" or model == "SBT V1.0": 
 
         # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
@@ -1175,7 +1175,6 @@ def update_sliders(model):
                                                                         mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
-    
     else:
         raise PreventUpdate
 
@@ -1192,7 +1191,7 @@ def update_sliders(model):
     Input(component_id="case-select", component_property="value")],
    prevent_initial_call=True
     )
-def update_sliders_case(model, case):
+def update_sliders_heat_exchanger(model, case):
 
     if model == "SBT V1.0":
 
@@ -1253,29 +1252,42 @@ def update_sliders_case(model, case):
     else:
         raise PreventUpdate
 
-### HERE
+@app.callback(
+   [
+     Output(component_id='hyperparam1-container', component_property='children'), 
+     Output(component_id='hyperparam3-container', component_property='children'),
+     Output(component_id='hyperparam5-container', component_property='children')
+   ],
+   [Input(component_id="model-select", component_property="value"),
+    ],
+   prevent_initial_call=True
+    )
+def update_sliders_hyperparms(model):
 
-# @app.callback(
-#    [
-#     Output(component_id='diameter-container', component_property='children', allow_duplicate=True),
-#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
-#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
-#     Output(component_id='HYPERPARAM', component_property='children', allow_duplicate=True),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#    ],
-#    [Input(component_id="model-select", component_property="value"),
-#     Input(component_id="case-select", component_property="value")],
-#    prevent_initial_call=True
-#     )
+    if model == "SBT V1.0":
 
-# def update_sliders(model, case):
+        hyperparam1 = dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+        hyperparam3 = dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
 
-#     if case == "utube":
-#     elif case == "coaxial":
-#     else:
-#         raise PreventUpdate
+        return hyperparam1, hyperparam3, hyperparam5
+    
+    elif model == "SBT V2.0":
+
+        hyperparam1 = slider1(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=2, max_v=20,
+                                                            mark_dict=inlet_pressure_dict, step_i=1e-7, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style)
+        hyperparam3 = slider1(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness", min_v=1e-7, max_v=1e-5,
+                                                            mark_dict=pipe_roughness_dict, step_i=1e-6, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style)
+        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_block_style)
+
+        return hyperparam1, hyperparam3, hyperparam5
+
+    else:
+        raise PreventUpdate
 
 
 @app.callback(
@@ -1295,31 +1307,6 @@ def remove_empty_div_container(param, tab):
         return b
     elif param == "Injection Temperature (˚C)":
         return n
-
-
-# @app.callback(
-# #    [
-#     Output(component_id='slider-container', component_property='children'),
-# #    ],
-#    [
-#     Input(component_id="model-select", component_property="value")
-#     ])
-
-# def update_system_values(selected_model):
-
-#     if selected_model == "HDF5": 
-
-#         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
-
-#     elif selected_model == "SBT V1.0": 
-        
-#         print(" ----------------------------- ")
-#         print("SBT")
-#         # TODO: update tabs styline
-#         return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
-
-#     else:
-#         raise PreventUpdate
 
 # -----------------------------------------------------------------------------
 # Define dash app plotting callbacks.
@@ -1361,6 +1348,7 @@ def remove_empty_div_container(param, tab):
      Input(component_id='accuracy-select', component_property='value'),
      Input(component_id='mass-mode-select', component_property='value'),
      Input(component_id='temp-mode-select', component_property='value'),
+     Input(component_id='fluid-mode-select', component_property='value'),
 
     ],
 )
@@ -1369,7 +1357,10 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
                         Tsurf, c_m, rho_m, 
                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                        mesh, accuracy, mass_mode, temp_mode):
+                        mesh, accuracy, 
+                        # mass_mode, temp_mode
+                        HyperParam3, HyperParam4, HyperParam5
+                        ):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -1383,7 +1374,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         Tsurf, c_m, rho_m, 
         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-        mesh, accuracy, mass_mode, temp_mode
+        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
     )
     # if SBT:
     # end = time.time()

@@ -414,10 +414,12 @@ def run_sbt(
                 print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
             
             densityfluidnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidnodes, Tfluidnodes + 273.15)]))  #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
-            if maxrelativechange < reltolerance:
-                print("Initial pressure field calculated successfully")
-            else:
-                print("Initial pressure field calculated but maximum relative tolerance not met")
+            
+            if is_print:
+                if maxrelativechange < reltolerance:
+                    print("Initial pressure field calculated successfully")
+                else:
+                    print("Initial pressure field calculated but maximum relative tolerance not met")
 
             #Calculate velocity field right at start up using intial density distribution and assuming initially uniform flow distribution accross all laterals
             velocityfluidmidpoints = mvector/Area/densityfluidmidpoints   #Fluid velocity at midpoints [m/s]
@@ -1774,13 +1776,13 @@ def run_sbt(
                 HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodesstore[0,:], Tfluidupnodesstore[0,:] + 273.15)])) - 
                                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodesstore[0,:], Tfluiddownnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
-                HeatProduction = mdot*cp_f*(Toutput-Tin)/1e6
+                HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
         elif clg_configuration == 2: #u-loop geometry:           
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
                 HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[interconnections_new[1],:], Tfluidnodesstore[interconnections_new[1],:] + 273.15)])) - 
                                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[0,:], Tfluidnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
-                HeatProduction = mdot*cp_f*(Toutput-Tin)/1e6
+                HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
             
     AverageProductionTemperature = np.sum((times[1:] - times[:-1]) * Toutput[1:]) / times[-1]  # Calculates the weighted-average production temperature [deg.C]
     AverageHeatProduction = np.sum((times[1:] - times[:-1]) * HeatProduction[1:]) / times[-1]  # Calculates the weighted-average heat production [MW]
@@ -1842,6 +1844,9 @@ def run_sbt(
                                                 Toutput=Toutput, Tinstore=Tinstore, 
                                                 times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
+
     
-    return times/365/24/3600, Toutput + 273.15, Poutput # return in Kelvin
+    print("DONE!")
+    
+    return times/365/24/3600, Toutput + 273.15, Poutput * 100000 #/ 10 # return in seconds, Kelvin, and Pa, respectively
 

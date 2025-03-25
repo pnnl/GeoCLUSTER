@@ -153,7 +153,10 @@ class data:
                     Tsurf, c_m, rho_m, 
                     # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                     Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                    mesh, accuracy, mass_mode, temp_mode): # needs to be a callback option
+                    mesh, accuracy, 
+                    HyperParam1, HyperParam3, HyperParam5
+                    # mass_mode, temp_mode
+                    ): # needs to be a callback option
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -201,15 +204,45 @@ class data:
             else:
                 fluid = 1 # water
             
-            if mass_mode == "Constant":
-                mass_mode_b = 0
-            elif mass_mode == "Variable":
-                mass_mode_b = 1
+            if sbt_version == 1:
 
-            if temp_mode == "Constant":
-                temp_mode_b = 0
-            elif temp_mode == "Variable":
-                temp_mode_b = 1
+                mass_mode = HyperParam1
+                temp_mode = HyperParam3
+
+                if mass_mode == "Constant":
+                    mass_mode_b = 0
+                elif mass_mode == "Variable":
+                    mass_mode_b = 1
+
+                if temp_mode == "Constant":
+                    temp_mode_b = 0
+                elif temp_mode == "Variable":
+                    temp_mode_b = 1
+                
+                hyperparam1 = mass_mode_b
+                hyperparam2 = "MassFlowRate.xlsx"
+                hyperparam3 = temp_mode_b
+                hyperparam4 = "InjectionTemperatures.xlsx"
+                hyperparam5 = None
+            
+            if sbt_version == 2:
+
+                reltolerance =  1e-5 
+                maxnumberofiterations =  15
+                fluid_mode = HyperParam5
+                
+
+                if fluid_mode == "Constant":
+                    fluid_mode_b = 0
+                elif fluid_mode == "Variable":
+                    fluid_mode_b = 1
+                
+                hyperparam1 = HyperParam1*10 # Pin (convert MPa to bar)
+                hyperparam2 = HyperParam3 # pipe roughness
+                hyperparam3 = fluid_mode_b # fluid mode
+                hyperparam4 = reltolerance
+                hyperparam5 = maxnumberofiterations
+
 
             # TODO: !!! ***
             if self.case == "coaxial":
@@ -234,11 +267,13 @@ class data:
 
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
             start = time.time()
+            
+            print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
             times, Tout, Pout = run_sbt_final(
                     ## Model Specifications 
-                    sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=mass_mode_b, HYPERPARAM2="MassFlowRate.xlsx", 
-                    HYPERPARAM3=temp_mode_b, HYPERPARAM4="InjectionTemperatures.xlsx", HYPERPARAM5=None, 
+                    sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
+                    HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
                     accuracy=accuracy,
 
                     ## Operations
