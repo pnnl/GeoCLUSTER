@@ -8,6 +8,7 @@ import numpy as np
 import scipy.io
 from scipy.special import erfc, jv, yv
 from scipy.interpolate import RegularGridInterpolator
+from paths import inpath_dict
 
 def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_fineness, fluid, HYPERPARAM1, HYPERPARAM2, HYPERPARAM3, HYPERPARAM4, HYPERPARAM5):
 
@@ -395,7 +396,8 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
             # print('Loading fluid properties...')
             if fluid == 1:  # H2O
                 try:
-                    mat = scipy.io.loadmat('properties_H2O.mat') 
+                    # mat = scipy.io.loadmat('properties_H2O.mat') 
+                    mat = scipy.io.loadmat(inpath_dict["properties_H2O_pathname_sbtv2"])
                     Pvector = mat['Pvector']
                     # print("pVector", Pvector)
                     Tvector = mat['Tvector']
@@ -413,7 +415,8 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     raise
             elif fluid == 2:  #CO2
                 try:
-                    mat = scipy.io.loadmat('properties_CO2.mat') 
+                    # mat = scipy.io.loadmat('properties_CO2.mat') 
+                    mat = scipy.io.loadmat(inpath_dict["properties_CO2_pathname_sbtv2"]) 
                     Pvector = mat['Pvector']
                     Tvector = mat['Tvector']
                     density = mat['density']
