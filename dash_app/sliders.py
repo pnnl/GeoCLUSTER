@@ -111,6 +111,9 @@ radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 radius_centerpipe_dict = {0.001: '0.001', 0.010: '0.010'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
+inlet_pressure_dict = {2: '2', 20: '20'}
+pipe_roughness_dict =  {1e-7: '0.0000001', 1e-5: '0.00001'}
+
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
 start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.05, "D": 0.3500, "k": 3.0}
@@ -122,6 +125,8 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "thicknesscenterpipe": 0.0127,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
+                    "inletpressure": 10,
+                    "piperoughness": 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
                     "kwe": 3000, "precool": 13, "turb-pout": 80
@@ -436,13 +441,25 @@ def slider_card():
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style),
                                                     slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
                                                                 mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style),
-                                                    dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style),
-                                                    dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style),
-                                                    
-                                                    # html.P("Mass Flow Rate Profile"),
-                                                    # html.P("Injection Temperature Profile")
+                                                
+                                                    html.Div(
+                                                            id="hyperparam1-container",
+                                                            children=[
+                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                        ]),
+                                                    html.Div(
+                                                        id="hyperparam3-container",
+                                                        children=[
+                                                                dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                        ]),
+                                                    html.Div(
+                                                        id="hyperparam5-container",
+                                                        children=[
+                                                                dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style)
+                                                    ]),
                                                 ]
 
                                             ),

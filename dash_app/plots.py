@@ -104,7 +104,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             Tsurf, c_m, rho_m, 
             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-            mesh, accuracy, mass_mode, temp_mode):
+            mesh, accuracy, 
+            # mass_mode, temp_mode
+            HyperParam3, HyperParam4, HyperParam5
+            ):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -123,6 +126,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 
@@ -190,14 +195,15 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+                                                        )
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -214,14 +220,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
             except ValueError as e:
@@ -616,6 +622,8 @@ def generate_econ_lineplots(TandP_dict,
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 

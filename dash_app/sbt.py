@@ -20,9 +20,9 @@ import cProfile
 # sourced scripts
 is_plot = False
 is_app = True
-# from plot_sbt_plotly import plot_borehole_geometry_plotly
-# from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
-# from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
+from plot_sbt_plotly import plot_borehole_geometry_plotly
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1
+from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 
 #%% -------
 # 1. Input
@@ -1889,11 +1889,6 @@ def run_sbt(
     #                                     lateralflowallocation=lateralflowallocation,
     #                                     xinj=xinj, xlat=xlat, xprod=xprod)
         
-    #     plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
-    #                                     coaxialflowtype=coaxialflowtype, 
-    #                                     Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
-    #                                     Deltaz=Deltaz)
-        
     #     plot_heat_production(HeatProduction=HeatProduction, times=times)
     #     plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
     #     plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
@@ -1904,7 +1899,3 @@ def run_sbt(
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
     # return times[13:]/365/24/3600, Toutput[13:] + 273.15 # return in Kelvin # already done in clgs.py
 
-
-if __name__ == "__main__":
-    cProfile.run("run_sbt()")
-    # run_sbt()
