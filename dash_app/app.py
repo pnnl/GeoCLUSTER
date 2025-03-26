@@ -1315,10 +1315,10 @@ def update_sliders_hyperparms(model):
     
     elif model == "SBT V2.0":
 
-        hyperparam1 = slider1(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=2, max_v=20,
-                                                            mark_dict=inlet_pressure_dict, step_i=1e-7, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style)
-        hyperparam3 = slider1(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness", min_v=1e-7, max_v=1e-5,
-                                                            mark_dict=pipe_roughness_dict, step_i=1e-6, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style)
+        hyperparam1 = slider1(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
+                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style)
+        hyperparam3 = slider1(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
+                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style)
         hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
                                                                                                 options=["Variable", "Constant"], disabled=True, div_style=div_block_style)
 

@@ -111,8 +111,8 @@ radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 radius_centerpipe_dict = {0.001: '0.001', 0.010: '0.010'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
-inlet_pressure_dict = {2: '2', 20: '20'}
-pipe_roughness_dict =  {1e-7: '0.0000001', 1e-5: '0.00001'}
+inlet_pressure_dict = {5: '5', 20: '20'}
+pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
@@ -126,7 +126,7 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
                     "inletpressure": 10,
-                    "piperoughness": 1e-6
+                    "piperoughness": 0.000001 # 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
                     "kwe": 3000, "precool": 13, "turb-pout": 80
