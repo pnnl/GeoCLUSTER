@@ -268,7 +268,7 @@ class data:
             # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
             start = time.time()
             
-            print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
+            # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
             times, Tout, Pout = run_sbt_final(
                     ## Model Specifications 
@@ -295,7 +295,7 @@ class data:
                 Pout = constant_pressure * np.ones_like(Tout)
                 
             end = time.time()
-            print("sbt function run: ", end-start)
+            # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
             # self.time = times
 
             times = times[14:]

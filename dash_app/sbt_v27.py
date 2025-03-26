@@ -285,7 +285,9 @@ def run_sbt(
             
             kk = 1
             maxrelativechange = 1
-            print("Calculating initial pressure field ... | Iteration = 1")
+            if is_print:
+                print("Calculating initial pressure field ... | Iteration = 1")
+
             while kk < maxnumberofiterations and maxrelativechange > reltolerance: #Iterate to converge to initial pressure distribution
                 # Store old values
                 Pfluidupmidpoints_old = np.copy(Pfluidupmidpoints) #Store current guess for upflowing pressure distribution at midpoints to previous guess [Pa]
@@ -306,7 +308,8 @@ def run_sbt(
                 kk += 1
                 
                 # Print iteration status
-                print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
+                if is_print:
+                    print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
             
             # Calculate initial density distribution
             densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)])) #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
@@ -377,7 +380,9 @@ def run_sbt(
             
             kk = 1
             maxrelativechange = 1
-            print('Calculating initial pressure field ... | Iteration = 1')
+            
+            if is_print:
+                print('Calculating initial pressure field ... | Iteration = 1')
             
             lateralnodalstartpoints = []  # Stores the nodal start point of each lateral
             lateralnodalendpoints = []    # Stores the nodal end point of each lateral
@@ -411,7 +416,8 @@ def run_sbt(
                 kk = kk+1
                 
                 # Print iteration status
-                print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
+                if is_print:
+                    print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
             
             densityfluidnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidnodes, Tfluidnodes + 273.15)]))  #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
             
@@ -1845,8 +1851,10 @@ def run_sbt(
                                                 times=times)
         plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
 
-    
-    print("DONE!")
-    
-    return times/365/24/3600, Toutput + 273.15, Poutput * 100000 #/ 10 # return in seconds, Kelvin, and Pa, respectively
+    # print("DONE!")
+
+    if sbt_version == 2:
+        Poutput = Poutput * 100000 # return Pa
+
+    return times/365/24/3600, Toutput + 273.15, Poutput #/ 10 # return in seconds, Kelvin, and Pa, respectively
 

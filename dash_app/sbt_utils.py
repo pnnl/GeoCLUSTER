@@ -348,11 +348,11 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
     TotalLength = np.sum(Deltaz)  # Total length of all elements (for informational purposes only) [m]
     smallestLoverR = np.min(LoverR)  # Smallest ratio of pipe segment length to pipe radius. This ratio should be larger than 10. [-]
     
-    # QUALITY CONTROL
-    if smallestLoverR < 10:
-        print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
-    if max(abs(RelativeLengthChanges)) > 0.5:
-        print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
+    # QUALITY CONTROL # AB: bring back later on UI
+    # if smallestLoverR < 10:
+    #     print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
+    # if max(abs(RelativeLengthChanges)) > 0.5:
+    #     print('Warning: abrupt change(s) in segment length detected, which may cause numerical instabilities. Good practice is to avoid abrupt length changes to obtain smooth results.')
         
     return locals()
 
@@ -392,7 +392,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
             viscosity = [[mu_f] * 2] * 2
             thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
         else:  # If variable fluid properties, import pre-generated tables
-            print('Loading fluid properties...')
+            # print('Loading fluid properties...')
             if fluid == 1:  # H2O
                 try:
                     mat = scipy.io.loadmat('properties_H2O.mat') 
@@ -407,7 +407,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     thermalconductivity = mat['thermalconductivity']
                     thermalexpansion = mat['thermalexpansion']
                     viscosity = mat['viscosity']
-                    print('Fluid properties for water loaded successfully')
+                    # print('Fluid properties for water loaded successfully')
                 except Exception as e:
                     print(f"Error loading properties for water: {e}")
                     raise
@@ -424,7 +424,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     thermalconductivity = mat['thermalconductivity']
                     thermalexpansion = mat['thermalexpansion']
                     viscosity = mat['viscosity']                
-                    print('Fluid properties for CO2 loaded successfully')
+                    # print('Fluid properties for CO2 loaded successfully')
                 except Exception as e:
                     print(f"Error loading properties for CO2: {e}")
                     raise
