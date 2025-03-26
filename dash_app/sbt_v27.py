@@ -11,8 +11,6 @@ import pdb
 import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
-from scipy.sparse import csc_matrix
-from scipy.sparse.linalg import spsolve
 #v27 has SBT v1 for co-axial and U-loop, SBT v2 for co-axial and U-loop,as well as FMM algorithm
 
 # sourced scripts
