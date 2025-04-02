@@ -5,7 +5,6 @@
 import numpy as np
 import scipy.io
 from scipy.interpolate import interpn, interp1d
-# import pdb
 
 # sourced scripts
 # import clgs as clgs_v2

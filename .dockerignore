@@ -1,0 +1,15 @@
+# .dockerignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.git/
+.gitignore
+Dockerfile
+.dockerignore
+apache-config.conf # Don't copy this via COPY . ., it's handled separately
+README.md
+# Add any other files/folders you don't need in the final image

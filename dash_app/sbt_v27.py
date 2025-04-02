@@ -7,7 +7,6 @@ import scipy.special as sp
 from scipy.special import erf, erfc, jv, yv, exp1
 from scipy.sparse import csc_matrix
 from scipy.sparse.linalg import spsolve
-import pdb
 import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator

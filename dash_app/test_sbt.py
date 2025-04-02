@@ -13,7 +13,7 @@ from sbt_v27 import run_sbt as run_sbt_final
 #                Tsurf=20, GeoGradient=90/1000, k_m=2.83, c_m=825, rho_m=2875)
 
 is_v27 = True
-is_config = "coaxial" # good to go for sbt v1, and v2!!!
+is_config = "uloop" # good to go for sbt v1, and v2!!!
 sbt_version = 2
 # is_config = "uloop"  # good to go for sbt v1
 fluid = 1 # h2o is 1 sco2 is 2
