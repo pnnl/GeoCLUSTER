@@ -10,11 +10,20 @@ ENV DEBIAN_FRONTEND=noninteractive
 # --- MODIFIED LINE BELOW ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apache2 \
-    libapache2-mod-wsgi-py3 \
- && apt-get clean && rm -rf /var/lib/apt/lists/*
+    apache2-dev \
+    python3-dev \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set the working directory inside the container
 WORKDIR /app
+
+#building mod wsgi
+#copy
+COPY mod_wsgi-5.0.2.tar.gz ./
+RUN tar xvfz mod_wsgi-5.0.2.tar.gz && \
+    cd mod_wsgi-5.0.2 && \ 
+    ./configure --with-apxs=/usr/bin/apxs --with-python=/usr/local/bin/python && \
+    make && make install
 
 # Copy the requirements file first to leverage Docker layer caching
 COPY requirements.txt ./
@@ -37,11 +46,11 @@ RUN chown -R www-data:www-data /app && \
     find /app -type d -exec chmod 755 {} + && \
     find /app -type f -exec chmod 644 {} + && \
     chmod +x /app/dash_app/wsgi.py # Ensure wsgi script is executable if needed (though read usually suffices)
+    
 
+#downloading python file
+RUN python /app/dash_app/data/download_hdf5.py
 
-# Ensure mod_wsgi is enabled (it usually is after install, but explicit is good)
-# This should enable the correct version if installed correctly
-RUN a2enmod wsgi
 
 # Expose port 80 (Apache's default HTTP port)
 EXPOSE 80
