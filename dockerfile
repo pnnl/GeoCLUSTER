@@ -49,7 +49,8 @@ RUN chown -R www-data:www-data /app && \
     
 
 #downloading python file
-RUN python /app/dash_app/data/download_hdf5.py
+RUN cd /app/dash_app/data/ && \
+    python ./download_hdf5.py
 
 
 # Expose port 80 (Apache's default HTTP port)

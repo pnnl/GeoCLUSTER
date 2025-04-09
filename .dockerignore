@@ -11,5 +11,6 @@ venv/
 Dockerfile
 .dockerignore
 apache-config.conf # Don't copy this via COPY . ., it's handled separately
+dash_app/data/decompressed_clgs_results_final_float32.h5
 README.md
 # Add any other files/folders you don't need in the final image
