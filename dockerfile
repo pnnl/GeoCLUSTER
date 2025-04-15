@@ -3,9 +3,6 @@
 # Choose a Python base image. 'slim' versions are smaller.
 FROM python:3.8.10-slim
 
-# Set environment variables to prevent interactive prompts during package installation
-ENV DEBIAN_FRONTEND=noninteractive
-
 # Install Apache and the WSGI module FOR PYTHON 3.8, plus cleanup
 # --- MODIFIED LINE BELOW ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,25 +11,33 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-dev \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory inside the container
+# Set environment variables to prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
 WORKDIR /app
 
-#building mod wsgi
+# Create a virtual environment
+RUN python -m venv /app/venv
+# Add venv bin to PATH to make it easier to call python/pip from venv
+ENV PATH="/app/venv/bin:$PATH"
+
+# Copy requirements first for layer caching
+COPY requirements.txt ./
+
+# Install Python dependencies into the virtual environment
+# --no-cache-dir keeps the image size down
+RUN pip install --upgrade pip setuptools
+RUN pip install --no-cache-dir -r requirements.txt
+
 #copy
 COPY mod_wsgi-5.0.2.tar.gz ./
 RUN tar xvfz mod_wsgi-5.0.2.tar.gz && \
     cd mod_wsgi-5.0.2 && \ 
-    ./configure --with-apxs=/usr/bin/apxs --with-python=/usr/local/bin/python && \
+    ./configure --with-apxs=/usr/bin/apxs --with-python=/app/venv/bin/python && \
     make && make install
 
 # Copy the requirements file first to leverage Docker layer caching
-COPY requirements.txt ./
 
-# Install Python dependencies
-# --no-cache-dir keeps the image size down
-RUN pip install --upgrade pip
-RUN pip install setuptools
-RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of your application code into the container
 COPY . .
@@ -47,11 +52,6 @@ RUN chown -R www-data:www-data /app && \
     find /app -type f -exec chmod 644 {} + && \
     chmod +x /app/dash_app/wsgi.py # Ensure wsgi script is executable if needed (though read usually suffices)
     
-
-#downloading python file
-RUN cd /app/dash_app/data/ && \
-    python ./download_hdf5.py
-
 
 # Expose port 80 (Apache's default HTTP port)
 EXPOSE 80
