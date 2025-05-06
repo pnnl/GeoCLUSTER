@@ -5,7 +5,8 @@ from dotenv import load_dotenv
 
 localpath = ""
 internal_pnnl_path = "/var/www/html/dash_app/"
-aws_path = "/www/GeoCLUSTER/dash_app/"
+# aws_path = "/www/GeoCLUSTER/dash_app/"
+aws_path = "/var/www/GeoCLUSTER/"
 
 load_dotenv()
 deployment_type = os.getenv("deployment_type", "aws")
