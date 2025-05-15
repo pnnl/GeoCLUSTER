@@ -30,6 +30,9 @@ from dash import Dash, dcc, html, ctx
 import dash_daq as daq                  # Adds more data acquisition (DAQ) and controls to dash callbacks 
 import dash_bootstrap_components as dbc # Adds bootstrap components for more web themes and templates
 from dash.exceptions import PreventUpdate
+from flask_talisman import Talisman
+from flask import send_from_directory
+from flask_compress import Compress
 
 # sourced scripts
 from paths import inpath_dict
@@ -56,8 +59,19 @@ properties_CO2v2_pathname = inpath_dict["properties_CO2v2_pathname"]
 additional_properties_CO2v2_pathname = inpath_dict["additional_properties_CO2v2_pathname"]
 tmatrix_pathname = inpath_dict["tmatrix_pathname"]
 
+# sha384 for bootstrap@5.3.1/dist/css/bootstrap.min.css (jsDelivr)
+BOOTSTRAP_CSS = {
+    "rel": "stylesheet",
+    "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css",
+    "integrity": "sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9",
+    "crossorigin": "anonymous",
+}
+# print(dbc.themes.BOOTSTRAP)
+
+
 app = dash.Dash(__name__, assets_folder='assets', 
-                external_stylesheets=[dbc.themes.BOOTSTRAP], 
+                # external_stylesheets=[dbc.themes.BOOTSTRAP], 
+                external_stylesheets=[BOOTSTRAP_CSS],          # ← use the dict, not dbc.themes.BOOTSTRAP
                 # url_base_pathname=url_base_pathname, # not needed
                 requests_pathname_prefix=requests_pathname_prefix,
                 meta_tags=[{'name': 'viewport', 'content': 'width=device-width'},
@@ -67,6 +81,14 @@ app = dash.Dash(__name__, assets_folder='assets',
                                         Office of Energy Efficiency and  Renewable Energy (EERE) at the U.S. Department of 
                                         Energy (DOE) to form a collaborative study of closed-loop geothermal systems."""}
                             ])
+# Talisman(
+#     app.server,                 # <-- the Flask instance
+#     force_https=True,           # redirects HTTP → HTTPS (308)
+#     strict_transport_security=True,
+#     strict_transport_security_max_age=31536000,     # one year
+#     strict_transport_security_include_subdomains=True,
+#     strict_transport_security_preload=True           # for Chrome preload list
+# )
 
 app.title = "GeoCLUSTER | Geothermal Closed-Loop User Tool in Energy Research"
 
@@ -1702,6 +1724,7 @@ def update_error_divs(levelized_cost_dict):
 
     return warning_div3
 
+
 # -----------------------------------------------------------------------------
 # App runs here. Define configurations, proxies, etc.
 # -----------------------------------------------------------------------------
@@ -1709,8 +1732,44 @@ def update_error_divs(levelized_cost_dict):
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
+compress = Compress()
+compress.init_app(app.server)     # gzip all static assets
+
+app.server.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
+
+"""" 
+1. Dash/Flask code no longer issuing a Set-Cookie header.
+2. No client-side script (such as the old Google-Analytics snippet) is writing a cookie anymore.
+"""
+    
+@server.route("/.well-known/apple-app-site-association")
+def aasa():
+    return send_from_directory(
+        "static",
+        "apple-app-site-association",   # apple-app-site-association is purely a hint to iOS / iPadOS about when it may open a native app instead of Safari
+        mimetype="application/json"
+    )
+
 if __name__ == '__main__':
-    app.run_server(port=8060, debug=True) 
+    # app.run_server(port=8060, debug=True) 
+    app.run_server(
+        # host="127.0.0.1",
+        port=8060,
+        debug=False, # needs to be False in production
+        ssl_context="adhoc"
+    )
+
+    """
+    ssl_context="adhoc"
+
+    Flask, and more specifically Werkzeug, support the use of on-the-fly certificates, 
+    which are useful to quickly serve an application over HTTPS without having to mess 
+    with certificates. All you need to do, is add ssl_context='adhoc' to your app.run() call
+    """
     # EXAMPLE: *************
     # app.run_server(port=8050, proxy="http://127.0.0.1:8059::https://<site>/<page_name>")
 
