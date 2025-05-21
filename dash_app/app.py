@@ -42,6 +42,7 @@ from dropdowns import *
 from text import *
 from tables import generate_summary_table
 
+
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
 #
