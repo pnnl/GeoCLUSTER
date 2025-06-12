@@ -6,7 +6,7 @@
 /www/geoVenv/bin/pip install -r /www/GeoCLUSTER.new/dash_app/requirements.txt
 
 # downloading hdf5 if it is not already downloaded
-cd /www/GeoCLUSTER.new/dash_app/data; /www/geoVenv/bin/python download_hdf5.py
+# cd /www/GeoCLUSTER.new/dash_app/data; /www/geoVenv/bin/python download_hdf5.py
 
 #giving apache permission to the venv
 chown -R apache:apache /www/geoVenv
