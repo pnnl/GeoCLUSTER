@@ -654,6 +654,9 @@ def generate_econ_lineplots(TandP_dict,
                         horizontal_spacing = 0.11
                         )
 
+    teaobj_sCO2 = None
+    teaobj_H2O = None
+
     # ts_fig = make_subplots(rows=1, cols=1,
     #                         horizontal_spacing = 0.11
     #                         )
@@ -942,6 +945,16 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_traces(cells_font=dict(size = 13), row=1, col=5)
     fig.update_traces(cells_font=dict(size = 13), row=2, col=5)
 
+    error_codes = []
+    #getting errors codes
+    if teaobj_H2O is not None:
+        error_codes += teaobj_H2O.error_codes.tolist()
+
+    if teaobj_sCO2 is not None:
+        error_codes += teaobj_sCO2.error_codes.tolist()
+    #removing duplicates
+    error_codes = list(set(error_codes))
+
     econ_data_dict = {'LCOH sCO2': lcoh_sCO2, 
                         'LCOH H2O': lcoh_H2O, 
                         'LCOE sCO2': lcoe_sCO2,
@@ -949,7 +962,8 @@ def generate_econ_lineplots(TandP_dict,
                         'Mean H2O Net HProd': mean_H2O_Net_HProd,
                         'Mean H2O Net EProd': mean_H2O_Net_EProd,
                         'Mean sCO2 Net HProd': mean_sCO2_Net_HProd,
-                        'Mean sCO2 Net EProd': mean_sCO2_Net_EProd}
+                        'Mean sCO2 Net EProd': mean_sCO2_Net_EProd,
+                        "error_codes": error_codes}
 
 
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40

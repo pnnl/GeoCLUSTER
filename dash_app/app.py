@@ -41,6 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+from clg_tea_module import get_error_message
 
 
 # -----------------------------------------------------------------------------
@@ -1711,14 +1712,24 @@ def update_error_divs(levelized_cost_dict):
                     'color': darkergrey,
                     }
 
-    if levelized_cost_dict['LCOE sCO2'] == "9999.00" or levelized_cost_dict['LCOE H2O'] == "9999.00":
-        
+    error_codes = levelized_cost_dict["error_codes"]
+    has_errors = len(error_codes) > 0
+    if has_errors:
+        print("error codes:\n", error_codes)
+        error_messages = [get_error_message(code) for code in error_codes]
+        if all(msg is None for msg in error_messages):
+            error_messages = ["Calculated energy or heat production is below 0"]
+        else:
+            error_messages = [msg for msg in error_messages if msg]  # Filter out None messages
+
+        paragraphs = [html.P(message) for message in error_messages]
+
         warning_div3 = html.Div(#id="error_block_div3",
                             style=error_style,
                             children=[
                                 html.Img(id="warning-img", src=app.get_asset_url('warning.png')), 
-                                dcc.Markdown("**LCOE is too high.**", style={'display': 'inline-block'}),
-                                html.P("Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."),
+                                dcc.Markdown("**Errors in Economic Simulation**", style={'display': 'inline-block'}),
+                                *paragraphs
                                 ]
                         )
 
