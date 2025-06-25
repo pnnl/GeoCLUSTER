@@ -99,7 +99,7 @@ def plot_borehole_geometry_plotly(clg_configuration, numberoflaterals, x, y, z, 
                     )
     # fig.update_layout()
     # Save the plot as an HTML file
-    fig.write_html("borehole_geometry.html")
+    # fig.write_html("borehole_geometry.html")
     
     # Show the plot
     # fig.show()

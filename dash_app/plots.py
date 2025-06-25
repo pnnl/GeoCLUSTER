@@ -104,7 +104,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             Tsurf, c_m, rho_m, 
             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-            mesh, accuracy, mass_mode, temp_mode):
+            mesh, accuracy, 
+            # mass_mode, temp_mode
+            HyperParam3, HyperParam4, HyperParam5
+            ):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -123,6 +126,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 
@@ -190,14 +195,15 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+                                                        )
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -214,14 +220,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, mass_mode, temp_mode)
+                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
 
             except ValueError as e:
@@ -616,6 +622,8 @@ def generate_econ_lineplots(TandP_dict,
         sbt_version = 0
     elif model == "SBT V1.0":
         sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
     else:
         sbt_version = 0
 
@@ -645,6 +653,9 @@ def generate_econ_lineplots(TandP_dict,
                                 ],
                         horizontal_spacing = 0.11
                         )
+
+    teaobj_sCO2 = None
+    teaobj_H2O = None
 
     # ts_fig = make_subplots(rows=1, cols=1,
     #                         horizontal_spacing = 0.11
@@ -934,6 +945,16 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_traces(cells_font=dict(size = 13), row=1, col=5)
     fig.update_traces(cells_font=dict(size = 13), row=2, col=5)
 
+    error_codes = []
+    #getting errors codes
+    if teaobj_H2O is not None:
+        error_codes += teaobj_H2O.error_codes.tolist()
+
+    if teaobj_sCO2 is not None:
+        error_codes += teaobj_sCO2.error_codes.tolist()
+    #removing duplicates
+    error_codes = list(set(error_codes))
+
     econ_data_dict = {'LCOH sCO2': lcoh_sCO2, 
                         'LCOH H2O': lcoh_H2O, 
                         'LCOE sCO2': lcoe_sCO2,
@@ -941,7 +962,8 @@ def generate_econ_lineplots(TandP_dict,
                         'Mean H2O Net HProd': mean_H2O_Net_HProd,
                         'Mean H2O Net EProd': mean_H2O_Net_EProd,
                         'Mean sCO2 Net HProd': mean_sCO2_Net_HProd,
-                        'Mean sCO2 Net EProd': mean_sCO2_Net_EProd}
+                        'Mean sCO2 Net EProd': mean_sCO2_Net_EProd,
+                        "error_codes": error_codes}
 
 
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40

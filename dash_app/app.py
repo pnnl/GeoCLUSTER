@@ -5,6 +5,10 @@
 # GeoCLUSTER, data tool and app that runs visuals on Closed-Loop Geothermal Data
 # -------------------------------------------------------------------------------------
 
+# TODO: get_Ts_diagram debugging, tab checks, visible and invisible checks
+# TODO: really it should only be running the plotting when fluid or end-use == "All"?
+# running unncessary amount of times maybe? This means running things more times
+
 # --------------------
 # Libraries.
 # --------------------
@@ -26,6 +30,9 @@ from dash import Dash, dcc, html, ctx
 import dash_daq as daq                  # Adds more data acquisition (DAQ) and controls to dash callbacks 
 import dash_bootstrap_components as dbc # Adds bootstrap components for more web themes and templates
 from dash.exceptions import PreventUpdate
+from flask_talisman import Talisman
+from flask import send_from_directory
+from flask_compress import Compress
 
 # sourced scripts
 from paths import inpath_dict
@@ -34,6 +41,8 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+from clg_tea_module import get_error_message
+
 
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
@@ -52,8 +61,19 @@ properties_CO2v2_pathname = inpath_dict["properties_CO2v2_pathname"]
 additional_properties_CO2v2_pathname = inpath_dict["additional_properties_CO2v2_pathname"]
 tmatrix_pathname = inpath_dict["tmatrix_pathname"]
 
+# sha384 for bootstrap@5.3.1/dist/css/bootstrap.min.css (jsDelivr)
+BOOTSTRAP_CSS = {
+    "rel": "stylesheet",
+    "href": "https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css",
+    "integrity": "sha384-4bw+/aepP/YC94hEpVNVgiZdgIC5+VKNBQNGCHeKRQN+PtmoHDEXuppvnDJzQIu9",
+    "crossorigin": "anonymous",
+}
+# print(dbc.themes.BOOTSTRAP)
+
+
 app = dash.Dash(__name__, assets_folder='assets', 
-                external_stylesheets=[dbc.themes.BOOTSTRAP], 
+                # external_stylesheets=[dbc.themes.BOOTSTRAP], 
+                external_stylesheets=[BOOTSTRAP_CSS],          # ← use the dict, not dbc.themes.BOOTSTRAP
                 # url_base_pathname=url_base_pathname, # not needed
                 requests_pathname_prefix=requests_pathname_prefix,
                 meta_tags=[{'name': 'viewport', 'content': 'width=device-width'},
@@ -63,6 +83,14 @@ app = dash.Dash(__name__, assets_folder='assets',
                                         Office of Energy Efficiency and  Renewable Energy (EERE) at the U.S. Department of 
                                         Energy (DOE) to form a collaborative study of closed-loop geothermal systems."""}
                             ])
+# Talisman(
+#     app.server,                 # <-- the Flask instance
+#     force_https=True,           # redirects HTTP → HTTPS (308)
+#     strict_transport_security=True,
+#     strict_transport_security_max_age=31536000,     # one year
+#     strict_transport_security_include_subdomains=True,
+#     strict_transport_security_preload=True           # for Chrome preload list
+# )
 
 app.title = "GeoCLUSTER | Geothermal Closed-Loop User Tool in Energy Research"
 
@@ -529,7 +557,7 @@ def update_tabs(selected_model):
 
         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0" : 
         
         print(" ----------------------------- ")
         print("SBT")
@@ -568,7 +596,7 @@ def update_loading(selected_model):
                                             ]
                                         )
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0": 
         
         return dcc.Loading(
                 parent_className="loader-wrapper",
@@ -595,64 +623,6 @@ def update_loading(selected_model):
         raise PreventUpdate
 
 
-# @app.callback(
-#    Output(component_id="graphics-parent-econ", component_property="children"),
-#    Input(component_id="model-select", component_property="value"),
-#    )
-
-# def update_loading(selected_model):
-
-#     if selected_model == "HDF5": 
-
-#         return html.Div(id="graphics-container-econ",
-#                                             children=[
-#                                                 dcc.Graph(id="econ_plots",
-#                                                             config=plotly_config),
-#                                                 dbc.RadioItems(
-#                                                             options=[
-#                                                                 {"label": "Auto Scale", "value": 1},
-#                                                                 {"label": "Full Scale", "value": 2},
-#                                                             ],
-#                                                             value=1,
-#                                                             id="radio-graphic-control4",
-#                                                         ),
-#                                                 html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-#                                             ]
-
-#                                         )
-
-#     elif selected_model == "SBT V1.0": 
-        
-#         time.sleep(7)
-
-#         return dcc.Loading(
-#                 parent_className="loader-wrapper",
-#                 type='circle',
-#                 children=[
-#                         html.Div(id="graphics-container-econ",
-#                                  children=[
-#                                     dcc.Graph(id="econ_plots",
-#                                                 config=plotly_config),
-#                                     dbc.RadioItems(
-#                                                 options=[
-#                                                     {"label": "Auto Scale", "value": 1},
-#                                                     {"label": "Full Scale", "value": 2},
-#                                                 ],
-#                                                 value=1,
-#                                                 id="radio-graphic-control4",
-#                                             ),
-#                                     html.P("Temperature-entropy (T-S) Diagram", id="ts-text"),
-#                                 ]
-
-#                             )
-#                         ]
-#                     )
-#     else:
-#         raise PreventUpdate
-
-
-
-
 @app.callback(
    Output(component_id="contour-tab", component_property="style"),
    [Input(component_id="model-select", component_property="value")
@@ -666,9 +636,8 @@ def update_tabs(selected_model):
 
         return {'display': 'block'}
 
-    elif selected_model == "SBT V1.0": 
+    elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0" : 
             
-        # TODO: update tabs styline
         return {'display': 'none'}
 
 
@@ -734,7 +703,13 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 
 def update_working_fluid(model):
 
-    if model == "SBT V1.0":
+    if model == "SBT V2.0":
+        fluid_list = ["All", "H2O", "sCO2"]
+        if ctx.triggered_id == "model-select":
+            return "All", [{"label": i, "value": i} for i in fluid_list]
+        else:
+            raise PreventUpdate
+    elif model == "SBT V1.0":
         fluid_list = ["H2O"]
         if ctx.triggered_id == "model-select":
             return "H2O", [{"label": i, "value": i} for i in fluid_list]
@@ -756,7 +731,7 @@ def update_working_fluid(model):
     ])
 
 def change_dropdown(at, fluid, model):
-
+    
     if model == "HDF5":
 
         if at == "energy-time-tab":
@@ -788,7 +763,7 @@ def change_dropdown(at, fluid, model):
             return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
             # raise PreventUpdate
 
-    if model == "SBT V1.0":
+    if model == "SBT V1.0" or model == "SBT V2.0":
 
         raise PreventUpdate
 
@@ -933,20 +908,22 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         else:
             raise PreventUpdate
 
-    elif model == "SBT V1.0":
+    elif model == "SBT V1.0" or model == "SBT V2.0":
         raise PreventUpdate
 
-
 @app.callback(
-    [Output(component_id="Tsurf-select-div", component_property="style"),
+    [
+    Output(component_id='model-params-div', component_property='style'),
+    Output(component_id="Tsurf-select-div", component_property="style"),
     Output(component_id="c-select-div", component_property="style"),
     Output(component_id="rho-select-div", component_property="style"),
     Output(component_id="radius-vertical-select-div", component_property="style"),
     Output(component_id="radius-lateral-select-div", component_property="style"),
-    Output(component_id="diameter-select-div", component_property="style"),
-    Output(component_id="n-laterals-select", component_property="style"),
-    Output(component_id="lateral-flow-select", component_property="style"),
-    Output(component_id="lateral-multiplier-select", component_property="style"),
+    Output(component_id="diameter-select-div", component_property="style"), # show HDF5, hide SBT
+    Output(component_id="fluid-mode-div", component_property="style"), # hide HDF5 and v1, show v2
+    Output(component_id='num-lat-div', component_property='style'),
+    Output(component_id='lat-allocation-div', component_property='style'),
+    Output(component_id='lat-flow-mul-div', component_property='style'),
     ],
    [Input(component_id="model-select", component_property="value"),
     ],
@@ -955,63 +932,38 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
 
 def show_model_params(model):
 
+    # print("show_model_params: ", model)
+
     b = {'display': 'block'}
     n = {'display': 'none'}
 
     if model == "HDF5":
-        return n, n, n, n, n, b, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, n, b, b, b
-
-
-@app.callback(
-   [Output(component_id='mdot-select-div', component_property='style'),
-    Output(component_id='L2-select-div', component_property='style'),
-    Output(component_id='L1-select-div', component_property='style'),
-    Output(component_id='grad-select-div', component_property='style'),
-    Output(component_id='diameter-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='Tinj-select-div', component_property='style'), # AB DEBUG HERE
-    Output(component_id='k-select-div', component_property='style'),
-
-    Output(component_id='drillcost-div', component_property='style'),
-    Output(component_id='discount-rate-div', component_property='style'),
-    Output(component_id='lifetime-div', component_property='style'),
-    Output(component_id='kwt-div', component_property='style'),
-    Output(component_id='kwe-div', component_property='style'),
-    Output(component_id='precool-div', component_property='style'),
-    Output(component_id='turb-pout-div', component_property='style'),
-    Output(component_id='economics-params-div', component_property='style'),
-    # Output(component_id='sCO2-card', component_property='style', allow_duplicate=True),
+        return b, b, b, b, b, b, n, b, b, n, n
+    
+    if model == "SBT V2.0":
+        return b, b, b, b, b, b, n, b, b, n, b
     
 
-    #  Output(component_id='Tsurf-select-div', component_property='style'),
-    #  Output(component_id='c-select-div', component_property='style'),
-    #  Output(component_id='rho-select-div', component_property='style'),
-    #  Output(component_id='radius-vertical-select-div', component_property='style'),
-    #  Output(component_id='radius-lateral-select-div', component_property='style'),
-    #  Output(component_id='n-laterals-select-div', component_property='style'),
-    #  Output(component_id='lateral-flow-select-div', component_property='style'),
-    #  Output(component_id='lateral-multiplier-select-div', component_property='style'),
-
-   ],
-   [Input(component_id='param-select', component_property='value'),
+@app.callback(
+    [
+    Output(component_id='economics-params-div', component_property='style', allow_duplicate=True),
+    Output(component_id='kwt-div', component_property='style'),
+    Output(component_id='kwe-div', component_property='style'),
+    ],
+   [
     Input(component_id="tabs", component_property="value"),
+    # Input(component_id="model-select", component_property="value"),
     Input(component_id="fluid-select", component_property="value"),
-    Input(component_id="end-use-select", component_property="value"),
-    Input(component_id="model-select", component_property="value")
+    Input(component_id="end-use-select", component_property="value")
     ],
     prevent_initial_call=True,
     )
 
-def show_hide_element(visibility_state, at, fluid, end_use, model):
+def econ_sliders_visibility(tab, fluid, end_use):
 
-    # ----------------------------------------------------------------------------------------------
-    # Reveals or hides sliders depending on which tab selected and which dropdowns.
-    # ----------------------------------------------------------------------------------------------
-
-    # TODO ****
-    
     b = {'display': 'block'}
     n = {'display': 'none'}
 
@@ -1034,72 +986,31 @@ def show_hide_element(visibility_state, at, fluid, end_use, model):
         "border-bottom": "none"
     }
 
-    if model == "HDF5":
-        if at == "about-tab":
-            if fluid == "H2O" or end_use == "Heating":
-                return b, b, b, b, b, b, b,\
-                        b, b, b, b, b, n, n, econ_parms_div_style
-            else:
-                return b, b, b, b, b, b, b,\
-                        b, b, b, b, b, b, b, econ_parms_div_style_2
-        
-        elif at == "energy-time-tab":
-            return b, b, b, b, b, b, b, \
-                    n, n, n, n, n, n, n, n
-        
-        elif at == "energy-tab":
-            
-            if visibility_state == param_list[0]:
-                return n, n, b, b, b, b, b, \
-                        n, n, n, n, n, n, n, n
-            if visibility_state == param_list[1]:
-                return n, b, n, b, b, b, b, \
-                        n, n, n, n, n, n, n, n
-            if visibility_state == param_list[2]:
-                return n, b, b, n, b, b, b, \
-                        n, n, n, n, n, n, n, n
-            if visibility_state == param_list[3]:
-                return n, b, b, b, n, b, b, \
-                        n, n, n, n, n, n, n, n
-            if visibility_state == param_list[4]:
-                return n, b, b, b, b, n, b, \
-                        n, n, n, n, n, n, n, n
-            if visibility_state == param_list[5]:
-                return n, b, b, b, b, b, n, \
-                        n, n, n, n, n, n, n, n
-        
-        elif at == "economics-time-tab":
-            if fluid == "H2O":
-                if end_use == "All":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, b, b, n, n, econ_parms_div_style
-                if end_use == "Heating":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, b, n, n, n, econ_parms_div_style
-                if end_use == "Electricity":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, n, b, n, n, econ_parms_div_style
-
-            else:
-                if end_use == "All":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, b, b, b, b, econ_parms_div_style_2
-                if end_use == "Heating":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, b, n, n, n, econ_parms_div_style
-                if end_use == "Electricity":
-                    return b, b, b, b, b, b, b, \
-                            b, b, b, n, b, b, b, econ_parms_div_style_2
-
-        elif at == "summary-tab":
-            if fluid == "H2O":
-                return b, b, b, b, b, b, b, \
-                        b, b, b, b, b, n, n, econ_parms_div_style
-            else:
-                return b, b, b, b, b, b, b, \
-                        b, b, b, b, b, b, b, econ_parms_div_style_2
-    else:
-        raise PreventUpdate
+    if tab == "energy-time-tab" or tab == "energy-tab":
+        # print("bye econ!")
+        return n, n, n
+    else: #
+        # print("hi econ!") # how should econ look under different conditions?
+        if fluid == "All" and end_use == "All":
+            return econ_parms_div_style_2, b, b
+        if fluid == "All" and end_use == "Heating":
+            return econ_parms_div_style, b, n
+        if fluid == "All" and end_use == "Electricity":
+            return econ_parms_div_style_2, n, b
+        elif fluid == "H2O" and end_use == "All":
+            return econ_parms_div_style, b, b
+        elif fluid == "H2O" and end_use == "Heating":
+            return econ_parms_div_style, b, n
+        elif fluid == "H2O" and end_use == "Electricity":
+            return econ_parms_div_style, n, b
+        elif fluid == "sCO2" and end_use == "All":
+            return econ_parms_div_style_2, b, b
+        elif fluid == "sCO2" and end_use == "Heating":
+            return econ_parms_div_style, b, n
+        elif fluid == "sCO2" and end_use == "Electricity":
+            return econ_parms_div_style_2, n, b
+        else:
+            return b, b, b
 
 
 @app.callback(
@@ -1115,61 +1026,131 @@ def show_hide_element(visibility_state, at, fluid, end_use, model):
 
 def show_hide_detailed_card(tab, fluid, end_use):
 
-    # TODO fix CSS
+    # print("show_hide_detailed_card, tab: ", tab, end_use)
 
     if tab == "energy-time-tab" or tab == "energy-tab":
+        # print("white 1")
         return {'border': 'solid 0px white'}, {'display': 'none'}, {'display': 'none'}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
 
         if fluid == "H2O" or end_use == "Heating":
-            # print('h20 heat')
+            # print("white 2")
             return {'border': 'solid 0px white'}, {'display': 'none'}, {'display': 'none'}
         else:
-            # print('all other options')
+            # print("orange")
             return {'border': 'solid 3px #c4752f', 'display': 'block'}, {'display': 'block'}, {'display': 'inline-block'}
         
 
-
-
-##### HERE NEED TO GET DIFFERENCE BETWEEN HDF5 AND SBT VIA CSS CHANGES AND UPDATING CHILDREN 
 @app.callback(
-   [
-    Output(component_id='model-params-div', component_property='style', allow_duplicate=True),
-    Output(component_id='Tinj-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='c-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='rho-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='num-lat-div', component_property='style'),
-    Output(component_id='lat-allocation-div', component_property='style'),
-    Output(component_id='lat-flow-mul-div', component_property='style'),
-    Output(component_id='radius-vertical-select-div', component_property='style', allow_duplicate=True),
-    Output(component_id='radius-lateral-select-div', component_property='style', allow_duplicate=True),
+   [Output(component_id='mdot-select-div', component_property='style'),
+    Output(component_id='L2-select-div', component_property='style'),
+    Output(component_id='L1-select-div', component_property='style'),
+    Output(component_id='grad-select-div', component_property='style'),
+    Output(component_id='diameter-select-div', component_property='style', allow_duplicate=True),
+    Output(component_id='Tinj-select-div', component_property='style'), # AB DEBUG HERE
+    Output(component_id='k-select-div', component_property='style'),
+
+    Output(component_id='drillcost-div', component_property='style'),
+    Output(component_id='discount-rate-div', component_property='style'),
+    Output(component_id='lifetime-div', component_property='style'),
+    Output(component_id='precool-div', component_property='style'),
+    Output(component_id='turb-pout-div', component_property='style'),
+
+    Output(component_id='wellbore-params-div', component_property='style'),
    ],
-   [Input(component_id="model-select", component_property="value")],
-   prevent_initial_call=True
+   [Input(component_id='param-select', component_property='value'),
+    Input(component_id="tabs", component_property="value"),
+    Input(component_id="fluid-select", component_property="value"),
+    Input(component_id="end-use-select", component_property="value"),
+    Input(component_id="model-select", component_property="value")
+    ],
+    prevent_initial_call=True,
     )
 
-def update_system_values(model):
+def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
+    # ----------------------------------------------------------------------------------------------
+    # Reveals or hides sliders depending on which tab selected and which dropdowns.
+    # ----------------------------------------------------------------------------------------------
+
+    # print("show_hide_element: ", model, tab, fluid, end_use, visibility_state)
+    # fluid getting changed makes this run "twice" but it's working as expected.
+    
     b = {'display': 'block'}
     n = {'display': 'none'}
-    # is_title_show = True
-    
-    if model == "HDF5":
-        # gotta make the default be hidden on the default LAYOUT ******
-        ##### for now can continue testing
 
-        # remove model-params
-        # null out rock specific heat (hide for now)
-        # null out rock density (hide for now)
-        # null out surface temperature  (hide for now)
-        return n, n, n, n, n, n, n, n, n
+    if model == "HDF5":
+        if tab == "about-tab":
+            if fluid == "H2O" or end_use == "Heating":
+                return b, b, b, b, b, b, b,\
+                        b, b, b, n, n, b
+
+            else:
+                return b, b, b, b, b, b, b,\
+                        b, b, b, b, b, b
         
+        elif tab == "energy-time-tab":
+            return b, b, b, b, b, b, b, \
+                    n, n, n, n, n, b
+        
+        elif tab == "energy-tab":
+            
+            if visibility_state == param_list[0]:
+                return n, n, b, b, b, b, b, \
+                        n, n, n, n, n, b
+            if visibility_state == param_list[1]:
+                return n, b, n, b, b, b, b, \
+                        n, n, n, n, n, b
+            if visibility_state == param_list[2]:
+                return n, b, b, n, b, b, b, \
+                        n, n, n, n, n, b
+            if visibility_state == param_list[3]:
+                return n, b, b, b, n, b, b, \
+                        n, n, n, n, n, b
+            if visibility_state == param_list[4]: # "Injection Temperature (˚C)"
+                return n, b, b, b, b, n, b, \
+                        n, n, n, n, n, n
+            if visibility_state == param_list[5]:
+                return n, b, b, b, b, b, n, \
+                        n, n, n, n, n, b
+        
+        elif tab == "economics-time-tab":
+            if fluid == "H2O":
+                if end_use == "All":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, n, b
+                if end_use == "Heating":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, n, b
+                if end_use == "Electricity":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, n, b
+
+            else:
+                if end_use == "All":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, b, b
+                if end_use == "Heating":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, n, n, b
+                if end_use == "Electricity":
+                    return b, b, b, b, b, b, b, \
+                            b, b, b, b, b, b
+
+        elif tab == "summary-tab":
+            if fluid == "H2O":
+                return b, b, b, b, b, b, b, \
+                        b, b, b, n, n, b
+            else:
+                return b, b, b, b, b, b, b, \
+                        b, b, b, b, b, b
+                        
     elif model == "SBT V1.0":
-        return b, b, b, b, b, b, b, b, b
-    
+        raise PreventUpdate
     else:
         raise PreventUpdate
+
 
 @app.callback(
    [
@@ -1185,7 +1166,7 @@ def update_system_values(model):
    prevent_initial_call=True
     )
 
-def update_sliders(model):
+def update_slider_ranges(model):
 
     grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
@@ -1218,7 +1199,7 @@ def update_sliders(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0": # TODO: HIDE BOREHOLE
+    elif model == "SBT V1.0" or model == "SBT V1.0": 
 
         # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
@@ -1256,7 +1237,6 @@ def update_sliders(model):
                                                                         mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
-    
     else:
         raise PreventUpdate
 
@@ -1273,7 +1253,7 @@ def update_sliders(model):
     Input(component_id="case-select", component_property="value")],
    prevent_initial_call=True
     )
-def update_sliders_case(model, case):
+def update_sliders_heat_exchanger(model, case):
 
     if model == "SBT V1.0":
 
@@ -1334,73 +1314,43 @@ def update_sliders_case(model, case):
     else:
         raise PreventUpdate
 
-### HERE
-
-# @app.callback(
-#    [
-#     Output(component_id='diameter-container', component_property='children', allow_duplicate=True),
-#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
-#     Output(component_id='RADIUS', component_property='children', allow_duplicate=True),
-#     Output(component_id='HYPERPARAM', component_property='children', allow_duplicate=True),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#     Output(component_id='HYPERPARAM', component_property='children'),
-#    ],
-#    [Input(component_id="model-select", component_property="value"),
-#     Input(component_id="case-select", component_property="value")],
-#    prevent_initial_call=True
-#     )
-
-# def update_sliders(model, case):
-
-#     if case == "utube":
-#     elif case == "coaxial":
-#     else:
-#         raise PreventUpdate
-
-
 @app.callback(
-    Output(component_id='wellbore-params-div', component_property='style'),
-    [Input(component_id="param-select", component_property="value"),
-    Input(component_id="tabs", component_property="value"),
-    ]
+   [
+     Output(component_id='hyperparam1-container', component_property='children'), 
+     Output(component_id='hyperparam3-container', component_property='children'),
+     Output(component_id='hyperparam5-container', component_property='children')
+   ],
+   [Input(component_id="model-select", component_property="value"),
+    ],
+   prevent_initial_call=True
     )
+def update_sliders_hyperparms(model):
 
-def remove_empty_div_container(param, tab):
+    if model == "SBT V1.0":
+
+        hyperparam1 = dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+        hyperparam3 = dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
+
+        return hyperparam1, hyperparam3, hyperparam5
     
-    b = {'display': 'block'}
-    n = {'display': 'none'}
-    
-    if tab != "energy-tab":
-        # TODO: be sure that this is not interferring with other callbacks
-        return b
-    elif param == "Injection Temperature (˚C)":
-        return n
+    elif model == "SBT V2.0":
 
+        hyperparam1 = slider1(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
+                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style)
+        hyperparam3 = slider1(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
+                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style)
+        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_block_style)
 
-# @app.callback(
-# #    [
-#     Output(component_id='slider-container', component_property='children'),
-# #    ],
-#    [
-#     Input(component_id="model-select", component_property="value")
-#     ])
+        return hyperparam1, hyperparam3, hyperparam5
 
-# def update_system_values(selected_model):
+    else:
+        raise PreventUpdate
 
-#     if selected_model == "HDF5": 
-
-#         return {'display': 'block'}, {'display': 'block'}, {'display': 'block'}
-
-#     elif selected_model == "SBT V1.0": 
-        
-#         print(" ----------------------------- ")
-#         print("SBT")
-#         # TODO: update tabs styline
-#         return {'display': 'none'}, {'display': 'none'}, {'display': 'none'}
-
-#     else:
-#         raise PreventUpdate
 
 # -----------------------------------------------------------------------------
 # Define dash app plotting callbacks.
@@ -1442,6 +1392,7 @@ def remove_empty_div_container(param, tab):
      Input(component_id='accuracy-select', component_property='value'),
      Input(component_id='mass-mode-select', component_property='value'),
      Input(component_id='temp-mode-select', component_property='value'),
+     Input(component_id='fluid-mode-select', component_property='value'),
 
     ],
 )
@@ -1450,7 +1401,10 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
                         Tsurf, c_m, rho_m, 
                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                        mesh, accuracy, mass_mode, temp_mode):
+                        mesh, accuracy, 
+                        # mass_mode, temp_mode
+                        HyperParam3, HyperParam4, HyperParam5
+                        ):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -1458,14 +1412,17 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
 
     # print('subsurface')
     # if HDF5:
+    # start = time.time()
     subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
         Tsurf, c_m, rho_m, 
         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-        mesh, accuracy, mass_mode, temp_mode
+        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
     )
     # if SBT:
+    # end = time.time()
+    # print("run generate_subsurface_lineplots:", end - start)
 
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict
 
@@ -1755,19 +1712,30 @@ def update_error_divs(levelized_cost_dict):
                     'color': darkergrey,
                     }
 
-    if levelized_cost_dict['LCOE sCO2'] == "9999.00" or levelized_cost_dict['LCOE H2O'] == "9999.00":
-        
+    error_codes = levelized_cost_dict["error_codes"]
+    has_errors = len(error_codes) > 0
+    if has_errors:
+        print("error codes:\n", error_codes)
+        error_messages = [get_error_message(code) for code in error_codes]
+        if all(msg is None for msg in error_messages):
+            error_messages = ["Calculated energy or heat production is below 0"]
+        else:
+            error_messages = [msg for msg in error_messages if msg]  # Filter out None messages
+
+        paragraphs = [html.P(message) for message in error_messages]
+
         warning_div3 = html.Div(#id="error_block_div3",
                             style=error_style,
                             children=[
                                 html.Img(id="warning-img", src=app.get_asset_url('warning.png')), 
-                                dcc.Markdown("**LCOE is too high.**", style={'display': 'inline-block'}),
-                                html.P("Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."),
+                                dcc.Markdown("**Errors in Economic Simulation**", style={'display': 'inline-block'}),
+                                *paragraphs
                                 ]
                         )
 
 
     return warning_div3
+
 
 # -----------------------------------------------------------------------------
 # App runs here. Define configurations, proxies, etc.
@@ -1776,7 +1744,56 @@ def update_error_divs(levelized_cost_dict):
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
 
+compress = Compress()
+compress.init_app(app.server)     # gzip all static assets
+
+app.server.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax"
+)
+
+"""" 
+1. Dash/Flask code no longer issuing a Set-Cookie header.
+2. No client-side script (such as the old Google-Analytics snippet) is writing a cookie anymore.
+"""
+    
+@server.route("/.well-known/apple-app-site-association")
+def aasa():
+    return send_from_directory(
+        "static",
+        "apple-app-site-association",   # apple-app-site-association is purely a hint to iOS / iPadOS about when it may open a native app instead of Safari
+        mimetype="application/json"
+    )
+
 if __name__ == '__main__':
-    app.run_server(port=8060, debug=True) 
+    # app.run_server(port=8060, debug=True) 
+    app.run_server(
+        # host="127.0.0.1",
+        port=8060,
+        debug=False, # needs to be False in production
+        ssl_context="adhoc"
+    )
+
+    """
+    ssl_context="adhoc"
+
+    Flask, and more specifically Werkzeug, support the use of on-the-fly certificates, 
+    which are useful to quickly serve an application over HTTPS without having to mess 
+    with certificates. All you need to do, is add ssl_context='adhoc' to your app.run() call
+    """
     # EXAMPLE: *************
     # app.run_server(port=8050, proxy="http://127.0.0.1:8059::https://<site>/<page_name>")
+
+
+
+#  show_hide_element
+    # Output(component_id='sCO2-card', component_property='style', allow_duplicate=True),
+    #  Output(component_id='Tsurf-select-div', component_property='style'),
+    #  Output(component_id='c-select-div', component_property='style'),
+    #  Output(component_id='rho-select-div', component_property='style'),
+    #  Output(component_id='radius-vertical-select-div', component_property='style'),
+    #  Output(component_id='radius-lateral-select-div', component_property='style'),
+    #  Output(component_id='n-laterals-select-div', component_property='style'),
+    #  Output(component_id='lateral-flow-select-div', component_property='style'),
+    #  Output(component_id='lateral-multiplier-select-div', component_property='style'),

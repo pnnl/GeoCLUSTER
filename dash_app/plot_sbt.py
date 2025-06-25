@@ -7,110 +7,6 @@ import numpy as np
 import plotly.graph_objects as go
 import numpy as np
 
-# def plot_borehole_geometry_plotly(clg_configuration, numberoflaterals, x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat):
-    
-#     print(f"x: {x[:5]}, y: {y[:5]}, z: {z[:5]}")  # Print first 5 points to check
-
-#     x = x.flatten()
-#     y = y.flatten()
-#     z = z.flatten()
-
-#     # Create a 3D figure for the borehole geometry
-#     fig = go.Figure()
-
-
-#     if clg_configuration == 1:  # co-axial geometry
-
-#         # Plot the borehole trajectory
-#         fig.add_trace(go.Scatter3d(x=x, y=y, z=z, 
-#                                 mode='lines+markers', 
-#                                 line=dict(color='black', width=4), 
-#                                 marker=dict(symbol='circle', size=5)))
-        
-#     elif clg_configuration == 2:  # U-loop geometry
-
-#         xinj = xinj.flatten()
-#         yinj = yinj.flatten()
-#         zinj = zinj.flatten()
-
-#         xprod = xprod.flatten()
-#         yprod = yprod.flatten()
-#         zprod = zprod.flatten()
-
-#         # xlat = xlat.flatten()
-#         # ylat = ylat.flatten()
-#         # zlat = zlat.flatten()
-
-#         # Plot injection well
-#         fig.add_trace(go.Scatter3d(x=xinj, y=yinj, z=zinj, 
-#                                     mode='lines+markers', 
-#                                     line=dict(color='blue', width=4), 
-#                                     marker=dict(symbol='circle', size=5),
-#                                     name='Injection Well'
-#                                     ))
-        
-#         # Plot production well
-#         fig.add_trace(go.Scatter3d(x=xprod, y=yprod, z=zprod, 
-#                                     mode='lines+markers', 
-#                                     line=dict(color='red', width=4), 
-#                                     marker=dict(symbol='circle', size=5),
-#                                     name='Production Well'
-#                                     ))
-        
-#         # Plot lateral wells
-#         for i in range(numberoflaterals):
-#             fig.add_trace(go.Scatter3d(x=xlat[:, i], y=ylat[:, i], z=zlat[:, i], 
-#                                        mode='lines+markers', 
-#                                        line=dict(color='black', width=4), 
-#                                        marker=dict(symbol='circle', size=5),
-#                                        name=f'Lateral(s)'
-#                                        ))
-        
-#     # Set axes ranges
-#     fig.update_layout(
-#         scene=dict(
-#             xaxis=dict(range=[np.min(x) - 200, np.max(x) + 200], title='x (m)'),
-#             yaxis=dict(range=[np.min(y) - 200, np.max(y) + 200], title='y (m)'),
-#             zaxis=dict(range=[np.min(z) - 500, 0], title='Depth (m)'),
-#         ),
-#         margin=dict(pad=0), #(l=0, r=0, b=0, t=0),
-#         legend=dict(
-#             itemsizing='constant'
-#         )
-#     )
-#     # paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
-#     #                   plot_bgcolor=''
-
-#     RGB = "rgba(212, 163, 110, 1)"
-#     # "peru" or "sandybrown" can also be used
-#     fig.update_layout(#plot_bgcolor='rgb(12,163,135)',
-#                     #   paper_bgcolor='rgba(255,255,255,0.10)', # rgb(12,163,135)
-#                     #coloraxis={"colorbar": {"x": -0.2, "len": 0.5, "y": 0.8}}, #I think this is for contours
-#                     scene = dict(
-#                                 xaxis = dict(
-#                                         backgroundcolor="peru",
-#                                         gridcolor="white",
-#                                         showbackground=True,
-#                                         zerolinecolor="white",),
-#                                 yaxis = dict(
-#                                     backgroundcolor=RGB,
-#                                     gridcolor="white",
-#                                     showbackground=True,
-#                                     zerolinecolor="black"),
-#                                 zaxis = dict(
-#                                     backgroundcolor=RGB,
-#                                     gridcolor="white",
-#                                     showbackground=True,
-#                                     zerolinecolor="white",),),
-#                     )
-#     # fig.update_layout()
-#     # Save the plot as an HTML file
-#     fig.write_html("borehole_geometry.html")
-    
-#     # Show the plot
-#     # fig.show()
-
-
 def plot_borehole_geometry(clg_configuration, numberoflaterals, x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat):
 
     # Make 3D figure of borehole geometry to make sure it looks correct
@@ -146,7 +42,16 @@ def plot_borehole_geometry(clg_configuration, numberoflaterals, x, y, z, xinj, y
 
 
 def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration, 
-                                    Tw_up_previous, Tw_down_previous, Tfluiddownnodes, 
+                                    Tw_up_previous, Tw_down_previous, Tfluiddownnodes,
+                                    Tfluidnodes, 
+                                    Tfluidupnodes,
+                                    Pfluidnodes,
+                                    Pfluidlateralexit,
+                                    Pfluiddownnodes,
+                                    Pfluidupnodes,
+                                    lateralnodalstartpoints,
+                                    lateralnodalendpoints,
+                                    Tfluidlateralexitstore,
                                     Deltaz, TwMatrix, 
                                     numberoflaterals, coaxialflowtype,
                                     interconnections,
@@ -177,74 +82,185 @@ def plot_final_fluid_temp_profile_v1(sbt_version, clg_configuration,
             plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
         plt.show()
 
-    elif clg_configuration == 2: #U-loop geometry 
+    # elif clg_configuration == 2: #U-loop geometry 
 
-        Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
-        Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
-        print(interconnections) # when more than one lateral [ 35  71  91 111]
-        # one lateral: [35 71]
-        if numberoflaterals == 1:
-            Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 :].shape[0]))
-        else:
-            Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
-        plt.figure()
-        plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
-        plt.grid(True)
-        plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
-        plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
+    #     Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
+    #     Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
+    #     print(interconnections) # when more than one lateral [ 35  71  91 111]
+    #     # one lateral: [35 71]
+    #     if numberoflaterals == 1:
+    #         Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 :].shape[0]))
+    #     else:
+    #         Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
+    #     plt.figure()
+    #     plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
+    #     plt.grid(True)
+    #     plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
+    #     plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
         
-        for kk in range(numberoflaterals):
-            if kk < numberoflaterals-1:
-                Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
+    #     for kk in range(numberoflaterals):
+    #         if kk < numberoflaterals-1:
+    #             Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
                 
+    #         else:
+    #             Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
+    #         if(kk==0):
+    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
+    #         if (kk==1):
+    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
+    #         if (kk==2):
+    #             plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
+        
+    #     plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
+    #             np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
+        
+    #     plt.ylabel('Fluid Temperature [°C]', fontsize=12)
+    #     plt.xlabel('Position along flow path [-]', fontsize=12)
+    #     plt.xticks(fontsize=12)
+    #     plt.yticks(fontsize=12)
+    #     plt.title('Final Fluid Temperature')
+    #     plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
+    #     plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
+    #     plt.show()  
+
+    elif clg_configuration == 2: #U-loop geometry 
+        if sbt_version == 1:
+            Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
+            Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
+            if numberoflaterals == 1:
+                Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 :].shape[0]))
             else:
-                Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
-            if(kk==0):
-                plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
-            if (kk==1):
-                plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
-            if (kk==2):
-                plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
-        
-        plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
-                np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
-        
-        plt.ylabel('Fluid Temperature [°C]', fontsize=12)
-        plt.xlabel('Position along flow path [-]', fontsize=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.title('Final Fluid Temperature')
-        plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
-        plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
-        plt.show()  
+                Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
+            # Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
+            plt.figure()
+            plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
+            plt.grid(True)
+            plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
+            plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
+            
+            for kk in range(numberoflaterals):
+                if kk < numberoflaterals-1:
+                    Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
+                    
+                else:
+                    Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
+                if(kk==0):
+                    plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
+                if (kk==1):
+                    plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
+                if (kk==2):
+                    plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
+            plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
+                    np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
+            
+            plt.ylabel('Fluid Temperature [°C]', fontsize=12)
+            plt.xlabel('Position along flow path [-]', fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.title('Final Fluid Temperature')
+            plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
+            plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
+            plt.show()  
+        elif sbt_version == 2:
+            Tw_final_injector = Tfluidnodes[:interconnections[0]+1]  # Final fluid temperature profile in injection well [°C]
+            Tw_final_producer = Tfluidnodes[interconnections[0]+1:interconnections[1]+1]  # Final fluid temperature profile in production well [°C]
+            plt.figure()
+            plt.plot(range(1, interconnections[0] + 2), Tw_final_injector, 'b-', linewidth=2, label='Injection Well')
+            plt.grid(True)
+            #Dummy plot for legend purposes
+            plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral(s)')
+            plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Production Well')
+            for dd in range(numberoflaterals):
+                Tw_final_lateral = np.concatenate([
+                    [Tfluidnodes[interconnections[0]]],
+                    Tfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
+                    [Tfluidlateralexitstore[dd, -1]]
+                ])  # Final fluid temperature profile in lateral dd [°C]
+            
+                lateral_x = range(len(xinj), len(xinj) + len(xlat))
+                plt.plot(lateral_x, Tw_final_lateral, 'k-', linewidth=2)
+            producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
+            plt.plot(producer_x, Tw_final_producer, 'r-', linewidth=2)
+            plt.ylabel('Fluid Temperature [°C]', fontsize=12)
+            plt.xlabel('Position along flow path [-]', fontsize=12)
+            plt.title('Final Fluid Temperature', fontsize=14)
+            plt.gca().tick_params(labelsize=12)
+            plt.legend(loc='upper left')
+            x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
+            y_min = min(Tfluidnodes) - 1
+            y_max = max(Tfluidnodes) + 1
+            plt.axis([0, x_axis_limit, y_min, y_max])
 
-def plot_final_fluid_temp_profile_v2(sbt_version, coaxialflowtype, Pfluiddownnodes, Pfluidupnodes, 
-                                            Deltaz
-                                            ):
-
-    #Plot final fluid temperature profile (SBT v2 only)\
+    #Plot final fluid pressure profile (SBT v2 only)
     if sbt_version == 2:
-        plt.figure()
-        plt.plot(Pfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))))
-        plt.plot(Pfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))))        
-        plt.grid(True)
-        plt.xlabel('Fluid Pressure [bar]', fontsize=12)
-        plt.ylabel('Measured Depth [m]', fontsize=12)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.title('Final Fluid Pressure')
-        if coaxialflowtype == 1:
-            plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='upper left')
-        elif coaxialflowtype == 2:
-            plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='upper left')
-        plt.show()    
+        if clg_configuration == 1: #co-axial geometry 
+            plt.figure()
+            plt.plot(Pfluiddownnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'b-')
+            plt.plot(Pfluidupnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'r-')        
+            plt.grid(True)
+            plt.xlabel('Fluid Pressure [bar]', fontsize=12)
+            plt.ylabel('Measured Depth [m]', fontsize=12)
+            plt.xticks(fontsize=12)
+            plt.yticks(fontsize=12)
+            plt.title('Final Fluid Pressure')
+            if coaxialflowtype == 1:
+                plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='best')
+            elif coaxialflowtype == 2:
+                plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='best')
+            plt.show()    
+            
+        elif clg_configuration == 2: #U-loop geometry 
+            Pw_final_injector = np.array(Pfluidnodes[:interconnections[0]+1]) / 1e5  # Final fluid pressure profile in injection well [bar]
+            Pw_final_producer = np.array(Pfluidnodes[interconnections[0]+1:interconnections[1]+1]) / 1e5  # Final fluid pressure profile in production well [bar]
+            plt.figure()
+            plt.plot(range(1, interconnections[0] + 2), Pw_final_injector, 'b-', linewidth=2, label='Injector')
+            plt.grid(True)
+            plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral')  # Dummy plot for legend
+            plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Producer')  # Dummy plot for legend
+            for dd in range(numberoflaterals):
+                Pw_final_lateral = np.concatenate([
+                    [Pfluidnodes[interconnections[0]]],
+                    Pfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
+                    [Pfluidlateralexit[dd]]
+                ]) / 1e5  # Final fluid pressure profile in lateral dd [bar]
+            
+                lateral_x = range(len(xinj), len(xinj) + len(xlat))
+                plt.plot(lateral_x, Pw_final_lateral, 'k-', linewidth=2)
+            
+            producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
+            plt.plot(producer_x, Pw_final_producer, 'r-', linewidth=2, label='Producer')
+            plt.ylabel('Fluid Pressure [bar]', fontsize=12)
+            plt.xlabel('Position along flow path [-]', fontsize=12)
+            plt.title('Final Fluid Pressure', fontsize=14)
+            plt.gca().tick_params(labelsize=12)
+            plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='best')
+            x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
+            y_min = min(Pfluidnodes) / 1e5 - 10
+            y_max = max(Pfluidnodes) / 1e5 + 10
+            plt.axis([0, x_axis_limit, y_min, y_max])
+            plt.show()
+            
 
-def plot_heat_production(HeatProduction, times):
+def plot_heat_production(clg_configuration, AverageHeatProduction, HeatProduction, times):
 
     # Plot heat production
+    # plt.figure()
+    # plt.plot(times[1:]/3600/24/365, HeatProduction[1:], linewidth=2, color='green')
+    # plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
+    # plt.xlabel('Time [years]', fontsize=12)
+    # plt.ylabel('Heat Production [MWt]', fontsize=12)
+    # plt.gca().set_facecolor((1, 1, 1))
+    # plt.grid(True)
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.show()
+
     plt.figure()
     plt.plot(times[1:]/3600/24/365, HeatProduction[1:], linewidth=2, color='green')
-    plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
+    if clg_configuration == 1: #co-axial geometry
+        plt.axis([0, times[-1]/3600/24/365, 0, 5*AverageHeatProduction])
+    elif clg_configuration == 2: #U-loop geometry
+        plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
     plt.xlabel('Time [years]', fontsize=12)
     plt.ylabel('Heat Production [MWt]', fontsize=12)
     plt.gca().set_facecolor((1, 1, 1))
@@ -253,13 +269,46 @@ def plot_heat_production(HeatProduction, times):
     plt.yticks(fontsize=12)
     plt.show()
 
-def plot_production_temperature_linear(Toutput, Tinstore, times):
+def plot_production_temperature(sbt_version, Poutput, Pin, times):
+
+    # Plot production pressure
+    if sbt_version == 2:
+        time_years = np.array(times[1:]) / (365 * 24 * 3600)
+        plt.figure()
+        plt.plot(time_years, Poutput[1:], linewidth=2, color='red', label='Production Pressure')
+        plt.axis([0, times[-1] / (365 * 24 * 3600), Pin - 10, max(Poutput) + 10])
+        plt.plot([0, times[-1] / (365 * 24 * 3600)], [Pin, Pin], linewidth=2, color='blue', label='Injection Pressure')
+        plt.xlabel('Time [years]', fontsize=12)
+        plt.ylabel('Pressure [bar]', fontsize=12)
+        plt.grid(True)
+        plt.gca().tick_params(labelsize=12)
+        plt.legend(fontsize=12)
+        plt.gcf().set_facecolor('white')
+        plt.show()
+
+def plot_production_temperature_linear(clg_configuration, AverageProductionTemperature, Toutput, Tinstore, times):
 
     # Plot production temperature with linear time scale
+    # plt.figure()
+    # plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='blue', label='Production Temperature')
+    # plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
+    # plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='black', label='Injection Temperature')
+    # plt.xlabel('Time [years]', fontsize=12)
+    # plt.ylabel('Temperature [°C]', fontsize=12)
+    # plt.gca().set_facecolor((1, 1, 1))
+    # plt.grid(True)
+    # plt.legend()
+    # plt.xticks(fontsize=12)
+    # plt.yticks(fontsize=12)
+    # plt.show()
+
     plt.figure()
-    plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='blue', label='Production Temperature')
-    plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
-    plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='black', label='Injection Temperature')
+    plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='red', label='Production Temperature')
+    if clg_configuration == 1: #co-axial geometry
+        plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, AverageProductionTemperature+5*(AverageProductionTemperature-min(Tinstore))])
+    elif clg_configuration == 2: #U-loop geometry
+        plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
+    plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='blue', label='Injection Temperature')
     plt.xlabel('Time [years]', fontsize=12)
     plt.ylabel('Temperature [°C]', fontsize=12)
     plt.gca().set_facecolor((1, 1, 1))
@@ -282,3 +331,216 @@ def plot_production_tempterature_log(Toutput, Tinstore, times):
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
     plt.show()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#AB: Already in plot_sbt.py
+# #Plot final fluid temperature profile
+# if clg_configuration == 1: #co-axial geometry 
+#     plt.figure()
+#     if sbt_version == 1:
+#         plt.plot(Tw_down_previous,-np.cumsum(Deltaz),'b-')
+#         plt.plot(Tw_up_previous,-np.cumsum(Deltaz),'r-')
+#     elif sbt_version == 2:
+#         plt.plot(Tfluiddownnodes,-np.cumsum(np.concatenate(([0], Deltaz))),'b-')
+#         plt.plot(Tfluidupnodes,-np.cumsum(np.concatenate(([0], Deltaz))),'r-')        
+#     plt.grid(True)
+#     plt.xlabel('Fluid Temperature [°C]', fontsize=12)
+#     plt.ylabel('Measured Depth [m]', fontsize=12)
+#     plt.xticks(fontsize=12)
+#     plt.yticks(fontsize=12)
+#     plt.title('Final Fluid Temperature')
+#     if coaxialflowtype == 1:
+#         plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='best')
+#     elif coaxialflowtype == 2:
+#         plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='best')
+#     plt.show()
+
+# elif clg_configuration == 2: #U-loop geometry 
+#     if sbt_version == 1:
+#         Tw_final_injector = TwMatrix[-1, 0:(interconnections[0] - 1)]  # Final fluid temperature profile in injection well [°C]
+#         Tw_final_producer = TwMatrix[-1, interconnections[0]:interconnections[1] - 1]  # Final fluid temperature profile in production well [°C]
+#         Tw_final_lateral=np.empty((numberoflaterals,TwMatrix[-1, interconnections[1] - 1 : interconnections[2] - 2].shape[0]))
+#         plt.figure()
+#         plt.plot(range(1, interconnections[0]), Tw_final_injector, 'b-', linewidth=2)
+#         plt.grid(True)
+#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2)  # Dummy plot for legend
+#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2)  # Dummy plot for legend
+        
+#         for kk in range(numberoflaterals):
+#             if kk < numberoflaterals-1:
+#                 Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - kk - 1 : interconnections[kk+2] - kk - 2]
+                
+#             else:
+#                 Tw_final_lateral[kk,:] = TwMatrix[-1, interconnections[kk+1] - numberoflaterals :]
+#             if(kk==0):
+#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'k-', linewidth=2)
+#             if (kk==1):
+#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'm-', linewidth=2)
+#             if (kk==2):
+#                 plt.plot(np.arange(len(xinj)-2, len(xinj) - 2 + len(xlat)), np.append(np.array([Tw_final_injector[-1]]), Tw_final_lateral[kk,:].reshape(1,len(Tw_final_lateral[kk,:]))), 'c-', linewidth=2)
+#         plt.plot((np.arange(interconnections[0] - 1, interconnections[1] - 1) + len(xlat) - 1), 
+#                  np.append(np.sum(lateralflowallocation * Tw_final_lateral[:,-1]) , np.array([Tw_final_producer])), 'r-', linewidth=2)
+        
+#         plt.ylabel('Fluid Temperature [°C]', fontsize=12)
+#         plt.xlabel('Position along flow path [-]', fontsize=12)
+#         plt.xticks(fontsize=12)
+#         plt.yticks(fontsize=12)
+#         plt.title('Final Fluid Temperature')
+#         plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='upper left')
+#         plt.axis([0, len(xinj) + len(xprod) + len(xlat) - 2, min(TwMatrix[-1, :]) - 1, max(TwMatrix[-1, :]) + 1])
+#         plt.show()  
+#     elif sbt_version == 2:
+#         Tw_final_injector = Tfluidnodes[:interconnections[0]+1]  # Final fluid temperature profile in injection well [°C]
+#         Tw_final_producer = Tfluidnodes[interconnections[0]+1:interconnections[1]+1]  # Final fluid temperature profile in production well [°C]
+#         plt.figure()
+#         plt.plot(range(1, interconnections[0] + 2), Tw_final_injector, 'b-', linewidth=2, label='Injection Well')
+#         plt.grid(True)
+#         #Dummy plot for legend purposes
+#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral(s)')
+#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Production Well')
+#         for dd in range(numberoflaterals):
+#             Tw_final_lateral = np.concatenate([
+#                 [Tfluidnodes[interconnections[0]]],
+#                 Tfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
+#                 [Tfluidlateralexitstore[dd, -1]]
+#             ])  # Final fluid temperature profile in lateral dd [°C]
+        
+#             lateral_x = range(len(xinj), len(xinj) + len(xlat))
+#             plt.plot(lateral_x, Tw_final_lateral, 'k-', linewidth=2)
+#         producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
+#         plt.plot(producer_x, Tw_final_producer, 'r-', linewidth=2)
+#         plt.ylabel('Fluid Temperature [°C]', fontsize=12)
+#         plt.xlabel('Position along flow path [-]', fontsize=12)
+#         plt.title('Final Fluid Temperature', fontsize=14)
+#         plt.gca().tick_params(labelsize=12)
+#         plt.legend(loc='upper left')
+#         x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
+#         y_min = min(Tfluidnodes) - 1
+#         y_max = max(Tfluidnodes) + 1
+#         plt.axis([0, x_axis_limit, y_min, y_max])
+
+# #Plot final fluid pressure profile (SBT v2 only)
+# if sbt_version == 2:
+#     if clg_configuration == 1: #co-axial geometry 
+#         plt.figure()
+#         plt.plot(Pfluiddownnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'b-')
+#         plt.plot(Pfluidupnodes/1e5,-np.cumsum(np.concatenate(([0], Deltaz))),'r-')        
+#         plt.grid(True)
+#         plt.xlabel('Fluid Pressure [bar]', fontsize=12)
+#         plt.ylabel('Measured Depth [m]', fontsize=12)
+#         plt.xticks(fontsize=12)
+#         plt.yticks(fontsize=12)
+#         plt.title('Final Fluid Pressure')
+#         if coaxialflowtype == 1:
+#             plt.legend(['Annulus (Injection)', 'Center Pipe (Production)'], loc='best')
+#         elif coaxialflowtype == 2:
+#             plt.legend(['Center Pipe (Injection)', 'Annulus (Production)'], loc='best')
+#         plt.show()    
+        
+#     elif clg_configuration == 2: #U-loop geometry 
+#         Pw_final_injector = np.array(Pfluidnodes[:interconnections[0]+1]) / 1e5  # Final fluid pressure profile in injection well [bar]
+#         Pw_final_producer = np.array(Pfluidnodes[interconnections[0]+1:interconnections[1]+1]) / 1e5  # Final fluid pressure profile in production well [bar]
+#         plt.figure()
+#         plt.plot(range(1, interconnections[0] + 2), Pw_final_injector, 'b-', linewidth=2, label='Injector')
+#         plt.grid(True)
+#         plt.plot([-2, -1], [-2, -1], 'k-', linewidth=2, label='Lateral')  # Dummy plot for legend
+#         plt.plot([-2, -1], [-2, -1], 'r-', linewidth=2, label='Producer')  # Dummy plot for legend
+#         for dd in range(numberoflaterals):
+#             Pw_final_lateral = np.concatenate([
+#                 [Pfluidnodes[interconnections[0]]],
+#                 Pfluidnodes[lateralnodalstartpoints[dd]:lateralnodalendpoints[dd] + 1],
+#                 [Pfluidlateralexit[dd]]
+#             ]) / 1e5  # Final fluid pressure profile in lateral dd [bar]
+        
+#             lateral_x = range(len(xinj), len(xinj) + len(xlat))
+#             plt.plot(lateral_x, Pw_final_lateral, 'k-', linewidth=2)
+        
+#         producer_x = range(interconnections[0] + len(xlat), interconnections[1] + len(xlat))
+#         plt.plot(producer_x, Pw_final_producer, 'r-', linewidth=2, label='Producer')
+#         plt.ylabel('Fluid Pressure [bar]', fontsize=12)
+#         plt.xlabel('Position along flow path [-]', fontsize=12)
+#         plt.title('Final Fluid Pressure', fontsize=14)
+#         plt.gca().tick_params(labelsize=12)
+#         plt.legend(['Injection Well', 'Lateral(s)', 'Production Well'], loc='best')
+#         x_axis_limit = len(xinj) + len(xprod) + len(xlat) - 2
+#         y_min = min(Pfluidnodes) / 1e5 - 10
+#         y_max = max(Pfluidnodes) / 1e5 + 10
+#         plt.axis([0, x_axis_limit, y_min, y_max])
+#         plt.show()
+                
+
+#AB: Already in plot_sbt.py
+# Plot heat production
+# plt.figure()
+# plt.plot(times[1:]/3600/24/365, HeatProduction[1:], linewidth=2, color='green')
+# if clg_configuration == 1: #co-axial geometry
+#     plt.axis([0, times[-1]/3600/24/365, 0, 5*AverageHeatProduction])
+# elif clg_configuration == 2: #U-loop geometry
+#     plt.axis([0, times[-1]/3600/24/365, 0, max(HeatProduction)])
+# plt.xlabel('Time [years]', fontsize=12)
+# plt.ylabel('Heat Production [MWt]', fontsize=12)
+# plt.gca().set_facecolor((1, 1, 1))
+# plt.grid(True)
+# plt.xticks(fontsize=12)
+# plt.yticks(fontsize=12)
+# plt.show()
+
+# AB: added to plot_sbt.py
+# Plot production pressure
+# if sbt_version == 2:
+#     time_years = np.array(times[1:]) / (365 * 24 * 3600)
+#     plt.figure()
+#     plt.plot(time_years, Poutput[1:], linewidth=2, color='red', label='Production Pressure')
+#     plt.axis([0, times[-1] / (365 * 24 * 3600), Pin - 10, max(Poutput) + 10])
+#     plt.plot([0, times[-1] / (365 * 24 * 3600)], [Pin, Pin], linewidth=2, color='blue', label='Injection Pressure')
+#     plt.xlabel('Time [years]', fontsize=12)
+#     plt.ylabel('Pressure [bar]', fontsize=12)
+#     plt.grid(True)
+#     plt.gca().tick_params(labelsize=12)
+#     plt.legend(fontsize=12)
+#     plt.gcf().set_facecolor('white')
+#     plt.show()
+
+# AB: Already in plot_sbt.py
+# Plot production temperature with linear time scale
+# plt.figure()
+# plt.plot(times[1:]/365/24/3600, Toutput[1:], linewidth=2, color='red', label='Production Temperature')
+# if clg_configuration == 1: #co-axial geometry
+#     plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, AverageProductionTemperature+5*(AverageProductionTemperature-min(Tinstore))])
+# elif clg_configuration == 2: #U-loop geometry
+#     plt.axis([0, times[-1]/3600/24/365, min(Tinstore)-10, max(Toutput)])
+# plt.plot(times[1:]/365/24/3600, Tinstore[1:], linewidth=2, color='blue', label='Injection Temperature')
+# plt.xlabel('Time [years]', fontsize=12)
+# plt.ylabel('Temperature [°C]', fontsize=12)
+# plt.gca().set_facecolor((1, 1, 1))
+# plt.grid(True)
+# plt.legend()
+# plt.xticks(fontsize=12)
+# plt.yticks(fontsize=12)
+# plt.show()
+
+# AB: Already in plot_sbt.py
+# # Plot production temperature with logarithmic time scale
+# plt.figure()
+# plt.semilogx(times[1:], Toutput[1:], linewidth=2, color='red')
+# plt.axis([10**2, times[-1], 0, max(Toutput)+10])
+# plt.xlabel('Time [s]', fontsize=12)
+# plt.ylabel('Production Temperature [°C]', fontsize=12)
+# plt.gca().set_facecolor((1, 1, 1))
+# plt.grid(True)
+# plt.xticks(fontsize=12)
+# plt.yticks(fontsize=12)
+# plt.show()
+        

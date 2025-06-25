@@ -10,6 +10,22 @@ from scipy.interpolate import interpn, interp1d
 # sourced scripts
 # import clgs as clgs_v2
 
+
+
+def get_error_message(error_code: int) -> str:
+    error_code_lookup = {
+        1000: "production temperature drops below injection temperature",
+        2000: "H2O Injection temperature too low. H20 Injection Temperature must be above 50C to fall within ORC correlations",
+        2001: "H2O production temperature must be within 100C to 200C too fall within ORC correlations",
+        3000: "Too low CO2 reinjection temperature. Injection temperature must be greater or equal to 32 degrees for it to be supercritical",
+        4000: "Too low CO2 turbine outlet temperature. Turbine outlet temperature must be above 37 degrees",
+    }
+
+    error_message = error_code_lookup.get(error_code, None)
+    if error_message:
+        error_message = "• " + error_message
+    return error_message
+
 class TEA:
     def __init__(self, u_sCO2, u_H2O, c_sCO2, c_H2O,
                     Fluid, End_use, Configuration, Flow_user, Hor_length_user, Depth_user, Gradient_user, 
@@ -411,7 +427,10 @@ class TEA:
                 self.Instantaneous_electricity_production_method_3 = self.Instantaneous_heat_production*self.Instantaneous_themal_efficiency #[kW]
                 
             else: #Water injection temperature and/or production tempeature fall outside the range used in the correlations
-                self.error_codes = np.append(self.error_codes,2000)
+                if self.T_in < 50: 
+                    self.error_codes = np.append(self.error_codes,2000)
+                if min(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
+                    self.error_codes = np.append(self.error_codes,2001)
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_themal_efficiency = np.zeros(len(self.Time_array))
@@ -566,8 +585,8 @@ class TEA:
                 print("Error: Water injection temperature and/or production tempeature fall outside the range of the ORC correlations. These correlations require injection temperature larger than 50 deg.C and production temperature in the range of 100 to 200 deg.C. Electricity production set to 0. \n")
                 
             if np.in1d(3000,self.error_codes): #CO2 injection temperature cannot be below 32 degrees C (CO2 must be supercritical)
-                print("Error: Too low CO2 reinjection temperature. CO2 must remain supercritical.\n")
-                
+                print("Error: Too low CO2 reinjection temperature. Injection temperature must be greater or equal to 32 degrees for it to be supercritical.\n")
+
             if np.in1d(4000,self.error_codes): #Turbine outlet CO2 temperature dropped below 37 degrees C
                 print("Error: Too low CO2 turbine outlet temperature. Turbine outlet temperature must be above 37 degrees C.\n")    
                 

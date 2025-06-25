@@ -39,7 +39,9 @@ inpath_dict = {
 	"geoCLUSTER_results_pathname": absolute_path + 'tmp/geoCLUSTER_results.xlsx',
 
 	"properties_H2O_pathname": absolute_path + "data/properties_H2O.mat",
+	"properties_H2O_pathname_sbtv2": absolute_path + "data/properties_H2O-v2.mat",
 	"properties_CO2v2_pathname": absolute_path + "data/properties_CO2v2.mat",
+	"properties_CO2_pathname_sbtv2": absolute_path + "data/properties_CO2-v2.mat",
 	"additional_properties_CO2v2_pathname": absolute_path + "data/additional_properties_CO2v2.mat",
 
 	"tmatrix_pathname": absolute_path + 'data/tmatrix.csv',

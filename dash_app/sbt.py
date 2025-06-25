@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
+from scipy.sparse import csc_matrix
+from scipy.sparse.linalg import spsolve
 import pandas as pd
 import time
 #import tensorflow as tf
@@ -12,14 +14,15 @@ import scipy.io
 import math
 from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
+import cProfile
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
 # sourced scripts
 is_plot = False
 is_app = True
-# from plot_sbt_plotly import plot_borehole_geometry_plotly
-# from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1, plot_final_fluid_temp_profile_v2
-# from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
+from plot_sbt_plotly import plot_borehole_geometry_plotly
+from plot_sbt import plot_borehole_geometry, plot_final_fluid_temp_profile_v1
+from plot_sbt import plot_heat_production, plot_production_temperature_linear, plot_production_tempterature_log
 
 #%% -------
 # 1. Input
@@ -578,7 +581,6 @@ def run_sbt(
         c_m:                             # Rock specific heat capacity [J/kgK]
         rho_m:                           # Rock density [kg/m3]
     """
-
     if is_app: 
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
@@ -1440,7 +1442,9 @@ def run_sbt(
             
             
             # Solving the linear system of equations
-            Sol = np.linalg.solve(L, R)    
+            L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+            Sol = spsolve(L_sparse, R)
+            # Sol = np.linalg.solve(L, R)    
         
         elif sbt_version == 2: #we need to perform iterative convergence for pressure, temperature, and fluid properties
             kk = 1
@@ -1684,7 +1688,9 @@ def run_sbt(
                         
                 
                 # Solving the linear system of equations
-                Sol = np.linalg.solve(L, R)  
+                L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
+                Sol = spsolve(L_sparse, R)
+
                 if coaxialflowtype == 1: #CXA
                     Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
                     Tfluidupnodes =  np.concatenate((Sol.ravel()[3::4],[Tfluiddownnodes[-1]]))
@@ -1883,11 +1889,6 @@ def run_sbt(
     #                                     lateralflowallocation=lateralflowallocation,
     #                                     xinj=xinj, xlat=xlat, xprod=xprod)
         
-    #     plot_final_fluid_temp_profile_v2(sbt_version=sbt_version, 
-    #                                     coaxialflowtype=coaxialflowtype, 
-    #                                     Pfluiddownnodes=Pfluiddownnodes, Pfluidupnodes=Pfluidupnodes, 
-    #                                     Deltaz=Deltaz)
-        
     #     plot_heat_production(HeatProduction=HeatProduction, times=times)
     #     plot_production_temperature_linear(Toutput=Toutput, Tinstore=Tinstore, times=times)
     #     plot_production_tempterature_log(Toutput=Toutput, Tinstore=Tinstore, times=times)
@@ -1897,5 +1898,4 @@ def run_sbt(
     # print(Toutput[14:].shape)
     return times/365/24/3600, Toutput + 273.15 # return in Kelvin
     # return times[13:]/365/24/3600, Toutput[13:] + 273.15 # return in Kelvin # already done in clgs.py
-
 

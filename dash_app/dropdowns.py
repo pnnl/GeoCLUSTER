@@ -8,7 +8,7 @@ from dash import dcc, html
 # Define dropdown options.
 # ---------------------------
 
-model_list = ["HDF5", "SBT V1.0"]
+model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]

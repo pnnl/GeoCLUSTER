@@ -11,6 +11,14 @@
             "program": "${workspaceFolder}\\dash_app\\app.py",
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}\\dash_app"
+        },
+        {
+            "name": "Debug SBT",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}\\dash_app\\sbt.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}\\dash_app"
         }
     ]
 }
