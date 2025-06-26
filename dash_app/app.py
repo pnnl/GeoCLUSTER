@@ -1279,7 +1279,7 @@ def update_sliders_heat_exchanger(model, case):
             radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
             
-            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
+            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
                                                                 mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
             
             thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
@@ -1761,7 +1761,7 @@ if __name__ == '__main__':
     app.run_server(
         # host="127.0.0.1",
         port=8060,
-        debug=False, # needs to be False in production
+        debug=True, # needs to be False in production
         ssl_context="adhoc"
     )
 

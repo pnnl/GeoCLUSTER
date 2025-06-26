@@ -108,7 +108,7 @@ rho_dict = {1000: '1000', 3500: '3500'}
 
 radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
-radius_centerpipe_dict = {0.001: '0.001', 0.010: '0.010'}
+radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
