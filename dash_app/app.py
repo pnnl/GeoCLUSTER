@@ -922,6 +922,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     Output(component_id="fluid-mode-div", component_property="style"), # hide HDF5 and v1, show v2
     Output(component_id='num-lat-div', component_property='style'),
     Output(component_id='lat-allocation-div', component_property='style'),
+    # Output(component_id='lateral-flow-select-div', component_property='style'),
     Output(component_id='lat-flow-mul-div', component_property='style'),
     ],
    [Input(component_id="model-select", component_property="value"),
@@ -1198,7 +1199,7 @@ def update_slider_ranges(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0" or model == "SBT V1.0": 
+    elif model == "SBT V1.0" or model == "SBT V2.0": 
 
         # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
@@ -1254,7 +1255,7 @@ def update_slider_ranges(model):
     )
 def update_sliders_heat_exchanger(model, case):
 
-    if model == "SBT V1.0":
+    if model == "SBT V1.0" or model == "SBT V2.0": 
 
         if case == "utube":
 
@@ -1275,7 +1276,7 @@ def update_sliders_heat_exchanger(model, case):
 
             insulation_thermal_k_dict = {0.025: '0.025', 0.50: '0.5'}
 
-            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
+            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
             
             radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
@@ -1760,7 +1761,7 @@ if __name__ == '__main__':
     app.run_server(
         # host="127.0.0.1",
         port=8060,
-        debug=True, # needs to be False in production
+        debug=False, # needs to be False in production
         ssl_context="adhoc"
     )
 
