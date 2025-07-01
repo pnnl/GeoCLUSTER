@@ -41,7 +41,6 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
-from clg_tea_module import get_error_message
 
 
 # -----------------------------------------------------------------------------
@@ -923,6 +922,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     Output(component_id="fluid-mode-div", component_property="style"), # hide HDF5 and v1, show v2
     Output(component_id='num-lat-div', component_property='style'),
     Output(component_id='lat-allocation-div', component_property='style'),
+    # Output(component_id='lateral-flow-select-div', component_property='style'),
     Output(component_id='lat-flow-mul-div', component_property='style'),
     ],
    [Input(component_id="model-select", component_property="value"),
@@ -1199,7 +1199,7 @@ def update_slider_ranges(model):
                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
         
-    elif model == "SBT V1.0" or model == "SBT V1.0": 
+    elif model == "SBT V1.0" or model == "SBT V2.0": 
 
         # Tsurf_dict = {0: '0', 40: '40'}
         c_dict = {700: '700', 1200: '1200'}
@@ -1255,7 +1255,7 @@ def update_slider_ranges(model):
     )
 def update_sliders_heat_exchanger(model, case):
 
-    if model == "SBT V1.0":
+    if model == "SBT V1.0" or model == "SBT V2.0": 
 
         if case == "utube":
 
@@ -1276,10 +1276,10 @@ def update_sliders_heat_exchanger(model, case):
 
             insulation_thermal_k_dict = {0.025: '0.025', 0.50: '0.5'}
 
-            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.2, max_v=0.6,
+            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
             
-            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.001, max_v=0.010,
+            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
                                                                 mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
             
             thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
@@ -1288,7 +1288,7 @@ def update_sliders_heat_exchanger(model, case):
             k_center_pipe = slider1(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
                                                                 mark_dict=insulation_thermal_k_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
             coaxialflowtype = dropdown_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
-                                                                    options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style),
+                                                                    options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style)
             # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
                                                                 # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
                                                      
@@ -1712,24 +1712,14 @@ def update_error_divs(levelized_cost_dict):
                     'color': darkergrey,
                     }
 
-    error_codes = levelized_cost_dict["error_codes"]
-    has_errors = len(error_codes) > 0
-    if has_errors:
-        print("error codes:\n", error_codes)
-        error_messages = [get_error_message(code) for code in error_codes]
-        if all(msg is None for msg in error_messages):
-            error_messages = ["Calculated energy or heat production is below 0"]
-        else:
-            error_messages = [msg for msg in error_messages if msg]  # Filter out None messages
-
-        paragraphs = [html.P(message) for message in error_messages]
-
+    if levelized_cost_dict['LCOE sCO2'] == "9999.00" or levelized_cost_dict['LCOE H2O'] == "9999.00":
+        
         warning_div3 = html.Div(#id="error_block_div3",
                             style=error_style,
                             children=[
                                 html.Img(id="warning-img", src=app.get_asset_url('warning.png')), 
-                                dcc.Markdown("**Errors in Economic Simulation**", style={'display': 'inline-block'}),
-                                *paragraphs
+                                dcc.Markdown("**LCOE is too high.**", style={'display': 'inline-block'}),
+                                html.P("Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."),
                                 ]
                         )
 
