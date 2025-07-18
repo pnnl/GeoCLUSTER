@@ -860,3 +860,18 @@ button:hover{
     }
 
 }
+
+/* Info Button Styling */
+.info-button {
+    transition: all 0.2s ease !important;
+}
+
+.info-button:hover {
+    transform: scale(1.15) !important;
+    color: #138496 !important;
+    text-decoration: none !important;
+}
+
+.info-button:active {
+    transform: scale(0.95) !important;
+}

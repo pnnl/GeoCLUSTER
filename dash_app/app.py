@@ -41,6 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+from info_popups import PARAMETER_INFO
 
 
 # -----------------------------------------------------------------------------
@@ -446,6 +447,8 @@ app.layout = html.Div(
                 ),
             ],
         ),
+        
+
     ],
 )
 
@@ -1725,6 +1728,9 @@ def update_error_divs(levelized_cost_dict):
 
 
     return warning_div3
+
+
+
 
 
 # -----------------------------------------------------------------------------
