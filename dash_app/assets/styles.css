@@ -875,3 +875,18 @@ button:hover{
 .info-button:active {
     transform: scale(0.95) !important;
 }
+
+/* Modal Close Button Styling */
+#close-info-modal {
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+#close-info-modal:hover {
+    background-color: #e9ecef !important;
+    border-color: #dee2e6 !important;
+}
+
+#close-info-modal:active {
+    transform: scale(0.95) !important;
+}

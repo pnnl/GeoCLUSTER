@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 
 # sourced scripts
 from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
-from info_popups import create_enhanced_slider, create_enhanced_dropdown
+from info_popups import create_enhanced_slider, create_enhanced_dropdown, create_enhanced_input_box
 
 # -------------------------------------------------------------------------------------------
 # Create dictionaries to assign the values and boundaries of the parameter siders.
@@ -337,20 +337,20 @@ def slider_card():
                                                     html.Div(
                                                             id="num-lat-container",
                                                             children=[ 
-                                                                input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style, parameter_name="Number of Laterals")
                                                             ]),
                                                     html.Div(
                                                             id="lat-allo-container",
                                                             children=[ 
-                                                                input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
-                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style, parameter_name="Lateral Flow Allocation")
                                                             ]),
                                                     html.Div(
                                                             id="lat-flow-container",
                                                             children=[
-                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
                                                             ]),
                                                     # html.Div(
                                                     #     id="num-lat-div",
@@ -446,20 +446,20 @@ def slider_card():
                                                     html.Div(
                                                             id="hyperparam1-container",
                                                             children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                                create_enhanced_dropdown(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Mass Flow Rate Mode")
                                                         ]),
                                                     html.Div(
                                                         id="hyperparam3-container",
                                                         children=[
-                                                                dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                                create_enhanced_dropdown(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Injection Temperature Mode")
                                                         ]),
                                                     html.Div(
                                                         id="hyperparam5-container",
                                                         children=[
-                                                                dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style)
+                                                                create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style, parameter_name="Fluid Properties Mode")
                                                     ]),
                                                 ]
 

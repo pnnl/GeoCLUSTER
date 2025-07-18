@@ -14,23 +14,23 @@ PARAMETER_INFO = {
     "Surface Temperature (˚C)": {
         "definition": "The temperature at the Earth's surface in the geothermal field.",
         "recommended_range": "0-40°C",
-        "typical_value": "25°C",
+        "typical_value": "20°C",
         "unit": "°C",
         "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
     },
     
     "Geothermal Gradient (K/m)": {
         "definition": "The rate of temperature increase with depth in the Earth's crust.",
-        "recommended_range": "0.02-0.15 K/m",
-        "typical_value": "0.05 K/m",
+        "recommended_range": "0.015-0.200 K/m",
+        "typical_value": "0.065 K/m",
         "unit": "K/m",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
     "Rock Thermal Conductivity (W/m-K)": {
         "definition": "A measure of how well rock conducts heat.",
-        "recommended_range": "1.5-5.0 W/m-K",
-        "typical_value": "3.0 W/m-K",
+        "recommended_range": "0.4-5.0 W/m-K",
+        "typical_value": "2.83 W/m-K",
         "unit": "W/m-K",
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
@@ -38,7 +38,7 @@ PARAMETER_INFO = {
     "Rock Specific Heat Capacity (J/kg-K)": {
         "definition": "The amount of heat required to raise the temperature of 1 kg of rock by 1°C.",
         "recommended_range": "500-2000 J/kg-K",
-        "typical_value": "790 J/kg-K",
+        "typical_value": "825 J/kg-K",
         "unit": "J/kg-K",
         "description": "Affects the thermal storage capacity of the rock formation."
     },
@@ -46,7 +46,7 @@ PARAMETER_INFO = {
     "Rock Density (kg/m3)": {
         "definition": "The mass per unit volume of the rock formation.",
         "recommended_range": "1000-3500 kg/m³",
-        "typical_value": "2750 kg/m³",
+        "typical_value": "2875 kg/m³",
         "unit": "kg/m³",
         "description": "Density influences the thermal mass and heat storage capacity of the formation."
     },
@@ -63,7 +63,7 @@ PARAMETER_INFO = {
     "Mass Flow Rate (kg/s)": {
         "definition": "The rate at which working fluid flows through the system.",
         "recommended_range": "5-300 kg/s",
-        "typical_value": "24 kg/s",
+        "typical_value": "20 kg/s",
         "unit": "kg/s",
         "description": "Higher flow rates increase heat extraction but may require more pumping power."
     },
@@ -72,7 +72,7 @@ PARAMETER_INFO = {
     "Borehole Diameter (m)": {
         "definition": "The diameter of the drilled borehole.",
         "recommended_range": "0.2159-0.4445 m",
-        "typical_value": "0.3500 m",
+        "typical_value": "0.2286 m",
         "unit": "m",
         "description": "Larger diameters allow for higher flow rates but increase drilling costs."
     },
@@ -96,7 +96,7 @@ PARAMETER_INFO = {
     "Horizontal Extent (m)": {
         "definition": "The total horizontal distance covered by the wellbore laterals.",
         "recommended_range": "1000-50000 m",
-        "typical_value": "10000 m",
+        "typical_value": "1000 m",
         "unit": "m",
         "description": "Longer horizontal extents increase heat extraction area but require more drilling."
     },
@@ -104,7 +104,7 @@ PARAMETER_INFO = {
     "Drilling Depth (m)": {
         "definition": "The vertical depth to which the wellbore is drilled.",
         "recommended_range": "1000-10000 m",
-        "typical_value": "3500 m",
+        "typical_value": "2000 m",
         "unit": "m",
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
@@ -112,7 +112,7 @@ PARAMETER_INFO = {
     "Number of Laterals": {
         "definition": "The number of horizontal lateral branches from the main wellbore.",
         "recommended_range": "1-20",
-        "typical_value": "1",
+        "typical_value": "3",
         "unit": "count",
         "description": "More laterals increase heat extraction area but add complexity and cost."
     },
@@ -120,7 +120,7 @@ PARAMETER_INFO = {
     "Lateral Flow Allocation": {
         "definition": "The fraction of total flow allocated to lateral sections.",
         "recommended_range": "0-1",
-        "typical_value": "1",
+        "typical_value": "0.33",
         "unit": "fraction",
         "description": "Controls how flow is distributed between vertical and lateral sections."
     },
@@ -153,7 +153,7 @@ PARAMETER_INFO = {
     "Lifetime (years)": {
         "definition": "The expected operational lifetime of the geothermal system.",
         "recommended_range": "10-40 years",
-        "typical_value": "40 years",
+        "typical_value": "30 years",
         "unit": "years",
         "description": "Longer lifetimes improve project economics but increase uncertainty."
     },
@@ -207,20 +207,29 @@ PARAMETER_INFO = {
         "description": "Higher accuracy settings provide more precise results but increase computation time."
     },
     
-    "Inlet Pressure (MPa)": {
-        "definition": "The pressure at the inlet of the wellbore system.",
-        "recommended_range": "5-20 MPa",
-        "typical_value": "10 MPa",
-        "unit": "MPa",
-        "description": "Affects fluid properties and heat transfer characteristics."
+    # Mode Parameters
+    "Mass Flow Rate Mode": {
+        "definition": "Whether the mass flow rate is constant or variable throughout the system.",
+        "recommended_range": "Constant, Variable",
+        "typical_value": "Constant",
+        "unit": "mode",
+        "description": "Variable mode allows for more complex flow patterns and optimization."
     },
     
-    "Pipe Roughness (m)": {
-        "definition": "The surface roughness of the wellbore pipe walls.",
-        "recommended_range": "1e-6-3e-6 m",
-        "typical_value": "1e-6 m",
-        "unit": "m",
-        "description": "Influences frictional pressure drop and flow characteristics in the wellbore."
+    "Injection Temperature Mode": {
+        "definition": "Whether the injection temperature is constant or variable.",
+        "recommended_range": "Constant, Variable",
+        "typical_value": "Constant",
+        "unit": "mode",
+        "description": "Variable temperature mode can optimize heat transfer efficiency."
+    },
+    
+    "Fluid Properties Mode": {
+        "definition": "Whether fluid properties are calculated as constant or variable.",
+        "recommended_range": "Variable, Constant",
+        "typical_value": "Variable",
+        "unit": "mode",
+        "description": "Variable mode provides more accurate fluid property calculations."
     }
 }
 
@@ -241,7 +250,16 @@ def create_info_button(parameter_name, button_id=None):
     """
     if button_id is None:
         # Create a standardized button ID based on parameter name
-        button_id = f"info-btn-{parameter_name.lower().replace(' ', '-').replace('(', '').replace(')', '').replace('˚', 'deg').replace('°', 'deg')}"
+        # First replace special characters, then spaces, then clean up multiple dashes
+        button_id = parameter_name.lower()
+        button_id = button_id.replace('˚', 'deg').replace('°', 'deg')
+        button_id = button_id.replace('(', '').replace(')', '')
+        button_id = button_id.replace('/', '-').replace('$', '')
+        button_id = button_id.replace(' ', '-')
+        # Clean up multiple consecutive dashes
+        import re
+        button_id = re.sub(r'-+', '-', button_id)
+        button_id = f"info-btn-{button_id}"
     
     return html.Div([
         dbc.Button(
@@ -265,7 +283,9 @@ def create_info_button(parameter_name, button_id=None):
                 "justifyContent": "center",
                 "lineHeight": "1",
                 "textAlign": "center",
-                "transform": "translateX(-1px)"
+                "transform": "translateX(-1px) translateY(-2px)", # Adjusted for centering and vertical position
+                "position": "relative",
+                "top": "-2px" # Adjusted for vertical position
             }
         )
     ])
@@ -353,4 +373,37 @@ def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, pa
                             disabled=disabled,
                             className="select-dropdown"
                     ),
-            ]) 
+            ])
+
+def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style, parameter_name=None):
+    """
+    Create an input box with an information button.
+    
+    Args:
+        DivID (str): The ID for the container div
+        ID (str): The ID for the input component
+        ptitle (str): The title/label for the input
+        min_v (float): Minimum value
+        max_v (float): Maximum value
+        start_v (float): Starting value
+        step_i (float): Step increment
+        div_style (dict): Style for the container div
+        parameter_name (str): The name of the parameter for info popup
+        
+    Returns:
+        html.Div: An input box component with info button
+    """
+    info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    return html.Div(
+            id=DivID,
+            style=div_style,
+            className="name-input-container",
+            children=[
+                html.Div([
+                    html.P(ptitle, className="input-title", style={"display": "inline"}),
+                    info_button
+                ]),
+                dcc.Input(id=ID, disabled=True,
+                            value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
+        ]) 
