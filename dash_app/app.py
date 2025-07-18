@@ -41,7 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
-from info_popups import PARAMETER_INFO
+from info_popups import PARAMETER_INFO, create_info_button
 
 
 # -----------------------------------------------------------------------------
@@ -443,12 +443,19 @@ app.layout = html.Div(
                                                 energy_tab,
                                                 economics_time_tab,
                                                 summary_tab,
-                              ])],
+                              ])                    ],
                 ),
             ],
         ),
         
-
+        # Information Modal
+        dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
+            dbc.ModalBody(id="info-modal-body"),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0)
+            ),
+        ], id="info-modal", is_open=False, size="lg"),
     ],
 )
 
@@ -1736,6 +1743,84 @@ def update_error_divs(levelized_cost_dict):
 # -----------------------------------------------------------------------------
 # App runs here. Define configurations, proxies, etc.
 # -----------------------------------------------------------------------------
+
+@app.callback(
+    [Output("info-modal", "is_open"),
+     Output("info-modal-title", "children"),
+     Output("info-modal-body", "children")],
+    [
+        Input("info-btn-surface-temperature-degc", "n_clicks"),
+        Input("info-btn-geothermal-gradient-km", "n_clicks"),
+        Input("info-btn-rock-thermal-conductivity-wmk", "n_clicks"),
+        Input("info-btn-rock-specific-heat-capacity-jkgk", "n_clicks"),
+        Input("info-btn-rock-density-kgm3", "n_clicks"),
+        Input("info-btn-injection-temperature-degc", "n_clicks"),
+        Input("info-btn-mass-flow-rate-kgs", "n_clicks"),
+        Input("info-btn-borehole-diameter-m", "n_clicks"),
+        Input("info-btn-wellbore-radius-vertical-m", "n_clicks"),
+        Input("info-btn-wellbore-radius-lateral-m", "n_clicks"),
+        Input("info-btn-horizontal-extent-m", "n_clicks"),
+        Input("info-btn-drilling-depth-m", "n_clicks"),
+        Input("info-btn-drilling-cost-m", "n_clicks"),
+        Input("info-btn-discount-rate", "n_clicks"),
+        Input("info-btn-lifetime-years", "n_clicks"),
+        Input("info-btn-plant-capex-kwt", "n_clicks"),
+        Input("info-btn-plant-capex-kwe", "n_clicks"),
+        Input("info-btn-pre-cooling-degc", "n_clicks"),
+        Input("info-btn-turbine-outlet-pressure-bar", "n_clicks"),
+        Input("info-btn-mesh-fineness", "n_clicks"),
+        Input("info-btn-accuracy", "n_clicks"),
+        Input("close-info-modal", "n_clicks")
+    ],
+    [State("info-modal", "is_open")],
+    prevent_initial_call=True
+)
+def toggle_info_modal(*args):
+    info_clicks = args[:-2]
+    close_clicks = args[-2]
+    is_open = args[-1]
+    parameter_names = [
+        "Surface Temperature (˚C)",
+        "Geothermal Gradient (K/m)",
+        "Rock Thermal Conductivity (W/m-K)",
+        "Rock Specific Heat Capacity (J/kg-K)",
+        "Rock Density (kg/m3)",
+        "Injection Temperature (˚C)",
+        "Mass Flow Rate (kg/s)",
+        "Borehole Diameter (m)",
+        "Wellbore Radius Vertical (m)",
+        "Wellbore Radius Lateral (m)",
+        "Horizontal Extent (m)",
+        "Drilling Depth (m)",
+        "Drilling Cost ($/m)",
+        "Discount Rate (%)",
+        "Lifetime (years)",
+        "Plant CAPEX ($/kWt)",
+        "Plant CAPEX ($/kWe)",
+        "Pre-cooling (˚C)",
+        "Turbine Outlet Pressure (bar)",
+        "Mesh Fineness",
+        "Accuracy"
+    ]
+    for i, click in enumerate(info_clicks):
+        if click and click > 0:
+            param = parameter_names[i]
+            info = PARAMETER_INFO.get(param, None)
+            if info:
+                modal_content = [
+                    html.H6("Definition:", className="text-primary"),
+                    html.P(info["definition"], className="mb-3"),
+                    html.H6("Recommended Range:", className="text-primary"),
+                    html.P(info["recommended_range"], className="mb-3"),
+                    html.H6("Typical Value:", className="text-primary"),
+                    html.P(f"{info['typical_value']} {info['unit']}", className="mb-3"),
+                    html.H6("Description:", className="text-primary"),
+                    html.P(info["description"], className="mb-3"),
+                ]
+                return True, f"Information: {param}", modal_content
+    if close_clicks and close_clicks > 0:
+        return False, "", []
+    return is_open, "", []
 
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
