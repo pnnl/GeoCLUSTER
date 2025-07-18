@@ -1785,13 +1785,9 @@ def toggle_info_modal(*args):
     info_clicks = args[:-1]
     is_open = args[-1]
     
-    print(f"DEBUG: All info_clicks values: {info_clicks}")
-    print(f"DEBUG: is_open: {is_open}")
-    
     # Get the triggered button ID
     from dash import ctx
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
-    print(f"DEBUG: Triggered ID: {triggered_id}")
     
     parameter_names = [
         "Surface Temperature (˚C)",
@@ -1856,7 +1852,6 @@ def toggle_info_modal(*args):
     
     if triggered_id and triggered_id in button_to_param:
         param = button_to_param[triggered_id]
-        print(f"Button clicked: {triggered_id}, parameter: {param}")
         info = PARAMETER_INFO.get(param, None)
         if info:
             modal_content = [
@@ -1869,8 +1864,6 @@ def toggle_info_modal(*args):
                 html.H6("Description:", className="text-primary"),
                 html.P(info["description"], className="mb-3"),
             ]
-            print(f"Returning modal content for: {param}")
-            print(f"DEBUG: Modal content definition: {info['definition'][:50]}...")
             return True, f"Information: {param}", modal_content
     
     # If no button was clicked, return current state
@@ -1885,7 +1878,6 @@ def toggle_info_modal(*args):
 )
 def close_modal(n_clicks):
     if n_clicks and n_clicks > 0:
-        print(f"Close button callback triggered: {n_clicks}")
         return False
     raise PreventUpdate
 

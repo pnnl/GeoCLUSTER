@@ -260,7 +260,7 @@ def create_info_button(parameter_name, button_id=None):
         import re
         button_id = re.sub(r'-+', '-', button_id)
         button_id = f"info-btn-{button_id}"
-        print(f"Generated button ID for '{parameter_name}': {button_id}")
+    
     
     return html.Div([
         dbc.Button(
