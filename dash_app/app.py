@@ -1775,17 +1775,24 @@ def update_error_divs(levelized_cost_dict):
         Input("info-btn-lateral-flow-multiplier", "n_clicks"),
         Input("info-btn-mass-flow-rate-mode", "n_clicks"),
         Input("info-btn-injection-temperature-mode", "n_clicks"),
-        Input("info-btn-fluid-properties-mode", "n_clicks"),
-        Input("close-info-modal", "n_clicks")
+        Input("info-btn-fluid-properties-mode", "n_clicks")
     ],
     [State("info-modal", "is_open")],
     prevent_initial_call=True,
     suppress_callback_exceptions=True
 )
 def toggle_info_modal(*args):
-    info_clicks = args[:-2]
-    close_clicks = args[-2]
+    info_clicks = args[:-1]
     is_open = args[-1]
+    
+    print(f"DEBUG: All info_clicks values: {info_clicks}")
+    print(f"DEBUG: is_open: {is_open}")
+    
+    # Get the triggered button ID
+    from dash import ctx
+    triggered_id = ctx.triggered_id if ctx.triggered_id else None
+    print(f"DEBUG: Triggered ID: {triggered_id}")
+    
     parameter_names = [
         "Surface Temperature (˚C)",
         "Geothermal Gradient (K/m)",
@@ -1815,31 +1822,58 @@ def toggle_info_modal(*args):
         "Injection Temperature Mode",
         "Fluid Properties Mode"
     ]
-    for i, click in enumerate(info_clicks):
-        if click and click > 0:
-            param = parameter_names[i]
-            print(f"Button clicked: index {i}, parameter: {param}")
-            info = PARAMETER_INFO.get(param, None)
-            if info:
-                modal_content = [
-                    html.H6("Definition:", className="text-primary"),
-                    html.P(info["definition"], className="mb-3"),
-                    html.H6("Recommended Range:", className="text-primary"),
-                    html.P(info["recommended_range"], className="mb-3"),
-                    html.H6("Typical Value:", className="text-primary"),
-                    html.P(f"{info['typical_value']}", className="mb-3"),
-                    html.H6("Description:", className="text-primary"),
-                    html.P(info["description"], className="mb-3"),
-                ]
-                return True, f"Information: {param}", modal_content
-    if close_clicks and close_clicks > 0:
-        print(f"Close button clicked: {close_clicks}")
-        return False, "", []
     
-    # Debug: print all args to see what's happening
-    print(f"Debug - close_clicks: {close_clicks}, is_open: {is_open}")
-    print(f"Debug - all args: {args}")
+    # Map button IDs to parameter names
+    button_to_param = {
+        "info-btn-surface-temperature-degc": "Surface Temperature (˚C)",
+        "info-btn-geothermal-gradient-k-m": "Geothermal Gradient (K/m)",
+        "info-btn-rock-thermal-conductivity-w-m-k": "Rock Thermal Conductivity (W/m-K)",
+        "info-btn-rock-specific-heat-capacity-j-kg-k": "Rock Specific Heat Capacity (J/kg-K)",
+        "info-btn-rock-density-kg-m3": "Rock Density (kg/m3)",
+        "info-btn-injection-temperature-degc": "Injection Temperature (˚C)",
+        "info-btn-mass-flow-rate-kg-s": "Mass Flow Rate (kg/s)",
+        "info-btn-borehole-diameter-m": "Borehole Diameter (m)",
+        "info-btn-wellbore-radius-vertical-m": "Wellbore Radius Vertical (m)",
+        "info-btn-wellbore-radius-lateral-m": "Wellbore Radius Lateral (m)",
+        "info-btn-horizontal-extent-m": "Horizontal Extent (m)",
+        "info-btn-drilling-depth-m": "Drilling Depth (m)",
+        "info-btn-drilling-cost-m": "Drilling Cost ($/m)",
+        "info-btn-discount-rate-%": "Discount Rate (%)",
+        "info-btn-lifetime-years": "Lifetime (years)",
+        "info-btn-plant-capex-kwt": "Plant CAPEX ($/kWt)",
+        "info-btn-plant-capex-kwe": "Plant CAPEX ($/kWe)",
+        "info-btn-pre-cooling-degc": "Pre-cooling (˚C)",
+        "info-btn-turbine-outlet-pressure-bar": "Turbine Outlet Pressure (bar)",
+        "info-btn-mesh-fineness": "Mesh Fineness",
+        "info-btn-accuracy": "Accuracy",
+        "info-btn-number-of-laterals": "Number of Laterals",
+        "info-btn-lateral-flow-allocation": "Lateral Flow Allocation",
+        "info-btn-lateral-flow-multiplier": "Lateral Flow Multiplier",
+        "info-btn-mass-flow-rate-mode": "Mass Flow Rate Mode",
+        "info-btn-injection-temperature-mode": "Injection Temperature Mode",
+        "info-btn-fluid-properties-mode": "Fluid Properties Mode"
+    }
     
+    if triggered_id and triggered_id in button_to_param:
+        param = button_to_param[triggered_id]
+        print(f"Button clicked: {triggered_id}, parameter: {param}")
+        info = PARAMETER_INFO.get(param, None)
+        if info:
+            modal_content = [
+                html.H6("Definition:", className="text-primary"),
+                html.P(info["definition"], className="mb-3"),
+                html.H6("Recommended Range:", className="text-primary"),
+                html.P(info["recommended_range"], className="mb-3"),
+                html.H6("Typical Value:", className="text-primary"),
+                html.P(f"{info['typical_value']}", className="mb-3"),
+                html.H6("Description:", className="text-primary"),
+                html.P(info["description"], className="mb-3"),
+            ]
+            print(f"Returning modal content for: {param}")
+            print(f"DEBUG: Modal content definition: {info['definition'][:50]}...")
+            return True, f"Information: {param}", modal_content
+    
+    # If no button was clicked, return current state
     return is_open, "", []
 
 # Separate callback for close button to ensure it works
@@ -1853,7 +1887,9 @@ def close_modal(n_clicks):
     if n_clicks and n_clicks > 0:
         print(f"Close button callback triggered: {n_clicks}")
         return False
-    return True
+    raise PreventUpdate
+
+
 
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
