@@ -915,3 +915,23 @@ button:hover{
     font-size: 18px !important;
     margin-bottom: 15px !important;
 }
+
+/* Ensure proper flexbox layout for title and button containers */
+.title-button-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 5px !important;
+    gap: 8px !important;
+}
+
+.title-button-container p {
+    margin: 0 !important;
+    text-align: center !important;
+}
+
+.title-button-container .info-button {
+    flex-shrink: 0 !important;
+    margin-left: 0 !important;
+    margin-top: 5px !important;
+}

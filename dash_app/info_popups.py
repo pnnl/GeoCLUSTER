@@ -330,8 +330,8 @@ def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, 
     return html.Div(id=DivID,
                     style=div_style,
                     children=[
-                       html.Div([
-                           html.P(ptitle, style={"fontWeight": "bold", "display": "inline"}),
+                       html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                           html.P(ptitle, style={"fontWeight": "bold", "margin": 0}),
                            info_button
                        ]),
                        dcc.Slider(**slider_props),
@@ -361,8 +361,8 @@ def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, pa
             className="name-input-container-dd",
             style=div_style,
             children=[
-                    html.Div([
-                        html.P(ptitle, className="input-title", style={"display": "inline"}),
+                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                        html.P(ptitle, className="input-title", style={"margin": 0}),
                         info_button
                     ]),
                     dcc.Dropdown(
@@ -401,8 +401,8 @@ def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, 
             style=div_style,
             className="name-input-container",
             children=[
-                html.Div([
-                    html.P(ptitle, className="input-title", style={"display": "inline"}),
+                html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                    html.P(ptitle, className="input-title", style={"margin": 0}),
                     info_button
                 ]),
                 dcc.Input(id=ID, disabled=True,
