@@ -1913,8 +1913,8 @@ if __name__ == '__main__':
     app.run_server(
         # host="127.0.0.1",
         port=8060,
-        debug=False, # needs to be False in production
-        # ssl_context="adhoc"  # Commented out for easier development
+        debug=True,  # needs to be False in production
+        ssl_context="adhoc"  
     )
 
     """
