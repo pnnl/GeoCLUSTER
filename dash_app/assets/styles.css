@@ -890,3 +890,28 @@ button:hover{
 #close-info-modal:active {
     transform: scale(0.95) !important;
 }
+
+/* Modal Content Styling */
+#info-modal .modal-body {
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}
+
+#info-modal .modal-title {
+    font-size: 20px !important;
+    font-weight: bold !important;
+    color: #174887 !important;
+}
+
+/* Target the text-primary class elements (Definition, Recommended Range, etc.) */
+#info-modal .text-primary {
+    font-size: 16px !important;
+    font-weight: bold !important;
+    color: #5192f5 !important;
+}
+
+/* Target the paragraph content following the text-primary headers */
+#info-modal .modal-body p {
+    font-size: 18px !important;
+    margin-bottom: 15px !important;
+}
