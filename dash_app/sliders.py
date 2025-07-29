@@ -7,6 +7,7 @@ import dash_bootstrap_components as dbc
 
 # sourced scripts
 from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
+from info_popups import create_enhanced_slider, create_enhanced_dropdown, create_enhanced_input_box
 
 # -------------------------------------------------------------------------------------------
 # Create dictionaries to assign the values and boundaries of the parameter siders.
@@ -252,27 +253,27 @@ def slider_card():
                                                 className="params-div",
                                                 children=[
                                                     html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
-                                                    slider2(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=0, max_v=40.0, 
-                                                            mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style),
+                                                    create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=0, max_v=40.0, 
+                                                            mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
                                                    
                                                     html.Div(
                                                             id="grad-container",
                                                             children=[
-                                                                    slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
+                                                                    create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
                                                             ]),
 
                                                     html.Div(
                                                             id="k-container",
                                                             children=[
-                                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
+                                                                    create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
                                                                     
                                                             ]),
-                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style),
-                                                    slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
-                                                            mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style),
+                                                    create_enhanced_slider(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
+                                                    create_enhanced_slider(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
+                                                            mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
                                             ),
                                         
@@ -285,14 +286,14 @@ def slider_card():
                                                     html.Div(
                                                             id="Tinj-container",
                                                             children=[
-                                                                slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                                        mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style)
+                                                                create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                                        mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
                                                             id="mdot-container",
                                                             children=[        
-                                                                slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                                        mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
+                                                                create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                                        mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
                                                             ]),
                                                 ]
 
@@ -306,50 +307,50 @@ def slider_card():
                                                     html.Div(
                                                             id="diameter-container",
                                                             children=[ 
-                                                                slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
+                                                                create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
+                                                                create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
-                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
+                                                                create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
+                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
                                                             children=[ 
-                                                                slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
+                                                                create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style, parameter_name="Horizontal Extent (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L1-container",
                                                             children=[ 
-                                                                slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
+                                                                create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
                                                             ]),
                                                     html.Div(
                                                             id="num-lat-container",
                                                             children=[ 
-                                                                input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style, parameter_name="Number of Laterals")
                                                             ]),
                                                     html.Div(
                                                             id="lat-allo-container",
                                                             children=[ 
-                                                                input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
-                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style, parameter_name="Lateral Flow Allocation")
                                                             ]),
                                                     html.Div(
                                                             id="lat-flow-container",
                                                             children=[
-                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+                                                                create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
                                                             ]),
                                                     # html.Div(
                                                     #     id="num-lat-div",
@@ -395,28 +396,28 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ECONOMIC PARAMETERS", className="param-class-name"),
-                                                        slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
-                                                                mark_dict=drillcost_dict, start_v=start_vals_econ["drillcost"], div_style=div_block_style),
-                                                        slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
-                                                                mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style),
+                                                        create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
+                                                                mark_dict=drillcost_dict, start_v=start_vals_econ["drillcost"], div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
+                                                        create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
+                                                                mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style, parameter_name="Discount Rate (%)"),
                                                         # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
                                                         #         mark_dict=lifetime_dict, start_v=30),
-                                                        slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                                                                mark_dict=lifetime_dict, step_i=1, start_v=start_vals_econ["lifetime"], div_style=div_block_style),
-                                                        slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
-                                                                mark_dict=kwt_dict, start_v=start_vals_econ["kwt"], div_style=div_block_style),
-                                                        slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
-                                                                mark_dict=kwe_dict, start_v=start_vals_econ["kwe"], div_style=div_block_style),
+                                                        create_enhanced_slider(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
+                                                                mark_dict=lifetime_dict, step_i=1, start_v=start_vals_econ["lifetime"], div_style=div_block_style, parameter_name="Lifetime (years)"),
+                                                        create_enhanced_slider(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
+                                                                mark_dict=kwt_dict, start_v=start_vals_econ["kwt"], div_style=div_block_style, parameter_name="Plant CAPEX ($/kWt)"),
+                                                        create_enhanced_slider(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
+                                                                mark_dict=kwe_dict, start_v=start_vals_econ["kwe"], div_style=div_block_style, parameter_name="Plant CAPEX ($/kWe)"),
                                                     ]
                                                     ),
                                             html.Div(id="sCO2-card",
                                                     className="params-div",
                                                     children=[
                                                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
-                                                                mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style),
-                                                        slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
-                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style),
+                                                        create_enhanced_slider(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                                mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style, parameter_name="Pre-cooling (˚C)"),
+                                                        create_enhanced_slider(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
+                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
                                                         html.Div(id="check-visual-card",
                                                                 children=[
                                                                         dcc.Checklist(id="checklist",
@@ -437,28 +438,28 @@ def slider_card():
                                                 style=div_none_style,
                                                 children=[
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
-                                                    slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
-                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style),
-                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style),
+                                                    create_enhanced_slider(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
+                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
+                                                    create_enhanced_slider(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
+                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
                                                 
                                                     html.Div(
                                                             id="hyperparam1-container",
                                                             children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                                create_enhanced_dropdown(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Mass Flow Rate Mode")
                                                         ]),
                                                     html.Div(
                                                         id="hyperparam3-container",
                                                         children=[
-                                                                dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                                create_enhanced_dropdown(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Injection Temperature Mode")
                                                         ]),
                                                     html.Div(
                                                         id="hyperparam5-container",
                                                         children=[
-                                                                dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style)
+                                                                create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style, parameter_name="Fluid Properties Mode")
                                                     ]),
                                                 ]
 

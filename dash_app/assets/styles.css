@@ -860,3 +860,78 @@ button:hover{
     }
 
 }
+
+/* Info Button Styling */
+.info-button {
+    transition: all 0.2s ease !important;
+}
+
+.info-button:hover {
+    transform: scale(1.15) !important;
+    color: #138496 !important;
+    text-decoration: none !important;
+}
+
+.info-button:active {
+    transform: scale(0.95) !important;
+}
+
+/* Modal Close Button Styling */
+#close-info-modal {
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+#close-info-modal:hover {
+    background-color: #e9ecef !important;
+    border-color: #dee2e6 !important;
+}
+
+#close-info-modal:active {
+    transform: scale(0.95) !important;
+}
+
+/* Modal Content Styling */
+#info-modal .modal-body {
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}
+
+#info-modal .modal-title {
+    font-size: 20px !important;
+    font-weight: bold !important;
+    color: #174887 !important;
+}
+
+/* Target the text-primary class elements (Definition, Recommended Range, etc.) */
+#info-modal .text-primary {
+    font-size: 16px !important;
+    font-weight: bold !important;
+    color: #5192f5 !important;
+}
+
+/* Target the paragraph content following the text-primary headers */
+#info-modal .modal-body p {
+    font-size: 18px !important;
+    margin-bottom: 15px !important;
+}
+
+/* Ensure proper flexbox layout for title and button containers */
+.title-button-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-bottom: 5px !important;
+    gap: 8px !important;
+}
+
+.title-button-container p {
+    margin: 0 !important;
+    text-align: center !important;
+}
+
+.title-button-container .info-button {
+    flex-shrink: 0 !important;
+    margin-left: 0 !important;
+    margin-top: 5px !important;
+}

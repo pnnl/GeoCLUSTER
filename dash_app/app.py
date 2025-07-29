@@ -41,6 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+from info_popups import PARAMETER_INFO, create_info_button
 
 
 # -----------------------------------------------------------------------------
@@ -442,10 +443,19 @@ app.layout = html.Div(
                                                 energy_tab,
                                                 economics_time_tab,
                                                 summary_tab,
-                              ])],
+                              ])                    ],
                 ),
             ],
         ),
+        
+        # Information Modal
+        dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
+            dbc.ModalBody(id="info-modal-body"),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0, style={"cursor": "pointer", "fontWeight": "bold"})
+            ),
+        ], id="info-modal", is_open=False, size="lg"),
     ],
 )
 
@@ -1727,9 +1737,151 @@ def update_error_divs(levelized_cost_dict):
     return warning_div3
 
 
+
+
+
 # -----------------------------------------------------------------------------
 # App runs here. Define configurations, proxies, etc.
 # -----------------------------------------------------------------------------
+
+@app.callback(
+    [Output("info-modal", "is_open"),
+     Output("info-modal-title", "children"),
+     Output("info-modal-body", "children")],
+    [
+        Input("info-btn-surface-temperature-degc", "n_clicks"),
+        Input("info-btn-geothermal-gradient-k-m", "n_clicks"),
+        Input("info-btn-rock-thermal-conductivity-w-m-k", "n_clicks"),
+        Input("info-btn-rock-specific-heat-capacity-j-kg-k", "n_clicks"),
+        Input("info-btn-rock-density-kg-m3", "n_clicks"),
+        Input("info-btn-injection-temperature-degc", "n_clicks"),
+        Input("info-btn-mass-flow-rate-kg-s", "n_clicks"),
+        Input("info-btn-borehole-diameter-m", "n_clicks"),
+        Input("info-btn-wellbore-radius-vertical-m", "n_clicks"),
+        Input("info-btn-wellbore-radius-lateral-m", "n_clicks"),
+        Input("info-btn-horizontal-extent-m", "n_clicks"),
+        Input("info-btn-drilling-depth-m", "n_clicks"),
+        Input("info-btn-drilling-cost-m", "n_clicks"),
+        Input("info-btn-discount-rate-%", "n_clicks"),
+        Input("info-btn-lifetime-years", "n_clicks"),
+        Input("info-btn-plant-capex-kwt", "n_clicks"),
+        Input("info-btn-plant-capex-kwe", "n_clicks"),
+        Input("info-btn-pre-cooling-degc", "n_clicks"),
+        Input("info-btn-turbine-outlet-pressure-bar", "n_clicks"),
+        Input("info-btn-mesh-fineness", "n_clicks"),
+        Input("info-btn-accuracy", "n_clicks"),
+        Input("info-btn-number-of-laterals", "n_clicks"),
+        Input("info-btn-lateral-flow-allocation", "n_clicks"),
+        Input("info-btn-lateral-flow-multiplier", "n_clicks"),
+        Input("info-btn-mass-flow-rate-mode", "n_clicks"),
+        Input("info-btn-injection-temperature-mode", "n_clicks"),
+        Input("info-btn-fluid-properties-mode", "n_clicks")
+    ],
+    [State("info-modal", "is_open")],
+    prevent_initial_call=True,
+    suppress_callback_exceptions=True
+)
+def toggle_info_modal(*args):
+    info_clicks = args[:-1]
+    is_open = args[-1]
+    
+    # Get the triggered button ID
+    from dash import ctx
+    triggered_id = ctx.triggered_id if ctx.triggered_id else None
+    
+    parameter_names = [
+        "Surface Temperature (˚C)",
+        "Geothermal Gradient (K/m)",
+        "Rock Thermal Conductivity (W/m-K)",
+        "Rock Specific Heat Capacity (J/kg-K)",
+        "Rock Density (kg/m3)",
+        "Injection Temperature (˚C)",
+        "Mass Flow Rate (kg/s)",
+        "Borehole Diameter (m)",
+        "Wellbore Radius Vertical (m)",
+        "Wellbore Radius Lateral (m)",
+        "Horizontal Extent (m)",
+        "Drilling Depth (m)",
+        "Drilling Cost ($/m)",
+        "Discount Rate (%)",
+        "Lifetime (years)",
+        "Plant CAPEX ($/kWt)",
+        "Plant CAPEX ($/kWe)",
+        "Pre-cooling (˚C)",
+        "Turbine Outlet Pressure (bar)",
+        "Mesh Fineness",
+        "Accuracy",
+        "Number of Laterals",
+        "Lateral Flow Allocation",
+        "Lateral Flow Multiplier",
+        "Mass Flow Rate Mode",
+        "Injection Temperature Mode",
+        "Fluid Properties Mode"
+    ]
+    
+    # Map button IDs to parameter names
+    button_to_param = {
+        "info-btn-surface-temperature-degc": "Surface Temperature (˚C)",
+        "info-btn-geothermal-gradient-k-m": "Geothermal Gradient (K/m)",
+        "info-btn-rock-thermal-conductivity-w-m-k": "Rock Thermal Conductivity (W/m-K)",
+        "info-btn-rock-specific-heat-capacity-j-kg-k": "Rock Specific Heat Capacity (J/kg-K)",
+        "info-btn-rock-density-kg-m3": "Rock Density (kg/m3)",
+        "info-btn-injection-temperature-degc": "Injection Temperature (˚C)",
+        "info-btn-mass-flow-rate-kg-s": "Mass Flow Rate (kg/s)",
+        "info-btn-borehole-diameter-m": "Borehole Diameter (m)",
+        "info-btn-wellbore-radius-vertical-m": "Wellbore Radius Vertical (m)",
+        "info-btn-wellbore-radius-lateral-m": "Wellbore Radius Lateral (m)",
+        "info-btn-horizontal-extent-m": "Horizontal Extent (m)",
+        "info-btn-drilling-depth-m": "Drilling Depth (m)",
+        "info-btn-drilling-cost-m": "Drilling Cost ($/m)",
+        "info-btn-discount-rate-%": "Discount Rate (%)",
+        "info-btn-lifetime-years": "Lifetime (years)",
+        "info-btn-plant-capex-kwt": "Plant CAPEX ($/kWt)",
+        "info-btn-plant-capex-kwe": "Plant CAPEX ($/kWe)",
+        "info-btn-pre-cooling-degc": "Pre-cooling (˚C)",
+        "info-btn-turbine-outlet-pressure-bar": "Turbine Outlet Pressure (bar)",
+        "info-btn-mesh-fineness": "Mesh Fineness",
+        "info-btn-accuracy": "Accuracy",
+        "info-btn-number-of-laterals": "Number of Laterals",
+        "info-btn-lateral-flow-allocation": "Lateral Flow Allocation",
+        "info-btn-lateral-flow-multiplier": "Lateral Flow Multiplier",
+        "info-btn-mass-flow-rate-mode": "Mass Flow Rate Mode",
+        "info-btn-injection-temperature-mode": "Injection Temperature Mode",
+        "info-btn-fluid-properties-mode": "Fluid Properties Mode"
+    }
+    
+    if triggered_id and triggered_id in button_to_param:
+        param = button_to_param[triggered_id]
+        info = PARAMETER_INFO.get(param, None)
+        if info:
+            modal_content = [
+                html.H6("Definition:", className="text-primary"),
+                html.P(info["definition"], className="mb-3"),
+                html.H6("Recommended Range:", className="text-primary"),
+                html.P(info["recommended_range"], className="mb-3"),
+                html.H6("Typical Value:", className="text-primary"),
+                html.P(f"{info['typical_value']}", className="mb-3"),
+                html.H6("Description:", className="text-primary"),
+                html.P(info["description"], className="mb-3"),
+            ]
+            return True, f"Information: {param}", modal_content
+    
+    # If no button was clicked, return current state
+    return is_open, "", []
+
+# Separate callback for close button to ensure it works
+@app.callback(
+    Output("info-modal", "is_open", allow_duplicate=True),
+    Input("close-info-modal", "n_clicks"),
+    prevent_initial_call=True,
+    suppress_callback_exceptions=True
+)
+def close_modal(n_clicks):
+    if n_clicks and n_clicks > 0:
+        return False
+    raise PreventUpdate
+
+
 
 server = app.server 
 # from app import server as application # in the wsgi.py file -- this targets the Flask server of Dash app
@@ -1762,7 +1914,7 @@ if __name__ == '__main__':
         # host="127.0.0.1",
         port=8060,
         debug=False, # needs to be False in production
-        ssl_context="adhoc"
+        ssl_context="adhoc" 
     )
 
     """
