@@ -208,28 +208,93 @@ PARAMETER_INFO = {
     },
     
     # Mode Parameters
-    "Mass Flow Rate Mode": {
-        "definition": "Whether the mass flow rate is constant or variable throughout the system.",
-        "recommended_range": "Constant, Variable",
-        "typical_value": "Constant",
-        "unit": "mode",
-        "description": "Variable mode allows for more complex flow patterns and optimization."
-    },
-    
-    "Injection Temperature Mode": {
-        "definition": "Whether the injection temperature is constant or variable.",
-        "recommended_range": "Constant, Variable",
-        "typical_value": "Constant",
-        "unit": "mode",
-        "description": "Variable temperature mode can optimize heat transfer efficiency."
-    },
-    
     "Fluid Properties Mode": {
-        "definition": "Whether fluid properties are calculated as constant or variable.",
-        "recommended_range": "Variable, Constant",
+        "definition": "Controls whether fluid properties are constant or variable with temperature and pressure.",
+        "recommended_range": "Constant or Variable",
         "typical_value": "Variable",
         "unit": "mode",
         "description": "Variable mode provides more accurate fluid property calculations."
+    },
+    
+    # SBT-specific parameters
+    "Mass Flow Rate Profile": {
+        "definition": "User-provided Excel file containing mass flow rate profile over time.",
+        "recommended_range": "Excel file with time and flow rate columns",
+        "typical_value": "MassFlowRate.xlsx",
+        "unit": "file",
+        "description": "Required when Mass Flow Rate Mode is set to Variable. First column stores time in seconds, second column stores mass flow rate in kg/s."
+    },
+    
+    "Injection Temperature Profile": {
+        "definition": "User-provided Excel file containing injection temperature profile over time.",
+        "recommended_range": "Excel file with time and temperature columns",
+        "typical_value": "InjectionTemperatures.xlsx",
+        "unit": "file",
+        "description": "Required when Injection Temperature Mode is set to Variable. First column stores time in seconds, second column stores injection temperature in °C."
+    },
+    
+    "Mass Flow Rate Mode": {
+        "definition": "Controls whether mass flow rate is constant or variable over time.",
+        "recommended_range": "Constant or Variable",
+        "typical_value": "Constant",
+        "unit": "mode",
+        "description": "When set to Variable, requires a Mass Flow Rate Profile file. When set to Constant, uses the Mass Flow Rate slider value."
+    },
+    
+    "Injection Temperature Mode": {
+        "definition": "Controls whether injection temperature is constant or variable over time.",
+        "recommended_range": "Constant or Variable",
+        "typical_value": "Constant",
+        "unit": "mode",
+        "description": "When set to Variable, requires an Injection Temperature Profile file. When set to Constant, uses the Injection Temperature slider value."
+    },
+    
+    "Inlet Pressure (MPa)": {
+        "definition": "The pressure at the inlet of the wellbore system.",
+        "recommended_range": "5-20 MPa",
+        "typical_value": "10 MPa",
+        "unit": "MPa",
+        "description": "Higher inlet pressures can improve flow rates but increase pumping requirements."
+    },
+    
+    "Pipe Roughness (m)": {
+        "definition": "The surface roughness of the pipe walls affecting fluid flow.",
+        "recommended_range": "1e-6 to 3e-6 m",
+        "typical_value": "1e-6 m",
+        "unit": "m",
+        "description": "Lower roughness values reduce friction losses and improve flow efficiency."
+    },
+    
+    "Center Pipe Radius (m)": {
+        "definition": "The radius of the center pipe in coaxial configurations.",
+        "recommended_range": "0.0635-0.174 m",
+        "typical_value": "0.127 m",
+        "unit": "m",
+        "description": "Affects the annular flow area and heat transfer characteristics in coaxial systems."
+    },
+    
+    "Center Pipe Thickness (m)": {
+        "definition": "The wall thickness of the center pipe in coaxial configurations.",
+        "recommended_range": "0.005-0.025 m",
+        "typical_value": "0.0127 m",
+        "unit": "m",
+        "description": "Thicker walls provide more structural strength but reduce flow area."
+    },
+    
+    "Insulation Thermal Conductivity (W/m-K)": {
+        "definition": "The thermal conductivity of insulation material in coaxial systems.",
+        "recommended_range": "0.025-0.5 W/m-K",
+        "typical_value": "0.025 W/m-K",
+        "unit": "W/m-K",
+        "description": "Lower conductivity values provide better thermal insulation."
+    },
+    
+    "Coaxial Flow Type": {
+        "definition": "The direction of fluid flow in coaxial wellbore configurations.",
+        "recommended_range": "Inject in Annulus, Inject in Center Pipe",
+        "typical_value": "Inject in Annulus",
+        "unit": "mode",
+        "description": "Determines whether fluid is injected through the annular space or the center pipe."
     }
 }
 

@@ -41,7 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
-from info_popups import PARAMETER_INFO, create_info_button
+from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown
 
 
 # -----------------------------------------------------------------------------
@@ -1178,73 +1178,63 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
 def update_slider_ranges(model):
 
-    grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
-    k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
-    D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
+    grad_dict = {0.01: '0.01', 0.1: '0.1'}
+    k_dict = {0.1: '0.1', 7.0: '7.0'} # 1.5 4.5
+    Tinj_dict = {30: '30', 60: '60'}
+    mdot_dict = {5: '5', 300: '300'}
+    D_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
+    L2_dict = {1000: '1000', 50000: '50000'}
+    L1_dict = {1000: '1000', 10000: '10000'}
 
-    if model == "HDF5": # hide the other params (happens in the next callback)
+    if model == "HDF5":
 
-        Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
-        mdot_dict = create_steps(arg_arr=u_sCO2.mdot, str_round_place='{:.1f}', val_round_place=1)
-        L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_place=0)
-        L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
-        
-
-        grad_container = slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
-        k_container = slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
-        # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15, 
-        #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
-        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style)
-        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
-        diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
-        L2_container =  slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
-        L1_container = slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)                       
-                                
+        grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+        k_container = create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
+        Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+        mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+        diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style, parameter_name="Borehole Diameter (m)")
+        L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+        L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")                       
+                                 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
-        
-    elif model == "SBT V1.0" or model == "SBT V2.0": 
 
-        # Tsurf_dict = {0: '0', 40: '40'}
-        c_dict = {700: '700', 1200: '1200'}
-        rho_dict = {400: '400', 4000: '4000'}
+    elif model == "SBT V1.0" or model == "SBT V2.0":
 
-        Tinj_dict =  {30: '30', 100: '100'}
-        grad_dict =  {0.015: '0.015', 0.2: '0.200'}
+        grad_dict = {0.015: '0.015', 0.200: '0.200'}
+        k_dict = {0.4: '0.4', 5.0: '5.0'}
+        Tinj_dict = {30: '30', 100: '100'}
         mdot_dict = {5: '5', 300: '300'}
-        L2_dict = {1000: '1k', 50000: '50k'}
-        L1_dict = {1000: '1k', 10000: '10k'}
-        k_dict = {0.4: '0.4', 5: '5.0'}
+        D_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
+        L2_dict = {1000: '1000', 50000: '50000'}
+        L1_dict = {1000: '1000', 10000: '10000'}
 
-        radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
-        radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
-
-        grad_container = slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", # min_v=0.01, max_v=0.1,
-                                                                        min_v=0.015, max_v=0.200, 
-                                                                    mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style)
-        k_container = slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", #min_v=0.1, max_v=7.0, 
-                                                                        min_v=0.4, max_v=5.0, 
-                                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style)
-        Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=100.0, 
+        grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", # min_v=0.01, max_v=0.1,
+                                                                     min_v=0.015, max_v=0.200, 
+                                                                mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+        k_container = create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", #min_v=0.1, max_v=7.0, 
+                                                                     min_v=0.4, max_v=5.0, 
+                                                                        mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
+        Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=100.0, 
                                                                     # min_v=20.0, max_v=200.0, 
-                                                                        mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"], div_style=div_block_style)
-        mdot_container = slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=5, max_v=300,
-                                                                            # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                                        mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style)
-        diameter_container = slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_none_style)
-        L2_container =  slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=1000, max_v=50000,
-                                                                            #min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
-        L1_container = slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=1000, max_v=10000,
-                                                                            #min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
+                                                                        mark_dict=Tinj_dict, start_v=start_vals_d["Tinj"], div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+        mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=5, max_v=300,
+                                                                        # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
+                                                                    mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+        diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_none_style, parameter_name="Borehole Diameter (m)")
+        L2_container =  create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=1000, max_v=50000,
+                                                                        #min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
+                                                                    mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+        L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=1000, max_v=10000,
+                                                                        #min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
+                                                                    mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
 
         return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
     else:
@@ -1269,38 +1259,41 @@ def update_sliders_heat_exchanger(model, case):
 
         if case == "utube":
 
-            radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_block_style)
-            radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_block_style)
-            n_laterals = input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                    min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_block_style)
-            lateral_flow = input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
-                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_block_style)
-            lateral_multiplier = input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
+            radius_vertical = create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_block_style, parameter_name="Wellbore Radius Vertical (m)")
+            radius_lateral = create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
+                                                                mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_block_style, parameter_name="Wellbore Radius Lateral (m)")
+            n_laterals = create_enhanced_input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                    min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_block_style, parameter_name="Number of Laterals")
+            lateral_flow = create_enhanced_input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_block_style, parameter_name="Lateral Flow Allocation")
+            lateral_multiplier = create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                    min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style, parameter_name="Lateral Flow Multiplier")
 
             return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
         
         elif case == "coaxial":
 
+            radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+            radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
+            thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
             insulation_thermal_k_dict = {0.025: '0.025', 0.50: '0.5'}
 
-            radius = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style)
+            radius = create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style, parameter_name="Wellbore Radius (m)")
             
-            radiuscenterpipe = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
-                                                                mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style)
+            radiuscenterpipe = create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
+                                                                mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style, parameter_name="Center Pipe Radius (m)")
             
-            thicknesscenterpipe = slider1(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
-                                                                mark_dict=thickness_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style)
+            thicknesscenterpipe = create_enhanced_slider(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
+                                                                mark_dict=thickness_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style, parameter_name="Center Pipe Thickness (m)")
             
-            k_center_pipe = slider1(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
-                                                                mark_dict=insulation_thermal_k_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style)
-            coaxialflowtype = dropdown_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
-                                                                    options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style)
+            k_center_pipe = create_enhanced_slider(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
+                                                                mark_dict=insulation_thermal_k_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style, parameter_name="Insulation Thermal Conductivity (W/m-K)")
+            coaxialflowtype = create_enhanced_dropdown(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
+                                                                    options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style, parameter_name="Coaxial Flow Type")
             # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
-                                                                # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
+                                                             # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
                                                      
             return radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype
 
@@ -1308,16 +1301,16 @@ def update_sliders_heat_exchanger(model, case):
     
     elif model == "HDF5":
 
-        radius_vertical = slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
-                                                            mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
-        radius_lateral = slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
-                                                            mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
-        n_laterals = input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
-        lateral_flow = input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
-                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
-        lateral_multiplier = input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+        radius_vertical = create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
+        radius_lateral = create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
+                                                            mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
+        n_laterals = create_enhanced_input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
+                                min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style, parameter_name="Number of Laterals")
+        lateral_flow = create_enhanced_input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style, parameter_name="Lateral Flow Allocation")
+        lateral_multiplier = create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
 
         return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
 
@@ -1338,23 +1331,26 @@ def update_sliders_hyperparms(model):
 
     if model == "SBT V1.0":
 
-        hyperparam1 = dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-        hyperparam3 = dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
+        hyperparam1 = create_enhanced_dropdown(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Mass Flow Rate Mode")
+        hyperparam3 = create_enhanced_dropdown(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Injection Temperature Mode")
+        hyperparam5 = create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style, parameter_name="Fluid Properties Mode")
 
         return hyperparam1, hyperparam3, hyperparam5
     
     elif model == "SBT V2.0":
 
-        hyperparam1 = slider1(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
-                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style)
-        hyperparam3 = slider1(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
-                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style)
-        hyperparam5 = dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_block_style)
+        inlet_pressure_dict = {5: '5', 20: '20'}
+        pipe_roughness_dict = {1e-6: '1e-6', 3e-6: '3e-6'}
+
+        hyperparam1 = create_enhanced_slider(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
+                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style, parameter_name="Inlet Pressure (MPa)")
+        hyperparam3 = create_enhanced_slider(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
+                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style, parameter_name="Pipe Roughness (m)")
+        hyperparam5 = create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_block_style, parameter_name="Fluid Properties Mode")
 
         return hyperparam1, hyperparam3, hyperparam5
 
@@ -1778,8 +1774,7 @@ def update_error_divs(levelized_cost_dict):
         Input("info-btn-fluid-properties-mode", "n_clicks")
     ],
     [State("info-modal", "is_open")],
-    prevent_initial_call=True,
-    suppress_callback_exceptions=True
+    prevent_initial_call=True
 )
 def toggle_info_modal(*args):
     info_clicks = args[:-1]
@@ -1788,6 +1783,51 @@ def toggle_info_modal(*args):
     # Get the triggered button ID
     from dash import ctx
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
+    
+    # Debug: print the triggered ID
+    print(f"Tooltip callback triggered. ID: {triggered_id}")
+    
+    # Check if any button was actually clicked (n_clicks > 0)
+    button_clicked = False
+    if triggered_id:
+        # Find the index of the triggered button in the args
+        button_ids = [
+            "info-btn-surface-temperature-degc",
+            "info-btn-geothermal-gradient-k-m",
+            "info-btn-rock-thermal-conductivity-w-m-k",
+            "info-btn-rock-specific-heat-capacity-j-kg-k",
+            "info-btn-rock-density-kg-m3",
+            "info-btn-injection-temperature-degc",
+            "info-btn-mass-flow-rate-kg-s",
+            "info-btn-borehole-diameter-m",
+            "info-btn-wellbore-radius-vertical-m",
+            "info-btn-wellbore-radius-lateral-m",
+            "info-btn-horizontal-extent-m",
+            "info-btn-drilling-depth-m",
+            "info-btn-drilling-cost-m",
+            "info-btn-discount-rate-%",
+            "info-btn-lifetime-years",
+            "info-btn-plant-capex-kwt",
+            "info-btn-plant-capex-kwe",
+            "info-btn-pre-cooling-degc",
+            "info-btn-turbine-outlet-pressure-bar",
+            "info-btn-mesh-fineness",
+            "info-btn-accuracy",
+            "info-btn-number-of-laterals",
+            "info-btn-lateral-flow-allocation",
+            "info-btn-lateral-flow-multiplier",
+            "info-btn-mass-flow-rate-mode",
+            "info-btn-injection-temperature-mode",
+            "info-btn-fluid-properties-mode"
+        ]
+        
+        try:
+            button_index = button_ids.index(triggered_id)
+            if info_clicks[button_index] and info_clicks[button_index] > 0:
+                button_clicked = True
+                print(f"Button {triggered_id} was clicked (n_clicks: {info_clicks[button_index]})")
+        except (ValueError, IndexError):
+            print(f"Button {triggered_id} not found in button list")
     
     parameter_names = [
         "Surface Temperature (˚C)",
@@ -1850,10 +1890,11 @@ def toggle_info_modal(*args):
         "info-btn-fluid-properties-mode": "Fluid Properties Mode"
     }
     
-    if triggered_id and triggered_id in button_to_param:
+    if button_clicked and triggered_id and triggered_id in button_to_param:
         param = button_to_param[triggered_id]
         info = PARAMETER_INFO.get(param, None)
         if info:
+            print(f"Found info for parameter: {param}")
             modal_content = [
                 html.H6("Definition:", className="text-primary"),
                 html.P(info["definition"], className="mb-3"),
@@ -1865,6 +1906,13 @@ def toggle_info_modal(*args):
                 html.P(info["description"], className="mb-3"),
             ]
             return True, f"Information: {param}", modal_content
+        else:
+            print(f"No info found for parameter: {param}")
+    else:
+        if triggered_id:
+            print(f"Button {triggered_id} was not actually clicked or not found in mapping")
+        else:
+            print("No button was triggered")
     
     # If no button was clicked, return current state
     return is_open, "", []
@@ -1873,8 +1921,7 @@ def toggle_info_modal(*args):
 @app.callback(
     Output("info-modal", "is_open", allow_duplicate=True),
     Input("close-info-modal", "n_clicks"),
-    prevent_initial_call=True,
-    suppress_callback_exceptions=True
+    prevent_initial_call=True
 )
 def close_modal(n_clicks):
     if n_clicks and n_clicks > 0:
