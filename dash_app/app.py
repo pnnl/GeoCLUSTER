@@ -1256,6 +1256,10 @@ def update_slider_ranges(model):
 def update_sliders_heat_exchanger(model, case):
 
     if model == "SBT V1.0" or model == "SBT V2.0": 
+        
+        # Define dictionaries for SBT models
+        radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+        radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 
         if case == "utube":
 
@@ -1274,7 +1278,6 @@ def update_sliders_heat_exchanger(model, case):
         
         elif case == "coaxial":
 
-            radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
             radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
             thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
             insulation_thermal_k_dict = {0.025: '0.025', 0.50: '0.5'}
@@ -1769,12 +1772,11 @@ def update_error_divs(levelized_cost_dict):
         Input("info-btn-number-of-laterals", "n_clicks"),
         Input("info-btn-lateral-flow-allocation", "n_clicks"),
         Input("info-btn-lateral-flow-multiplier", "n_clicks"),
-        Input("info-btn-mass-flow-rate-mode", "n_clicks"),
-        Input("info-btn-injection-temperature-mode", "n_clicks"),
         Input("info-btn-fluid-properties-mode", "n_clicks")
     ],
     [State("info-modal", "is_open")],
-    prevent_initial_call=True
+    prevent_initial_call=True,
+    suppress_callback_exceptions=True
 )
 def toggle_info_modal(*args):
     info_clicks = args[:-1]
@@ -1784,8 +1786,9 @@ def toggle_info_modal(*args):
     from dash import ctx
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
     
-    # Debug: print the triggered ID
+    # Debug: print the triggered ID and all click values
     print(f"Tooltip callback triggered. ID: {triggered_id}")
+    print(f"All click values: {info_clicks}")
     
     # Check if any button was actually clicked (n_clicks > 0)
     button_clicked = False
@@ -1816,8 +1819,6 @@ def toggle_info_modal(*args):
             "info-btn-number-of-laterals",
             "info-btn-lateral-flow-allocation",
             "info-btn-lateral-flow-multiplier",
-            "info-btn-mass-flow-rate-mode",
-            "info-btn-injection-temperature-mode",
             "info-btn-fluid-properties-mode"
         ]
         
@@ -1826,6 +1827,8 @@ def toggle_info_modal(*args):
             if info_clicks[button_index] and info_clicks[button_index] > 0:
                 button_clicked = True
                 print(f"Button {triggered_id} was clicked (n_clicks: {info_clicks[button_index]})")
+            else:
+                print(f"Button {triggered_id} was not actually clicked (n_clicks: {info_clicks[button_index]})")
         except (ValueError, IndexError):
             print(f"Button {triggered_id} not found in button list")
     
@@ -1854,8 +1857,6 @@ def toggle_info_modal(*args):
         "Number of Laterals",
         "Lateral Flow Allocation",
         "Lateral Flow Multiplier",
-        "Mass Flow Rate Mode",
-        "Injection Temperature Mode",
         "Fluid Properties Mode"
     ]
     
@@ -1885,8 +1886,6 @@ def toggle_info_modal(*args):
         "info-btn-number-of-laterals": "Number of Laterals",
         "info-btn-lateral-flow-allocation": "Lateral Flow Allocation",
         "info-btn-lateral-flow-multiplier": "Lateral Flow Multiplier",
-        "info-btn-mass-flow-rate-mode": "Mass Flow Rate Mode",
-        "info-btn-injection-temperature-mode": "Injection Temperature Mode",
         "info-btn-fluid-properties-mode": "Fluid Properties Mode"
     }
     
