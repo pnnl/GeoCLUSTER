@@ -1335,9 +1335,9 @@ def update_sliders_hyperparms(model):
     if model == "SBT V1.0":
 
         hyperparam1 = create_enhanced_dropdown(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Mass Flow Rate Mode")
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name=None)
         hyperparam3 = create_enhanced_dropdown(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name="Injection Temperature Mode")
+                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style, parameter_name=None)
         hyperparam5 = create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
                                                                                                 options=["Constant", "Variable"], disabled=True, div_style=div_none_style, parameter_name="Fluid Properties Mode")
 
@@ -1349,9 +1349,9 @@ def update_sliders_hyperparms(model):
         pipe_roughness_dict = {1e-6: '1e-6', 3e-6: '3e-6'}
 
         hyperparam1 = create_enhanced_slider(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
-                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style, parameter_name="Inlet Pressure (MPa)")
+                                                            mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_block_style, parameter_name=None)
         hyperparam3 = create_enhanced_slider(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
-                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style, parameter_name="Pipe Roughness (m)")
+                                                            mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_block_style, parameter_name=None)
         hyperparam5 = create_enhanced_dropdown(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
                                                                                                 options=["Variable", "Constant"], disabled=True, div_style=div_block_style, parameter_name="Fluid Properties Mode")
 
@@ -1824,11 +1824,12 @@ def toggle_info_modal(*args):
         
         try:
             button_index = button_ids.index(triggered_id)
-            if info_clicks[button_index] and info_clicks[button_index] > 0:
+            # Handle case where the component might not exist (None value)
+            if button_index < len(info_clicks) and info_clicks[button_index] is not None and info_clicks[button_index] > 0:
                 button_clicked = True
                 print(f"Button {triggered_id} was clicked (n_clicks: {info_clicks[button_index]})")
             else:
-                print(f"Button {triggered_id} was not actually clicked (n_clicks: {info_clicks[button_index]})")
+                print(f"Button {triggered_id} was not actually clicked (n_clicks: {info_clicks[button_index] if button_index < len(info_clicks) else 'N/A'})")
         except (ValueError, IndexError):
             print(f"Button {triggered_id} not found in button list")
     
@@ -1915,6 +1916,10 @@ def toggle_info_modal(*args):
     
     # If no button was clicked, return current state
     return is_open, "", []
+
+
+
+
 
 # Separate callback for close button to ensure it works
 @app.callback(
