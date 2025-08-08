@@ -980,20 +980,21 @@ def econ_sliders_visibility(tab, fluid, end_use):
     econ_parms_div_style = {
         'display': 'block',
         "border": "solid 3px #c4752f",
-        "border-radius": "10px",
-        "margin-bottom": "5px",
-        "margin-right": "5px",
-        "padding-bottom": "5px",
+        "borderRadius": "10px",
+        "marginBottom": "5px",
+        "marginRight": "5px",
+        "paddingBottom": "5px",
     }
 
     econ_parms_div_style_2 = {
         'display': 'block',
-        "border": "solid 3px #c4752f",
-        "border-radius": "10px 10px 0px 0px",
-        "margin-bottom": "5px",
-        "margin-right": "5px",
-        "padding-bottom": "5px",
-        "border-bottom": "none"
+        "borderTop": "solid 3px #c4752f",
+        "borderLeft": "solid 3px #c4752f",
+        "borderRight": "solid 3px #c4752f",
+        "borderRadius": "10px 10px 0px 0px",
+        "marginBottom": "5px",
+        "marginRight": "5px",
+        "paddingBottom": "5px"
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -1304,6 +1305,10 @@ def update_sliders_heat_exchanger(model, case):
     
     elif model == "HDF5":
 
+        # Define dictionaries for HDF5 models
+        radius_vertical_dict = {0.2: '0.2', 0.6: '0.6'}
+        radius_lateral_dict = {0.2: '0.2', 0.6: '0.6'}
+
         radius_vertical = create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.2, max_v=0.6,
                                                             mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
         radius_lateral = create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.2, max_v=0.6,
@@ -1598,20 +1603,35 @@ def update_plot_title(fluid, end_use, checklist):
      Input(component_id="turb-pout-select", component_property="value"),
      Input(component_id='econ-memory', component_property='data'),
      Input(component_id='thermal-memory', component_property='data'),
+     Input(component_id='model-select', component_property='value'),
+     Input(component_id='TandP-data', component_property='data'),
     ],
 )
 
 def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Drilling_cost_per_m, Discount_rate, Lifetime, 
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                 econ_dict, thermal_dict):
+                 econ_dict, thermal_dict, model, tandp_data):
+
+    print(f"DEBUG SUMMARY: model={model}, tandp_data keys={list(tandp_data.keys()) if tandp_data else 'None'}")
+    print(f"DEBUG SUMMARY: thermal_dict keys={list(thermal_dict.keys()) if thermal_dict else 'None'}")
+    print(f"DEBUG SUMMARY: econ_dict keys={list(econ_dict.keys()) if econ_dict else 'None'}")
+
+    # Add TandP data to thermal_dict for SBT models
+    if model != "HDF5" and tandp_data:
+        thermal_dict['TandP-data'] = tandp_data
+        print(f"DEBUG SUMMARY: Added TandP-data to thermal_dict")
 
     tbl, summary_dict = generate_summary_table(
                 mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
-                interp_time, case, fluid,
+                interp_time, case, fluid, model,
                 thermal_dict, econ_dict
     )
+
+    print(f"DEBUG SUMMARY: Table generated successfully for {model}")
+    print(f"DEBUG SUMMARY: Table figure type: {type(tbl)}")
+    print(f"DEBUG SUMMARY: Summary dict keys: {list(summary_dict.keys()) if summary_dict else 'None'}")
 
     return tbl, summary_dict
 
@@ -1756,8 +1776,6 @@ def update_error_divs(levelized_cost_dict):
         Input("info-btn-injection-temperature-degc", "n_clicks"),
         Input("info-btn-mass-flow-rate-kg-s", "n_clicks"),
         Input("info-btn-borehole-diameter-m", "n_clicks"),
-        Input("info-btn-wellbore-radius-vertical-m", "n_clicks"),
-        Input("info-btn-wellbore-radius-lateral-m", "n_clicks"),
         Input("info-btn-horizontal-extent-m", "n_clicks"),
         Input("info-btn-drilling-depth-m", "n_clicks"),
         Input("info-btn-drilling-cost-m", "n_clicks"),
@@ -1803,8 +1821,6 @@ def toggle_info_modal(*args):
             "info-btn-injection-temperature-degc",
             "info-btn-mass-flow-rate-kg-s",
             "info-btn-borehole-diameter-m",
-            "info-btn-wellbore-radius-vertical-m",
-            "info-btn-wellbore-radius-lateral-m",
             "info-btn-horizontal-extent-m",
             "info-btn-drilling-depth-m",
             "info-btn-drilling-cost-m",
@@ -1842,8 +1858,6 @@ def toggle_info_modal(*args):
         "Injection Temperature (˚C)",
         "Mass Flow Rate (kg/s)",
         "Borehole Diameter (m)",
-        "Wellbore Radius Vertical (m)",
-        "Wellbore Radius Lateral (m)",
         "Horizontal Extent (m)",
         "Drilling Depth (m)",
         "Drilling Cost ($/m)",

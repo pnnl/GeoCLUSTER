@@ -190,21 +190,42 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "utube":
 
             try:
-                if fluid == "sCO2" or fluid == "All":
-                    sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
-                                                        Tsurf, c_m, rho_m, 
-                                                        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-                                                        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
-                                                        )
-                    sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
-                if fluid == "H2O" or fluid == "All":
+                # For SBT models, generate data based on model version
+                if model != "HDF5":
+                    # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    
+                    # Generate sCO2 data only for SBT V2.0 (SBT V1.0 doesn't support sCO2)
+                    if model == "SBT V2.0":
+                        sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                                                            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+                                                            )
+                        sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    else:
+                        # SBT V1.0 doesn't support sCO2, so set to None
+                        sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                else:
+                    # For HDF5 models, use the original conditional logic with minimal parameters
+                    if fluid == "sCO2" or fluid == "All":
+                        sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            mesh, accuracy, None, None, None)
+                        sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
@@ -215,20 +236,41 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if case == "coaxial":
 
             try:
-                if fluid == "sCO2" or fluid == "All":
-                    sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
-                                                        Tsurf, c_m, rho_m, 
-                                                        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-                                                        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
-                    sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
-                if fluid == "H2O" or fluid == "All":
+                # For SBT models, generate data based on model version
+                if model != "HDF5":
+                    # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
-                    H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
+                    H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    
+                    # Generate sCO2 data only for SBT V2.0 (SBT V1.0 doesn't support sCO2)
+                    if model == "SBT V2.0":
+                        sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                                                            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
+                        sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    else:
+                        # SBT V1.0 doesn't support sCO2, so set to None
+                        sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                else:
+                    # For HDF5 models, use the original conditional logic with minimal parameters
+                    if fluid == "sCO2" or fluid == "All":
+                        sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            mesh, accuracy, None, None, None)
+                        sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()

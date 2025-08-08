@@ -184,19 +184,19 @@ class data:
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
 
-            # print("\n -------------------------------- UI -------------------------------- ")
-            # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
-            
             # AB UNIT CONVERSIONS AND RENAMING
             # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
+            L2_original = L2
+            L1_original = L1
+            Tinj_original = Tinj
+            
             L2 = L2/1000
             L1 = L1/1000
             Tinj = Tinj-273.15
-            # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
-            if self.CP_fluid == "H20":
+            if self.CP_fluid == "H2O":
                 fluid = 1
-            if self.CP_fluid == "CO2":
+            elif self.CP_fluid == "CO2":
                 fluid = 2
             else:
                 fluid = 1 # water
@@ -206,15 +206,20 @@ class data:
                 mass_mode = HyperParam1
                 temp_mode = HyperParam3
 
-                if mass_mode == "Constant":
+                # Convert string values to integers for SBT model
+                if mass_mode == "Constant" or mass_mode == 0:
                     mass_mode_b = 0
-                elif mass_mode == "Variable":
+                elif mass_mode == "Variable" or mass_mode == 1:
                     mass_mode_b = 1
+                else:
+                    mass_mode_b = 0  # Default to constant
 
-                if temp_mode == "Constant":
+                if temp_mode == "Constant" or temp_mode == 0:
                     temp_mode_b = 0
-                elif temp_mode == "Variable":
+                elif temp_mode == "Variable" or temp_mode == 1:
                     temp_mode_b = 1
+                else:
+                    temp_mode_b = 0  # Default to constant
                 
                 hyperparam1 = mass_mode_b
                 hyperparam2 = "MassFlowRate.xlsx"
@@ -229,10 +234,12 @@ class data:
                 fluid_mode = HyperParam5
                 
 
-                if fluid_mode == "Constant":
+                if fluid_mode == "Constant" or fluid_mode == 0:
                     fluid_mode_b = 0
-                elif fluid_mode == "Variable":
+                elif fluid_mode == "Variable" or fluid_mode == 1:
                     fluid_mode_b = 1
+                else:
+                    fluid_mode_b = 1  # Default to variable
                 
                 hyperparam1 = HyperParam1*10 # Pin (convert MPa to bar)
                 hyperparam2 = HyperParam3 # pipe roughness
@@ -248,7 +255,6 @@ class data:
                     PipeParam5 = 1
                 if PipeParam5 == "Inject in Center Pipe":
                     PipeParam5 = 2
-                # print(PipeParam5)
             #     Diameter1 = radius_vertical #radius # Diameter1/2
             #     Diameter2 = radius_lateral #radiuscenterpipe # Diameter2/2
             #     PipeParam3 = n_laterals #thicknesscenterpipe
@@ -262,42 +268,47 @@ class data:
                 PipeParam4 = [PipeParam4]
                 # PipeParam5 = lateral_multiplier
 
-            # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
             start = time.time()
             
             # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
-            times, Tout, Pout = run_sbt_final(
-                    ## Model Specifications 
-                    sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
-                    HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
-                    accuracy=accuracy,
+            try:
+                times, Tout, Pout = run_sbt_final(
+                        ## Model Specifications 
+                        sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
+                        HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
+                        accuracy=accuracy,
 
-                    ## Operations
-                    clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
-                    DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-                    Diameter1=Diameter1, Diameter2=Diameter2, 
-                    PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
-                    # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-                    PipeParam5=PipeParam5, ## Tube Geometry
+                        ## Operations
+                        clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+                        DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+                        Diameter1=Diameter1, Diameter2=Diameter2, 
+                        PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
+                        # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
+                        PipeParam5=PipeParam5, ## Tube Geometry
 
-                    ## Geologic Properties
-                    Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
-                    # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
-            )
-            
+                        ## Geologic Properties
+                        Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
+                        # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+                )
+                
+            except Exception as e:
+                print(f"DEBUG SBT: Error in run_sbt_final: {e}")
+                times, Tout, Pout = None, None, None
+                
             if Pout is None:
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
                 # constant_pressure = 22228604.37405011
                 Pout = constant_pressure * np.ones_like(Tout)
                 
             end = time.time()
-            # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
-            # self.time = times
 
-            times = times[14:]
-            Tout = Tout[14:]
-            Pout = Pout[14:]
+            if times is not None and Tout is not None and Pout is not None:
+                times = times[14:]
+                Tout = Tout[14:]
+                Pout = Pout[14:]
+            else:
+                print(f"DEBUG SBT: One or more outputs are None, cannot trim")
 
         return Tout, Pout, times
 
