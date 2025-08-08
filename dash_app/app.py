@@ -1613,14 +1613,9 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
                  econ_dict, thermal_dict, model, tandp_data):
 
-    print(f"DEBUG SUMMARY: model={model}, tandp_data keys={list(tandp_data.keys()) if tandp_data else 'None'}")
-    print(f"DEBUG SUMMARY: thermal_dict keys={list(thermal_dict.keys()) if thermal_dict else 'None'}")
-    print(f"DEBUG SUMMARY: econ_dict keys={list(econ_dict.keys()) if econ_dict else 'None'}")
-
     # Add TandP data to thermal_dict for SBT models
     if model != "HDF5" and tandp_data:
         thermal_dict['TandP-data'] = tandp_data
-        print(f"DEBUG SUMMARY: Added TandP-data to thermal_dict")
 
     tbl, summary_dict = generate_summary_table(
                 mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -1628,10 +1623,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                 interp_time, case, fluid, model,
                 thermal_dict, econ_dict
     )
-
-    print(f"DEBUG SUMMARY: Table generated successfully for {model}")
-    print(f"DEBUG SUMMARY: Table figure type: {type(tbl)}")
-    print(f"DEBUG SUMMARY: Summary dict keys: {list(summary_dict.keys()) if summary_dict else 'None'}")
 
     return tbl, summary_dict
 

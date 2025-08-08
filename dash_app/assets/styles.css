@@ -293,6 +293,8 @@ hr {
   color: white !important;
   border-bottom: 5px solid var(--orange) !important;
   background-color: var(--selectedblue) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 /*  border-top: 1px solid var(--selectedblue) !important;*/
 /*  border-left: 1px solid var(--selectedblue) !important;*/
 /*  border-right: 1px solid var(--selectedblue) !important;*/
