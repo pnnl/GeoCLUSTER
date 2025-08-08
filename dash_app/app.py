@@ -1601,6 +1601,22 @@ def update_plot_title(fluid, end_use, checklist):
      Input(component_id="kwe-select", component_property="value"),
      Input(component_id="precool-select", component_property="value"),
      Input(component_id="turb-pout-select", component_property="value"),
+     
+     # SBT model parameters
+     Input(component_id='Tsurf-select', component_property='value'),
+     Input(component_id='c-select', component_property='value'),
+     Input(component_id='rho-select', component_property='value'),
+     Input(component_id='radius-vertical-select', component_property='value'),
+     Input(component_id='radius-lateral-select', component_property='value'),
+     Input(component_id='n-laterals-select', component_property='value'),
+     Input(component_id='lateral-flow-select', component_property='value'),
+     Input(component_id='lateral-multiplier-select', component_property='value'),
+     Input(component_id='mesh-select', component_property='value'),
+     Input(component_id='accuracy-select', component_property='value'),
+     Input(component_id='mass-mode-select', component_property='value'),
+     Input(component_id='temp-mode-select', component_property='value'),
+     Input(component_id='fluid-mode-select', component_property='value'),
+     
      Input(component_id='econ-memory', component_property='data'),
      Input(component_id='thermal-memory', component_property='data'),
      Input(component_id='model-select', component_property='value'),
@@ -1611,6 +1627,8 @@ def update_plot_title(fluid, end_use, checklist):
 def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Drilling_cost_per_m, Discount_rate, Lifetime, 
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
+                 Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                 mesh, accuracy, HyperParam3, HyperParam4, HyperParam5,
                  econ_dict, thermal_dict, model, tandp_data):
 
     # Add TandP data to thermal_dict for SBT models
@@ -1621,7 +1639,10 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                 mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                 Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                 interp_time, case, fluid, model,
-                thermal_dict, econ_dict
+                thermal_dict, econ_dict,
+                Tsurf=Tsurf, c_m=c_m, rho_m=rho_m, Diameter1=Diameter1, Diameter2=Diameter2, 
+                PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
+                mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5
     )
 
     return tbl, summary_dict
@@ -1795,10 +1816,6 @@ def toggle_info_modal(*args):
     from dash import ctx
     triggered_id = ctx.triggered_id if ctx.triggered_id else None
     
-    # Debug: print the triggered ID and all click values
-    print(f"Tooltip callback triggered. ID: {triggered_id}")
-    print(f"All click values: {info_clicks}")
-    
     # Check if any button was actually clicked (n_clicks > 0)
     button_clicked = False
     if triggered_id:
@@ -1834,11 +1851,8 @@ def toggle_info_modal(*args):
             # Handle case where the component might not exist (None value)
             if button_index < len(info_clicks) and info_clicks[button_index] is not None and info_clicks[button_index] > 0:
                 button_clicked = True
-                print(f"Button {triggered_id} was clicked (n_clicks: {info_clicks[button_index]})")
-            else:
-                print(f"Button {triggered_id} was not actually clicked (n_clicks: {info_clicks[button_index] if button_index < len(info_clicks) else 'N/A'})")
         except (ValueError, IndexError):
-            print(f"Button {triggered_id} not found in button list")
+            pass
     
     parameter_names = [
         "Surface Temperature (˚C)",
@@ -1899,7 +1913,6 @@ def toggle_info_modal(*args):
         param = button_to_param[triggered_id]
         info = PARAMETER_INFO.get(param, None)
         if info:
-            print(f"Found info for parameter: {param}")
             modal_content = [
                 html.H6("Definition:", className="text-primary"),
                 html.P(info["definition"], className="mb-3"),
@@ -1911,13 +1924,6 @@ def toggle_info_modal(*args):
                 html.P(info["description"], className="mb-3"),
             ]
             return True, f"Information: {param}", modal_content
-        else:
-            print(f"No info found for parameter: {param}")
-    else:
-        if triggered_id:
-            print(f"Button {triggered_id} was not actually clicked or not found in mapping")
-        else:
-            print("No button was triggered")
     
     # If no button was clicked, return current state
     return is_open, "", []

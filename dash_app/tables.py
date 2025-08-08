@@ -30,15 +30,26 @@ summary_tbl = pd.read_csv(summary_tbl_pathname)
 def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid, model,
-                             thermal_dict, econ_dict):
+                             thermal_dict, econ_dict, **kwargs):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly a plotly table. Then, returns the figure and data as a dictionary of lits for data downloading.
     # -----------------------------------------------------------------------------------------------------------------
 
+    # Create variable input values list - include SBT parameters if provided
     variable_input_values = [mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid]
+    
+    # Add SBT-specific parameters if they exist in kwargs
+    if 'Tsurf' in kwargs:
+        variable_input_values.extend([kwargs.get('Tsurf', '-'), kwargs.get('c_m', '-'), kwargs.get('rho_m', '-')])
+    if 'Diameter1' in kwargs:
+        variable_input_values.extend([kwargs.get('Diameter1', '-'), kwargs.get('Diameter2', '-'), 
+                                   kwargs.get('PipeParam3', '-'), kwargs.get('PipeParam4', '-'), kwargs.get('PipeParam5', '-')])
+    if 'mesh' in kwargs:
+        variable_input_values.extend([kwargs.get('mesh', '-'), kwargs.get('accuracy', '-'), 
+                                   kwargs.get('HyperParam3', '-'), kwargs.get('HyperParam4', '-'), kwargs.get('HyperParam5', '-')])
 
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5":
@@ -141,7 +152,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     result_names = [name.replace('X', str(Lifetime)) for name in result_names]
 
     # Create the table
-    list_of_lists = [summary_tbl.iloc[:, 0], summary_tbl.iloc[:, 1], 
+    list_of_lists = [summary_tbl.iloc[:, 0], variable_input_values, 
                      summary_tbl.iloc[:, 2], summary_tbl.iloc[:, 3], 
                      summary_tbl.iloc[:, 4], results]
 
@@ -159,7 +170,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     
     fig_table.update_layout(
         margin=dict(l=0, r=0, t=0, b=0),
-        height=400
+        height=1100
     )
 
     data_dict_of_lists = {summary_tbl.columns[0]: summary_tbl['Variable Parameter'].to_list(),
