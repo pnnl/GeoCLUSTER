@@ -41,6 +41,7 @@ from sliders import * # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from
 from dropdowns import *
 from text import *
 from tables import generate_summary_table
+from plots import generate_econ_lineplots, generate_subsurface_lineplots, generate_subsurface_contours
 from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown
 
 
@@ -934,6 +935,11 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     Output(component_id='lat-allocation-div', component_property='style'),
     # Output(component_id='lateral-flow-select-div', component_property='style'),
     Output(component_id='lat-flow-mul-div', component_property='style'),
+    # Coaxial case containers
+    Output(component_id='center-pipe-radius-container', component_property='style'),
+    Output(component_id='center-pipe-thickness-container', component_property='style'),
+    Output(component_id='insulation-thermal-k-container', component_property='style'),
+    Output(component_id='coaxial-flow-type-container', component_property='style'),
     ],
    [Input(component_id="model-select", component_property="value"),
     ],
@@ -948,13 +954,13 @@ def show_model_params(model):
     n = {'display': 'none'}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, b, b, n, n
+        return b, b, b, b, b, b, n, b, b, n, n, n, n, n, n
     
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, b
+        return b, b, b, b, b, b, n, b, b, n, b, n, n, n, n
     
 
 @app.callback(
@@ -1249,6 +1255,11 @@ def update_slider_ranges(model):
      Output(component_id='num-lat-container', component_property='children'), # PipeParam3
      Output(component_id='lat-allo-container', component_property='children'), # PipeParam4
      Output(component_id='lat-flow-container', component_property='children'), # PipeParam5
+     # Coaxial case containers
+     Output(component_id='center-pipe-radius-container', component_property='children'),
+     Output(component_id='center-pipe-thickness-container', component_property='children'),
+     Output(component_id='insulation-thermal-k-container', component_property='children'),
+     Output(component_id='coaxial-flow-type-container', component_property='children'),
    ],
    [Input(component_id="model-select", component_property="value"),
     Input(component_id="case-select", component_property="value")],
@@ -1275,7 +1286,9 @@ def update_sliders_heat_exchanger(model, case):
             lateral_multiplier = create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                     min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style, parameter_name="Lateral Flow Multiplier")
 
-            return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+            # Empty containers for coaxial case
+            empty_container = html.Div()
+            return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, empty_container, empty_container, empty_container, empty_container
         
         elif case == "coaxial":
 
@@ -1286,20 +1299,22 @@ def update_sliders_heat_exchanger(model, case):
             radius = create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius (m)", min_v=0.10795, max_v=0.22225,
                                                                 mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius"], div_style=div_block_style, parameter_name="Wellbore Radius (m)")
             
-            radiuscenterpipe = create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
+            radiuscenterpipe = create_enhanced_slider(DivID="center-pipe-radius-div", ID="center-pipe-radius-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174, #  # Center Pipe Radius (coaxial)	0.0635	0.174
                                                                 mark_dict=radius_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["radiuscenterpipe"], div_style=div_block_style, parameter_name="Center Pipe Radius (m)")
             
-            thicknesscenterpipe = create_enhanced_slider(DivID="num-lat-div", ID="n-laterals-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
+            thicknesscenterpipe = create_enhanced_slider(DivID="center-pipe-thickness-div", ID="center-pipe-thickness-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
                                                                 mark_dict=thickness_centerpipe_dict, step_i=0.001, start_v=start_vals_sbt["thicknesscenterpipe"], div_style=div_block_style, parameter_name="Center Pipe Thickness (m)")
             
-            k_center_pipe = create_enhanced_slider(DivID="lateral-flow-select-div", ID="lateral-flow-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
+            k_center_pipe = create_enhanced_slider(DivID="insulation-thermal-k-div", ID="insulation-thermal-k-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
                                                                 mark_dict=insulation_thermal_k_dict, step_i=0.001, start_v=start_vals_sbt["k_center_pipe"], div_style=div_block_style, parameter_name="Insulation Thermal Conductivity (W/m-K)")
-            coaxialflowtype = create_enhanced_dropdown(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", 
+            coaxialflowtype = create_enhanced_dropdown(DivID="coaxial-flow-type-div", ID="coaxial-flow-type-select", ptitle="Coaxial Flow Type", 
                                                                     options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_block_style, parameter_name="Coaxial Flow Type")
             # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
                                                              # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
                                                      
-            return radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype
+            # Empty containers for utube case
+            empty_container = html.Div()
+            return radius, radiuscenterpipe, thicknesscenterpipe, k_center_pipe, coaxialflowtype, empty_container, empty_container, empty_container, empty_container
 
             # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
     
@@ -1320,7 +1335,9 @@ def update_sliders_heat_exchanger(model, case):
         lateral_multiplier = create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                 min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
 
-        return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+        # Empty containers for coaxial case
+        empty_container = html.Div()
+        return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, empty_container, empty_container, empty_container, empty_container
 
     else:
         raise PreventUpdate
@@ -1489,14 +1506,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      Input(component_id="case-select", component_property="value"),
      Input(component_id="end-use-select", component_property="value"),
 
-     Input(component_id="mdot-select", component_property="value"),
-     Input(component_id="L2-select", component_property="value"),
-     Input(component_id="L1-select", component_property="value"),
-     Input(component_id="grad-select", component_property="value"),
-     Input(component_id="diameter-select", component_property="value"),
-     Input(component_id="Tinj-select", component_property="value"),
-     Input(component_id="k-select", component_property="value"),
-
+     # Economic parameters only - these should trigger economic updates
      Input(component_id="drillcost-select", component_property="value"),
      Input(component_id="discount-rate-select", component_property="value"),
      Input(component_id="lifetime-select", component_property="value"),
@@ -1508,16 +1518,23 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      Input(component_id="checklist", component_property="value"),
      Input(component_id='model-select', component_property='value'),
      
+     # Thermal parameters as State - these won't trigger the callback but are available for calculations
+     State(component_id="mdot-select", component_property="value"),
+     State(component_id="L2-select", component_property="value"),
+     State(component_id="L1-select", component_property="value"),
+     State(component_id="grad-select", component_property="value"),
+     State(component_id="diameter-select", component_property="value"),
+     State(component_id="Tinj-select", component_property="value"),
+     State(component_id="k-select", component_property="value"),
     ],
 )
 
 def update_econ_plots(TandP_dict,
                      interp_time, fluid, case, end_use,
-                      mdot, L2, L1, grad, D, Tinj, k_m,
-                      Drilling_cost_per_m, Discount_rate, Lifetime, 
-                      Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                      scale, checklist, model
-                      ):
+                     Drilling_cost_per_m, Discount_rate, Lifetime, 
+                     Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
+                     scale, checklist, model,
+                     mdot, L2, L1, grad, D, Tinj, k_m):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the economic results.
@@ -1577,9 +1594,8 @@ def update_plot_title(fluid, end_use, checklist):
         return {'display': 'block', 'marginTop':'-620px'}
 
 @app.callback(
-    # Output(component_id="table", component_property="figure"),
-     [Output(component_id="table", component_property="figure"),
-      Output(component_id='summary-memory', component_property='data')
+    [Output(component_id="table", component_property="figure"),
+     Output(component_id='summary-memory', component_property='data')
      ],
     [Input(component_id="interpolation-select", component_property="value"),
      Input(component_id="fluid-select", component_property="value"),
@@ -1633,6 +1649,8 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
 
     # Add TandP data to thermal_dict for SBT models
     if model != "HDF5" and tandp_data:
+        if 'TandP-data' not in thermal_dict:
+            thermal_dict = thermal_dict.copy()
         thermal_dict['TandP-data'] = tandp_data
 
     tbl, summary_dict = generate_summary_table(
