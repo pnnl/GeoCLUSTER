@@ -36,20 +36,13 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     # Creates Plotly a plotly table. Then, returns the figure and data as a dictionary of lits for data downloading.
     # -----------------------------------------------------------------------------------------------------------------
 
-    # Create variable input values list - include SBT parameters if provided
+    # Create variable input values list - only include the 20 parameters that match the CSV template rows
     variable_input_values = [mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid]
     
-    # Add SBT-specific parameters if they exist in kwargs
-    if 'Tsurf' in kwargs:
-        variable_input_values.extend([kwargs.get('Tsurf', '-'), kwargs.get('c_m', '-'), kwargs.get('rho_m', '-')])
-    if 'Diameter1' in kwargs:
-        variable_input_values.extend([kwargs.get('Diameter1', '-'), kwargs.get('Diameter2', '-'), 
-                                   kwargs.get('PipeParam3', '-'), kwargs.get('PipeParam4', '-'), kwargs.get('PipeParam5', '-')])
-    if 'mesh' in kwargs:
-        variable_input_values.extend([kwargs.get('mesh', '-'), kwargs.get('accuracy', '-'), 
-                                   kwargs.get('HyperParam3', '-'), kwargs.get('HyperParam4', '-'), kwargs.get('HyperParam5', '-')])
+    # Note: SBT-specific parameters are handled separately and don't get added to the main summary table
+    # to avoid creating extra rows that don't match the CSV template structure
 
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5":
