@@ -1472,16 +1472,26 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # -----------------------------------------------------------------------------
 
     # Handle missing SBT parameters gracefully
-    if not Diameter1:
-        Diameter1 = 0.10795  # Default value
-    if not Diameter2:
-        Diameter2 = 0.10795  # Default value
-    if not PipeParam3:
-        PipeParam3 = 1  # Default value
-    if not PipeParam4:
-        PipeParam4 = 0.5  # Default value
-    if not PipeParam5:
-        PipeParam5 = 0.5  # Default value
+    # Only set defaults if we're actually using SBT models
+    if model in ["SBT V1.0", "SBT V2.0"]:
+        # For SBT models, ensure we have valid parameters
+        if not Diameter1 or Diameter1 is None:
+            Diameter1 = 0.10795  # Default value
+        if not Diameter2 or Diameter2 is None:
+            Diameter2 = 0.10795  # Default value
+        if not PipeParam3 or PipeParam3 is None:
+            PipeParam3 = 1  # Default value
+        if not PipeParam4 or PipeParam4 is None:
+            PipeParam4 = 0.5  # Default value
+        if not PipeParam5 or PipeParam5 is None:
+            PipeParam5 = 0.5  # Default value
+    else:
+        # For HDF5, these parameters aren't used, so set to None
+        Diameter1 = None
+        Diameter2 = None
+        PipeParam3 = None
+        PipeParam4 = None
+        PipeParam5 = None
 
     # print('subsurface')
     # if HDF5:
