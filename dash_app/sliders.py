@@ -352,61 +352,6 @@ def slider_card():
                                                                 create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
                                                             ]),
-                                                    # Coaxial case containers
-                                                    html.Div(
-                                                            id="center-pipe-radius-container",
-                                                            children=[
-                                                                create_enhanced_slider(DivID="center-pipe-radius-div", ID="center-pipe-radius-select", ptitle="Center Pipe Radius (m)", min_v=0.0635, max_v=0.174,
-                                                                        mark_dict={0.0635: '0.0635', 0.174: '0.174'}, step_i=0.001, start_v=0.0635, div_style=div_none_style, parameter_name="Center Pipe Radius (m)")
-                                                            ]),
-                                                    html.Div(
-                                                            id="center-pipe-thickness-container",
-                                                            children=[
-                                                                create_enhanced_slider(DivID="center-pipe-thickness-div", ID="center-pipe-thickness-select", ptitle="Center Pipe Thickness (m)", min_v=0.005, max_v=0.025,
-                                                                        mark_dict={0.005: '0.005', 0.025: '0.025'}, step_i=0.001, start_v=0.0127, div_style=div_none_style, parameter_name="Center Pipe Thickness (m)")
-                                                            ]),
-                                                    html.Div(
-                                                            id="insulation-thermal-k-container",
-                                                            children=[
-                                                                create_enhanced_slider(DivID="insulation-thermal-k-div", ID="insulation-thermal-k-select", ptitle="Insulation Thermal Conductivity (W/m-K)", min_v=0.025, max_v=0.5,
-                                                                        mark_dict={0.025: '0.025', 0.50: '0.5'}, step_i=0.001, start_v=0.025, div_style=div_none_style, parameter_name="Insulation Thermal Conductivity (W/m-K)")
-                                                            ]),
-                                                    html.Div(
-                                                            id="coaxial-flow-type-container",
-                                                            children=[
-                                                                create_enhanced_dropdown(DivID="coaxial-flow-type-div", ID="coaxial-flow-type-select", ptitle="Coaxial Flow Type", 
-                                                                                        options=["Inject in Annulus", "Inject in Center Pipe"], disabled=False, div_style=div_none_style, parameter_name="Coaxial Flow Type")
-                                                            ]),
-                                                    # html.Div(
-                                                    #     id="num-lat-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Number of Laterals", className="input-title"),
-                                                    #         dcc.Input(id="n-laterals-select", 
-                                                    #                     disabled=True,
-                                                    #                     value=start_vals_hdf5["n-laterals"], type='number', min=0, max=20, step=1, className="input-box"),
-                                                    # ]),
-                                                    # html.Div(
-                                                    #     id="lat-allocation-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Lateral Flow Allocation", className="input-title"),
-                                                    #         dcc.Input(id="lateral-flow-select", 
-                                                    #                     disabled=True,
-                                                    #                     value=start_vals_hdf5["lateral-flow"], type='number', min=0, max=1, step=0.01, className="input-box"),
-                                                    # ]),
-                                                    # html.Div(
-                                                    #     id="lat-flow-mul-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Lateral Flow Multiplier", className="input-title"),
-                                                    #         dcc.Input(id="lateral-multiplier-select", 
-                                                    #                     disabled=True, 
-                                                    #                     value=start_vals_hdf5["lateral-multiplier"], type='number', min=0, max=1, step=0.05, className="input-box"),
-                                                    # ]),
 
                                                 ]
                                             ),
