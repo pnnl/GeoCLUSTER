@@ -293,7 +293,6 @@ class data:
                 )
                 
             except Exception as e:
-                print(f"DEBUG SBT: Error in run_sbt_final: {e}")
                 times, Tout, Pout = None, None, None
                 
             if Pout is None:
@@ -308,7 +307,8 @@ class data:
                 Tout = Tout[14:]
                 Pout = Pout[14:]
             else:
-                print(f"DEBUG SBT: One or more outputs are None, cannot trim")
+                # Handle case where outputs are None
+                pass
 
         return Tout, Pout, times
 
