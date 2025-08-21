@@ -43,6 +43,8 @@ from text import *
 from tables import generate_summary_table
 from plots import generate_econ_lineplots, generate_subsurface_lineplots, generate_subsurface_contours
 from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown
+from unit_conversions import unit_converter, convert_value, get_unit_symbol
+from unit_preferences import create_unit_preferences_card, create_quick_unit_selector, get_unit_preferences_from_inputs, apply_metric_units, apply_imperial_units
 
 
 # -----------------------------------------------------------------------------
@@ -77,6 +79,7 @@ app = dash.Dash(__name__, assets_folder='assets',
                 external_stylesheets=[BOOTSTRAP_CSS],          # ← use the dict, not dbc.themes.BOOTSTRAP
                 # url_base_pathname=url_base_pathname, # not needed
                 requests_pathname_prefix=requests_pathname_prefix,
+                suppress_callback_exceptions=True,
                 meta_tags=[{'name': 'viewport', 'content': 'width=device-width'},
                            {'name': 'description', 
                             'content': """Welcome to the Geothermal Closed-Loop User Tool in Energy Research (GeoCLUSTER). 
@@ -190,7 +193,9 @@ def generate_control_card():
             dropdown_card(),
             html.Br(),
             html.Br(),
-            slider_card(),
+            create_quick_unit_selector(),
+            html.Br(),
+            html.Div(id="slider-card", children=slider_card()),
             # disclaimer
             html.P(disclaimer_text, id='disclaimer-text'),
         ], 
@@ -2113,6 +2118,50 @@ def close_modal(n_clicks):
     if n_clicks and n_clicks > 0:
         return False
     raise PreventUpdate
+
+# -----------------------------------------------------------------------------
+# Unit Conversion Callbacks
+# -----------------------------------------------------------------------------
+
+@app.callback(
+    Output("quick-temp-selector", "value"),
+    Output("quick-unit-selector", "value"),
+    Input("quick-temp-selector", "value"),
+    Input("quick-unit-selector", "value"),
+    prevent_initial_call=True
+)
+def handle_quick_unit_changes(temp_unit, unit_system):
+    """Handle quick unit system changes"""
+    
+    if unit_system == "metric":
+        # Apply metric units
+        preferences = apply_metric_units()
+        unit_converter.update_preferences(preferences)
+        print(f"Applied metric units: {preferences}")
+        return "C", "metric"
+    
+    elif unit_system == "imperial":
+        # Apply imperial units
+        preferences = apply_imperial_units()
+        unit_converter.update_preferences(preferences)
+        print(f"Applied imperial units: {preferences}")
+        return "F", "imperial"
+    
+    return temp_unit, unit_system
+
+@app.callback(
+    Output("slider-card", "children", allow_duplicate=True),
+    Input("quick-unit-selector", "value"),
+    prevent_initial_call=True
+)
+def refresh_sliders_for_unit_change(unit_system):
+    """Refresh sliders when units change to show new labels"""
+    
+    # Force a refresh of the slider card to show updated unit labels
+    from sliders import slider_card
+    return slider_card()
+
+
 
 
 

@@ -351,6 +351,19 @@ hr {
     width: 20%;
 }
 
+/* Unit selector styling to match other dropdowns */
+#unit-selector-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+#unit-selector-card0, #unit-selector-card1 {
+    width: 20%;
+    min-width: 150px;
+}
+
 #param-select {
     width: 35%;
 }
