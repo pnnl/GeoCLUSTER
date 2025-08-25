@@ -37,6 +37,7 @@
 @font-face {
     font-family: var(--main-fontfamily);
     font-weight: bold;
+    src: local("Acumin Pro Bold"), local("Acumin-Bold");
 }
 
 #app-container {
@@ -269,9 +270,18 @@ hr {
 
 }
 
+#summary-tab {
+  flex: 1 !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+#about-tab, #summary-tab {
+  flex: 1.1 !important;
+}
+
 #contour-tab, #econ-tab, #subsurface-tab {
     background-color: var(--blue);
-    width: 30%;
     font-size: var(--sub-fontsize);
     color: var(--lightblue2);
     border: var(--blue);
@@ -281,7 +291,7 @@ hr {
     padding: 7px 0px 7px 0px;
     border-style: solid;
     border-color: var(--blue);
-
+    flex: 0.8 !important;
 }
 
 #econ-tab:hover, #summary-tab:hover, #contour-tab:hover, #subsurface-tab:hover, #about-tab:hover{
@@ -293,9 +303,7 @@ hr {
   color: white !important;
   border-bottom: 5px solid var(--orange) !important;
   background-color: var(--selectedblue) !important;
-/*  border-top: 1px solid var(--selectedblue) !important;*/
-/*  border-left: 1px solid var(--selectedblue) !important;*/
-/*  border-right: 1px solid var(--selectedblue) !important;*/
+  box-sizing: border-box !important;
 }
 
 /* Input Boxes
@@ -394,10 +402,7 @@ hr {
     padding-bottom: 5px;
 }
 
-#economics-params-div {
-    /* border-radius: 10px 10px 0px 0px;
-    border-bottom: none; */
-}
+
 
 .loader-wrapper > div {
     visibility: visible !important;
@@ -834,6 +839,7 @@ button:hover{
     #about-tab, #summary-tab, #contour-tab, #econ-tab, #subsurface-tab {
         width: 100%;
         z-index: 1;
+        box-sizing: border-box !important;
     }
 
     #btn_xlsx {

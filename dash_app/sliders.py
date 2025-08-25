@@ -352,36 +352,6 @@ def slider_card():
                                                                 create_enhanced_input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier")
                                                             ]),
-                                                    # html.Div(
-                                                    #     id="num-lat-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Number of Laterals", className="input-title"),
-                                                    #         dcc.Input(id="n-laterals-select", 
-                                                    #                     disabled=True,
-                                                    #                     value=start_vals_hdf5["n-laterals"], type='number', min=0, max=20, step=1, className="input-box"),
-                                                    # ]),
-                                                    # html.Div(
-                                                    #     id="lat-allocation-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Lateral Flow Allocation", className="input-title"),
-                                                    #         dcc.Input(id="lateral-flow-select", 
-                                                    #                     disabled=True,
-                                                    #                     value=start_vals_hdf5["lateral-flow"], type='number', min=0, max=1, step=0.01, className="input-box"),
-                                                    # ]),
-                                                    # html.Div(
-                                                    #     id="lat-flow-mul-div",
-                                                    #     style=div_none_style,
-                                                    #     className="name-input-container",
-                                                    #     children=[
-                                                    #         html.P("Lateral Flow Multiplier", className="input-title"),
-                                                    #         dcc.Input(id="lateral-multiplier-select", 
-                                                    #                     disabled=True, 
-                                                    #                     value=start_vals_hdf5["lateral-multiplier"], type='number', min=0, max=1, step=0.05, className="input-box"),
-                                                    # ]),
 
                                                 ]
                                             ),
