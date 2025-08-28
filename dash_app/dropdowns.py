@@ -96,6 +96,22 @@ def dropdown_card():
                                 ),
                             ]
                         ),
+                        html.Div(id="dropdown-card5",
+                            children=[
+                                html.P("Units", className="dropdown-text"),
+                                dcc.Dropdown(
+                                    id="quick-unit-selector",
+                                    options=[
+                                        {"label": "Metric (SI)", "value": "metric"},
+                                        {"label": "Imperial (US)", "value": "imperial"}
+                                    ],
+                                    value="metric",
+                                    clearable=False,
+                                    searchable=False,
+                                    style={"width": "140px"}  # Make it a bit wider
+                                ),
+                            ]
+                        ),
                 ]
             )
 

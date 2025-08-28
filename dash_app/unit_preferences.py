@@ -196,21 +196,7 @@ def create_quick_unit_selector():
                                 ),
                             ]
                         ),
-                        html.Div(id="unit-selector-card1",
-                            children=[
-                                html.P("Temperature", className="dropdown-text"),
-                                dcc.Dropdown(
-                                    id="quick-temp-selector",
-                                    options=[
-                                        {"label": "°C", "value": "C"},
-                                        {"label": "°F", "value": "F"}
-                                    ],
-                                    value="C",
-                                    clearable=False,
-                                    searchable=False
-                                ),
-                            ]
-                        ),
+
                     ])
 
 def get_unit_preferences_from_inputs(temperature_unit, length_unit, mass_flow_unit, 

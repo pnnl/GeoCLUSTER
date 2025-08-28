@@ -44,7 +44,7 @@ from tables import generate_summary_table
 from plots import generate_econ_lineplots, generate_subsurface_lineplots, generate_subsurface_contours
 from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown
 from unit_conversions import unit_converter, convert_value, get_unit_symbol
-from unit_preferences import create_unit_preferences_card, create_quick_unit_selector, get_unit_preferences_from_inputs, apply_metric_units, apply_imperial_units
+from unit_preferences import create_unit_preferences_card, get_unit_preferences_from_inputs, apply_metric_units, apply_imperial_units
 
 
 # -----------------------------------------------------------------------------
@@ -192,8 +192,6 @@ def generate_control_card():
             html.Hr(id="hr-break2"), 
             dropdown_card(),
             html.Br(),
-            html.Br(),
-            create_quick_unit_selector(),
             html.Br(),
             html.Div(id="slider-card", children=slider_card()),
             # disclaimer
@@ -2267,13 +2265,11 @@ def close_modal(n_clicks):
 # -----------------------------------------------------------------------------
 
 @app.callback(
-    Output("quick-temp-selector", "value"),
     Output("quick-unit-selector", "value"),
-    Input("quick-temp-selector", "value"),
     Input("quick-unit-selector", "value"),
     prevent_initial_call=True
 )
-def handle_quick_unit_changes(temp_unit, unit_system):
+def handle_quick_unit_changes(unit_system):
     """Handle quick unit system changes"""
     
     if unit_system == "metric":
@@ -2281,16 +2277,16 @@ def handle_quick_unit_changes(temp_unit, unit_system):
         preferences = apply_metric_units()
         unit_converter.update_preferences(preferences)
         print(f"Applied metric units: {preferences}")
-        return "C", "metric"
+        return "metric"
     
     elif unit_system == "imperial":
         # Apply imperial units
         preferences = apply_imperial_units()
         unit_converter.update_preferences(preferences)
         print(f"Applied imperial units: {preferences}")
-        return "F", "imperial"
+        return "imperial"
     
-    return temp_unit, unit_system
+    return unit_system
 
 @app.callback(
     Output("slider-card", "children", allow_duplicate=True),
