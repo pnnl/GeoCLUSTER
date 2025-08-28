@@ -61,6 +61,7 @@ THERMAL_CONDUCTIVITY_CONVERSIONS = {
     'W/m-K': 1.0,       # W/m-K (base unit)
     'W/m-C': 1.0,       # W/m-C (same as W/m-K)
     'Btu/ft-h-F': 0.577789,  # BTU per foot-hour-Fahrenheit
+    'Btu/yd-h-F': 1.733367,  # BTU per yard-hour-Fahrenheit
     'cal/cm-s-C': 0.002388,  # Calories per cm-second-Celsius
     'kcal/m-h-C': 0.859845   # Kilocalories per meter-hour-Celsius
 }
@@ -69,6 +70,7 @@ THERMAL_CONDUCTIVITY_CONVERSIONS_INVERSE = {
     'W/m-K': 1.0,       # W/m-K (base unit)
     'W/m-C': 1.0,       # W/m-C (same as W/m-K)
     'Btu/ft-h-F': 1.730735,  # BTU per foot-hour-Fahrenheit to W/m-K
+    'Btu/yd-h-F': 0.576912,  # BTU per yard-hour-Fahrenheit to W/m-K
     'cal/cm-s-C': 418.68,    # Calories per cm-second-Celsius to W/m-K
     'kcal/m-h-C': 1.163      # Kilocalories per meter-hour-Celsius to W/m-K
 }
@@ -95,6 +97,7 @@ DENSITY_CONVERSIONS = {
     'kg/m3': 1.0,       # kg/m³ (base unit)
     'g/cm3': 0.001,     # g/cm³
     'lb/ft3': 0.062428, # lb/ft³
+    'lb/yd3': 0.002309, # lb/yd³
     'lb/gal': 0.008345, # lb/gal (US)
     'g/L': 0.001,       # g/L
     't/m3': 0.001       # metric tons/m³
@@ -104,6 +107,7 @@ DENSITY_CONVERSIONS_INVERSE = {
     'kg/m3': 1.0,       # kg/m³ (base unit)
     'g/cm3': 1000,      # g/cm³ to kg/m³
     'lb/ft3': 16.0185,  # lb/ft³ to kg/m³
+    'lb/yd3': 433.0,    # lb/yd³ to kg/m³
     'lb/gal': 119.826,  # lb/gal (US) to kg/m³
     'g/L': 1000,        # g/L to kg/m³
     't/m3': 1000        # metric tons/m³ to kg/m³
@@ -134,6 +138,7 @@ GEOTHERMAL_GRADIENT_CONVERSIONS = {
     'C/m': 1.0,         # C/m (same as K/m)
     'C/km': 1000,       # C/km
     'F/ft': 0.54864,    # F/ft
+    'F/yd': 1.64592,    # F/yd
     'F/100ft': 54.864,  # F/100ft
     'K/km': 1000        # K/km
 }
@@ -143,6 +148,7 @@ GEOTHERMAL_GRADIENT_CONVERSIONS_INVERSE = {
     'C/m': 1.0,         # C/m (same as K/m)
     'C/km': 0.001,      # C/km to K/m
     'F/ft': 1.82269,    # F/ft to K/m
+    'F/yd': 0.60756,    # F/yd to K/m
     'F/100ft': 0.018227, # F/100ft to K/m
     'K/km': 0.001       # K/km to K/m
 }
@@ -374,6 +380,7 @@ class UnitConverter:
             'W/m-K': 'W/m·K',
             'W/m-C': 'W/m·°C',
             'Btu/ft-h-F': 'Btu/ft·h·°F',
+            'Btu/yd-h-F': 'Btu/yd·h·°F',
             'cal/cm-s-C': 'cal/cm·s·°C',
             'kcal/m-h-C': 'kcal/m·h·°C',
             'J/kg-K': 'J/kg·K',
@@ -385,6 +392,7 @@ class UnitConverter:
             'kg/m3': 'kg/m³',
             'g/cm3': 'g/cm³',
             'lb/ft3': 'lb/ft³',
+            'lb/yd3': 'lb/yd³',
             'lb/gal': 'lb/gal',
             'g/L': 'g/L',
             't/m3': 't/m³',
@@ -399,6 +407,7 @@ class UnitConverter:
             'C/m': '°C/m',
             'C/km': '°C/km',
             'F/ft': '°F/ft',
+            'F/yd': '°F/yd',
             'F/100ft': '°F/100ft',
             'K/km': 'K/km'
         }

@@ -231,13 +231,13 @@ def apply_imperial_units():
     """Apply imperial (US) units"""
     return {
         'temperature': 'F',
-        'length': 'ft',
+        'length': 'yd',
         'mass_flow': 'lb/s',
-        'thermal_conductivity': 'Btu/ft-h-F',
+        'thermal_conductivity': 'Btu/yd-h-F',
         'heat_capacity': 'Btu/lb-F',
-        'density': 'lb/ft3',
+        'density': 'lb/yd3',
         'pressure': 'psi',
-        'geothermal_gradient': 'F/ft'
+        'geothermal_gradient': 'F/yd'
     }
 
 def update_unit_converter_preferences(preferences):

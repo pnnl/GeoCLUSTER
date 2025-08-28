@@ -30,6 +30,10 @@ def get_length_converted_values(base_value_meters, target_unit):
         converted = unit_converter.convert_length(base_value_meters, 'm', 'ft')
         print(f"DEBUG: Converting {base_value_meters}m to {converted}ft")
         return converted
+    elif target_unit == 'yd':
+        converted = unit_converter.convert_length(base_value_meters, 'm', 'yd')
+        print(f"DEBUG: Converting {base_value_meters}m to {converted}yd")
+        return converted
     else:
         return base_value_meters
 
@@ -51,6 +55,10 @@ def get_thermal_conductivity_converted_values(base_value_w_m_k, target_unit):
     elif target_unit == 'Btu/ft-h-F':
         converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/ft-h-F')
         print(f"DEBUG: Converting {base_value_w_m_k} W/m-K to {converted} Btu/ft-h-F")
+        return converted
+    elif target_unit == 'Btu/yd-h-F':
+        converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/yd-h-F')
+        print(f"DEBUG: Converting {base_value_w_m_k} W/m-K to {converted} Btu/yd-h-F")
         return converted
     else:
         return base_value_w_m_k
@@ -74,6 +82,10 @@ def get_density_converted_values(base_value_kg_m3, target_unit):
         converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/ft3')
         print(f"DEBUG: Converting {base_value_kg_m3} kg/m³ to {converted} lb/ft³")
         return converted
+    elif target_unit == 'lb/yd3':
+        converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/yd3')
+        print(f"DEBUG: Converting {base_value_kg_m3} kg/m³ to {converted} lb/yd³")
+        return converted
     else:
         return base_value_kg_m3
 
@@ -96,16 +108,22 @@ def get_geothermal_gradient_converted_values(base_value_k_m, target_unit):
         converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/ft')
         print(f"DEBUG: Converting {base_value_k_m} K/m to {converted} F/ft")
         return converted
+    elif target_unit == 'F/yd':
+        converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/yd')
+        print(f"DEBUG: Converting {base_value_k_m} K/m to {converted} F/yd")
+        return converted
     else:
         return base_value_k_m
 
 def get_drilling_cost_converted_values(base_value_per_meter, target_unit):
-    """Convert drilling cost from $/m to $/ft"""
+    """Convert drilling cost from $/m to $/ft or $/yd"""
     if target_unit == 'm':
         return base_value_per_meter
     elif target_unit == 'ft':
-        # Convert from $/m to $/ft (divide by 3.28084)
         converted = base_value_per_meter / 3.28084
+        return converted
+    elif target_unit == 'yd':
+        converted = base_value_per_meter / 1.09361
         return converted
     else:
         return base_value_per_meter
@@ -120,6 +138,11 @@ def create_imperial_marks(min_val, max_val, unit):
         max_rounded = round(max_val, 2)
         result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
         return result
+    elif unit == 'yd':
+        min_rounded = round(min_val, 2)
+        max_rounded = round(max_val, 2)
+        result = {min_rounded: f'{min_rounded:.2f} yd', max_rounded: f'{max_rounded:.2f} yd'}
+        return result
     elif unit == 'F':
         # For Fahrenheit, show min and max with °F suffix
         return {min_val: f'{min_val:.0f}°F', max_val: f'{max_val:.0f}°F'}
@@ -132,20 +155,30 @@ def create_imperial_marks(min_val, max_val, unit):
     elif unit == 'Btu/ft-h-F':
         # For thermal conductivity, show min and max
         return {min_val: f'{min_val:.1f}', max_val: f'{max_val:.1f}'}
+    elif unit == 'Btu/yd-h-F':
+        return {min_val: f'{min_val:.1f}', max_val: f'{max_val:.1f}'}
     elif unit == 'Btu/lb-F':
         # For heat capacity, show min and max
         return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
     elif unit == 'lb/ft3':
         # For density, show min and max
         return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
+    elif unit == 'lb/yd3':
+        return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
     elif unit == 'F/ft':
         # For geothermal gradient, show min and max
+        return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
+    elif unit == 'F/yd':
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
     elif unit == 'ft' and min_val < 1000:  # Special case for drilling cost in $/ft
         # For drilling cost in $/ft, show min and max with $/ft suffix
         min_rounded = round(min_val, 0)
         max_rounded = round(max_val, 0)
         return {min_rounded: f'${min_rounded:.0f}/ft', max_rounded: f'${max_rounded:.0f}/ft'}
+    elif unit == 'yd' and min_val < 1000:  # Special case for drilling cost in $/yd
+        min_rounded = round(min_val, 0)
+        max_rounded = round(max_val, 0)
+        return {min_rounded: f'${min_rounded:.0f}/yd', max_rounded: f'${max_rounded:.0f}/yd'}
     else:
         # Default case - just show min and max
         return {min_val: str(min_val), max_val: str(max_val)}
@@ -458,7 +491,7 @@ def slider_card():
                                                                                 get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
                                                                                 get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
                                                                                 unit_converter.user_preferences.get('geothermal_gradient', 'K/m')
-                                                                            ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') == 'F/ft' else grad_dict, 
+                                                                            ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') in ['F/ft', 'F/yd'] else grad_dict, 
                                                                             start_v=get_geothermal_gradient_converted_values(start_vals_d["grad"], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
                                                                             div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
                                                             ]),
@@ -473,7 +506,7 @@ def slider_card():
                                                                                 get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
                                                                                 get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
                                                                                 unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')
-                                                                            ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') == 'Btu/ft-h-F' else k_dict, 
+                                                                            ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') in ['Btu/ft-h-F', 'Btu/yd-h-F'] else k_dict, 
                                                                             start_v=get_thermal_conductivity_converted_values(start_vals_d["k"], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
                                                                             div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
                                                                     
@@ -546,7 +579,7 @@ def slider_card():
                                                                             get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') == 'ft' else D_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else D_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["D"], unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_block_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
@@ -572,7 +605,7 @@ def slider_card():
                                                                             get_length_converted_values(u_sCO2.L2[0], unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(u_sCO2.L2[-1], unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') == 'ft' else L2_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else L2_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["L2"], unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_block_style, parameter_name="Horizontal Extent (m)")
                                                             ]),
@@ -586,7 +619,7 @@ def slider_card():
                                                                             get_length_converted_values(u_sCO2.L1[0], unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(u_sCO2.L1[-1], unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') == 'ft' else L1_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else L1_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["L1"], unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_block_style, parameter_name="Drilling Depth (m)")
                                                             ]),
@@ -629,7 +662,7 @@ def slider_card():
                                                                      get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')),
                                                                      get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')),
                                                                      unit_converter.user_preferences.get('length', 'm')
-                                                                 ) if unit_converter.user_preferences.get('length', 'm') == 'ft' else drillcost_dict, 
+                                                                 ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else drillcost_dict, 
                                                                  start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm')), 
                                                                  div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
                                                         create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
