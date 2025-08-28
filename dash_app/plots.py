@@ -108,6 +108,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             # mass_mode, temp_mode
             HyperParam3, HyperParam4, HyperParam5
             ):
+    
+    # Debug output
+    print(f"DEBUG: generate_subsurface_lineplots called with:")
+    print(f"  - interp_time: {interp_time}")
+    print(f"  - fluid: {fluid}")
+    print(f"  - case: {case}")
+    print(f"  - model: {model}")
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -182,6 +189,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             if fluid == "sCO2" or fluid == "All":
                 sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
                 sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+
+
 
     if interp_time == "True":
 
@@ -304,24 +313,27 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                       legendgroup=labels_cat[1], name=labels[1], showlegend=False),
                       row=1, col=2)
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw), # #379dbf
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=True),
-                      row=2, col=1)
-        # temperature
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
-                      line = dict(color='royalblue', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=2)
-        # pressure
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
-                      line = dict(color='#16b8a2', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=3)
+        # kWe vs. time - only plot if data exists
+        if sCO2_kWe is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw), # #379dbf
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=True),
+                          row=2, col=1)
+        # temperature - only plot if data exists
+        if sCO2_Tout is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
+                          line = dict(color='royalblue', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=2)
+        # pressure - only plot if data exists
+        if sCO2_Pout is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
+                          line = dict(color='#16b8a2', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=3)
 
         if is_blank_data:
             blank_canvas(fig=fig, row_n=2, col_n=1)
@@ -339,7 +351,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         mass_flow_rates_dict["sCO2 40-Year Average of Exergy (kWe)"] = sCO2_kWe_avg
         mass_flow_rates_dict["sCO2 40-Year Average of Available Thermal Output (kWt)"] = sCO2_kWt_avg
 
-        time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
+        if sCO2_kWe is not None:
+            time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
         time_dict["sCO2 Outlet Temperature (˚C)"] = sCO2_Tout - to_kelvin_factor # to celsius
         time_dict["sCO2 Outlet Pressure (MPa)"] = sCO2_Pout / 1000000
 
@@ -359,12 +372,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                       legendgroup=labels_cat[0], name=labels[0], showlegend=False),
                       row=1, col=2)
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw, dash='dash'), # #379dbf
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=True),
-                      row=2, col=1)
+        # kWe vs. time - only plot if data exists
+        if H2O_kWe is not None:
+            fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw, dash='dash'), # #379dbf
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=True),
+                          row=2, col=1)
         # temperature
         fig.add_trace(go.Scatter(x=time, y=H2O_Tout - to_kelvin_factor, # to celsius
                       hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
@@ -394,7 +408,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         mass_flow_rates_dict["H2O 40-Year Average of Exergy (kWe)"] = H2O_kWe_avg
         mass_flow_rates_dict["H2O 40-Year Average of Available Thermal Output (kWt)"] = H2O_kWt_avg
 
-        time_dict["H2O Exergy (kWe)"] = H2O_kWe
+        if H2O_kWe is not None:
+            time_dict["H2O Exergy (kWe)"] = H2O_kWe
         time_dict["H2O Outlet Temperature (˚C)"] = H2O_Tout - to_kelvin_factor # to celsius
         time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
 
@@ -418,6 +433,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             "mdot": m_dot,
                             }
 
+    
+    # Debug output to see what's being returned
+    print(f"DEBUG: generate_subsurface_lineplots returning:")
+    print(f"  - fig type: {type(fig)}")
+    print(f"  - forty_yr_means_dict keys: {list(forty_yr_means_dict.keys()) if forty_yr_means_dict else None}")
+    print(f"  - mass_flow_rates_dict keys: {list(mass_flow_rates_dict.keys()) if mass_flow_rates_dict else None}")
+    print(f"  - time_dict keys: {list(time_dict.keys()) if time_dict else None}")
+    print(f"  - TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else None}")
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
 

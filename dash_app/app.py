@@ -1582,6 +1582,30 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
+    print(f"DEBUG: Callback called with parameters:")
+    print(f"  model: {model}")
+    print(f"  fluid: {fluid}")
+    print(f"  case: {case}")
+    print(f"  mdot: {mdot}")
+    print(f"  L2: {L2}")
+    print(f"  L1: {L1}")
+    print(f"  grad: {grad}")
+    print(f"  D: {D}")
+    print(f"  Tinj: {Tinj}")
+    print(f"  k_m: {k_m}")
+    print(f"  scale: {scale}")
+    print(f"  Tsurf: {Tsurf}")
+    print(f"  c_m: {c_m}")
+    print(f"  rho_m: {rho_m}")
+    print(f"  Diameter1: {Diameter1}")
+    print(f"  Diameter2: {Diameter2}")
+    print(f"  PipeParam3: {PipeParam3}")
+    print(f"  PipeParam4: {PipeParam4}")
+    print(f"  PipeParam5: {PipeParam5}")
+    print(f"  mesh: {mesh}")
+    print(f"  accuracy: {accuracy}")
+
+
     # Handle missing SBT parameters gracefully
     # Only set defaults if we're actually using SBT models
     if model in ["SBT V1.0", "SBT V2.0"]:
@@ -1604,20 +1628,64 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         PipeParam4 = None
         PipeParam5 = None
 
-    # print('subsurface')
-    # if HDF5:
-    # start = time.time()
-    subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
-        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
-        Tsurf, c_m, rho_m, 
-        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
-    )
-    # if SBT:
-    # end = time.time()
-    # print("run generate_subsurface_lineplots:", end - start)
+    print(f"DEBUG: After defaults - Diameter1: {Diameter1}, Diameter2: {Diameter2}, PipeParam3: {PipeParam3}, PipeParam4: {PipeParam4}, PipeParam5: {PipeParam5}")
 
+    # Convert imperial values back to metric for backend calculations
+    # Simple conversion function to convert imperial values back to metric
+    def convert_to_metric(value, from_unit, to_unit, converter_func):
+        """Convert a value from imperial to metric units"""
+        if from_unit != to_unit:
+            return converter_func(value, from_unit, to_unit)
+        return value
+    
+    # Get current unit preferences
+    from unit_conversions import unit_converter
+    
+    # Convert all values back to metric for backend calculations
+    L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    D_m = convert_to_metric(D, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    mdot_kg_s = convert_to_metric(mdot, unit_converter.user_preferences.get('mass_flow', 'kg/s'), 'kg/s', unit_converter.convert_mass_flow)
+    Tinj_c = convert_to_metric(Tinj, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    grad_k_m = convert_to_metric(grad, unit_converter.user_preferences.get('geothermal_gradient', 'K/m'), 'K/m', unit_converter.convert_geothermal_gradient)
+    k_w_m_k = convert_to_metric(k_m, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'), 'W/m-K', unit_converter.convert_thermal_conductivity)
+    c_j_kg_k = convert_to_metric(c_m, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'), 'J/kg-K', unit_converter.convert_heat_capacity)
+    rho_kg_m3 = convert_to_metric(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3', unit_converter.convert_density)
+    Tsurf_c = convert_to_metric(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    
+    print(f"DEBUG: Converted to metric: L2={L2_m}m, L1={L1_m}m, D={D_m}m, mdot={mdot_kg_s}kg/s, Tinj={Tinj_c}°C")
+
+    try:
+        print("DEBUG: About to call generate_subsurface_lineplots...")
+        # print('subsurface')
+        # if HDF5:
+        # start = time.time()
+        subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
+            interp_time, fluid, case, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, scale, model,
+            Tsurf_c, c_j_kg_k, rho_kg_m3, 
+            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+        )
+        # if SBT:
+        # end = time.time()
+        # print("run generate_subsurface_lineplots:", end - start)
+        print("DEBUG: generate_subsurface_lineplots completed successfully")
+        print(f"DEBUG: Return values - subplots: {type(subplots)}, forty_yr_TPmeans_dict: {type(forty_yr_TPmeans_dict)}, df_mass_flow_rate: {type(df_mass_flow_rate)}")
+    except Exception as e:
+        print(f"DEBUG: Error in generate_subsurface_lineplots: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return empty/default values on error
+        from plotly.subplots import make_subplots
+        subplots = make_subplots(rows=2, cols=3)
+        forty_yr_TPmeans_dict = {}
+        df_mass_flow_rate = {}
+        df_time = {}
+        err_subres_dict = {'Error': str(e)}
+        TandP_dict = {}
+
+    print("DEBUG: About to return from update_subsurface_results_plots")
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict
 
 
@@ -1810,21 +1878,67 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  mesh, accuracy, HyperParam3, HyperParam4, HyperParam5,
                  econ_dict, thermal_dict, model, tandp_data):
 
+    # Simple conversion function to convert imperial values back to metric
+    def convert_to_metric(value, from_unit, to_unit, converter_func):
+        """Convert a value from imperial to metric units"""
+        if from_unit != to_unit:
+            return converter_func(value, from_unit, to_unit)
+        return value
+    
+    # Get current unit preferences
+    from unit_conversions import unit_converter
+    
+    # Convert all values back to metric for backend calculations
+    L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    D_m = convert_to_metric(D, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    mdot_kg_s = convert_to_metric(mdot, unit_converter.user_preferences.get('mass_flow', 'kg/s'), 'kg/s', unit_converter.convert_mass_flow)
+    Tinj_c = convert_to_metric(Tinj, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    grad_k_m = convert_to_metric(grad, unit_converter.user_preferences.get('geothermal_gradient', 'K/m'), 'K/m', unit_converter.convert_geothermal_gradient)
+    k_w_m_k = convert_to_metric(k, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'), 'W/m-K', unit_converter.convert_thermal_conductivity)
+    c_j_kg_k = convert_to_metric(c_m, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'), 'J/kg-K', unit_converter.convert_heat_capacity)
+    rho_kg_m3 = convert_to_metric(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3', unit_converter.convert_density)
+    Tsurf_c = convert_to_metric(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    
+    print(f"DEBUG: update_table - Converted to metric: L2={L2_m}m, L1={L1_m}m, D={D_m}m, mdot={mdot_kg_s}kg/s, Tinj={Tinj_c}°C")
+
     # Add TandP data to thermal_dict for SBT models
     if model != "HDF5" and tandp_data:
         if 'TandP-data' not in thermal_dict:
             thermal_dict = thermal_dict.copy()
         thermal_dict['TandP-data'] = tandp_data
 
-    tbl, summary_dict = generate_summary_table(
-                mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
-                Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
-                interp_time, case, fluid, model,
-                thermal_dict, econ_dict,
-                Tsurf=Tsurf, c_m=c_m, rho_m=rho_m, Diameter1=Diameter1, Diameter2=Diameter2, 
-                PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
-                mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5
-    )
+    print(f"DEBUG: update_table - About to call generate_summary_table with:")
+    print(f"  thermal_dict keys: {list(thermal_dict.keys()) if thermal_dict else 'None'}")
+    print(f"  econ_dict keys: {list(econ_dict.keys()) if econ_dict else 'None'}")
+    
+    # Check if we have the required data before proceeding
+    if not thermal_dict or not econ_dict:
+        print("DEBUG: update_table - Missing required data, returning empty table")
+        from plotly.graph_objects import Table
+        tbl = Table()
+        summary_dict = {}
+        return tbl, summary_dict
+    
+    try:
+        tbl, summary_dict = generate_summary_table(
+                    mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, Drilling_cost_per_m, Discount_rate, Lifetime, 
+                    Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
+                    interp_time, case, fluid, model,
+                    thermal_dict, econ_dict,
+                    Tsurf=Tsurf_c, c_m=c_j_kg_k, rho_m=rho_kg_m3, Diameter1=Diameter1, Diameter2=Diameter2, 
+                    PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
+                    mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5
+        )
+        print("DEBUG: update_table - generate_summary_table completed successfully")
+    except Exception as e:
+        print(f"DEBUG: Error in generate_summary_table: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return empty/default values on error
+        from plotly.graph_objects import Table
+        tbl = Table()
+        summary_dict = {}
 
     return tbl, summary_dict
 
@@ -1842,72 +1956,91 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
 
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
 
-    err_div1 = html.Div(#id="error_block_div1",
-                        style={'display': 'none'})
+    print(f"DEBUG: update_error_divs called with:")
+    print(f"  err_sub_dict: {err_sub_dict}")
+    print(f"  err_contour_dict: {err_contour_dict}")
+    print(f"  err_econ_dict: {err_econ_dict}")
 
-    err_div2 = html.Div(#id="error_block_div2",
-                        style={'display': 'none'})
-
-    err_div3 = html.Div(#id="error_block_div3",
-                        style={'display': 'none'})
-
-    error_style = {'display': 'block',
-                    'width': '100%',
-                    "paddingTop": "8px",
-                    "paddingLeft": "20px",
-                    "paddingRight": "20px",
-                    "paddingBottom": "5px",
-                    'backgroundColor': lightbrown,
-                    'color': darkergrey,
-                    }
-    if err_sub_dict != {}:
-
-
-        error_message = next(iter(err_sub_dict.values()))
-
-        if "No outputs" in error_message:
-            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
-
+    try:
         err_div1 = html.Div(#id="error_block_div1",
-                            style=error_style,
-                            children=[
-                                html.Img(id="error-img1", src=app.get_asset_url('error.png')), 
-                                dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                html.P(error_message),
-                                ]
-                        )
-
-
-    if err_contour_dict != {}:
-
-        error_message = next(iter(err_contour_dict.values()))
+                            style={'display': 'none'})
 
         err_div2 = html.Div(#id="error_block_div2",
-                            style=error_style,
-                            children=[
-                                html.Img(id="error-img2", src=app.get_asset_url('error.png')), 
-                                dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                html.P(error_message),
-                                ]
-                        )
-
-    if err_econ_dict != {}:
-
-        error_message = next(iter(err_econ_dict.values()))
-
-        if "object has no attribute" in error_message:
-            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                            style={'display': 'none'})
 
         err_div3 = html.Div(#id="error_block_div3",
-                            style=error_style,
-                            children=[
-                                html.Img(id="error-img3", src=app.get_asset_url('error.png')),
-                                dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                html.P(error_message),
-                                ]
-                        )
+                            style={'display': 'none'})
 
-    return err_div1, err_div2, err_div3
+        error_style = {'display': 'block',
+                        'width': '100%',
+                        "paddingTop": "8px",
+                        "paddingLeft": "20px",
+                        "paddingRight": "20px",
+                        "paddingBottom": "5px",
+                        'backgroundColor': lightbrown,
+                        'color': darkergrey,
+                        }
+        
+        if err_sub_dict and err_sub_dict != {}:
+            try:
+                error_message = next(iter(err_sub_dict.values()))
+                if "No outputs" in error_message:
+                    error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+
+                err_div1 = html.Div(#id="error_block_div1",
+                                    style=error_style,
+                                    children=[
+                                        html.Img(id="error-img1", src=app.get_asset_url('error.png')), 
+                                        dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
+                                        html.P(error_message),
+                                        ]
+                                    )
+            except Exception as e:
+                print(f"DEBUG: Error processing err_sub_dict: {e}")
+                err_div1 = html.Div(style={'display': 'none'})
+
+        if err_contour_dict and err_contour_dict != {}:
+            try:
+                error_message = next(iter(err_contour_dict.values()))
+                err_div2 = html.Div(#id="error_block_div2",
+                                    style=error_style,
+                                    children=[
+                                        html.Img(id="error-img2", src=app.get_asset_url('error.png')), 
+                                        dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
+                                        html.P(error_message),
+                                        ]
+                                    )
+            except Exception as e:
+                print(f"DEBUG: Error processing err_contour_dict: {e}")
+                err_div2 = html.Div(style={'display': 'none'})
+
+        if err_econ_dict and err_econ_dict != {}:
+            try:
+                error_message = next(iter(err_econ_dict.values()))
+                if "object has no attribute" in error_message:
+                    error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+
+                err_div3 = html.Div(#id="error_block_div3",
+                                    style=error_style,
+                                    children=[
+                                        html.Img(id="error-img3", src=app.get_asset_url('error.png')),
+                                        dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
+                                        html.P(error_message),
+                                        ]
+                                    )
+            except Exception as e:
+                print(f"DEBUG: Error processing err_econ_dict: {e}")
+                err_div3 = html.Div(style={'display': 'none'})
+
+        print("DEBUG: update_error_divs completed successfully")
+        return err_div1, err_div2, err_div3
+        
+    except Exception as e:
+        print(f"DEBUG: Error in update_error_divs: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return safe default values
+        return html.Div(style={'display': 'none'}), html.Div(style={'display': 'none'}), html.Div(style={'display': 'none'})
 
 
 @app.callback(
@@ -1919,6 +2052,13 @@ def update_error_divs(levelized_cost_dict):
     
     warning_div3 = html.Div(style={'display': 'none'})
 
+    # Check if levelized_cost_dict exists and has the required keys
+    if levelized_cost_dict is None:
+        return warning_div3
+        
+    if not isinstance(levelized_cost_dict, dict):
+        return warning_div3
+
     error_style = {'display': 'block',
                     'width': '100%',
                     "paddingTop": "8px",
@@ -1929,7 +2069,11 @@ def update_error_divs(levelized_cost_dict):
                     'color': darkergrey,
                     }
 
-    if levelized_cost_dict['LCOE sCO2'] == "9999.00" or levelized_cost_dict['LCOE H2O'] == "9999.00":
+    # Safely check the LCOE values
+    lcoe_sco2 = levelized_cost_dict.get('LCOE sCO2', '')
+    lcoe_h2o = levelized_cost_dict.get('LCOE H2O', '')
+    
+    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00":
         
         warning_div3 = html.Div(#id="error_block_div3",
                             style=error_style,
@@ -1939,7 +2083,6 @@ def update_error_divs(levelized_cost_dict):
                                 html.P("Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."),
                                 ]
                         )
-
 
     return warning_div3
 
