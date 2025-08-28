@@ -99,6 +99,18 @@ def get_geothermal_gradient_converted_values(base_value_k_m, target_unit):
     else:
         return base_value_k_m
 
+def get_drilling_cost_converted_values(base_value_per_meter, target_unit):
+    """Convert drilling cost from $/m to $/ft"""
+    if target_unit == 'm':
+        return base_value_per_meter
+    elif target_unit == 'ft':
+        # Convert from $/m to $/ft (divide by 3.28084)
+        converted = base_value_per_meter / 3.28084
+        print(f"DEBUG: Converting ${base_value_per_meter}/m to ${converted:.2f}/ft")
+        return converted
+    else:
+        return base_value_per_meter
+
 # -------------------------------------------------------------------------------------------
 # Create dictionaries to assign the values and boundaries of the parameter siders.
 #
@@ -401,8 +413,8 @@ def slider_card():
                                                             id="grad-container",
                                                             children=[
                                                                     create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle=f"Geothermal Gradient ({get_unit_symbol(unit_converter.user_preferences.get('geothermal_gradient', 'K/m'))})", 
-                                                                            min_v=get_geothermal_gradient_converted_values(u_sCO2.grad[0], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
-                                                                            max_v=get_geothermal_gradient_converted_values(u_sCO2.grad[-1], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            min_v=get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            max_v=get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
                                                                             mark_dict=grad_dict, 
                                                                             start_v=get_geothermal_gradient_converted_values(start_vals_d["grad"], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
                                                                             div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
@@ -412,8 +424,8 @@ def slider_card():
                                                             id="k-container",
                                                             children=[
                                                                     create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle=f"Rock Thermal Conductivity ({get_unit_symbol(unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'))})", 
-                                                                            min_v=get_thermal_conductivity_converted_values(u_sCO2.k[0], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
-                                                                            max_v=get_thermal_conductivity_converted_values(u_sCO2.k[-1], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            min_v=get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            max_v=get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
                                                                             mark_dict=k_dict, 
                                                                             start_v=get_thermal_conductivity_converted_values(start_vals_d["k"], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
                                                                             div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
@@ -544,10 +556,10 @@ def slider_card():
                                                     children=[
                                                         html.P("ECONOMIC PARAMETERS", className="param-class-name"),
                                                                                                                  create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle=f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
-                                                                 min_v=0 if unit_converter.user_preferences.get('length', 'm') == 'm' else 0, 
-                                                                 max_v=4000 if unit_converter.user_preferences.get('length', 'm') == 'm' else 4000/3.28084, 
+                                                                 min_v=get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')), 
+                                                                 max_v=get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')), 
                                                                  mark_dict=drillcost_dict, 
-                                                                 start_v=start_vals_econ["drillcost"] if unit_converter.user_preferences.get('length', 'm') == 'm' else start_vals_econ["drillcost"]/3.28084, 
+                                                                 start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm')), 
                                                                  div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
                                                         create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
                                                                 mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style, parameter_name="Discount Rate (%)"),
