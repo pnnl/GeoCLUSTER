@@ -325,7 +325,7 @@ energy_tab = dcc.Tab(label='Subsurface Contours',
                         children=[
                             html.Div(className="extra-space"),
                             # html.Hr(),
-                            html.Div(id="dropdown-card5",
+                            html.Div(id="dropdown-card6",
                                     children=[
                                         graph_guidance_card(btnID="collapse-button", cardID="collapse", dropdown_children=html.P(dropdown_text2)),
                                         html.Div(id="error_block_div2"), 

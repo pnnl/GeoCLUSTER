@@ -106,14 +106,12 @@ def get_drilling_cost_converted_values(base_value_per_meter, target_unit):
     elif target_unit == 'ft':
         # Convert from $/m to $/ft (divide by 3.28084)
         converted = base_value_per_meter / 3.28084
-        print(f"DEBUG: Converting ${base_value_per_meter}/m to ${converted:.2f}/ft")
         return converted
     else:
         return base_value_per_meter
 
 def create_imperial_marks(min_val, max_val, unit):
     """Create min/max marks for imperial units"""
-    print(f"DEBUG: create_imperial_marks called with min_val={min_val}, max_val={max_val}, unit={unit}")
     
     if unit == 'ft':
         # For feet, show min and max with ft suffix
@@ -121,7 +119,6 @@ def create_imperial_marks(min_val, max_val, unit):
         min_rounded = round(min_val, 2)
         max_rounded = round(max_val, 2)
         result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
-        print(f"DEBUG: Feet result: {result}")
         return result
     elif unit == 'F':
         # For Fahrenheit, show min and max with °F suffix
@@ -144,6 +141,11 @@ def create_imperial_marks(min_val, max_val, unit):
     elif unit == 'F/ft':
         # For geothermal gradient, show min and max
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
+    elif unit == 'ft' and min_val < 1000:  # Special case for drilling cost in $/ft
+        # For drilling cost in $/ft, show min and max with $/ft suffix
+        min_rounded = round(min_val, 0)
+        max_rounded = round(max_val, 0)
+        return {min_rounded: f'${min_rounded:.0f}/ft', max_rounded: f'${max_rounded:.0f}/ft'}
     else:
         # Default case - just show min and max
         return {min_val: str(min_val), max_val: str(max_val)}
