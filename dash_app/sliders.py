@@ -170,15 +170,6 @@ def create_imperial_marks(min_val, max_val, unit):
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
     elif unit == 'F/yd':
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
-    elif unit == 'drillcost_ft':  # Special case for drilling cost in $/ft
-        # For drilling cost in $/ft, show min and max with $/ft suffix
-        min_rounded = round(min_val, 0)
-        max_rounded = round(max_val, 0)
-        return {min_rounded: f'${min_rounded:.0f}/ft', max_rounded: f'${max_rounded:.0f}/ft'}
-    elif unit == 'drillcost_yd':  # Special case for drilling cost in $/yd
-        min_rounded = round(min_val, 0)
-        max_rounded = round(max_val, 0)
-        return {min_rounded: f'${min_rounded:.0f}/yd', max_rounded: f'${max_rounded:.0f}/yd'}
     elif unit == 'ft':  # Regular length unit in feet
         # For feet, show min and max with ft suffix
         # Round to 2 decimal places for feet to avoid showing too many decimals
@@ -686,11 +677,7 @@ def slider_card():
                                                                                                                  create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle=f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
                                                                  min_v=get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')), 
                                                                  max_v=get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')), 
-                                                                 mark_dict=create_imperial_marks(
-                                                                     get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')),
-                                                                     get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')),
-                                                                     f"drillcost_{unit_converter.user_preferences.get('length', 'm')}"
-                                                                 ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else drillcost_dict, 
+                                                                 mark_dict={0: '0', 4000: '4k'} if unit_converter.user_preferences.get('length', 'm') == 'm' else {0: '0', get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')): f'{get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get("length", "m")):.0f}'}, 
                                                                  start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm')), 
                                                                  div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
                                                         create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
