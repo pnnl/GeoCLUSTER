@@ -41,7 +41,8 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in model_list],
                                     value=model_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                 ),
                             ]
                         ),
@@ -68,7 +69,8 @@ def dropdown_card():
                                         options=[{"label": i, "value": i} for i in case_list],
                                         value=case_list[0],
                                         clearable=False,
-                                        searchable=False
+                                        searchable=False,
+                                        style={"width": "100%", "minWidth": "100px"}
                                     ),
                                 ]
                             ),
@@ -80,7 +82,8 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in fluid_list],
                                     value=fluid_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                     )
                                 ]
                             ),
@@ -92,7 +95,8 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in end_use_list],
                                     value=end_use_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                 ),
                             ]
                         ),
@@ -102,13 +106,13 @@ def dropdown_card():
                                 dcc.Dropdown(
                                     id="quick-unit-selector",
                                     options=[
-                                        {"label": "Metric (SI)", "value": "metric"},
-                                        {"label": "Imperial (US)", "value": "imperial"}
+                                        {"label": "Metric", "value": "metric"},
+                                        {"label": "Imperial", "value": "imperial"}
                                     ],
                                     value="metric",
                                     clearable=False,
                                     searchable=False,
-                                    style={"width": "140px"}  # Make it a bit wider
+                                    style={"width": "100%", "minWidth": "100px"}
                                 ),
                             ]
                         ),

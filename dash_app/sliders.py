@@ -170,15 +170,27 @@ def create_imperial_marks(min_val, max_val, unit):
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
     elif unit == 'F/yd':
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
-    elif unit == 'ft' and min_val < 1000:  # Special case for drilling cost in $/ft
+    elif unit == 'drillcost_ft':  # Special case for drilling cost in $/ft
         # For drilling cost in $/ft, show min and max with $/ft suffix
         min_rounded = round(min_val, 0)
         max_rounded = round(max_val, 0)
         return {min_rounded: f'${min_rounded:.0f}/ft', max_rounded: f'${max_rounded:.0f}/ft'}
-    elif unit == 'yd' and min_val < 1000:  # Special case for drilling cost in $/yd
+    elif unit == 'drillcost_yd':  # Special case for drilling cost in $/yd
         min_rounded = round(min_val, 0)
         max_rounded = round(max_val, 0)
         return {min_rounded: f'${min_rounded:.0f}/yd', max_rounded: f'${max_rounded:.0f}/yd'}
+    elif unit == 'ft':  # Regular length unit in feet
+        # For feet, show min and max with ft suffix
+        # Round to 2 decimal places for feet to avoid showing too many decimals
+        min_rounded = round(min_val, 2)
+        max_rounded = round(max_val, 2)
+        result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
+        return result
+    elif unit == 'yd':  # Regular length unit in yards
+        min_rounded = round(min_val, 2)
+        max_rounded = round(max_val, 2)
+        result = {min_rounded: f'{min_rounded:.2f} yd', max_rounded: f'{max_rounded:.2f} yd'}
+        return result
     else:
         # Default case - just show min and max
         return {min_val: str(min_val), max_val: str(max_val)}
@@ -479,7 +491,7 @@ def slider_card():
                                                 children=[
                                                     html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
                                                     create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle=f"Surface Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", min_v=0, max_v=40.0, 
-                                                            mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
+                                                            mark_dict=create_imperial_marks(0, 40.0, unit_converter.user_preferences.get('temperature', 'C')) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
                                                    
                                                     html.Div(
                                                             id="grad-container",
@@ -514,13 +526,21 @@ def slider_card():
                                                     create_enhanced_slider(DivID="c-select-div", ID="c-select", ptitle=f"Rock Specific Heat Capacity ({get_unit_symbol(unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'))})", 
                                                             min_v=get_heat_capacity_converted_values(500, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
                                                             max_v=get_heat_capacity_converted_values(2000, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
-                                                            mark_dict=c_dict, step_i=1, 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_heat_capacity_converted_values(500, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')),
+                                                                get_heat_capacity_converted_values(2000, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')),
+                                                                unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')
+                                                            ) if unit_converter.user_preferences.get('heat_capacity', 'J/kg-K') == 'Btu/lb-F' else c_dict, step_i=1, 
                                                             start_v=get_heat_capacity_converted_values(start_vals_hdf5["c"], unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
                                                             div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
                                                     create_enhanced_slider(DivID="rho-select-div", ID="rho-select", ptitle=f"Rock Density ({get_unit_symbol(unit_converter.user_preferences.get('density', 'kg/m3'))})", 
                                                             min_v=get_density_converted_values(1000, unit_converter.user_preferences.get('density', 'kg/m3')), 
                                                             max_v=get_density_converted_values(3500, unit_converter.user_preferences.get('density', 'kg/m3')), 
-                                                            mark_dict=rho_dict, step_i=1, 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_density_converted_values(1000, unit_converter.user_preferences.get('density', 'kg/m3')),
+                                                                get_density_converted_values(3500, unit_converter.user_preferences.get('density', 'kg/m3')),
+                                                                unit_converter.user_preferences.get('density', 'kg/m3')
+                                                            ) if unit_converter.user_preferences.get('density', 'kg/m3') in ['lb/ft3', 'lb/yd3'] else rho_dict, step_i=1, 
                                                             start_v=get_density_converted_values(start_vals_hdf5["rho"], unit_converter.user_preferences.get('density', 'kg/m3')), 
                                                             div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
@@ -587,13 +607,21 @@ def slider_card():
                                                             id="Diameter1-container",
                                                             children=[
                                                                 create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle=f"Wellbore Radius Vertical ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
+                                                                mark_dict=create_imperial_marks(
+                                                                    get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
+                                                                    get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                    unit_converter.user_preferences.get('length', 'm')
+                                                                ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
                                                                 create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle=f"Wellbore Radius Lateral ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=0.10795, max_v=0.22225,
-                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
@@ -661,7 +689,7 @@ def slider_card():
                                                                  mark_dict=create_imperial_marks(
                                                                      get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')),
                                                                      get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')),
-                                                                     unit_converter.user_preferences.get('length', 'm')
+                                                                     f"drillcost_{unit_converter.user_preferences.get('length', 'm')}"
                                                                  ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else drillcost_dict, 
                                                                  start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm')), 
                                                                  div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),

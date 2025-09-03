@@ -1236,7 +1236,8 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
     Output(component_id='L1-container', component_property='children'),
    ],
    [Input(component_id="model-select", component_property="value"),
-    Input(component_id="case-select", component_property="value")],
+    Input(component_id="case-select", component_property="value"),
+    Input(component_id="quick-unit-selector", component_property="value")],
    [State(component_id="grad-select", component_property="value"),
     State(component_id="k-select", component_property="value"),
     State(component_id="Tinj-select", component_property="value"),
@@ -1247,7 +1248,7 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
    prevent_initial_call=True
     )
 
-def update_slider_ranges(model, case, current_grad, current_k, current_Tinj, current_mdot, current_diameter, current_L2, current_L1):
+def update_slider_ranges(model, case, unit_system, current_grad, current_k, current_Tinj, current_mdot, current_diameter, current_L2, current_L1):
 
     # Default case - return empty containers if no model selected
     if not model:
@@ -1329,20 +1330,30 @@ def update_slider_ranges(model, case, current_grad, current_k, current_Tinj, cur
                                                                         mark_dict=k_dict, 
                                                                         start_v=get_safe_start_value(current_k, k_min, k_max, start_vals_d["k"]), 
                                                                         div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
-            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", 
-                                                                    min_v=Tinj_min, max_v=Tinj_max, 
-                                                                        mark_dict=Tinj_dict, 
-                                                                        start_v=get_safe_start_value(current_Tinj, Tinj_min, Tinj_max, start_vals_d["Tinj"]), 
+            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle=f"Injection Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
+                                                                    min_v=get_temperature_converted_values(Tinj_min, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                    max_v=get_temperature_converted_values(Tinj_max, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_temperature_converted_values(Tinj_min, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            get_temperature_converted_values(Tinj_max, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            unit_converter.user_preferences.get('temperature', 'C')
+                                                                        ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tinj_dict, 
+                                                                        start_v=get_temperature_converted_values(get_safe_start_value(current_Tinj, Tinj_min, Tinj_max, start_vals_d["Tinj"]), unit_converter.user_preferences.get('temperature', 'C')), 
                                                                         div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
                                                                     min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
                                                                     mark_dict=mdot_dict, 
                                                                     start_v=get_safe_start_value(current_mdot, u_sCO2.mdot[0], u_sCO2.mdot[-1], start_vals_d["mdot"]), 
                                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
-            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
-                                                                        min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, 
-                                                                        start_v=get_safe_start_value(current_diameter, 0.2159, 0.4445, start_vals_d["D"]), 
+            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle=f"Borehole Diameter ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+                                                                        min_v=get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else D_dict, step_i=0.002, 
+                                                                        start_v=get_length_converted_values(get_safe_start_value(current_diameter, 0.2159, 0.4445, start_vals_d["D"]), unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_none_style, parameter_name="Borehole Diameter (m)")
             L2_container =  create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
                                                                     min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1],
@@ -1369,20 +1380,30 @@ def update_slider_ranges(model, case, current_grad, current_k, current_Tinj, cur
                                                                         mark_dict=k_dict, 
                                                                         start_v=get_safe_start_value(current_k, k_min, k_max, start_vals_d["k"]), 
                                                                         div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
-            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", 
-                                                                    min_v=Tinj_min, max_v=Tinj_max, 
-                                                                        mark_dict=Tinj_dict, 
-                                                                        start_v=get_safe_start_value(current_Tinj, Tinj_min, Tinj_max, start_vals_d["Tinj"]), 
+            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle=f"Injection Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
+                                                                    min_v=get_temperature_converted_values(Tinj_min, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                    max_v=get_temperature_converted_values(Tinj_max, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_temperature_converted_values(Tinj_min, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            get_temperature_converted_values(Tinj_max, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            unit_converter.user_preferences.get('temperature', 'C')
+                                                                        ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tinj_dict, 
+                                                                        start_v=get_temperature_converted_values(get_safe_start_value(current_Tinj, Tinj_min, Tinj_max, start_vals_d["Tinj"]), unit_converter.user_preferences.get('temperature', 'C')), 
                                                                         div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
                                                                     min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
                                                                     mark_dict=mdot_dict, 
                                                                     start_v=get_safe_start_value(current_mdot, u_sCO2.mdot[0], u_sCO2.mdot[-1], start_vals_d["mdot"]), 
                                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
-            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
-                                                                        min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, 
-                                                                        start_v=get_safe_start_value(current_diameter, 0.2159, 0.4445, start_vals_d["D"]), 
+            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle=f"Borehole Diameter ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+                                                                        min_v=get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else D_dict, step_i=0.002, 
+                                                                        start_v=get_length_converted_values(get_safe_start_value(current_diameter, 0.2159, 0.4445, start_vals_d["D"]), unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_none_style, parameter_name="Borehole Diameter (m)")
             L2_container =  create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
                                                                     min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1],

@@ -337,9 +337,11 @@ hr {
 #dropdown-container {
     width: 100% !important;
     margin-top: -15px !important;
-    display: inline-flex !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
     justify-content: space-between !important;
     text-align: left !important; 
+    gap: 10px !important;
     /* change to inline-block for them to be stacked */
 }
 
@@ -349,6 +351,30 @@ hr {
 
 #dropdown-card4 {
     width: 20%;
+}
+
+#dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4, #dropdown-card5 {
+    flex: 1;
+    min-width: 100px;
+    margin-bottom: 10px;
+}
+
+/* Make dropdowns more compact */
+#dropdown-card1 .Select-control, #dropdown-card2 .Select-control, 
+#dropdown-card3 .Select-control, #dropdown-card4 .Select-control, 
+#dropdown-card5 .Select-control {
+    min-width: 100px !important;
+}
+
+#dropdown-card5 .Select-control {
+    width: 120px !important;
+    max-width: 120px !important;
+}
+
+/* Make the dropdown text smaller and more compact */
+.dropdown-text {
+    font-size: 12px !important;
+    margin-bottom: 5px !important;
 }
 
 #unit-selector-container {
@@ -785,6 +811,47 @@ button:hover{
     margin-left: 2%; }
   .column:first-child, .columns:first-child {
     margin-left: 1%; }
+}
+
+/* Make dropdowns even more compact on medium screens */
+@media only screen and (max-width: 1400px) {
+    #dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4, #dropdown-card5 {
+        min-width: 90px !important;
+    }
+    
+    .dropdown-text {
+        font-size: 11px !important;
+    }
+}
+
+/* Only stack vertically on very small screens */
+@media only screen and (max-width: 900px) {
+    #dropdown-container {
+        flex-direction: column !important;
+    }
+    
+    #dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4 {
+        width: auto !important;
+        max-width: 200px !important;
+        margin-bottom: 15px !important;
+        min-width: 100px !important;
+    }
+    
+    #dropdown-card5 {
+        width: 120px !important;
+        max-width: 120px !important;
+        margin-bottom: 15px !important;
+        min-width: 120px !important;
+    }
+    
+    #dropdown-card5 .Select-control {
+        width: 120px !important;
+        max-width: 120px !important;
+    }
+    
+    .dropdown-text {
+        font-size: 12px !important;
+    }
 }
 
 @media only screen and (max-width: 975px) { /* 900 */
