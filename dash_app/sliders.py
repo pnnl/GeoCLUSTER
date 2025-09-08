@@ -30,10 +30,6 @@ def get_length_converted_values(base_value_meters, target_unit):
         converted = unit_converter.convert_length(base_value_meters, 'm', 'ft')
         print(f"DEBUG: Converting {base_value_meters}m to {converted}ft")
         return converted
-    elif target_unit == 'yd':
-        converted = unit_converter.convert_length(base_value_meters, 'm', 'yd')
-        print(f"DEBUG: Converting {base_value_meters}m to {converted}yd")
-        return converted
     else:
         return base_value_meters
 
@@ -55,10 +51,6 @@ def get_thermal_conductivity_converted_values(base_value_w_m_k, target_unit):
     elif target_unit == 'Btu/ft-h-F':
         converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/ft-h-F')
         print(f"DEBUG: Converting {base_value_w_m_k} W/m-K to {converted} Btu/ft-h-F")
-        return converted
-    elif target_unit == 'Btu/yd-h-F':
-        converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/yd-h-F')
-        print(f"DEBUG: Converting {base_value_w_m_k} W/m-K to {converted} Btu/yd-h-F")
         return converted
     else:
         return base_value_w_m_k
@@ -82,10 +74,6 @@ def get_density_converted_values(base_value_kg_m3, target_unit):
         converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/ft3')
         print(f"DEBUG: Converting {base_value_kg_m3} kg/m³ to {converted} lb/ft³")
         return converted
-    elif target_unit == 'lb/yd3':
-        converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/yd3')
-        print(f"DEBUG: Converting {base_value_kg_m3} kg/m³ to {converted} lb/yd³")
-        return converted
     else:
         return base_value_kg_m3
 
@@ -108,22 +96,15 @@ def get_geothermal_gradient_converted_values(base_value_k_m, target_unit):
         converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/ft')
         print(f"DEBUG: Converting {base_value_k_m} K/m to {converted} F/ft")
         return converted
-    elif target_unit == 'F/yd':
-        converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/yd')
-        print(f"DEBUG: Converting {base_value_k_m} K/m to {converted} F/yd")
-        return converted
     else:
         return base_value_k_m
 
 def get_drilling_cost_converted_values(base_value_per_meter, target_unit):
-    """Convert drilling cost from $/m to $/ft or $/yd"""
+    """Convert drilling cost from $/m to $/ft"""
     if target_unit == 'm':
         return base_value_per_meter
     elif target_unit == 'ft':
-        converted = base_value_per_meter / 3.28084
-        return converted
-    elif target_unit == 'yd':
-        converted = base_value_per_meter / 1.09361
+        converted = base_value_per_meter / 3.28084  # 1 m = 3.28084 ft, so $/m / 3.28084 = $/ft
         return converted
     else:
         return base_value_per_meter
@@ -138,11 +119,6 @@ def create_imperial_marks(min_val, max_val, unit):
         max_rounded = round(max_val, 2)
         result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
         return result
-    elif unit == 'yd':
-        min_rounded = round(min_val, 2)
-        max_rounded = round(max_val, 2)
-        result = {min_rounded: f'{min_rounded:.2f} yd', max_rounded: f'{max_rounded:.2f} yd'}
-        return result
     elif unit == 'F':
         # For Fahrenheit, show min and max with °F suffix
         return {min_val: f'{min_val:.0f}°F', max_val: f'{max_val:.0f}°F'}
@@ -155,20 +131,14 @@ def create_imperial_marks(min_val, max_val, unit):
     elif unit == 'Btu/ft-h-F':
         # For thermal conductivity, show min and max
         return {min_val: f'{min_val:.1f}', max_val: f'{max_val:.1f}'}
-    elif unit == 'Btu/yd-h-F':
-        return {min_val: f'{min_val:.1f}', max_val: f'{max_val:.1f}'}
     elif unit == 'Btu/lb-F':
         # For heat capacity, show min and max
         return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
     elif unit == 'lb/ft3':
         # For density, show min and max
         return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
-    elif unit == 'lb/yd3':
-        return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
     elif unit == 'F/ft':
         # For geothermal gradient, show min and max
-        return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
-    elif unit == 'F/yd':
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
     elif unit == 'ft':  # Regular length unit in feet
         # For feet, show min and max with ft suffix
@@ -176,11 +146,6 @@ def create_imperial_marks(min_val, max_val, unit):
         min_rounded = round(min_val, 2)
         max_rounded = round(max_val, 2)
         result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
-        return result
-    elif unit == 'yd':  # Regular length unit in yards
-        min_rounded = round(min_val, 2)
-        max_rounded = round(max_val, 2)
-        result = {min_rounded: f'{min_rounded:.2f} yd', max_rounded: f'{max_rounded:.2f} yd'}
         return result
     else:
         # Default case - just show min and max
@@ -231,6 +196,7 @@ def create_steps(arg_arr, str_round_place, val_round_place):
     slider_dict = dict(zip(value_list, list_str))
 
     return slider_dict
+
 
 def get_dynamic_slider_labels():
     """Get slider labels with current unit preferences"""
@@ -481,8 +447,16 @@ def slider_card():
                                                 className="params-div",
                                                 children=[
                                                     html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
-                                                    create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle=f"Surface Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", min_v=0, max_v=40.0, 
-                                                            mark_dict=create_imperial_marks(0, 40.0, unit_converter.user_preferences.get('temperature', 'C')) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
+                                                    create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle=f"Surface Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
+                                                            min_v=get_temperature_converted_values(0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            max_v=get_temperature_converted_values(40.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_temperature_converted_values(0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                get_temperature_converted_values(40.0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                unit_converter.user_preferences.get('temperature', 'C')
+                                                            ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tsurf_dict, 
+                                                            start_v=get_temperature_converted_values(start_vals_hdf5["Tsurf"], unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
                                                    
                                                     html.Div(
                                                             id="grad-container",
@@ -494,7 +468,7 @@ def slider_card():
                                                                                 get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
                                                                                 get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
                                                                                 unit_converter.user_preferences.get('geothermal_gradient', 'K/m')
-                                                                            ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') in ['F/ft', 'F/yd'] else grad_dict, 
+                                                                            ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') in ['F/ft'] else grad_dict, 
                                                                             start_v=get_geothermal_gradient_converted_values(start_vals_d["grad"], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
                                                                             div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
                                                             ]),
@@ -509,7 +483,7 @@ def slider_card():
                                                                                 get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
                                                                                 get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
                                                                                 unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')
-                                                                            ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') in ['Btu/ft-h-F', 'Btu/yd-h-F'] else k_dict, 
+                                                                            ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') in ['Btu/ft-h-F'] else k_dict, 
                                                                             start_v=get_thermal_conductivity_converted_values(start_vals_d["k"], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
                                                                             div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
                                                                     
@@ -531,7 +505,7 @@ def slider_card():
                                                                 get_density_converted_values(1000, unit_converter.user_preferences.get('density', 'kg/m3')),
                                                                 get_density_converted_values(3500, unit_converter.user_preferences.get('density', 'kg/m3')),
                                                                 unit_converter.user_preferences.get('density', 'kg/m3')
-                                                            ) if unit_converter.user_preferences.get('density', 'kg/m3') in ['lb/ft3', 'lb/yd3'] else rho_dict, step_i=1, 
+                                                            ) if unit_converter.user_preferences.get('density', 'kg/m3') in ['lb/ft3'] else rho_dict, step_i=1, 
                                                             start_v=get_density_converted_values(start_vals_hdf5["rho"], unit_converter.user_preferences.get('density', 'kg/m3')), 
                                                             div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
@@ -590,29 +564,29 @@ def slider_card():
                                                                             get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else D_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else D_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["D"], unit_converter.user_preferences.get('length', 'm')), 
                                                                         div_style=div_block_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle=f"Wellbore Radius Vertical ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=0.10795, max_v=0.22225,
+                                                                create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle=f"Wellbore Radius Vertical ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')), max_v=get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
                                                                 mark_dict=create_imperial_marks(
                                                                     get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
                                                                     get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
                                                                     unit_converter.user_preferences.get('length', 'm')
-                                                                ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
+                                                                ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else radius_vertical_dict, step_i=0.001, start_v=get_length_converted_values(start_vals_sbt["radius-vertical"], unit_converter.user_preferences.get('length', 'm')), div_style=div_none_style, parameter_name="Wellbore Radius Vertical")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle=f"Wellbore Radius Lateral ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=0.10795, max_v=0.22225,
+                                                                create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle=f"Wellbore Radius Lateral ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')), max_v=get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
                                                                         mark_dict=create_imperial_marks(
                                                                             get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else radius_lateral_dict, step_i=0.001, start_v=get_length_converted_values(start_vals_sbt["radius-lateral"], unit_converter.user_preferences.get('length', 'm')), div_style=div_none_style, parameter_name="Wellbore Radius Lateral")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
@@ -624,9 +598,9 @@ def slider_card():
                                                                             get_length_converted_values(u_sCO2.L2[0], unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(u_sCO2.L2[-1], unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else L2_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else L2_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["L2"], unit_converter.user_preferences.get('length', 'm')), 
-                                                                        div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+                                                                        div_style=div_block_style, parameter_name="Horizontal Extent")
                                                             ]),
                                                     html.Div(
                                                             id="L1-container",
@@ -638,9 +612,9 @@ def slider_card():
                                                                             get_length_converted_values(u_sCO2.L1[0], unit_converter.user_preferences.get('length', 'm')),
                                                                             get_length_converted_values(u_sCO2.L1[-1], unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
-                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft', 'yd'] else L1_dict, 
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else L1_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["L1"], unit_converter.user_preferences.get('length', 'm')), 
-                                                                        div_style=div_block_style, parameter_name="Drilling Depth (m)")
+                                                                        div_style=div_block_style, parameter_name="Drilling Depth")
                                                             ]),
                                                     html.Div(
                                                             id="num-lat-container",
@@ -674,12 +648,12 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ECONOMIC PARAMETERS", className="param-class-name"),
-                                                                                                                 create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle=f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
-                                                                 min_v=get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm')), 
-                                                                 max_v=get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')), 
-                                                                 mark_dict={0: '0', 4000: '4k'} if unit_converter.user_preferences.get('length', 'm') == 'm' else {0: '0', get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')): f'{get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get("length", "m")):.0f}'}, 
-                                                                 start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm')), 
-                                                                 div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
+                                                                                                                 create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle=f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm')) if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'})", 
+                                                                 min_v=get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm') if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'), 
+                                                                 max_v=get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')) if unit_converter.user_preferences.get('length', 'm') == 'm' else get_drilling_cost_converted_values(4000, 'ft'), 
+                                                                 mark_dict={0: '0', 4000: '4k'} if unit_converter.user_preferences.get('length', 'm') == 'm' else {0: '0', get_drilling_cost_converted_values(4000, 'ft'): f'{get_drilling_cost_converted_values(4000, "ft"):.0f}'}, 
+                                                                 start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm') if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'), 
+                                                                 div_style=div_block_style, parameter_name="Drilling Cost"),
                                                         create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
                                                                 mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style, parameter_name="Discount Rate (%)"),
                                                         # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 

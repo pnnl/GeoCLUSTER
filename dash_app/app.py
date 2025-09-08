@@ -1631,7 +1631,8 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
             interp_time, fluid, case, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, scale, model,
             Tsurf_c, c_j_kg_k, rho_kg_m3, 
-            # radius_vertical, radius_lateral, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+            # radius_vertical, radius_lateral, 
+            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
             mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
         )
         # if SBT:
