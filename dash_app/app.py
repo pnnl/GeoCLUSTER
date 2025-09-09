@@ -1303,8 +1303,6 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
 def update_slider_ranges(model, case, unit_system):
 
-    # Debug message to see if callback is triggered
-    print(f"*** DEBUG: update_slider_ranges called with model={model}, unit_system={unit_system} ***")
 
     # Define styles for showing/hiding sliders
     div_block_style = {"width": "98%", "margin": "auto", "margin-bottom": "10px", "display": "block"}
@@ -1585,28 +1583,6 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
-    print(f"DEBUG: Callback called with parameters:")
-    print(f"  model: {model}")
-    print(f"  fluid: {fluid}")
-    print(f"  case: {case}")
-    print(f"  mdot: {mdot}")
-    print(f"  L2: {L2}")
-    print(f"  L1: {L1}")
-    print(f"  grad: {grad}")
-    print(f"  D: {D}")
-    print(f"  Tinj: {Tinj}")
-    print(f"  k_m: {k_m}")
-    print(f"  scale: {scale}")
-    print(f"  Tsurf: {Tsurf}")
-    print(f"  c_m: {c_m}")
-    print(f"  rho_m: {rho_m}")
-    print(f"  Diameter1: {Diameter1}")
-    print(f"  Diameter2: {Diameter2}")
-    print(f"  PipeParam3: {PipeParam3}")
-    print(f"  PipeParam4: {PipeParam4}")
-    print(f"  PipeParam5: {PipeParam5}")
-    print(f"  mesh: {mesh}")
-    print(f"  accuracy: {accuracy}")
 
 
     # Handle missing SBT parameters gracefully
@@ -1631,7 +1607,6 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         PipeParam4 = None
         PipeParam5 = None
 
-    print(f"DEBUG: After defaults - Diameter1: {Diameter1}, Diameter2: {Diameter2}, PipeParam3: {PipeParam3}, PipeParam4: {PipeParam4}, PipeParam5: {PipeParam5}")
 
     # Convert imperial values back to metric for backend calculations
     # Simple conversion function to convert imperial values back to metric
@@ -1656,10 +1631,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     rho_kg_m3 = convert_to_metric(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3', unit_converter.convert_density)
     Tsurf_c = convert_to_metric(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
     
-    print(f"DEBUG: Converted to metric: L2={L2_m}m, L1={L1_m}m, D={D_m}m, mdot={mdot_kg_s}kg/s, Tinj={Tinj_c}°C")
-
     try:
-        print("DEBUG: About to call generate_subsurface_lineplots...")
         # print('subsurface')
         # if HDF5:
         # start = time.time()
@@ -1673,10 +1645,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         # if SBT:
         # end = time.time()
         # print("run generate_subsurface_lineplots:", end - start)
-        print("DEBUG: generate_subsurface_lineplots completed successfully")
-        print(f"DEBUG: Return values - subplots: {type(subplots)}, forty_yr_TPmeans_dict: {type(forty_yr_TPmeans_dict)}, df_mass_flow_rate: {type(df_mass_flow_rate)}")
     except Exception as e:
-        print(f"DEBUG: Error in generate_subsurface_lineplots: {e}")
         import traceback
         traceback.print_exc()
         # Return empty/default values on error
@@ -1688,7 +1657,6 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         err_subres_dict = {'Error': str(e)}
         TandP_dict = {}
 
-    print("DEBUG: About to return from update_subsurface_results_plots")
     return subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict
 
 
@@ -1778,7 +1746,6 @@ def update_econ_plots(TandP_dict,
     required_params = [mdot, L2, L1, grad, D, Tinj, k_m, Drilling_cost_per_m, Discount_rate, Lifetime, 
                       Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure]
     if any(param is None for param in required_params):
-        print("DEBUG: update_econ_plots - None values detected, preventing update")
         from plotly.graph_objects import Figure
         empty_fig = Figure()
         return empty_fig, {}, {}, {}
@@ -1807,7 +1774,6 @@ def update_econ_plots(TandP_dict,
         )
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
-        print(f"DEBUG: update_econ_plots - Waiting for thermal data, error: {str(e)[:50]}...")
         from plotly.graph_objects import Figure
         empty_fig = Figure()
         return empty_fig, {}, {}, {}
@@ -1898,7 +1864,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
     # Check for None values that could cause errors during unit conversion
     thermal_params = [mdot, L2, L1, grad, D, Tinj, k]
     if any(param is None for param in thermal_params):
-        print("DEBUG: update_table - None values in thermal parameters, preventing update")
         from plotly.graph_objects import Table
         empty_table = Table()
         return empty_table, {}
@@ -1906,7 +1871,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
     # Check for None economic parameters too
     econ_params = [Drilling_cost_per_m, Discount_rate, Lifetime, Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure]
     if any(param is None for param in econ_params):
-        print("DEBUG: update_table - None values in economic parameters, preventing update")
         from plotly.graph_objects import Table
         empty_table = Table()
         return empty_table, {}
@@ -1926,7 +1890,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
     rho_kg_m3 = rho_m if rho_m is not None else 2500  # Default density
     Tsurf_c = Tsurf if Tsurf is not None else 15  # Default surface temperature
     
-    print(f"DEBUG: update_table - Using values: L2={L2_m}m, L1={L1_m}m, D={D_m}m, mdot={mdot_kg_s}kg/s, Tinj={Tinj_c}°C")
 
     # Add TandP data to thermal_dict for SBT models
     if model != "HDF5" and tandp_data:
@@ -1936,7 +1899,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
 
     # Check if we have the required data before proceeding (this is normal on app startup)
     if not thermal_dict or not econ_dict:
-        print("DEBUG: update_table - Waiting for thermal/economic calculations to complete...")
         from plotly.graph_objects import Table
         tbl = Table()
         summary_dict = {}
@@ -1952,9 +1914,7 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                     PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
                     mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5
         )
-        print("DEBUG: update_table - generate_summary_table completed successfully")
     except Exception as e:
-        print(f"DEBUG: Error in generate_summary_table: {e}")
         import traceback
         traceback.print_exc()
         # Return empty/default values on error
@@ -1978,10 +1938,6 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
 
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
 
-    print(f"DEBUG: update_error_divs called with:")
-    print(f"  err_sub_dict: {err_sub_dict}")
-    print(f"  err_contour_dict: {err_contour_dict}")
-    print(f"  err_econ_dict: {err_econ_dict}")
 
     try:
         err_div1 = html.Div(#id="error_block_div1",
@@ -2018,7 +1974,6 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
                                         ]
                                     )
             except Exception as e:
-                print(f"DEBUG: Error processing err_sub_dict: {e}")
                 err_div1 = html.Div(style={'display': 'none'})
 
         if err_contour_dict and err_contour_dict != {}:
@@ -2033,7 +1988,6 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
                                         ]
                                     )
             except Exception as e:
-                print(f"DEBUG: Error processing err_contour_dict: {e}")
                 err_div2 = html.Div(style={'display': 'none'})
 
         if err_econ_dict and err_econ_dict != {}:
@@ -2051,14 +2005,11 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
                                         ]
                                     )
             except Exception as e:
-                print(f"DEBUG: Error processing err_econ_dict: {e}")
                 err_div3 = html.Div(style={'display': 'none'})
 
-        print("DEBUG: update_error_divs completed successfully")
         return err_div1, err_div2, err_div3
         
     except Exception as e:
-        print(f"DEBUG: Error in update_error_divs: {e}")
         import traceback
         traceback.print_exc()
         # Return safe default values

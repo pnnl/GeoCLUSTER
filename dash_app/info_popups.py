@@ -194,6 +194,23 @@ PARAMETER_INFO = {
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
+    # Base parameter names (without units) for pattern matching
+    "Wellbore Radius Vertical": {
+        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.10795-0.22225 m",
+        "typical_value": "0.222 m",
+        "unit": "m",
+        "description": "Affects the heat transfer area and flow resistance in the vertical section."
+    },
+    
+    "Wellbore Radius Lateral": {
+        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.10795-0.22225 m",
+        "typical_value": "0.222 m",
+        "unit": "m",
+        "description": "Influences heat transfer and flow characteristics in the lateral sections."
+    },
+    
     "Horizontal Extent (m)": {
         "definition": "Set the horizontal length of the well. A value of 10 km represents long multi-lateral systems. A value of 50 km far exceeds directional drilling and would require massive pressure support and well integrity.",
         "recommended_range": "1000-50000 m",
@@ -256,6 +273,15 @@ PARAMETER_INFO = {
         "recommended_range": "0-1,220 $/ft",
         "typical_value": "305 $/ft",
         "unit": "$/ft",
+        "description": "A major component of geothermal project costs, varies with depth and geology."
+    },
+    
+    # Base parameter name (without units) for pattern matching
+    "Drilling Cost": {
+        "definition": "Set the cost per meter drilled. A value of $1,000/m represents an average cost.",
+        "recommended_range": "0-4000 $/m",
+        "typical_value": "1000 $/m",
+        "unit": "$/m",
         "description": "A major component of geothermal project costs, varies with depth and geology."
     },
     
