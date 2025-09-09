@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# web app and interactive graphics libraries 
-from dash import dcc, html
+from dash import dcc, html, Input, Output, State, ctx, ALL
 import dash_bootstrap_components as dbc
-
-# ---------------------------
-# Parameter Information Dictionary
-# ---------------------------
+from dash.exceptions import PreventUpdate
 
 PARAMETER_INFO = {
     # Heat Transfer and System Configuration
@@ -452,34 +448,28 @@ PARAMETER_INFO = {
     }
 }
 
-# ---------------------------
-# Helper Functions
-# ---------------------------
+def param_name_to_id_suffix(name: str) -> str:
+    """
+    Turn a PARAMETER_INFO key into a consistent id suffix.
+    Example: "Drilling Depth (m)" -> "drilling-depth-m"
+    """
+    import re
+    s = name.lower()
+    s = s.replace('˚', 'deg').replace('°', 'deg')
+    s = re.sub(r'[()$]', '', s)
+    s = s.replace('/', '-')
+    s = re.sub(r'\s+', '-', s)
+    s = re.sub(r'-+', '-', s)
+    s = s.strip('-')
+    return s
 
 def create_info_button(parameter_name, button_id=None):
-    """
-    Create an information button for a parameter.
-    
-    Args:
-        parameter_name (str): The name of the parameter
-        button_id (str): Optional custom button ID
-        
-    Returns:
-        html.Div: A button component with info icon
-    """
+    """Create an information button for a parameter."""
     if button_id is None:
-        # Create a standardized button ID based on parameter name
-        # First replace special characters, then spaces, then clean up multiple dashes
-        button_id = parameter_name.lower()
-        button_id = button_id.replace('˚', 'deg').replace('°', 'deg')
-        button_id = button_id.replace('(', '').replace(')', '')
-        button_id = button_id.replace('/', '-').replace('$', '')
-        button_id = button_id.replace(' ', '-')
-        # Clean up multiple consecutive dashes
-        import re
-        button_id = re.sub(r'-+', '-', button_id)
-        button_id = f"info-btn-{button_id}"
-    
+        button_id = {
+            "type": "info-btn",
+            "param": param_name_to_id_suffix(parameter_name),
+        }
     
     return html.Div([
         dbc.Button(
@@ -503,9 +493,9 @@ def create_info_button(parameter_name, button_id=None):
                 "justifyContent": "center",
                 "lineHeight": "1",
                 "textAlign": "center",
-                "transform": "translateX(-1px) translateY(-2px)", # Adjusted for centering and vertical position
+                "transform": "translateX(-1px) translateY(-2px)",
                 "position": "relative",
-                "top": "-2px" # Adjusted for vertical position
+                "top": "-2px"
             }
         )
     ])
@@ -513,24 +503,7 @@ def create_info_button(parameter_name, button_id=None):
 
 
 def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, step_i=None):
-    """
-    Create a slider with an information button.
-    
-    Args:
-        DivID (str): The div ID
-        ID (str): The slider ID
-        ptitle (str): The parameter title
-        min_v (float): Minimum value
-        max_v (float): Maximum value
-        mark_dict (dict): Marks dictionary
-        start_v (float): Starting value
-        div_style (dict): Style dictionary
-        parameter_name (str): Parameter name for info popup
-        step_i (float): Step increment (for slider1 type)
-        
-    Returns:
-        html.Div: Enhanced slider component with info button
-    """
+    """Create a slider with an information button."""
     info_button = create_info_button(parameter_name) if parameter_name else html.Div()
     
     slider_props = {
@@ -542,7 +515,6 @@ def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, 
         "tooltip": {"placement": "bottom", "always_visible": True}
     }
     
-    # Add step if provided (for slider1 type)
     if step_i is not None:
         slider_props["step"] = step_i
     
@@ -558,22 +530,15 @@ def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, 
                     )
 
 def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, parameter_name=None):
-    """
-    Create a dropdown with an information button.
-    
-    Args:
-        DivID (str): The div ID
-        ID (str): The dropdown ID
-        ptitle (str): The parameter title
-        options (list): Dropdown options
-        disabled (bool): Whether dropdown is disabled
-        div_style (dict): Style dictionary
-        parameter_name (str): Parameter name for info popup
-        
-    Returns:
-        html.Div: Enhanced dropdown component with info button
-    """
+    """Create a dropdown with an information button."""
     info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    if options and isinstance(options[0], dict):
+        default_value = options[0]["value"]
+    else:
+        default_value = options[0] if options else None
+    
+    value = None if not options else default_value
     
     return html.Div(
             id=DivID,
@@ -587,7 +552,7 @@ def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, pa
                     dcc.Dropdown(
                             id=ID,
                             options=options,
-                            value=options[0],
+                            value=value,
                             clearable=False,
                             searchable=False,
                             disabled=disabled,
@@ -596,23 +561,7 @@ def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, pa
             ])
 
 def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style, parameter_name=None):
-    """
-    Create an input box with an information button.
-    
-    Args:
-        DivID (str): The ID for the container div
-        ID (str): The ID for the input component
-        ptitle (str): The title/label for the input
-        min_v (float): Minimum value
-        max_v (float): Maximum value
-        start_v (float): Starting value
-        step_i (float): Step increment
-        div_style (dict): Style for the container div
-        parameter_name (str): The name of the parameter for info popup
-        
-    Returns:
-        html.Div: An input box component with info button
-    """
+    """Create an input box with an information button."""
     info_button = create_info_button(parameter_name) if parameter_name else html.Div()
     
     return html.Div(
@@ -626,4 +575,71 @@ def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, 
                 ]),
                 dcc.Input(id=ID, disabled=True,
                             value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
-        ]) 
+        ])
+
+def create_info_modal():
+    """Create the info modal component."""
+    return dbc.Modal([
+        dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
+        dbc.ModalBody(id="info-modal-body"),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0, 
+                      style={"cursor": "pointer", "fontWeight": "bold"})
+        ),
+    ], id="info-modal", is_open=False, size="lg")
+
+def register_info_modal_callbacks(app):
+    """Register info modal callbacks using pattern-matching IDs."""
+    suffix_to_param = {
+        param_name_to_id_suffix(p): p for p in PARAMETER_INFO.keys()
+    }
+
+    @app.callback(
+        [Output("info-modal", "is_open"),
+         Output("info-modal-title", "children"),
+         Output("info-modal-body", "children")],
+        [
+            Input({"type": "info-btn", "param": ALL}, "n_clicks"),
+            State("info-modal", "is_open"),
+        ],
+        prevent_initial_call=True,
+    )
+    def toggle_info_modal(n_clicks_list, is_open):
+        """Handle info popup clicks for all parameters dynamically using pattern matching."""
+        if not n_clicks_list or all((c or 0) == 0 for c in n_clicks_list):
+            raise PreventUpdate
+
+        triggered = ctx.triggered_id
+        if not triggered or "param" not in triggered:
+            raise PreventUpdate
+
+        suffix = triggered["param"]
+        param = suffix_to_param.get(suffix)
+        if not param:
+            raise PreventUpdate
+
+        info = PARAMETER_INFO.get(param)
+        if not info:
+            raise PreventUpdate
+
+        modal_content = [
+            html.H6("Definition:", className="text-primary"),
+            html.P(info["definition"], className="mb-3"),
+            html.H6("Recommended Range:", className="text-primary"),
+            html.P(info["recommended_range"], className="mb-3"),
+            html.H6("Typical Value:", className="text-primary"),
+            html.P(f"{info['typical_value']}", className="mb-3"),
+            html.H6("Description:", className="text-primary"),
+            html.P(info["description"], className="mb-3"),
+        ]
+        return True, f"Information: {param}", modal_content
+
+    @app.callback(
+        Output("info-modal", "is_open", allow_duplicate=True),
+        Input("close-info-modal", "n_clicks"),
+        prevent_initial_call=True
+    )
+    def close_modal(n_clicks):
+        if n_clicks:
+            return False
+        raise PreventUpdate 

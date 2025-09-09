@@ -42,7 +42,7 @@ from dropdowns import *
 from text import *
 from tables import generate_summary_table
 from plots import generate_econ_lineplots, generate_subsurface_lineplots, generate_subsurface_contours
-from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown
+from info_popups import PARAMETER_INFO, create_info_button, create_enhanced_slider, create_enhanced_input_box, create_enhanced_dropdown, create_info_modal, register_info_modal_callbacks
 from unit_conversions import unit_converter, convert_value, get_unit_symbol
 from unit_preferences import create_unit_preferences_card, get_unit_preferences_from_inputs, apply_metric_units, apply_imperial_units
 
@@ -453,16 +453,12 @@ app.layout = html.Div(
         ),
         
         # Information Modal
-        dbc.Modal([
-            dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
-            dbc.ModalBody(id="info-modal-body"),
-            dbc.ModalFooter(
-                dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0, style={"cursor": "pointer", "fontWeight": "bold"})
-            ),
-        ], id="info-modal", is_open=False, size="lg"),
+        create_info_modal(),
     ],
 )
 
+# Register info popup callbacks
+register_info_modal_callbacks(app)
 
 # -----------------------------------------------------------------------------
 # Define dash app callbacks begin here.
@@ -1290,6 +1286,7 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
 @app.callback(
    [
+    Output(component_id='Tsurf-select-div', component_property='children'),
     Output(component_id='grad-container', component_property='children'),
     Output(component_id='k-container', component_property='children'),
     Output(component_id='Tinj-container', component_property='children'),
@@ -1309,52 +1306,66 @@ def update_slider_ranges(model, case, unit_system):
     # Debug message to see if callback is triggered
     print(f"*** DEBUG: update_slider_ranges called with model={model}, unit_system={unit_system} ***")
 
+    # Define styles for showing/hiding sliders
+    div_block_style = {"width": "98%", "margin": "auto", "margin-bottom": "10px", "display": "block"}
+    div_none_style = {"width": "98%", "margin": "auto", "margin-bottom": "10px", "display": "none"}
+
     # Default case - return empty containers if no model selected
     if not model:
         empty_container = html.Div(style={'display': 'none'})
-        return empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container
+        return empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container
 
     if model == "HDF5":
-        # Hardcoded values for simplicity
+        # For HDF5, we need to update the sliders with unit-aware values
         if unit_system == "imperial":
-            # Imperial units with hardcoded ranges
+            # Imperial HDF5 ranges
+            Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°F)", 
+                                                    min_v=32, max_v=104, 
+                                                    mark_dict={32: '32', 104: '104'}, 
+                                                    start_v=77, 
+                                                    div_style=div_none_style, parameter_name="Surface Temperature (˚F)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (°F/ft)", 
                                                     min_v=0.0082, max_v=0.0546, 
                                                     mark_dict={0.0082: '0.008', 0.0546: '0.055'}, 
                                                     start_v=0.0328, 
-                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (˚F/ft)")
             k_container = create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (Btu/ft-h-°F)", 
                                                     min_v=0.231, max_v=2.89, 
                                                     mark_dict={0.231: '0.2', 2.89: '2.9'}, 
                                                     start_v=1.73, 
-                                                    div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
+                                                    div_style=div_block_style, parameter_name="Rock Thermal Conductivity (Btu/ft-h-˚F)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°F)", 
                                                     min_v=86, max_v=140, 
                                                     mark_dict={86: '86', 140: '140'}, 
                                                     start_v=86, 
-                                                    div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                    div_style=div_block_style, parameter_name="Injection Temperature (˚F)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (lb/s)", 
                                                     min_v=22, max_v=441, 
                                                     mark_dict={22: '22', 441: '441'}, 
                                                     start_v=220, 
-                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (lb/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (ft)", 
                                                     min_v=0.708, max_v=1.458, 
                                                     mark_dict={0.708: '0.7', 1.458: '1.5'}, step_i=0.002, 
                                                     start_v=1.0, 
-                                                    div_style=div_block_style, parameter_name="Borehole Diameter (m)")
+                                                    div_style=div_block_style, parameter_name="Borehole Diameter (ft)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)", 
                                                     min_v=1640, max_v=16404, 
                                                     mark_dict={1640: '1.6k', 16404: '16k'}, 
                                                     start_v=8202, 
-                                                    div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+                                                    div_style=div_block_style, parameter_name="Horizontal Extent (ft)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)", 
                                                     min_v=3281, max_v=26247, 
                                                     mark_dict={3281: '3.3k', 26247: '26k'}, 
                                                     start_v=16404, 
-                                                    div_style=div_block_style, parameter_name="Drilling Depth (m)")
+                                                    div_style=div_block_style, parameter_name="Drilling Depth (ft)")
         else:
-            # Metric units (default) with hardcoded ranges
+            # Metric HDF5 ranges
+            Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°C)", 
+                                                    min_v=0, max_v=40, 
+                                                    mark_dict={0: '0', 40: '40'}, 
+                                                    start_v=25, 
+                                                    div_style=div_none_style, parameter_name="Surface Temperature (˚C)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
                                                     min_v=0.015, max_v=0.1, 
                                                     mark_dict={0.015: '0.015', 0.1: '0.1'}, 
@@ -1389,31 +1400,41 @@ def update_slider_ranges(model, case, unit_system):
                                                     min_v=1000, max_v=8000, 
                                                     mark_dict={1000: '1k', 8000: '8k'}, 
                                                     start_v=5000, 
-                                                    div_style=div_block_style, parameter_name="Drilling Depth (m)")                       
-                                 
-        return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
+                                                    div_style=div_block_style, parameter_name="Drilling Depth (m)")
+        
+        return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
 
     elif model == "SBT V1.0" or model == "SBT V2.0":
         # Hardcoded values for SBT models
         if unit_system == "imperial":
             # Imperial SBT ranges
+            Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°F)", 
+                                                    min_v=32, max_v=104, 
+                                                    mark_dict={32: '32', 104: '104'}, 
+                                                    start_v=77, 
+                                                    div_style=div_block_style, parameter_name="Surface Temperature (˚F)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (°F/ft)", 
                                                     min_v=0.0082, max_v=0.11, 
                                                     mark_dict={0.0082: '0.008', 0.11: '0.11'}, 
                                                     start_v=0.033, 
-                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (˚F/ft)")
             k_container = create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (Btu/ft-h-°F)", 
                                                     min_v=0.231, max_v=2.89, 
                                                     mark_dict={0.231: '0.2', 2.89: '2.9'}, 
                                                     start_v=1.73, 
-                                                    div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
+                                                    div_style=div_block_style, parameter_name="Rock Thermal Conductivity (Btu/ft-h-˚F)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°F)", 
                                                     min_v=86, max_v=212, 
                                                     mark_dict={86: '86', 212: '212'}, 
                                                     start_v=86, 
-                                                    div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                    div_style=div_block_style, parameter_name="Injection Temperature (˚F)")
         else:
             # Metric SBT ranges
+            Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°C)", 
+                                                    min_v=0, max_v=40, 
+                                                    mark_dict={0: '0', 40: '40'}, 
+                                                    start_v=25, 
+                                                    div_style=div_block_style, parameter_name="Surface Temperature (˚C)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
                                                     min_v=0.015, max_v=0.200, 
                                                     mark_dict={0.015: '0.015', 0.200: '0.2'}, 
@@ -1430,26 +1451,40 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=30.0, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
         
-        # Common sliders for both unit systems (SBT doesn't use these, so just use placeholders)
-        mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate", 
-                                               min_v=1, max_v=10, mark_dict={1: '1', 10: '10'}, start_v=5, 
-                                               div_style={'display': 'none'}, parameter_name="Mass Flow Rate")
-        diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Diameter", 
-                                                   min_v=0.1, max_v=1, mark_dict={0.1: '0.1', 1: '1'}, start_v=0.5, 
-                                                   div_style={'display': 'none'}, parameter_name="Diameter")
-        L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="L2", 
-                                             min_v=100, max_v=1000, mark_dict={100: '100', 1000: '1k'}, start_v=500, 
-                                             div_style={'display': 'none'}, parameter_name="L2")
-        L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="L1", 
-                                             min_v=100, max_v=1000, mark_dict={100: '100', 1000: '1k'}, start_v=500, 
-                                             div_style={'display': 'none'}, parameter_name="L1")
+        # Tube geometry sliders for SBT models
+        if unit_system == "imperial":
+            mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (lb/s)", 
+                                                   min_v=22, max_v=441, mark_dict={22: '22', 441: '441'}, start_v=220, 
+                                                   div_style=div_block_style, parameter_name="Mass Flow Rate (lb/s)")
+            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (ft)", 
+                                                       min_v=0.708, max_v=1.458, mark_dict={0.708: '0.7', 1.458: '1.5'}, start_v=1.0, 
+                                                       div_style=div_block_style, parameter_name="Borehole Diameter (ft)")
+            L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)", 
+                                                 min_v=1640, max_v=16404, mark_dict={1640: '1.6k', 16404: '16k'}, start_v=8202, 
+                                                 div_style=div_block_style, parameter_name="Horizontal Extent (ft)")
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)", 
+                                                 min_v=3281, max_v=26247, mark_dict={3281: '3.3k', 26247: '26k'}, start_v=16404, 
+                                                 div_style=div_block_style, parameter_name="Drilling Depth (ft)")
+        else:
+            mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
+                                                   min_v=10, max_v=200, mark_dict={10: '10', 200: '200'}, start_v=100, 
+                                                   div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+            diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
+                                                       min_v=0.2159, max_v=0.4445, mark_dict={0.2159: '0.22', 0.4445: '0.44'}, start_v=0.3, 
+                                                       div_style=div_block_style, parameter_name="Borehole Diameter (m)")
+            L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
+                                                 min_v=500, max_v=5000, mark_dict={500: '500', 5000: '5k'}, start_v=2500, 
+                                                 div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", 
+                                                 min_v=1000, max_v=8000, mark_dict={1000: '1k', 8000: '8k'}, start_v=5000, 
+                                                 div_style=div_block_style, parameter_name="Drilling Depth (m)")
                        
-        return grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
+        return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
 
     else:
         # Default case - return empty containers
         empty_container = html.Div(style={'display': 'none'})
-        return empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container
+        return empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container, empty_container
 
 @app.callback(
    [
@@ -2081,192 +2116,7 @@ def update_error_divs(levelized_cost_dict):
 # App runs here. Define configurations, proxies, etc.
 # -----------------------------------------------------------------------------
 
-@app.callback(
-    [Output("info-modal", "is_open"),
-     Output("info-modal-title", "children"),
-     Output("info-modal-body", "children")],
-    [
-        # Metric parameter inputs
-        Input("info-btn-surface-temperature-degc", "n_clicks"),
-        Input("info-btn-geothermal-gradient-k-m", "n_clicks"),
-        Input("info-btn-rock-thermal-conductivity-w-m-k", "n_clicks"),
-        Input("info-btn-rock-specific-heat-capacity-j-kg-k", "n_clicks"),
-        Input("info-btn-rock-density-kg-m3", "n_clicks"),
-        Input("info-btn-injection-temperature-degc", "n_clicks"),
-        Input("info-btn-mass-flow-rate-kg-s", "n_clicks"),
-        Input("info-btn-borehole-diameter-m", "n_clicks"),
-        Input("info-btn-wellbore-radius-vertical", "n_clicks"),
-        Input("info-btn-wellbore-radius-lateral", "n_clicks"),
-        Input("info-btn-horizontal-extent", "n_clicks"),
-        Input("info-btn-drilling-depth", "n_clicks"),
-        Input("info-btn-drilling-cost", "n_clicks"),
-        Input("info-btn-pre-cooling-degc", "n_clicks"),
-        Input("info-btn-turbine-outlet-pressure-bar", "n_clicks"),
-        
-        
-        # Common parameter inputs (no unit suffix)
-        Input("info-btn-discount-rate-%", "n_clicks"),
-        Input("info-btn-lifetime-years", "n_clicks"),
-        Input("info-btn-plant-capex-kwt", "n_clicks"),
-        Input("info-btn-plant-capex-kwe", "n_clicks"),
-        Input("info-btn-mesh-fineness", "n_clicks"),
-        Input("info-btn-accuracy", "n_clicks"),
-        Input("info-btn-number-of-laterals", "n_clicks"),
-        Input("info-btn-lateral-flow-allocation", "n_clicks"),
-        Input("info-btn-lateral-flow-multiplier", "n_clicks"),
-        Input("info-btn-fluid-properties-mode", "n_clicks")
-    ],
-    [State("info-modal", "is_open")],
-    prevent_initial_call=True,
-    suppress_callback_exceptions=True
-)
-def toggle_info_modal(*args):
-    info_clicks = args[:-1]
-    is_open = args[-1]
-    
-    # Get the triggered button ID
-    from dash import ctx
-    triggered_id = ctx.triggered_id if ctx.triggered_id else None
-    
-    # Check if any button was actually clicked (n_clicks > 0)
-    button_clicked = False
-    if triggered_id:
-        # Find the index of the triggered button in the args
-        button_ids = [
-            # Metric parameter button IDs
-            "info-btn-surface-temperature-degc",
-            "info-btn-geothermal-gradient-k-m",
-            "info-btn-rock-thermal-conductivity-w-m-k",
-            "info-btn-rock-specific-heat-capacity-j-kg-k",
-            "info-btn-rock-density-kg-m3",
-            "info-btn-injection-temperature-degc",
-            "info-btn-mass-flow-rate-kg-s",
-            "info-btn-borehole-diameter-m",
-            "info-btn-wellbore-radius-vertical",
-            "info-btn-wellbore-radius-lateral",
-            "info-btn-horizontal-extent",
-            "info-btn-drilling-depth",
-            "info-btn-drilling-cost",
-            "info-btn-pre-cooling-degc",
-            "info-btn-turbine-outlet-pressure-bar",
-            
-            
-            # Common parameter button IDs (no unit suffix)
-            "info-btn-discount-rate-%",
-            "info-btn-lifetime-years",
-            "info-btn-plant-capex-kwt",
-            "info-btn-plant-capex-kwe",
-            "info-btn-mesh-fineness",
-            "info-btn-accuracy",
-            "info-btn-number-of-laterals",
-            "info-btn-lateral-flow-allocation",
-            "info-btn-lateral-flow-multiplier",
-            "info-btn-fluid-properties-mode"
-        ]
-        
-        try:
-            button_index = button_ids.index(triggered_id)
-            # Handle case where the component might not exist (None value)
-            if button_index < len(info_clicks) and info_clicks[button_index] is not None and info_clicks[button_index] > 0:
-                button_clicked = True
-        except (ValueError, IndexError):
-            pass
-    
-    parameter_names = [
-        "Surface Temperature (˚C)",
-        "Geothermal Gradient (K/m)",
-        "Rock Thermal Conductivity (W/m-K)",
-        "Rock Specific Heat Capacity (J/kg-K)",
-        "Rock Density (kg/m3)",
-        "Injection Temperature (˚C)",
-        "Mass Flow Rate (kg/s)",
-        "Borehole Diameter (m)",
-        "Wellbore Radius Vertical (m)",
-        "Wellbore Radius Lateral (m)",
-        "Horizontal Extent (m)",
-        "Drilling Depth (m)",
-        "Drilling Cost ($/m)",
-        "Discount Rate (%)",
-        "Lifetime (years)",
-        "Plant CAPEX ($/kWt)",
-        "Plant CAPEX ($/kWe)",
-        "Pre-cooling (˚C)",
-        "Turbine Outlet Pressure (bar)",
-        "Mesh Fineness",
-        "Accuracy",
-        "Number of Laterals",
-        "Lateral Flow Allocation",
-        "Lateral Flow Multiplier",
-        "Fluid Properties Mode"
-    ]
-    
-    # Map button IDs to parameter names - handle both metric and imperial dynamically
-    button_to_param = {
-        # Metric parameter names
-        "info-btn-surface-temperature-degc": "Surface Temperature (˚C)",
-        "info-btn-geothermal-gradient-k-m": "Geothermal Gradient (K/m)",
-        "info-btn-rock-thermal-conductivity-w-m-k": "Rock Thermal Conductivity (W/m-K)",
-        "info-btn-rock-specific-heat-capacity-j-kg-k": "Rock Specific Heat Capacity (J/kg-K)",
-        "info-btn-rock-density-kg-m3": "Rock Density (kg/m3)",
-        "info-btn-injection-temperature-degc": "Injection Temperature (˚C)",
-        "info-btn-mass-flow-rate-kg-s": "Mass Flow Rate (kg/s)",
-        "info-btn-borehole-diameter-m": "Borehole Diameter (m)",
-        "info-btn-wellbore-radius-vertical": "Wellbore Radius Vertical (m)",
-        "info-btn-wellbore-radius-lateral": "Wellbore Radius Lateral (m)",
-        "info-btn-horizontal-extent": "Horizontal Extent (m)",
-        "info-btn-drilling-depth": "Drilling Depth (m)",
-        "info-btn-drilling-cost": "Drilling Cost ($/m)",
-        "info-btn-pre-cooling-degc": "Pre-cooling (˚C)",
-        "info-btn-turbine-outlet-pressure-bar": "Turbine Outlet Pressure (bar)",
-        
-        
-        
-        # Common parameters (no unit suffix)
-        "info-btn-discount-rate-%": "Discount Rate (%)",
-        "info-btn-lifetime-years": "Lifetime (years)",
-        "info-btn-plant-capex-kwt": "Plant CAPEX ($/kWt)",
-        "info-btn-plant-capex-kwe": "Plant CAPEX ($/kWe)",
-        "info-btn-mesh-fineness": "Mesh Fineness",
-        "info-btn-accuracy": "Accuracy",
-        "info-btn-number-of-laterals": "Number of Laterals",
-        "info-btn-lateral-flow-allocation": "Lateral Flow Allocation",
-        "info-btn-lateral-flow-multiplier": "Lateral Flow Multiplier",
-        "info-btn-fluid-properties-mode": "Fluid Properties Mode"
-    }
-    
-    if button_clicked and triggered_id and triggered_id in button_to_param:
-        param = button_to_param[triggered_id]
-        info = PARAMETER_INFO.get(param, None)
-        if info:
-            modal_content = [
-                html.H6("Definition:", className="text-primary"),
-                html.P(info["definition"], className="mb-3"),
-                html.H6("Recommended Range:", className="text-primary"),
-                html.P(info["recommended_range"], className="mb-3"),
-                html.H6("Typical Value:", className="text-primary"),
-                html.P(f"{info['typical_value']}", className="mb-3"),
-                html.H6("Description:", className="text-primary"),
-                html.P(info["description"], className="mb-3"),
-            ]
-            return True, f"Information: {param}", modal_content
-    
-    # If no button was clicked, return current state
-    return is_open, "", []
-
-
-
-
-
-# Separate callback for close button to ensure it works
-@app.callback(
-    Output("info-modal", "is_open", allow_duplicate=True),
-    Input("close-info-modal", "n_clicks"),
-    prevent_initial_call=True
-)
-def close_modal(n_clicks):
-    if n_clicks and n_clicks > 0:
-        return False
-    raise PreventUpdate
+# Info popup callbacks are now handled in info_popups.py
 
 # -----------------------------------------------------------------------------
 # Unit Conversion Callbacks
