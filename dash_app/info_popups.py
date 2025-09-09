@@ -578,15 +578,18 @@ def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, 
         ])
 
 def create_info_modal():
-    """Create the info modal component."""
-    return dbc.Modal([
-        dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
-        dbc.ModalBody(id="info-modal-body"),
-        dbc.ModalFooter(
-            dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0, 
-                      style={"cursor": "pointer", "fontWeight": "bold"})
-        ),
-    ], id="info-modal", is_open=False, size="lg")
+    """Create the info modal component with timestamp store to prevent automatic opening when switching models or units"""
+    return html.Div([
+        dcc.Store(id="info-btn-last-ts", data=0),
+        dbc.Modal([
+            dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
+            dbc.ModalBody(id="info-modal-body"),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close-info-modal", className="ms-auto", n_clicks=0, 
+                          style={"cursor": "pointer", "fontWeight": "bold"})
+            ),
+        ], id="info-modal", is_open=False, size="lg")
+    ])
 
 def register_info_modal_callbacks(app):
     """Register info modal callbacks using pattern-matching IDs."""
@@ -597,23 +600,36 @@ def register_info_modal_callbacks(app):
     @app.callback(
         [Output("info-modal", "is_open"),
          Output("info-modal-title", "children"),
-         Output("info-modal-body", "children")],
+         Output("info-modal-body", "children"),
+         Output("info-btn-last-ts", "data")],
         [
-            Input({"type": "info-btn", "param": ALL}, "n_clicks"),
+            Input({"type": "info-btn", "param": ALL}, "n_clicks_timestamp"),
+        ],
+        [
+            State("info-btn-last-ts", "data"),
             State("info-modal", "is_open"),
         ],
         prevent_initial_call=True,
     )
-    def toggle_info_modal(n_clicks_list, is_open):
-        """Handle info popup clicks for all parameters dynamically using pattern matching."""
-        if not n_clicks_list or all((c or 0) == 0 for c in n_clicks_list):
+    def toggle_info_modal(ts_list, last_ts, is_open):
+        """Handle info popup clicks for all parameters dynamically using pattern matching with timestamps."""
+        # No buttons mounted or nothing ever clicked
+        if not ts_list:
             raise PreventUpdate
 
+        # Current max click time among mounted buttons
+        current_max = max((t or 0) for t in ts_list)
+
+        # If no new click since last time, do nothing
+        if current_max <= (last_ts or 0):
+            raise PreventUpdate
+
+        # A *new* click happened; figure out which button
         triggered = ctx.triggered_id
-        if not triggered or "param" not in triggered:
+        if not triggered or not isinstance(triggered, dict) or triggered.get("type") != "info-btn":
             raise PreventUpdate
 
-        suffix = triggered["param"]
+        suffix = triggered.get("param")
         param = suffix_to_param.get(suffix)
         if not param:
             raise PreventUpdate
@@ -632,7 +648,7 @@ def register_info_modal_callbacks(app):
             html.H6("Description:", className="text-primary"),
             html.P(info["description"], className="mb-3"),
         ]
-        return True, f"Information: {param}", modal_content
+        return True, f"Information: {param}", modal_content, current_max
 
     @app.callback(
         Output("info-modal", "is_open", allow_duplicate=True),

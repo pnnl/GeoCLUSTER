@@ -2162,45 +2162,57 @@ def update_economic_sliders(unit_system):
     
     if unit_system == "imperial":
         # Imperial drilling cost ($/ft)
-        drillcost_container = create_enhanced_slider(
-            DivID="drillcost-div", ID="drillcost-select", 
-            ptitle="Drilling Cost ($/ft)", 
-            min_v=0, max_v=1220, 
-            mark_dict={0: '0', 1220: '1.2k'}, 
-            start_v=610, 
-            div_style=div_block_style, 
-            parameter_name="Drilling Cost ($/m)"
+        drillcost_container = html.Div(
+            key=f"drillcost-imperial",
+            children=[create_enhanced_slider(
+                DivID="drillcost-div", ID="drillcost-select", 
+                ptitle="Drilling Cost ($/ft)", 
+                min_v=0, max_v=1220, 
+                mark_dict={0: '0', 1220: '1.2k'}, 
+                start_v=610, 
+                div_style=div_block_style, 
+                parameter_name="Drilling Cost ($/ft)"
+            )]
         )
         # Imperial pre-cooling (°F)
-        precool_container = create_enhanced_slider(
-            DivID="precool-div", ID="precool-select", 
-            ptitle="Pre-cooling (°F)", 
-            min_v=32, max_v=104, 
-            mark_dict={32: '32', 104: '104'}, 
-            start_v=32, 
-            div_style=div_block_style, 
-            parameter_name="Pre-cooling (˚C)"
+        precool_container = html.Div(
+            key=f"precool-imperial",
+            children=[create_enhanced_slider(
+                DivID="precool-div", ID="precool-select", 
+                ptitle="Pre-cooling (°F)", 
+                min_v=32, max_v=104, 
+                mark_dict={32: '32', 104: '104'}, 
+                start_v=32, 
+                div_style=div_block_style, 
+                parameter_name="Pre-cooling (˚F)"
+            )]
         )
     else:
         # Metric drilling cost ($/m)
-        drillcost_container = create_enhanced_slider(
-            DivID="drillcost-div", ID="drillcost-select", 
-            ptitle="Drilling Cost ($/m)", 
-            min_v=0, max_v=4000, 
-            mark_dict={0: '0', 4000: '4k'}, 
-            start_v=2000, 
-            div_style=div_block_style, 
-            parameter_name="Drilling Cost ($/m)"
+        drillcost_container = html.Div(
+            key=f"drillcost-metric",
+            children=[create_enhanced_slider(
+                DivID="drillcost-div", ID="drillcost-select", 
+                ptitle="Drilling Cost ($/m)", 
+                min_v=0, max_v=4000, 
+                mark_dict={0: '0', 4000: '4k'}, 
+                start_v=2000, 
+                div_style=div_block_style, 
+                parameter_name="Drilling Cost ($/m)"
+            )]
         )
         # Metric pre-cooling (°C)
-        precool_container = create_enhanced_slider(
-            DivID="precool-div", ID="precool-select", 
-            ptitle="Pre-cooling (°C)", 
-            min_v=0, max_v=40, 
-            mark_dict={0: '0', 40: '40'}, 
-            start_v=0, 
-            div_style=div_block_style, 
-            parameter_name="Pre-cooling (˚C)"
+        precool_container = html.Div(
+            key=f"precool-metric",
+            children=[create_enhanced_slider(
+                DivID="precool-div", ID="precool-select", 
+                ptitle="Pre-cooling (°C)", 
+                min_v=0, max_v=40, 
+                mark_dict={0: '0', 40: '40'}, 
+                start_v=0, 
+                div_style=div_block_style, 
+                parameter_name="Pre-cooling (˚C)"
+            )]
         )
     
     return drillcost_container, precool_container
