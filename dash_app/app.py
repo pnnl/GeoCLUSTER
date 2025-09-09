@@ -2086,6 +2086,7 @@ def update_error_divs(levelized_cost_dict):
      Output("info-modal-title", "children"),
      Output("info-modal-body", "children")],
     [
+        # Metric parameter inputs
         Input("info-btn-surface-temperature-degc", "n_clicks"),
         Input("info-btn-geothermal-gradient-k-m", "n_clicks"),
         Input("info-btn-rock-thermal-conductivity-w-m-k", "n_clicks"),
@@ -2094,15 +2095,20 @@ def update_error_divs(levelized_cost_dict):
         Input("info-btn-injection-temperature-degc", "n_clicks"),
         Input("info-btn-mass-flow-rate-kg-s", "n_clicks"),
         Input("info-btn-borehole-diameter-m", "n_clicks"),
-        Input("info-btn-horizontal-extent-m", "n_clicks"),
-        Input("info-btn-drilling-depth-m", "n_clicks"),
-        Input("info-btn-drilling-cost-m", "n_clicks"),
+        Input("info-btn-wellbore-radius-vertical", "n_clicks"),
+        Input("info-btn-wellbore-radius-lateral", "n_clicks"),
+        Input("info-btn-horizontal-extent", "n_clicks"),
+        Input("info-btn-drilling-depth", "n_clicks"),
+        Input("info-btn-drilling-cost", "n_clicks"),
+        Input("info-btn-pre-cooling-degc", "n_clicks"),
+        Input("info-btn-turbine-outlet-pressure-bar", "n_clicks"),
+        
+        
+        # Common parameter inputs (no unit suffix)
         Input("info-btn-discount-rate-%", "n_clicks"),
         Input("info-btn-lifetime-years", "n_clicks"),
         Input("info-btn-plant-capex-kwt", "n_clicks"),
         Input("info-btn-plant-capex-kwe", "n_clicks"),
-        Input("info-btn-pre-cooling-degc", "n_clicks"),
-        Input("info-btn-turbine-outlet-pressure-bar", "n_clicks"),
         Input("info-btn-mesh-fineness", "n_clicks"),
         Input("info-btn-accuracy", "n_clicks"),
         Input("info-btn-number-of-laterals", "n_clicks"),
@@ -2127,6 +2133,7 @@ def toggle_info_modal(*args):
     if triggered_id:
         # Find the index of the triggered button in the args
         button_ids = [
+            # Metric parameter button IDs
             "info-btn-surface-temperature-degc",
             "info-btn-geothermal-gradient-k-m",
             "info-btn-rock-thermal-conductivity-w-m-k",
@@ -2135,15 +2142,20 @@ def toggle_info_modal(*args):
             "info-btn-injection-temperature-degc",
             "info-btn-mass-flow-rate-kg-s",
             "info-btn-borehole-diameter-m",
-            "info-btn-horizontal-extent-m",
-            "info-btn-drilling-depth-m",
-            "info-btn-drilling-cost-m",
+            "info-btn-wellbore-radius-vertical",
+            "info-btn-wellbore-radius-lateral",
+            "info-btn-horizontal-extent",
+            "info-btn-drilling-depth",
+            "info-btn-drilling-cost",
+            "info-btn-pre-cooling-degc",
+            "info-btn-turbine-outlet-pressure-bar",
+            
+            
+            # Common parameter button IDs (no unit suffix)
             "info-btn-discount-rate-%",
             "info-btn-lifetime-years",
             "info-btn-plant-capex-kwt",
             "info-btn-plant-capex-kwe",
-            "info-btn-pre-cooling-degc",
-            "info-btn-turbine-outlet-pressure-bar",
             "info-btn-mesh-fineness",
             "info-btn-accuracy",
             "info-btn-number-of-laterals",
@@ -2169,6 +2181,8 @@ def toggle_info_modal(*args):
         "Injection Temperature (˚C)",
         "Mass Flow Rate (kg/s)",
         "Borehole Diameter (m)",
+        "Wellbore Radius Vertical (m)",
+        "Wellbore Radius Lateral (m)",
         "Horizontal Extent (m)",
         "Drilling Depth (m)",
         "Drilling Cost ($/m)",
@@ -2186,8 +2200,9 @@ def toggle_info_modal(*args):
         "Fluid Properties Mode"
     ]
     
-    # Map button IDs to parameter names
+    # Map button IDs to parameter names - handle both metric and imperial dynamically
     button_to_param = {
+        # Metric parameter names
         "info-btn-surface-temperature-degc": "Surface Temperature (˚C)",
         "info-btn-geothermal-gradient-k-m": "Geothermal Gradient (K/m)",
         "info-btn-rock-thermal-conductivity-w-m-k": "Rock Thermal Conductivity (W/m-K)",
@@ -2196,17 +2211,21 @@ def toggle_info_modal(*args):
         "info-btn-injection-temperature-degc": "Injection Temperature (˚C)",
         "info-btn-mass-flow-rate-kg-s": "Mass Flow Rate (kg/s)",
         "info-btn-borehole-diameter-m": "Borehole Diameter (m)",
-        "info-btn-wellbore-radius-vertical-m": "Wellbore Radius Vertical (m)",
-        "info-btn-wellbore-radius-lateral-m": "Wellbore Radius Lateral (m)",
-        "info-btn-horizontal-extent-m": "Horizontal Extent (m)",
-        "info-btn-drilling-depth-m": "Drilling Depth (m)",
-        "info-btn-drilling-cost-m": "Drilling Cost ($/m)",
+        "info-btn-wellbore-radius-vertical": "Wellbore Radius Vertical (m)",
+        "info-btn-wellbore-radius-lateral": "Wellbore Radius Lateral (m)",
+        "info-btn-horizontal-extent": "Horizontal Extent (m)",
+        "info-btn-drilling-depth": "Drilling Depth (m)",
+        "info-btn-drilling-cost": "Drilling Cost ($/m)",
+        "info-btn-pre-cooling-degc": "Pre-cooling (˚C)",
+        "info-btn-turbine-outlet-pressure-bar": "Turbine Outlet Pressure (bar)",
+        
+        
+        
+        # Common parameters (no unit suffix)
         "info-btn-discount-rate-%": "Discount Rate (%)",
         "info-btn-lifetime-years": "Lifetime (years)",
         "info-btn-plant-capex-kwt": "Plant CAPEX ($/kWt)",
         "info-btn-plant-capex-kwe": "Plant CAPEX ($/kWe)",
-        "info-btn-pre-cooling-degc": "Pre-cooling (˚C)",
-        "info-btn-turbine-outlet-pressure-bar": "Turbine Outlet Pressure (bar)",
         "info-btn-mesh-fineness": "Mesh Fineness",
         "info-btn-accuracy": "Accuracy",
         "info-btn-number-of-laterals": "Number of Laterals",

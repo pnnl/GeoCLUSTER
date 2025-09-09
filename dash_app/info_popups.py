@@ -44,11 +44,27 @@ PARAMETER_INFO = {
         "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
     },
     
+    "Surface Temperature (˚F)": {
+        "definition": "Set the ground-level or ambient temperature. A value of 77°F is a typical average surface temperature in temperate regions during geothermal operation.",
+        "recommended_range": "32-104°F",
+        "typical_value": "77°F",
+        "unit": "°F",
+        "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
+    },
+    
     "Geothermal Gradient (K/m)": {
         "definition": "Set the rate at which temperature increases with depth. A value of 0.05 K/m means that the temperature increases by 50°C for every kilometer of depth. 50°C/km represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
         "recommended_range": "0.015-0.200 K/m",
         "typical_value": "0.05 K/m",
         "unit": "K/m",
+        "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
+    },
+    
+    "Geothermal Gradient (˚F/ft)": {
+        "definition": "Set the rate at which temperature increases with depth. A value of 0.027°F/ft means that the temperature increases by 27°F for every 1000 feet of depth. This represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
+        "recommended_range": "0.008-0.109°F/ft",
+        "typical_value": "0.027°F/ft",
+        "unit": "°F/ft",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
@@ -60,6 +76,14 @@ PARAMETER_INFO = {
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
     
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)": {
+        "definition": "Set how quickly heat moves through rock. A value of 1.73 Btu/ft-h-°F represents moderately conductive rock, such as granite.",
+        "recommended_range": "0.23-2.89 Btu/ft-h-°F",
+        "typical_value": "1.73 Btu/ft-h-°F",
+        "unit": "Btu/ft-h-°F",
+        "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
+    },
+    
     "Rock Specific Heat Capacity (J/kg-K)": {
         "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.051 J/kg-K represents an average for various dry rocks.",
         "recommended_range": "500-2000 J/kg-K",
@@ -68,11 +92,27 @@ PARAMETER_INFO = {
         "description": "Affects the thermal storage capacity of the rock formation."
     },
     
+    "Rock Specific Heat Capacity (Btu/lb-˚F)": {
+        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°F, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.000012 Btu/lb-°F represents an average for various dry rocks.",
+        "recommended_range": "0.119-0.477 Btu/lb-°F",
+        "typical_value": "0.000012 Btu/lb-°F",
+        "unit": "Btu/lb-°F",
+        "description": "Affects the thermal storage capacity of the rock formation."
+    },
+    
     "Rock Density (kg/m3)": {
         "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 790 kg/m³ implies the rock is highly porous, fractured, or contains gas-filled voids. Typical rock densities usually range from 2,000 to 3,000 kg/m³.",
         "recommended_range": "1000-3500 kg/m³",
         "typical_value": "790 kg/m³",
         "unit": "kg/m³",
+        "description": "Density influences the thermal mass and heat storage capacity of the formation."
+    },
+    
+    "Rock Density (lb/ft3)": {
+        "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 49.3 lb/ft³ implies the rock is highly porous, fractured, or contains gas-filled voids. Typical rock densities usually range from 124.9 to 218.6 lb/ft³.",
+        "recommended_range": "62.4-218.6 lb/ft³",
+        "typical_value": "49.3 lb/ft³",
+        "unit": "lb/ft³",
         "description": "Density influences the thermal mass and heat storage capacity of the formation."
     },
     
@@ -85,11 +125,27 @@ PARAMETER_INFO = {
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
     },
     
+    "Injection Temperature (˚F)": {
+        "definition": "Set the temperature of the fluid entering the subsurface. A value of 86°F is a common injection temperature for low-enthalpy systems.",
+        "recommended_range": "86-140°F",
+        "typical_value": "86°F",
+        "unit": "°F",
+        "description": "Lower injection temperatures generally improve heat extraction efficiency."
+    },
+    
     "Mass Flow Rate (kg/s)": {
         "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 24 kg/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
         "recommended_range": "5-300 kg/s",
         "typical_value": "24 kg/s",
         "unit": "kg/s",
+        "description": "Higher flow rates increase heat extraction but may require more pumping power."
+    },
+    
+    "Mass Flow Rate (lb/s)": {
+        "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 52.9 lb/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
+        "recommended_range": "11.0-661.4 lb/s",
+        "typical_value": "52.9 lb/s",
+        "unit": "lb/s",
         "description": "Higher flow rates increase heat extraction but may require more pumping power."
     },
     
@@ -102,11 +158,27 @@ PARAMETER_INFO = {
         "description": "Larger diameters allow for higher flow rates but increase drilling costs."
     },
     
+    "Borehole Diameter (ft)": {
+        "definition": "Set the width of the hole drilled into the ground to access the geothermal reservoir. A value of 1.15 ft can manage frictional pressure losses where lower widths can increase pressure drops and reduce heat transfer.",
+        "recommended_range": "0.71-1.46 ft",
+        "typical_value": "1.15 ft",
+        "unit": "ft",
+        "description": "Larger diameters allow for higher flow rates but increase drilling costs."
+    },
+    
     "Wellbore Radius Vertical (m)": {
         "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
         "recommended_range": "0.10795-0.22225 m",
         "typical_value": "0.222 m",
         "unit": "m",
+        "description": "Affects the heat transfer area and flow resistance in the vertical section."
+    },
+    
+    "Wellbore Radius Vertical (ft)": {
+        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.35-0.73 ft",
+        "typical_value": "0.73 ft",
+        "unit": "ft",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
@@ -118,6 +190,14 @@ PARAMETER_INFO = {
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
+    "Wellbore Radius Lateral (ft)": {
+        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.35-0.73 ft",
+        "typical_value": "0.73 ft",
+        "unit": "ft",
+        "description": "Influences heat transfer and flow characteristics in the lateral sections."
+    },
+    
     "Horizontal Extent (m)": {
         "definition": "Set the horizontal length of the well. A value of 10 km represents long multi-lateral systems. A value of 50 km far exceeds directional drilling and would require massive pressure support and well integrity.",
         "recommended_range": "1000-50000 m",
@@ -126,11 +206,27 @@ PARAMETER_INFO = {
         "description": "Longer horizontal extents increase heat extraction area but require more drilling."
     },
     
+    "Horizontal Extent (ft)": {
+        "definition": "Set the horizontal length of the well. A value of 32,808 ft represents long multi-lateral systems. A value of 164,042 ft far exceeds directional drilling and would require massive pressure support and well integrity.",
+        "recommended_range": "3,281-164,042 ft",
+        "typical_value": "32,808 ft",
+        "unit": "ft",
+        "description": "Longer horizontal extents increase heat extraction area but require more drilling."
+    },
+    
     "Drilling Depth (m)": {
         "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 3.5 km targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
         "recommended_range": "1000-10000 m",
         "typical_value": "3500 m",
         "unit": "m",
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
+    },
+    
+    "Drilling Depth (ft)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 11,483 ft targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
+        "recommended_range": "3,281-32,808 ft",
+        "typical_value": "11,483 ft",
+        "unit": "ft",
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
     
@@ -159,7 +255,15 @@ PARAMETER_INFO = {
         "description": "A major component of geothermal project costs, varies with depth and geology."
     },
     
-    "Discount Rate (%)": {
+    "Drilling Cost ($/ft)": {
+        "definition": "Set the cost per foot drilled. A value of $305/ft represents an average cost.",
+        "recommended_range": "0-1,220 $/ft",
+        "typical_value": "305 $/ft",
+        "unit": "$/ft",
+        "description": "A major component of geothermal project costs, varies with depth and geology."
+    },
+    
+  "Discount Rate (%)": {
         "definition": "Set the percentage that reflects how much future money is worth today, accounting for both the time and value of money and project risk. A 7% rate reflects moderate risk and cost of capital.",
         "recommended_range": "0-20%",
         "typical_value": "7%",
@@ -199,11 +303,27 @@ PARAMETER_INFO = {
         "description": "Optimizes turbine efficiency and power output for sCO2 cycles."
     },
     
+    "Pre-cooling (˚F)": {
+        "definition": "Set the temperature to which the working fluid is cooled before it's injected back underground. This temperature reflects the lowest temperature that can be consistently and economically achieved to help maximize the thermal gradient between the rock and the fluid. A value of 55.4°F is a realistic baseline for a system that includes ambient air cooling or mechanical chillers.",
+        "recommended_range": "32-104°F",
+        "typical_value": "55.4°F",
+        "unit": "°F",
+        "description": "Optimizes turbine efficiency and power output for sCO2 cycles."
+    },
+    
     "Turbine Outlet Pressure (bar)": {
         "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 80 bar keeps the working fluid in a dense supercritical or subcooled state.",
         "recommended_range": "75-200 bar",
         "typical_value": "80 bar",
         "unit": "bar",
+        "description": "Critical parameter for sCO2 cycle efficiency and power output."
+    },
+    
+    "Turbine Outlet Pressure (psi)": {
+        "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 1,160 psi keeps the working fluid in a dense supercritical or subcooled state.",
+        "recommended_range": "1,088-2,901 psi",
+        "typical_value": "1,160 psi",
+        "unit": "psi",
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
     },
     
