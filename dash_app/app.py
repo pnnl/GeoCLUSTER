@@ -1685,9 +1685,33 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
-    # print('contours')
+    # Check for None values that could cause errors during unit conversion
+    thermal_params = [mdot, L2, L1, grad, D, Tinj, k_m]
+    if any(param is None for param in thermal_params):
+        from plotly.subplots import make_subplots
+        empty_fig = make_subplots(rows=2, cols=2)
+        return empty_fig, {'Error': 'Missing parameter values'}
+
+    # Apply unit conversions to match other callbacks
+    from unit_conversions import unit_converter
+    
+    def convert_to_metric(value, from_unit, to_unit, converter_func):
+        """Convert a value from imperial to metric units"""
+        if from_unit != to_unit:
+            return converter_func(value, from_unit, to_unit)
+        return value
+    
+    # Convert all values to metric for backend calculations
+    L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    D_m = convert_to_metric(D, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
+    mdot_kg_s = convert_to_metric(mdot, unit_converter.user_preferences.get('mass_flow', 'kg/s'), 'kg/s', unit_converter.convert_mass_flow)
+    Tinj_c = convert_to_metric(Tinj, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    grad_k_m = convert_to_metric(grad, unit_converter.user_preferences.get('geothermal_gradient', 'K/m'), 'K/m', unit_converter.convert_geothermal_gradient)
+    k_w_m_k = convert_to_metric(k_m, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'), 'W/m-K', unit_converter.convert_thermal_conductivity)
+
     subplots, err_subcontour_dict = generate_subsurface_contours(
-        interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
+        interp_time, fluid, case, param, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k
     )
 
     return subplots, err_subcontour_dict

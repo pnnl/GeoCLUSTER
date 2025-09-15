@@ -41,13 +41,28 @@ lw = 1.4 # line width
 
 def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
 
-    arg_mdot_v, arg_mdot_i = find_nearest(u_sCO2.mdot, arg_mdot) 
-    arg_L2_v, arg_L2_i = find_nearest(u_sCO2.L2, arg_L2)
-    arg_L1_v, arg_L1_i = find_nearest(u_sCO2.L1, arg_L1)
-    arg_grad_v, arg_grad_i = find_nearest(u_sCO2.grad, arg_grad)
-    arg_D_v, arg_D_i = find_nearest(u_sCO2.D, arg_D)
-    arg_Tinj_v, arg_Tinj_i = find_nearest(u_sCO2.Tinj, arg_Tinj + to_kelvin_factor) # to kelvin
-    arg_k_v, arg_k_i = find_nearest(u_sCO2.k, arg_k)
+    # Ensure values are within data array bounds to prevent issues with unit conversion
+    def clamp_to_bounds(value, array):
+        """Clamp value to be within array bounds"""
+        array = np.asarray(array)
+        return np.clip(value, array.min(), array.max())
+    
+    # Clamp all values to their respective array bounds
+    arg_mdot_clamped = clamp_to_bounds(arg_mdot, u_sCO2.mdot)
+    arg_L2_clamped = clamp_to_bounds(arg_L2, u_sCO2.L2)
+    arg_L1_clamped = clamp_to_bounds(arg_L1, u_sCO2.L1)
+    arg_grad_clamped = clamp_to_bounds(arg_grad, u_sCO2.grad)
+    arg_D_clamped = clamp_to_bounds(arg_D, u_sCO2.D)
+    arg_Tinj_clamped = clamp_to_bounds(arg_Tinj + to_kelvin_factor, u_sCO2.Tinj)  # to kelvin
+    arg_k_clamped = clamp_to_bounds(arg_k, u_sCO2.k)
+
+    arg_mdot_v, arg_mdot_i = find_nearest(u_sCO2.mdot, arg_mdot_clamped) 
+    arg_L2_v, arg_L2_i = find_nearest(u_sCO2.L2, arg_L2_clamped)
+    arg_L1_v, arg_L1_i = find_nearest(u_sCO2.L1, arg_L1_clamped)
+    arg_grad_v, arg_grad_i = find_nearest(u_sCO2.grad, arg_grad_clamped)
+    arg_D_v, arg_D_i = find_nearest(u_sCO2.D, arg_D_clamped)
+    arg_Tinj_v, arg_Tinj_i = find_nearest(u_sCO2.Tinj, arg_Tinj_clamped)
+    arg_k_v, arg_k_i = find_nearest(u_sCO2.k, arg_k_clamped)
 
     return arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
@@ -109,12 +124,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             HyperParam3, HyperParam4, HyperParam5
             ):
     
-    # Debug output
-    print(f"DEBUG: generate_subsurface_lineplots called with:")
-    print(f"  - interp_time: {interp_time}")
-    print(f"  - fluid: {fluid}")
-    print(f"  - case: {case}")
-    print(f"  - model: {model}")
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -434,14 +443,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             }
 
     
-    # Debug output to see what's being returned
-    print(f"DEBUG: generate_subsurface_lineplots returning:")
-    print(f"  - fig type: {type(fig)}")
-    print(f"  - forty_yr_means_dict keys: {list(forty_yr_means_dict.keys()) if forty_yr_means_dict else None}")
-    print(f"  - mass_flow_rates_dict keys: {list(mass_flow_rates_dict.keys()) if mass_flow_rates_dict else None}")
-    print(f"  - time_dict keys: {list(time_dict.keys()) if time_dict else None}")
-    print(f"  - TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else None}")
-    
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
 
 
@@ -469,8 +470,80 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     mdot_x = param_dict[(case, fluid, "mdot")]
     mdot_ij, param_ij = np.meshgrid(mdot_x, param_y, indexing='ij') # returns coordinate matrices from coordinate vectors
 
-    arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
-                arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    # For contour plots, we need to find the nearest indices for the current parameter values
+    # and only use slice(None) for the parameter being varied and mass flow rate
+    
+    # First, find the nearest indices for all parameters using the current values
+    arg_mdot_v, arg_mdot_i_nearest, arg_L2_v, arg_L2_i_nearest, arg_L1_v, arg_L1_i_nearest, arg_grad_v, arg_grad_i_nearest, arg_D_v, arg_D_i_nearest, \
+    arg_Tinj_v, arg_Tinj_i_nearest, arg_k_v, arg_k_i_nearest = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    
+    # Now set the indices based on which parameter is being varied for the contour plot
+    # The varied parameter and mass flow rate should use slice(None) for full ranges
+    # All other parameters should use their nearest indices
+    
+    if param == "Horizontal Extent (m)":
+        # L2 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2 (the varied parameter)
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param == "Vertical Extent (m)":
+        # L1 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = slice(None)    # Full range for L1 (the varied parameter)
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param == "Geothermal Gradient (K/m)":
+        # grad is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = slice(None)  # Full range for grad (the varied parameter)
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param == "Diameter (m)":
+        # D is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = slice(None)     # Full range for D (the varied parameter)
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param == "Injection Temperature (C)":
+        # Tinj is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = slice(None)  # Full range for Tinj (the varied parameter)
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param == "Thermal Conductivity (W/m-K)":
+        # k is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = slice(None)     # Full range for k (the varied parameter)
+    else:
+        # Default case - use L2 and mdot as the two axes
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
 
     # initial time conditions
     # arg_i = 160 # 4
@@ -478,122 +551,39 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     arg_i = 160 - (1*101) 
     arg_v = 40 - (0.25*101)
     
-    if interp_time == "False":
+    
+    if fluid == "sCO2" and case == "utube":
+        kWe_avg_flipped = np.transpose(u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        kWt_avg_flipped = np.transpose(u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        Tout_flipped = np.transpose(u_sCO2.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+        Pout_flipped = np.transpose(u_sCO2.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-        # print('FALSE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-        
-        if param == "Horizontal Extent (m)":
-            arg_L2_i = slice(None)
-        if param == "Vertical Extent (m)":
-            arg_L1_i = slice(None)
-        if param == "Geothermal Gradient (K/m)":
-            arg_grad_i = slice(None)
-        if param == "Borehole Diameter (m)":
-            arg_D_i = slice(None)
-        if param == "Injection Temperature (˚C)":
-            arg_Tinj_i = slice(None)
-        if param == "Rock Thermal Conductivity (W/m-K)":
-            arg_k_i = slice(None)
+    if fluid == "sCO2" and case == "coaxial":
 
-        if fluid == "sCO2" and case == "utube":
+        kWe_avg_flipped = np.transpose(c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        kWt_avg_flipped = np.transpose(c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        Tout_flipped = np.transpose(c_sCO2.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+        Pout_flipped = np.transpose(c_sCO2.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-            kWe_avg_flipped = np.transpose(u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            kWt_avg_flipped = np.transpose(u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            Tout_flipped = np.transpose(u_sCO2.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-            Pout_flipped = np.transpose(u_sCO2.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+    if fluid == "H2O" and case == "utube":
+        kWe_avg_flipped = np.transpose(u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        kWt_avg_flipped = np.transpose(u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        Tout_flipped = np.transpose(u_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+        Pout_flipped = np.transpose(u_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-        if fluid == "sCO2" and case == "coaxial":
 
-            kWe_avg_flipped = np.transpose(c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            kWt_avg_flipped = np.transpose(c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            Tout_flipped = np.transpose(c_sCO2.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-            Pout_flipped = np.transpose(c_sCO2.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+    if fluid == "H2O" and case == "coaxial":
 
-        if fluid == "H2O" and case == "utube":
+        kWe_avg_flipped = np.transpose(c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        kWt_avg_flipped = np.transpose(c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
+        Tout_flipped = np.transpose(c_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
+        Pout_flipped = np.transpose(c_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-            kWe_avg_flipped = np.transpose(u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            kWt_avg_flipped = np.transpose(u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            Tout_flipped = np.transpose(u_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-            Pout_flipped = np.transpose(u_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-
-            # print(kWe_avg_flipped.shape) # (20, 26)
-            # print('\n')
-
-        if fluid == "H2O" and case == "coaxial":
-
-            kWe_avg_flipped = np.transpose(c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            kWt_avg_flipped = np.transpose(c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
-            Tout_flipped = np.transpose(c_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-            Pout_flipped = np.transpose(c_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
-
-    if interp_time == "True": # would this even make sense? It doesn't because can manipulate the other factors, when they should be fixed?
-
-        # print('TRUE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-
-        point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
-        # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
-
-        if fluid == "sCO2" and case == "utube":
-            try:
-                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param, point) 
-                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
-
-            except ValueError as e:
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
-                error_message = parse_error_message(e=e, e_name='Err SubContour1')
-                error_messages_dict['Err SubContour1'] = error_message
-        
-        if fluid == "sCO2" and case == "coaxial":
-            try:
-                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param, point)
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
-
-            except ValueError as e:
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
-                error_message = parse_error_message(e=e, e_name='Err SubContour2')
-                error_messages_dict['Err SubContour2'] = error_message
-        
-        if fluid == "H2O" and case == "utube":
-            try:
-                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
-
-            except ValueError as e:
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
-                error_message = parse_error_message(e=e, e_name='Err SubContour3')
-                error_messages_dict['Err SubContour3'] = error_message
-        
-            # print(kWe_avg_flipped.shape) # should have an x and y right for the z component?
-            # print('\n')
-
-        if fluid == "H2O" and case == "coaxial":
-            try:
-                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
-
-            except ValueError as e:
-                kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
-                error_message = parse_error_message(e=e, e_name='Err SubContour4')
-                error_messages_dict['Err SubContour4'] = error_message
         
 
     fig = make_subplots(rows=2, cols=2, start_cell="top-left",
                         horizontal_spacing = 0.12,
-                        vertical_spacing = 0.12,
+                        vertical_spacing = 0.18,
                         subplot_titles=('40-Year Average Exergy (kWe)', 
                                        '40-Year Average Thermal Output (kWt)',
                                        'Outlet Temperature (°C)',
