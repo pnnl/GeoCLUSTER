@@ -281,27 +281,40 @@ class TEA:
                         37.75, 38, 38.25, 38.5, 38.75, 39, 39.25, 39.5, 39.75, 40]
   
         if self.Fluid == 1:
-            # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
-            # self.Tout = np.array(TandP_dict["H2O_Tout"])
-            self.Pout = np.array(TandP_dict["H2O_Pout"])
-            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
-            try:
-                self.Tout = f(np.array(hdf5_times))
-            except Exception as e:
-                print(e)
-            # times = TandP_dict["time"]
+            # Check if H2O data exists and is not None
+            if TandP_dict.get("H2O_Tout") is not None and TandP_dict.get("H2O_Pout") is not None and TandP_dict.get("time") is not None:
+                self.Pout = np.array(TandP_dict["H2O_Pout"])
+                f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+                try:
+                    self.Tout = f(np.array(hdf5_times))
+                except Exception as e:
+                    print(f"H2O interpolation error: {e}")
+                    # Fallback to default values
+                    self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+            else:
+                # Use default values when data is None
+                self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                self.Pout = np.ones(len(hdf5_times)) * self.P_in
+                # Mark this as invalid thermal data
+                self.error_codes = np.append(self.error_codes, 8000)  # Missing thermal data
 
         elif self.Fluid == 2:
-            # self.Tout = np.array(TandP_dict["sCO2_Tout"])
-            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
-            try:
-                self.Tout = f(np.array(hdf5_times))
-            except Exception as e:
-                print(e)
-            self.Pout = np.array(TandP_dict["sCO2_Pout"])
-            # times = TandP_dict["time"]
-            # self.timearray = TandP_dict["time"]
-            # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
+            # Check if sCO2 data exists and is not None
+            if TandP_dict.get("sCO2_Tout") is not None and TandP_dict.get("sCO2_Pout") is not None and TandP_dict.get("time") is not None:
+                f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+                try:
+                    self.Tout = f(np.array(hdf5_times))
+                except Exception as e:
+                    print(f"sCO2 interpolation error: {e}")
+                    # Fallback to default values
+                    self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                self.Pout = np.array(TandP_dict["sCO2_Pout"])
+            else:
+                # Use default values when data is None
+                self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                self.Pout = np.ones(len(hdf5_times)) * self.P_in
+                # Mark this as invalid thermal data
+                self.error_codes = np.append(self.error_codes, 8000)  # Missing thermal data
 
         #Initial time correction (Correct production temperature and pressure at time 0 (the value at time 0 [=initial condition] is not a good representation for the first few months)
         self.Tout[0] = self.Tout[1]
@@ -358,20 +371,32 @@ class TEA:
                 # print("\n\n")
 
                 if self.LCOH<0:
-                    self.LCOH = 9999
+                    self.LCOH = "Negative LCOH - System may be losing heat"
                     self.error_codes = np.append(self.error_codes,5000)
             elif self.End_use == 2: #electricity production
                 if self.Average_electricity_production == 0:
-                    self.LCOE = 9999
+                    self.LCOE = "No electricity production - Check system parameters"
                     self.error_codes = np.append(self.error_codes,6000)
                 else:
                     self.LCOE = (self.TotalCAPEX + np.sum(self.OPEX_Plant*Discount_vector))*1e6/np.sum((self.Annual_electricity_production-self.Annual_pumping_power)/1e3*Discount_vector) #$/MWh
                 if self.LCOE<0:
-                    self.LCOE = 9999
+                    self.LCOE = "Negative LCOE - System may be inefficient"
                     self.error_codes = np.append(self.error_codes,7000)
             
         else:  #Production temperature went below injection temperature # AB HERE *****
             self.error_codes = np.append(self.error_codes,1000)
+            # Set meaningful error messages for when thermal data is invalid
+            if self.End_use == 1:
+                self.LCOH = "Invalid thermal data - Production temp below injection temp"
+            elif self.End_use == 2:
+                self.LCOE = "Invalid thermal data - Production temp below injection temp"
+        
+        # Check for missing thermal data (error code 8000)
+        if 8000 in self.error_codes:
+            if self.End_use == 1:
+                self.LCOH = "Missing thermal data - Check system parameters"
+            elif self.End_use == 2:
+                self.LCOE = "Missing thermal data - Check system parameters"
     
  
     def calculatedrillinglength(self):

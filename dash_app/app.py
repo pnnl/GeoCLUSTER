@@ -2066,18 +2066,73 @@ def update_error_divs(levelized_cost_dict):
                     'color': darkergrey,
                     }
 
-    # Safely check the LCOE values
+    # Safely check the LCOE and LCOH values
     lcoe_sco2 = levelized_cost_dict.get('LCOE sCO2', '')
     lcoe_h2o = levelized_cost_dict.get('LCOE H2O', '')
+    lcoh_sco2 = levelized_cost_dict.get('LCOH sCO2', '')
+    lcoh_h2o = levelized_cost_dict.get('LCOH H2O', '')
     
-    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00":
+    # Check for error messages (string values) or high LCOE/LCOH values
+    is_error = (isinstance(lcoe_sco2, str) and ("No electricity production" in lcoe_sco2 or "Negative LCOE" in lcoe_sco2 or "Invalid thermal data" in lcoe_sco2 or "Missing thermal data" in lcoe_sco2)) or \
+               (isinstance(lcoe_h2o, str) and ("No electricity production" in lcoe_h2o or "Negative LCOE" in lcoe_h2o or "Invalid thermal data" in lcoe_h2o or "Missing thermal data" in lcoe_h2o)) or \
+               (isinstance(lcoh_sco2, str) and ("Negative LCOH" in lcoh_sco2 or "Invalid thermal data" in lcoh_sco2 or "Missing thermal data" in lcoh_sco2)) or \
+               (isinstance(lcoh_h2o, str) and ("Negative LCOH" in lcoh_h2o or "Invalid thermal data" in lcoh_h2o or "Missing thermal data" in lcoh_h2o)) or \
+               lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00"
+    
+    if is_error:
+        # Determine the specific error message
+        if isinstance(lcoe_sco2, str) and "No electricity production" in lcoe_sco2:
+            error_msg = "**No electricity production detected.**"
+            error_detail = "Check system parameters - outlet temperature may be too low or system configuration may be inefficient."
+        elif isinstance(lcoe_h2o, str) and "No electricity production" in lcoe_h2o:
+            error_msg = "**No electricity production detected.**"
+            error_detail = "Check system parameters - outlet temperature may be too low or system configuration may be inefficient."
+        elif isinstance(lcoe_sco2, str) and "Negative LCOE" in lcoe_sco2:
+            error_msg = "**Negative LCOE detected.**"
+            error_detail = "System may be inefficient - check thermal parameters and system configuration."
+        elif isinstance(lcoe_h2o, str) and "Negative LCOE" in lcoe_h2o:
+            error_msg = "**Negative LCOE detected.**"
+            error_detail = "System may be inefficient - check thermal parameters and system configuration."
+        elif isinstance(lcoe_sco2, str) and "Invalid thermal data" in lcoe_sco2:
+            error_msg = "**Invalid thermal data.**"
+            error_detail = "Production temperature below injection temperature - check geothermal gradient and system parameters."
+        elif isinstance(lcoe_h2o, str) and "Invalid thermal data" in lcoe_h2o:
+            error_msg = "**Invalid thermal data.**"
+            error_detail = "Production temperature below injection temperature - check geothermal gradient and system parameters."
+        elif isinstance(lcoh_sco2, str) and "Negative LCOH" in lcoh_sco2:
+            error_msg = "**Negative LCOH detected.**"
+            error_detail = "System may be losing heat - check thermal parameters and system configuration."
+        elif isinstance(lcoh_h2o, str) and "Negative LCOH" in lcoh_h2o:
+            error_msg = "**Negative LCOH detected.**"
+            error_detail = "System may be losing heat - check thermal parameters and system configuration."
+        elif isinstance(lcoh_sco2, str) and "Invalid thermal data" in lcoh_sco2:
+            error_msg = "**Invalid thermal data.**"
+            error_detail = "Production temperature below injection temperature - check geothermal gradient and system parameters."
+        elif isinstance(lcoh_h2o, str) and "Invalid thermal data" in lcoh_h2o:
+            error_msg = "**Invalid thermal data.**"
+            error_detail = "Production temperature below injection temperature - check geothermal gradient and system parameters."
+        elif isinstance(lcoe_sco2, str) and "Missing thermal data" in lcoe_sco2:
+            error_msg = "**Missing thermal data.**"
+            error_detail = "Thermal calculations failed - check system parameters and model selection."
+        elif isinstance(lcoe_h2o, str) and "Missing thermal data" in lcoe_h2o:
+            error_msg = "**Missing thermal data.**"
+            error_detail = "Thermal calculations failed - check system parameters and model selection."
+        elif isinstance(lcoh_sco2, str) and "Missing thermal data" in lcoh_sco2:
+            error_msg = "**Missing thermal data.**"
+            error_detail = "Thermal calculations failed - check system parameters and model selection."
+        elif isinstance(lcoh_h2o, str) and "Missing thermal data" in lcoh_h2o:
+            error_msg = "**Missing thermal data.**"
+            error_detail = "Thermal calculations failed - check system parameters and model selection."
+        else:
+            error_msg = "**Economic calculation error.**"
+            error_detail = "Outlet Temperature (°C) may be too low or the system is losing heat."
         
         warning_div3 = html.Div(#id="error_block_div3",
                             style=error_style,
                             children=[
                                 html.Img(id="warning-img", src=app.get_asset_url('warning.png')), 
-                                dcc.Markdown("**LCOE is too high.**", style={'display': 'inline-block'}),
-                                html.P("Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."),
+                                dcc.Markdown(error_msg, style={'display': 'inline-block'}),
+                                html.P(error_detail),
                                 ]
                         )
 

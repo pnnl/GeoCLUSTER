@@ -736,7 +736,10 @@ def generate_econ_lineplots(TandP_dict,
                                                 properties_CO2v2_pathname, 
                                                 additional_properties_CO2v2_pathname,
                                                 is_heating=True)
-                lcoh_sCO2 = format( teaobj_sCO2.LCOH, '.2f')
+                if isinstance(teaobj_sCO2.LCOH, str):
+                    lcoh_sCO2 = teaobj_sCO2.LCOH
+                else:
+                    lcoh_sCO2 = format( teaobj_sCO2.LCOH, '.2f')
 
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Instantaneous_heat_production/1e3,
@@ -796,7 +799,10 @@ def generate_econ_lineplots(TandP_dict,
                                                 additional_properties_CO2v2_pathname,
                                                 is_H20=True, is_heating=True
                                                 )
-                lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
+                if isinstance(teaobj_H2O.LCOH, str):
+                    lcoh_H2O = teaobj_H2O.LCOH
+                else:
+                    lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
                 # print(lcoh_H2O)
                 # print("Error on LCOH ... ")
                 # print(teaobj_H2O)
@@ -872,7 +878,10 @@ def generate_econ_lineplots(TandP_dict,
                 # convert any negative value to 0
                 teaobj_sCO2.Inst_Net_Electricity_production[teaobj_sCO2.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_sCO2 = format( teaobj_sCO2.LCOE, '.2f')
+                if isinstance(teaobj_sCO2.LCOE, str):
+                    lcoe_sCO2 = teaobj_sCO2.LCOE
+                else:
+                    lcoe_sCO2 = format( teaobj_sCO2.LCOE, '.2f')
 
                 # Electricity 
                 fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Inst_Net_Electricity_production/1e3,
@@ -946,7 +955,10 @@ def generate_econ_lineplots(TandP_dict,
                 # convert any negative value to 0
                 teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
+                if isinstance(teaobj_H2O.LCOE, str):
+                    lcoe_H2O = teaobj_H2O.LCOE
+                else:
+                    lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
 
                 # print(" ********* ")
                 # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)

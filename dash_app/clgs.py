@@ -91,6 +91,13 @@ class data:
 
         if target == "all":
             return slice(None)  # slice all of the points
+        
+        # Handle None values - return a slice for the middle of the array
+        if target is None:
+            print(f"Warning: None value passed to get_parameter_indices, using middle of array")
+            middle_idx = len(array) // 2
+            return slice(middle_idx, middle_idx + 1)
+            
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
         # Check if the target value is within the array bounds
         # For metric units, use strict validation
