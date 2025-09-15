@@ -1535,7 +1535,7 @@ def update_sliders_hyperparms(model):
      Output(component_id='thermal-results-mass', component_property='data'),
      Output(component_id='thermal-results-time', component_property='data'),
      Output(component_id='thermal-results-errors', component_property='data'),
-     Output(component_id="TandP-data", component_property="data"),
+     Output(component_id="TandP-data", component_property="data", allow_duplicate=True),
      ],
     [Input(component_id="interpolation-select", component_property="value"),
      Input(component_id="fluid-select", component_property="value"),
@@ -1568,6 +1568,7 @@ def update_sliders_hyperparms(model):
      Input(component_id='fluid-mode-select', component_property='value'),
 
     ],
+    prevent_initial_call=True,
 )
 
 def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
@@ -1664,8 +1665,10 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
 @app.callback(
     [Output(component_id="geothermal_plots", component_property="figure"),
      Output(component_id="thermal-contours-errors", component_property="data"),
+     Output(component_id="TandP-data", component_property="data", allow_duplicate=True),
     ],
-    [Input(component_id="interpolation-select", component_property="value"),
+    [
+     Input(component_id="interpolation-select", component_property="value"),
      Input(component_id="fluid-select", component_property="value"),
      Input(component_id="case-select", component_property="value"),
      Input(component_id="param-select", component_property="value"),
@@ -1677,6 +1680,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
      Input(component_id="Tinj-select", component_property="value"),
      Input(component_id="k-select", component_property="value"),
     ],
+    prevent_initial_call=True,
 )
 
 def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m):
@@ -1690,7 +1694,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     if any(param is None for param in thermal_params):
         from plotly.subplots import make_subplots
         empty_fig = make_subplots(rows=2, cols=2)
-        return empty_fig, {'Error': 'Missing parameter values'}
+        return empty_fig, {'Error': 'Missing parameter values'}, {}
 
     # Apply unit conversions to match other callbacks
     from unit_conversions import unit_converter
@@ -1714,7 +1718,17 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
         interp_time, fluid, case, param, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k
     )
 
-    return subplots, err_subcontour_dict
+    # Generate thermal data for economic calculations with proper unit conversions
+    try:
+        from plots import generate_subsurface_lineplots
+        _, _, _, _, _, TandP_dict = generate_subsurface_lineplots(
+            interp_time, fluid, case, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, 
+            1, "HDF5", 15, 1000, 2500, 0.1, 0.1, 1, 1, 1, 1, 1, 1, 1, 1
+        )
+    except Exception as e:
+        TandP_dict = {}
+
+    return subplots, err_subcontour_dict, TandP_dict
 
 
 @app.callback(
@@ -1781,6 +1795,12 @@ def update_econ_plots(TandP_dict,
     else:
         is_plot_ts = False
 
+    # Check if TandP_dict is valid before proceeding
+    if not TandP_dict or not isinstance(TandP_dict, dict):
+        from plotly.graph_objects import Figure
+        empty_fig = Figure()
+        return empty_fig, {}, {}, {'Error': 'Missing thermal data'}
+
     try:
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = generate_econ_lineplots(
             TandP_dict,
@@ -1800,7 +1820,7 @@ def update_econ_plots(TandP_dict,
     except Exception as e:
         from plotly.graph_objects import Figure
         empty_fig = Figure()
-        return empty_fig, {}, {}, {}
+        return empty_fig, {}, {}, {'Error': str(e)}
 
 
 @app.callback(
@@ -1987,7 +2007,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
             try:
                 error_message = next(iter(err_sub_dict.values()))
                 if "No outputs" in error_message:
-                    error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                    error_message = "No outputs were able to be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 
                 err_div1 = html.Div(#id="error_block_div1",
                                     style=error_style,
@@ -2164,14 +2184,12 @@ def handle_quick_unit_changes(unit_system):
         # Apply metric units
         preferences = apply_metric_units()
         unit_converter.update_preferences(preferences)
-        print(f"Applied metric units: {preferences}")
         return "metric"
     
     elif unit_system == "imperial":
         # Apply imperial units
         preferences = apply_imperial_units()
         unit_converter.update_preferences(preferences)
-        print(f"Applied imperial units: {preferences}")
         return "imperial"
     
     return unit_system

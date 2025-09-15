@@ -698,15 +698,8 @@ def generate_econ_lineplots(TandP_dict,
     fig = make_subplots(rows=2, cols=5,
                         specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.11
-                        )
-
-    fig = make_subplots(rows=3, cols=5,
-                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, None, None, None]
-                                ],
-                        horizontal_spacing = 0.11
+                        horizontal_spacing = 0.13,
+                        vertical_spacing = 0.40
                         )
 
     teaobj_sCO2 = None
@@ -875,6 +868,13 @@ def generate_econ_lineplots(TandP_dict,
                                                 properties_CO2v2_pathname, 
                                                 additional_properties_CO2v2_pathname)
                 
+                # Check if Inst_Net_Electricity_production exists, if not create it
+                if not hasattr(teaobj_sCO2, 'Inst_Net_Electricity_production'):
+                    if hasattr(teaobj_sCO2, 'Inst_electricity_production'):
+                        teaobj_sCO2.Inst_Net_Electricity_production = teaobj_sCO2.Inst_electricity_production
+                    else:
+                        teaobj_sCO2.Inst_Net_Electricity_production = np.zeros(len(teaobj_sCO2.Linear_time_distribution))
+                
                 # convert any negative value to 0
                 teaobj_sCO2.Inst_Net_Electricity_production[teaobj_sCO2.Inst_Net_Electricity_production<0] = 0
 
@@ -918,7 +918,7 @@ def generate_econ_lineplots(TandP_dict,
                         # ts_fig = get_Ts_diagram(fig=ts_fig, teaobj=teaobj_sCO2, nrow=1, ncol=1)
                         get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=2, ncol=1, tmatrix_pathname=tmatrix_pathname)
                     if end_use == "All":
-                        get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=3, ncol=1, tmatrix_pathname=tmatrix_pathname)
+                        get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=2, ncol=1, tmatrix_pathname=tmatrix_pathname)
 
                     # ths throws an error sometimes ... to see why and where
                     # else:
@@ -951,6 +951,13 @@ def generate_econ_lineplots(TandP_dict,
                                                 additional_properties_CO2v2_pathname,
                                                 is_H20=True
                                                 )
+                
+                # Check if Inst_Net_Electricity_production exists, if not create it
+                if not hasattr(teaobj_H2O, 'Inst_Net_Electricity_production'):
+                    if hasattr(teaobj_H2O, 'Inst_electricity_production'):
+                        teaobj_H2O.Inst_Net_Electricity_production = teaobj_H2O.Inst_electricity_production
+                    else:
+                        teaobj_H2O.Inst_Net_Electricity_production = np.zeros(len(teaobj_H2O.Linear_time_distribution))
                 
                 # convert any negative value to 0
                 teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0

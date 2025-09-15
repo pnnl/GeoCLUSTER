@@ -283,14 +283,32 @@ class TEA:
         if self.Fluid == 1:
             # Check if H2O data exists and is not None
             if TandP_dict.get("H2O_Tout") is not None and TandP_dict.get("H2O_Pout") is not None and TandP_dict.get("time") is not None:
-                self.Pout = np.array(TandP_dict["H2O_Pout"])
-                f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+                time_data = np.array(TandP_dict["time"])
+                temp_data = np.array(TandP_dict["H2O_Tout"])
+                pressure_data = np.array(TandP_dict["H2O_Pout"])
+                
+                # Check array lengths and handle mismatches
+                if len(time_data) != len(temp_data) or len(temp_data) == 0:
+                    if len(temp_data) == 0:
+                        # If temperature data is empty, use default values
+                        self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                        self.Pout = np.ones(len(hdf5_times)) * self.P_in
+                        self.error_codes = np.append(self.error_codes, 8000)  # Missing thermal data
+                        return
+                    # Use the shorter length
+                    min_len = min(len(time_data), len(temp_data))
+                    time_data = time_data[:min_len]
+                    temp_data = temp_data[:min_len]
+                    pressure_data = pressure_data[:min_len] if len(pressure_data) >= min_len else pressure_data
+                
                 try:
+                    f = interp1d(time_data, temp_data, fill_value="extrapolate")
                     self.Tout = f(np.array(hdf5_times))
+                    self.Pout = pressure_data
                 except Exception as e:
-                    print(f"H2O interpolation error: {e}")
                     # Fallback to default values
                     self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                    self.Pout = np.ones(len(hdf5_times)) * self.P_in
             else:
                 # Use default values when data is None
                 self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
@@ -301,14 +319,32 @@ class TEA:
         elif self.Fluid == 2:
             # Check if sCO2 data exists and is not None
             if TandP_dict.get("sCO2_Tout") is not None and TandP_dict.get("sCO2_Pout") is not None and TandP_dict.get("time") is not None:
-                f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+                time_data = np.array(TandP_dict["time"])
+                temp_data = np.array(TandP_dict["sCO2_Tout"])
+                pressure_data = np.array(TandP_dict["sCO2_Pout"])
+                
+                # Check array lengths and handle mismatches
+                if len(time_data) != len(temp_data) or len(temp_data) == 0:
+                    if len(temp_data) == 0:
+                        # If temperature data is empty, use default values
+                        self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
+                        self.Pout = np.ones(len(hdf5_times)) * self.P_in
+                        self.error_codes = np.append(self.error_codes, 8000)  # Missing thermal data
+                        return
+                    # Use the shorter length
+                    min_len = min(len(time_data), len(temp_data))
+                    time_data = time_data[:min_len]
+                    temp_data = temp_data[:min_len]
+                    pressure_data = pressure_data[:min_len] if len(pressure_data) >= min_len else pressure_data
+                
                 try:
+                    f = interp1d(time_data, temp_data, fill_value="extrapolate")
                     self.Tout = f(np.array(hdf5_times))
+                    self.Pout = pressure_data
                 except Exception as e:
-                    print(f"sCO2 interpolation error: {e}")
                     # Fallback to default values
                     self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
-                self.Pout = np.array(TandP_dict["sCO2_Pout"])
+                    self.Pout = np.ones(len(hdf5_times)) * self.P_in
             else:
                 # Use default values when data is None
                 self.Tout = np.ones(len(hdf5_times)) * (self.T_in + 273.15)
@@ -370,7 +406,7 @@ class TEA:
                 # print(self.LCOH)
                 # print("\n\n")
 
-                if self.LCOH<0:
+                if isinstance(self.LCOH, (int, float)) and self.LCOH<0:
                     self.LCOH = "Negative LCOH - System may be losing heat"
                     self.error_codes = np.append(self.error_codes,5000)
             elif self.End_use == 2: #electricity production
@@ -379,7 +415,7 @@ class TEA:
                     self.error_codes = np.append(self.error_codes,6000)
                 else:
                     self.LCOE = (self.TotalCAPEX + np.sum(self.OPEX_Plant*Discount_vector))*1e6/np.sum((self.Annual_electricity_production-self.Annual_pumping_power)/1e3*Discount_vector) #$/MWh
-                if self.LCOE<0:
+                if isinstance(self.LCOE, (int, float)) and self.LCOE<0:
                     self.LCOE = "Negative LCOE - System may be inefficient"
                     self.error_codes = np.append(self.error_codes,7000)
             
