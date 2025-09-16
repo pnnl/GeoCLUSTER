@@ -219,19 +219,43 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 	return fig
 
 
-def update_layout_properties_subsurface_contours(fig, param):
+def update_layout_properties_subsurface_contours(fig, param, units="metric"):
 
-    fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=1, col=1)
-    fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=1, col=2)
-    fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=2, col=1)
-    fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=2, col=2)
+    # Set x-axis labels based on units
+    if units.lower().startswith("imp"):
+        fig.update_xaxes(title_text="Mass Flow Rate (lb/s)", row=1, col=1)
+        fig.update_xaxes(title_text="Mass Flow Rate (lb/s)", row=1, col=2)
+        fig.update_xaxes(title_text="Mass Flow Rate (lb/s)", row=2, col=1)
+        fig.update_xaxes(title_text="Mass Flow Rate (lb/s)", row=2, col=2)
+    else:
+        fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=1, col=1)
+        fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=1, col=2)
+        fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=2, col=1)
+        fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", row=2, col=2)
 
+    # Update y-axis labels based on units
+    if units.lower().startswith("imp"):
+        if param == "Horizontal Extent (m)":
+            param_label = "Horizontal Extent (ft)"
+        elif param == "Vertical Extent (m)":
+            param_label = "Vertical Extent (ft)"
+        elif param == "Geothermal Gradient (K/m)":
+            param_label = "Geothermal Gradient (°F/ft)"
+        elif param == "Diameter (m)":
+            param_label = "Diameter (ft)"
+        elif param == "Injection Temperature (C)":
+            param_label = "Injection Temperature (°F)"
+        elif param == "Thermal Conductivity (W/m-K)":
+            param_label = "Thermal Conductivity (BTU/(hr·ft·°F))"
+        else:
+            param_label = param
+    else:
+        param_label = param
 
-    # Update yaxis properties
-    fig.update_yaxes(title_text=param, row=1, col=1)
-    fig.update_yaxes(title_text=param, row=1, col=2)
-    fig.update_yaxes(title_text=param, row=2, col=1)
-    fig.update_yaxes(title_text=param, row=2, col=2)
+    fig.update_yaxes(title_text=param_label, row=1, col=1)
+    fig.update_yaxes(title_text=param_label, row=1, col=2)
+    fig.update_yaxes(title_text=param_label, row=2, col=1)
+    fig.update_yaxes(title_text=param_label, row=2, col=2)
 
     fig.update_layout(margin=dict(l=70, r=70, t=50, b=0)) 
 

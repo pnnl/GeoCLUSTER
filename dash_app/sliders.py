@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# web app and interactive graphics libraries 
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 
-# sourced scripts
-from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
+from plots import *
 from info_popups import create_enhanced_slider, create_enhanced_dropdown, create_enhanced_input_box
 from unit_conversions import unit_converter, get_unit_symbol
-
-# Conversion helper functions
 def get_temperature_converted_values(base_value_celsius, target_unit):
     """Convert temperature values from Celsius to target unit"""
     if target_unit == 'C':
@@ -298,7 +294,6 @@ thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 inlet_pressure_dict = {5: '5', 20: '20'}
 pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
-# TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
 start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.05, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #

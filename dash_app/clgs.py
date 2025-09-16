@@ -88,6 +88,11 @@ class data:
 
         If we pass in "all" as the target, it will return a slice that will slice the entirety of that array
         """
+        
+        # Handle empty array
+        if len(array) == 0:
+            print(f"Warning: Empty array passed to get_parameter_indices")
+            return slice(0, 1)
 
         if target == "all":
             return slice(None)  # slice all of the points
@@ -97,6 +102,7 @@ class data:
             print(f"Warning: None value passed to get_parameter_indices, using middle of array")
             middle_idx = len(array) // 2
             return slice(middle_idx, middle_idx + 1)
+        
             
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
         # Check if the target value is within the array bounds
@@ -130,12 +136,22 @@ class data:
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
                 print(lineprint)
                 # Don't raise exception, but log the warning
-            # Continue with interpolation in both cases
+            
+            # For values outside bounds, clamp to the nearest valid range
+            if target < array[0]:
+                return slice(0, 1)  # Use first value
+            else:  # target > array[-1]
+                return slice(-1, None)  # Use last value
+        
+        # Normal case: find the appropriate slice for interpolation
         for i, value in enumerate(array):
             if value == target:
                 return slice(i, i + 1)
             if value > target:
                 return slice(i - 1, i + 1)
+        
+        # Fallback: if we get here, return the last slice
+        return slice(-1, None)
 
     def read_values_around_point_for_interpolation(
         self, zarr_array, point, parameter_values
@@ -145,10 +161,23 @@ class data:
         If "all" is passed in as any of the coordinates of the point,
         then it'll slice across the entirety of that coordinate's dimension
         """
+        # Debug: Check for None values in point
+        if any(val is None for val in point):
+            print(f"DEBUG: None values found in point: {point}")
+            print(f"DEBUG: parameter_values: {[len(p) for p in parameter_values]}")
+        
         indices = [
             self.get_parameter_indices(params, value)
             for value, params in zip(point, parameter_values)
         ]
+        
+        # Debug: Check for None values in indices
+        if any(idx is None for idx in indices):
+            print(f"DEBUG: None values found in indices: {indices}")
+            print(f"DEBUG: point: {point}")
+            # Replace None values with slice(None) as a fallback
+            indices = [idx if idx is not None else slice(None) for idx in indices]
+        
         data = zarr_array[
             tuple(indices)
         ]  # need to convert into into a tuple or zarr thinks we're doing fancy indexing
@@ -345,127 +374,92 @@ class data:
 
         return Tout, Pout, times
 
-    def interp_outlet_states_contour(self, param, point):
+    def interp_outlet_states_contour(self, param, point, time_index=None):
+        """
+        Build a 2D (varied_param × mdot) slice of Tout, Pout at a single time.
+        point = (mdot, L2, L1, grad, D, Tinj, k) in SI units.
+        time_index: optional index into self.time (default: last snapshot).
+        """
+        from utils_labels import canonicalize_param_label
+        
+        # Canonicalize the parameter label to handle both metric and imperial units
+        param_key = canonicalize_param_label(param) if param else ""
+        
+        # Map canonical keys to axis indices in self.ivars (0..7). time is 7.
+        axis_by_key = {
+            "L2": 1,    # Horizontal Extent
+            "L1": 2,    # Vertical Extent  
+            "grad": 3,  # Geothermal Gradient
+            "D": 4,     # Borehole Diameter
+            "Tinj": 5,  # Injection Temperature
+            "k": 6,     # Rock Thermal Conductivity
+        }
+        
+        if param_key not in axis_by_key:
+            raise ValueError(f"Unknown parameter label: {param} (canonicalized: {param_key})")
+
+        var_axis = axis_by_key[param_key]
+        # Choose a time index for the contours (use end-of-life by default)
+        if time_index is None:
+            time_index = len(self.time) - 1
+        t_fixed = self.time[time_index]
+
+        # 2) Build the interpolation grid "points": (mdot_grid, varied_grid, fixed scalars..., time_fixed)
+        varied_grid = self.ivars[var_axis]
+        mdot_grid = self.mdot
+
+        # unpack point in the same order as self.ivars[:-1]
+        mdot, L2, L1, grad, D, Tinj, k = point
+
+        def fixed_val(axis):
+            return {
+                1: L2, 2: L1, 3: grad, 4: D, 5: Tinj, 6: k
+            }[axis]
+
+        points = list(iter.product(
+            mdot_grid,                                 # axis 0 (mdot) -> vary (x)
+            (varied_grid if var_axis == 1 else (L2,)), # axis 1 (L2)
+            (varied_grid if var_axis == 2 else (L1,)), # axis 2 (L1)
+            (varied_grid if var_axis == 3 else (grad,)),# axis 3 (grad)
+            (varied_grid if var_axis == 4 else (D,)),  # axis 4 (D)
+            (varied_grid if var_axis == 5 else (Tinj,)),# axis 5 (Tinj in K)
+            (varied_grid if var_axis == 6 else (k,)),  # axis 6 (k)
+            (t_fixed,)                                  # axis 7 (time) -> fixed
+        ))
+
+        # 3) Tell interpolate_points to read "all" for mdot and the varied axis, and fix the rest:
+        indices = []
+        for axis, arr in enumerate(self.ivars):
+            if axis == 0 or axis == var_axis:
+                indices.append(slice(None))            # read all mdot & varied
+            elif axis == 7:
+                # time fixed to nearest index
+                # use a tiny helper from get_parameter_indices to clamp/locate time
+                idx_slice = self.get_parameter_indices(self.time, t_fixed)
+                indices.append(idx_slice)
+            else:
+                # fixed values from 'point'
+                val = [mdot, L2, L1, grad, D, Tinj, k][axis]
+                idx_slice = self.get_parameter_indices(self.ivars[axis], val)
+                indices.append(idx_slice)
+
+        # 4) Read the corner hypercube and interpn on that reduced grid
+        def interpn_on(zarr):
+            data = zarr[tuple(indices)]
+            grid = [arr[idx] for idx, arr in zip(indices, self.ivars)]
+            return interpn(grid, data, points)
 
         try:
-            var_index = None
-            if param == "Horizontal Extent (m)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        self.L2,
-                        (point[1],),
-                        (point[2],),
-                        (point[3],),
-                        (point[4],),
-                        (point[5],),
-                        (point[6],),
-                    )
-                )
-                var_index = 1
-            if param == "Vertical Extent (m)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        (point[0],),
-                        self.L1,
-                        (point[2],),
-                        (point[3],),
-                        (point[4],),
-                        (point[5],),
-                        (point[6],),
-                    )
-                )
-                var_index = 2
-            if param == "Geothermal Gradient (K/m)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        (point[0],),
-                        (point[1],),
-                        self.grad,
-                        (point[3],),
-                        (point[4],),
-                        (point[5],),
-                        (point[6],),
-                    )
-                )
-                var_index = 3
-            if param == "Borehole Diameter (m)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        (point[0],),
-                        (point[1],),
-                        (point[2],),
-                        self.D,
-                        (point[4],),
-                        (point[5],),
-                        (point[6],),
-                    )
-                )
-                var_index = 4
-            if param == "Injection Temperature (˚C)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        (point[0],),
-                        (point[1],),
-                        (point[2],),
-                        (point[3],),
-                        self.Tinj,
-                        (point[5],),
-                        (point[6],),
-                    )
-                )
-                var_index = 5
-            if param == "Rock Thermal Conductivity (W/m-K)":
-                points = list(
-                    iter.product(
-                        self.mdot,
-                        (point[0],),
-                        (point[1],),
-                        (point[2],),
-                        (point[3],),
-                        (point[4],),
-                        self.k,
-                        (point[6],),
-                    )
-                )
-                var_index = 6
-
-            N_DIMENSIONS = 8
-            points_to_read_around = [None] * N_DIMENSIONS
-            point_index = 0
-            # the passed in point contains the coordinate of the value we're slicing over in conjuction with mass flow rate.
-            # we don't want to include that point the points to fetch, so we're removing it from the list of parameters to read at a point
-            # and replacing that with "all", so the function will slice over that entire dimension
-            parameters_to_read_from_point = list(point)
-            del parameters_to_read_from_point[var_index - 1]
-            for i in range(len(points_to_read_around)):
-                if i == 0 or i == var_index:
-                    points_to_read_around[i] = "all"
-                else:
-                    points_to_read_around[i] = parameters_to_read_from_point[point_index]
-                    point_index += 1
-            points_to_read_around = tuple(
-                points_to_read_around
-            )  # interpolate_points expects this to be a tuple so converting it
-
-            Tout = self.interpolate_points(self.Tout, points_to_read_around, points)
-            Pout = self.interpolate_points(self.Pout, points_to_read_around, points)
-
-            Tout = np.transpose(
-                np.reshape(Tout, (len(self.mdot), len(self.ivars[var_index])))
-            )  
-            Pout = np.transpose(
-                np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
-            )
-        except Exception:
-            print("Flag: Check if SBT model selected")
-            # AB: Dummy data for the contours:
-            Tout = np.full((20, 26), 365)
-            Pout = np.full((20, 26), 22228604)
+            Tout = interpn_on(self.Tout)
+            Pout = interpn_on(self.Pout)
+            # reshape to (len(varied), len(mdot)) then transpose to (mdot, varied)
+            Tout = np.reshape(Tout, (len(varied_grid), len(mdot_grid))).T
+            Pout = np.reshape(Pout, (len(varied_grid), len(mdot_grid))).T
+        except Exception as e:
+            print(f"Error in interp_outlet_states_contour: {e}")
+            # Fallback dummy data to avoid callback crash (and make the error visible)
+            Tout = np.full((len(mdot_grid), len(varied_grid)), 365.0)
+            Pout = np.full((len(mdot_grid), len(varied_grid)), 2.2228604e7)
 
         return Tout, Pout
 

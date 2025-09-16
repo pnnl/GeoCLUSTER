@@ -6,151 +6,150 @@ Unit Conversion Module for GeoCLUSTER
 Handles conversion between different unit systems for all parameters
 """
 
-# Unit conversion constants
 TEMPERATURE_CONVERSIONS = {
-    'C': 1.0,           # Celsius (base unit)
-    'F': lambda x: (x * 9/5) + 32   # Fahrenheit
+    'C': 1.0,
+    'F': lambda x: (x * 9/5) + 32
 }
 
 TEMPERATURE_CONVERSIONS_INVERSE = {
-    'C': 1.0,           # Celsius (base unit)
-    'F': lambda x: (x - 32) * 5/9   # Fahrenheit to Celsius
+    'C': 1.0,
+    'F': lambda x: (x - 32) * 5/9
 }
 
 LENGTH_CONVERSIONS = {
-    'm': 1.0,           # Meters (base unit)
-    'ft': 3.28084,      # Feet
-    'km': 0.001,        # Kilometers
-    'mi': 0.000621371,  # Miles
-    'cm': 100,          # Centimeters
-    'mm': 1000,         # Millimeters
-    'in': 39.3701,      # Inches
-    'yd': 1.09361       # Yards
+    'm': 1.0,
+    'ft': 3.28084,
+    'km': 0.001,
+    'mi': 0.000621371,
+    'cm': 100,
+    'mm': 1000,
+    'in': 39.3701,
+    'yd': 1.09361
 }
 
 LENGTH_CONVERSIONS_INVERSE = {
-    'm': 1.0,           # Meters (base unit)
-    'ft': 0.3048,       # Feet to meters
-    'km': 1000,         # Kilometers to meters
-    'mi': 1609.34,      # Miles to meters
-    'cm': 0.01,         # Centimeters to meters
-    'mm': 0.001,        # Millimeters to meters
-    'in': 0.0254,       # Inches to meters
-    'yd': 0.9144        # Yards to meters
+    'm': 1.0,
+    'ft': 0.3048,
+    'km': 1000,
+    'mi': 1609.34,
+    'cm': 0.01,
+    'mm': 0.001,
+    'in': 0.0254,
+    'yd': 0.9144
 }
 
 MASS_FLOW_CONVERSIONS = {
-    'kg/s': 1.0,        # kg/s (base unit)
-    'lb/s': 2.20462,    # Pounds per second
-    'kg/h': 3600,       # Kilograms per hour
-    'lb/h': 7936.64,    # Pounds per hour
-    'g/s': 1000,        # Grams per second
-    'ton/h': 3.6        # Metric tons per hour
+    'kg/s': 1.0,
+    'lb/s': 2.20462,
+    'kg/h': 3600,
+    'lb/h': 7936.64,
+    'g/s': 1000,
+    'ton/h': 3.6
 }
 
 MASS_FLOW_CONVERSIONS_INVERSE = {
-    'kg/s': 1.0,        # kg/s (base unit)
-    'lb/s': 0.453592,   # Pounds per second to kg/s
-    'kg/h': 0.000277778, # Kilograms per hour to kg/s
-    'lb/h': 0.000125998, # Pounds per hour to kg/s
-    'g/s': 0.001,       # Grams per second to kg/s
-    'ton/h': 0.277778    # Metric tons per hour to kg/s
+    'kg/s': 1.0,
+    'lb/s': 0.453592,
+    'kg/h': 0.000277778,
+    'lb/h': 0.000125998,
+    'g/s': 0.001,
+    'ton/h': 0.277778
 }
 
 THERMAL_CONDUCTIVITY_CONVERSIONS = {
-    'W/m-K': 1.0,       # W/m-K (base unit)
-    'W/m-C': 1.0,       # W/m-C (same as W/m-K)
-    'Btu/ft-h-F': 0.577789,  # BTU per foot-hour-Fahrenheit
-    'Btu/yd-h-F': 1.733367,  # BTU per yard-hour-Fahrenheit
-    'cal/cm-s-C': 0.002388,  # Calories per cm-second-Celsius
-    'kcal/m-h-C': 0.859845   # Kilocalories per meter-hour-Celsius
+    'W/m-K': 1.0,
+    'W/m-C': 1.0,
+    'Btu/ft-h-F': 0.577789,
+    'Btu/yd-h-F': 1.733367,
+    'cal/cm-s-C': 0.002388,
+    'kcal/m-h-C': 0.859845
 }
 
 THERMAL_CONDUCTIVITY_CONVERSIONS_INVERSE = {
-    'W/m-K': 1.0,       # W/m-K (base unit)
-    'W/m-C': 1.0,       # W/m-C (same as W/m-K)
-    'Btu/ft-h-F': 1.730735,  # BTU per foot-hour-Fahrenheit to W/m-K
-    'Btu/yd-h-F': 0.576912,  # BTU per yard-hour-Fahrenheit to W/m-K
-    'cal/cm-s-C': 418.68,    # Calories per cm-second-Celsius to W/m-K
-    'kcal/m-h-C': 1.163      # Kilocalories per meter-hour-Celsius to W/m-K
+    'W/m-K': 1.0,
+    'W/m-C': 1.0,
+    'Btu/ft-h-F': 1.730735,
+    'Btu/yd-h-F': 0.576912,
+    'cal/cm-s-C': 418.68,
+    'kcal/m-h-C': 1.163
 }
 
 HEAT_CAPACITY_CONVERSIONS = {
-    'J/kg-K': 1.0,      # J/kg-K (base unit)
-    'J/kg-C': 1.0,      # J/kg-C (same as J/kg-K)
-    'Btu/lb-F': 0.000238846, # BTU per pound-Fahrenheit
-    'cal/g-C': 0.000238846,  # Calories per gram-Celsius
-    'kJ/kg-K': 0.001,   # Kilojoules per kilogram-Kelvin
-    'kcal/kg-C': 0.000238846 # Kilocalories per kilogram-Celsius
+    'J/kg-K': 1.0,
+    'J/kg-C': 1.0,
+    'Btu/lb-F': 0.000238846,
+    'cal/g-C': 0.000238846,
+    'kJ/kg-K': 0.001,
+    'kcal/kg-C': 0.000238846
 }
 
 HEAT_CAPACITY_CONVERSIONS_INVERSE = {
-    'J/kg-K': 1.0,      # J/kg-K (base unit)
-    'J/kg-C': 1.0,      # J/kg-C (same as J/kg-K)
-    'Btu/lb-F': 4186.8, # BTU per pound-Fahrenheit to J/kg-K
-    'cal/g-C': 4186.8,  # Calories per gram-Celsius to J/kg-K
-    'kJ/kg-K': 1000,    # Kilojoules per kilogram-Kelvin to J/kg-K
-    'kcal/kg-C': 4186.8 # Kilocalories per kilogram-Celsius to J/kg-K
+    'J/kg-K': 1.0,
+    'J/kg-C': 1.0,
+    'Btu/lb-F': 4186.8,
+    'cal/g-C': 4186.8,
+    'kJ/kg-K': 1000,
+    'kcal/kg-C': 4186.8
 }
 
 DENSITY_CONVERSIONS = {
-    'kg/m3': 1.0,       # kg/m³ (base unit)
-    'g/cm3': 0.001,     # g/cm³
-    'lb/ft3': 0.062428, # lb/ft³
-    'lb/yd3': 0.002309, # lb/yd³
-    'lb/gal': 0.008345, # lb/gal (US)
-    'g/L': 0.001,       # g/L
-    't/m3': 0.001       # metric tons/m³
+    'kg/m3': 1.0,
+    'g/cm3': 0.001,
+    'lb/ft3': 0.062428,
+    'lb/yd3': 0.002309,
+    'lb/gal': 0.008345,
+    'g/L': 0.001,
+    't/m3': 0.001
 }
 
 DENSITY_CONVERSIONS_INVERSE = {
-    'kg/m3': 1.0,       # kg/m³ (base unit)
-    'g/cm3': 1000,      # g/cm³ to kg/m³
-    'lb/ft3': 16.0185,  # lb/ft³ to kg/m³
-    'lb/yd3': 433.0,    # lb/yd³ to kg/m³
-    'lb/gal': 119.826,  # lb/gal (US) to kg/m³
-    'g/L': 1000,        # g/L to kg/m³
-    't/m3': 1000        # metric tons/m³ to kg/m³
+    'kg/m3': 1.0,
+    'g/cm3': 1000,
+    'lb/ft3': 16.0185,
+    'lb/yd3': 433.0,
+    'lb/gal': 119.826,
+    'g/L': 1000,
+    't/m3': 1000
 }
 
 PRESSURE_CONVERSIONS = {
-    'Pa': 1.0,          # Pascal (base unit)
-    'bar': 1e-5,        # Bar
-    'MPa': 1e-6,        # Megapascal
-    'psi': 0.000145038, # Pounds per square inch
-    'atm': 9.86923e-6,  # Atmospheres
-    'kPa': 1e-3,        # Kilopascal
-    'torr': 7.50062e-3  # Torr
+    'Pa': 1.0,
+    'bar': 1e-5,
+    'MPa': 1e-6,
+    'psi': 0.000145038,
+    'atm': 9.86923e-6,
+    'kPa': 1e-3,
+    'torr': 7.50062e-3
 }
 
 PRESSURE_CONVERSIONS_INVERSE = {
-    'Pa': 1.0,          # Pascal (base unit)
-    'bar': 1e5,         # Bar to Pa
-    'MPa': 1e6,         # Megapascal to Pa
-    'psi': 6894.76,     # Pounds per square inch to Pa
-    'atm': 101325,      # Atmospheres to Pa
-    'kPa': 1e3,         # Kilopascal to Pa
-    'torr': 133.322     # Torr to Pa
+    'Pa': 1.0,
+    'bar': 1e5,
+    'MPa': 1e6,
+    'psi': 6894.76,
+    'atm': 101325,
+    'kPa': 1e3,
+    'torr': 133.322
 }
 
 GEOTHERMAL_GRADIENT_CONVERSIONS = {
-    'K/m': 1.0,         # K/m (base unit)
-    'C/m': 1.0,         # C/m (same as K/m)
-    'C/km': 1000,       # C/km
-    'F/ft': 0.54864,    # F/ft
-    'F/yd': 1.64592,    # F/yd
-    'F/100ft': 54.864,  # F/100ft
-    'K/km': 1000        # K/km
+    'K/m': 1.0,
+    'C/m': 1.0,
+    'C/km': 1000,
+    'F/ft': 0.54864,
+    'F/yd': 1.64592,
+    'F/100ft': 54.864,
+    'K/km': 1000
 }
 
 GEOTHERMAL_GRADIENT_CONVERSIONS_INVERSE = {
-    'K/m': 1.0,         # K/m (base unit)
-    'C/m': 1.0,         # C/m (same as K/m)
-    'C/km': 0.001,      # C/km to K/m
-    'F/ft': 1.82269,    # F/ft to K/m
-    'F/yd': 0.60756,    # F/yd to K/m
-    'F/100ft': 0.018227, # F/100ft to K/m
-    'K/km': 0.001       # K/km to K/m
+    'K/m': 1.0,
+    'C/m': 1.0,
+    'C/km': 0.001,
+    'F/ft': 1.82269,
+    'F/yd': 0.60756,
+    'F/100ft': 0.018227,
+    'K/km': 0.001
 }
 
 # Default unit preferences
@@ -182,7 +181,6 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to Celsius first if needed
         if from_unit != 'C':
             if from_unit in TEMPERATURE_CONVERSIONS_INVERSE:
                 if callable(TEMPERATURE_CONVERSIONS_INVERSE[from_unit]):
@@ -190,7 +188,6 @@ class UnitConverter:
                 else:
                     value = value * TEMPERATURE_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from Celsius to target unit
         if to_unit != 'C':
             if to_unit in TEMPERATURE_CONVERSIONS:
                 if callable(TEMPERATURE_CONVERSIONS[to_unit]):
@@ -205,11 +202,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to meters first
         if from_unit != 'm':
             value = value * LENGTH_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from meters to target unit
         if to_unit != 'm':
             value = value * LENGTH_CONVERSIONS[to_unit]
         
@@ -220,11 +215,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to kg/s first
         if from_unit != 'kg/s':
             value = value * MASS_FLOW_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from kg/s to target unit
         if to_unit != 'kg/s':
             value = value * MASS_FLOW_CONVERSIONS[to_unit]
         
@@ -235,11 +228,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to W/m-K first
         if from_unit != 'W/m-K':
             value = value * THERMAL_CONDUCTIVITY_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from W/m-K to target unit
         if to_unit != 'W/m-K':
             value = value * THERMAL_CONDUCTIVITY_CONVERSIONS[to_unit]
         
@@ -250,11 +241,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to J/kg-K first
         if from_unit != 'J/kg-K':
             value = value * HEAT_CAPACITY_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from J/kg-K to target unit
         if to_unit != 'J/kg-K':
             value = value * HEAT_CAPACITY_CONVERSIONS[to_unit]
         
@@ -265,11 +254,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to kg/m³ first
         if from_unit != 'kg/m3':
             value = value * DENSITY_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from kg/m³ to target unit
         if to_unit != 'kg/m3':
             value = value * DENSITY_CONVERSIONS[to_unit]
         
@@ -280,11 +267,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to Pa first
         if from_unit != 'Pa':
             value = value * PRESSURE_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from Pa to target unit
         if to_unit != 'Pa':
             value = value * PRESSURE_CONVERSIONS[to_unit]
         
@@ -295,11 +280,9 @@ class UnitConverter:
         if from_unit == to_unit:
             return value
         
-        # Convert to K/m first
         if from_unit != 'K/m':
             value = value * GEOTHERMAL_GRADIENT_CONVERSIONS_INVERSE[from_unit]
         
-        # Convert from K/m to target unit
         if to_unit != 'K/m':
             value = value * GEOTHERMAL_GRADIENT_CONVERSIONS[to_unit]
         
