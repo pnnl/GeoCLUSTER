@@ -35,6 +35,37 @@ labels_cat = ['Working Fluid2', 'Working Fluid1'] # legend visibility and syncin
 labels = ['H2O','sCO2'] # legend visibility and syncing 
 lw = 1.4 # line width
 
+# -----------------------
+# Unit conversion helpers
+# -----------------------
+def to_SI(mdot, L2, L1, grad, D, Tinj, k, units="metric"):
+    """Return SI versions of the inputs used by subsurface + TEA."""
+    if units.lower().startswith("imp"):   # "imperial"
+        mdot = mdot * 0.45359237          # lb/s -> kg/s
+        L2 = L2 * 0.3048                  # ft -> m
+        L1 = L1 * 0.3048                  # ft -> m
+        D   = D  * 0.3048                 # ft -> m
+        grad = grad * (5.0/9.0) / 0.3048  # °F/ft -> K/m
+        Tinj = (Tinj - 32.0) * (5.0/9.0)  # °F -> °C (we'll add 273.15 later)
+        k = k * 1.730735                  # BTU/(hr·ft·°F) -> W/m·K
+    return mdot, L2, L1, grad, D, Tinj, k
+
+def delta_to_SI(dT, units="metric"):
+    return dT * (5.0/9.0) if units.lower().startswith("imp") else dT
+
+def pressure_to_bar(p, units="metric"):
+    # UI supplies psi in imperial; TEA expects bar
+    return p * 0.0689475729 if units.lower().startswith("imp") else p
+
+def _have_thermal(fluid, TandP):
+    if fluid in ("sCO2", "All"):
+        if TandP.get("sCO2_Tout") is None or TandP.get("sCO2_Pout") is None:
+            return False
+    if fluid in ("H2O", "All"):
+        if TandP.get("H2O_Tout") is None or TandP.get("H2O_Pout") is None:
+            return False
+    return True
+
 # --------------------------------------------------------------------------------------------------------------------
 # THERMAL PERFORMANCE PLOTS
 # --------------------------------------------------------------------------------------------------------------------
@@ -121,9 +152,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
             mesh, accuracy, 
             # mass_mode, temp_mode
-            HyperParam3, HyperParam4, HyperParam5
+            HyperParam3, HyperParam1, HyperParam5, units="metric"
             ):
     
+    # Convert to SI before interpolation/TEA
+    arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k = to_SI(
+        arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, units
+    )
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -215,7 +250,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
+                                                        mesh, accuracy, HyperParam3, HyperParam1, HyperParam5)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
                     
                     # Generate sCO2 data only for SBT V2.0 (SBT V1.0 doesn't support sCO2)
@@ -224,30 +259,39 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+                                                            mesh, accuracy, HyperParam3, HyperParam1, HyperParam5
                                                             )
                         sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
-                    # For HDF5 models, use the original conditional logic with minimal parameters
+                    # For HDF5 models, use dummy values for SBT parameters since they're not used
+                    dummy_diameter1 = 0.0
+                    dummy_diameter2 = 0.0
+                    dummy_pipe3 = 0.0
+                    dummy_pipe4 = 0.0
+                    dummy_pipe5 = 0.0
+                    
                     if fluid == "sCO2" or fluid == "All":
                         sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
-                                                            mesh, accuracy, None, None, None)
+                                                            dummy_diameter1, dummy_diameter2, dummy_pipe3, dummy_pipe4, dummy_pipe5,
+                                                            mesh, accuracy, HyperParam3, HyperParam1, HyperParam5)
                         sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                     if fluid == "H2O" or fluid == "All":
                         H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
-                                                            mesh, accuracy, None, None, None)
+                                                            dummy_diameter1, dummy_diameter2, dummy_pipe3, dummy_pipe4, dummy_pipe5,
+                                                            mesh, accuracy, HyperParam3, HyperParam1, HyperParam5)
                         H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
                 error_message = parse_error_message(e=e, e_name='Err SubRes3')
+                # Add more context to the error message
+                if "outside the valid interpolation range" in str(e) or "bounds" in str(e).lower():
+                    error_message += f" (Input values may be outside valid range for {units} units)"
                 error_messages_dict['Err SubRes3'] = error_message
                 is_blank_data = True
                 
@@ -261,7 +305,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
+                                                        mesh, accuracy, HyperParam3, HyperParam1, HyperParam5)
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
                     
                     # Generate sCO2 data only for SBT V2.0 (SBT V1.0 doesn't support sCO2)
@@ -270,7 +314,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5)
+                                                            mesh, accuracy, HyperParam3, HyperParam1, HyperParam5)
                         sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
@@ -660,8 +704,27 @@ def generate_econ_lineplots(TandP_dict,
                             additional_properties_CO2v2_pathname,
                             tmatrix_pathname,
                             model,
-                            is_plot_ts_check
+                            is_plot_ts_check, units="metric"
                             ):
+
+    # Convert all physical inputs that TEA uses to SI
+    mdot, L2, L1, grad, D, Tinj, k = to_SI(mdot, L2, L1, grad, D, Tinj, k, units)
+    Pre_Cooling_Delta_T = delta_to_SI(Pre_Cooling_Delta_T, units)
+    Turbine_outlet_pressure = pressure_to_bar(Turbine_outlet_pressure, units)
+
+    # Check if thermal data is available
+    if not _have_thermal(fluid, TandP_dict):
+        # Provide more specific error message based on what's missing
+        missing_fluids = []
+        if fluid in ("sCO2", "All") and (TandP_dict.get("sCO2_Tout") is None or TandP_dict.get("sCO2_Pout") is None):
+            missing_fluids.append("sCO2")
+        if fluid in ("H2O", "All") and (TandP_dict.get("H2O_Tout") is None or TandP_dict.get("H2O_Pout") is None):
+            missing_fluids.append("H2O")
+        
+        error_msg = f"Missing thermal data for {', '.join(missing_fluids)}. This may be due to input values outside the valid interpolation range. Try adjusting your input parameters or using different values within the recommended ranges."
+        error_messages_dict = {"Err Econ0": error_msg}
+        fig, _ = update_blank_econ2(fig=None, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
+        return fig, {}, {}, error_messages_dict
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 4 subplot lineplots:

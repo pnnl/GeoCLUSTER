@@ -1566,6 +1566,7 @@ def update_sliders_hyperparms(model):
      Input(component_id='mass-mode-select', component_property='value'),
      Input(component_id='temp-mode-select', component_property='value'),
      Input(component_id='fluid-mode-select', component_property='value'),
+     Input(component_id="quick-unit-selector", component_property="value"),
 
     ],
     prevent_initial_call=True,
@@ -1577,7 +1578,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                         mesh, accuracy, 
                         # mass_mode, temp_mode
-                        HyperParam3, HyperParam4, HyperParam5
+                        HyperParam3, HyperParam4, HyperParam5, units
                         ):
 
     # -----------------------------------------------------------------------------
@@ -1641,7 +1642,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
             Tsurf_c, c_j_kg_k, rho_kg_m3, 
             # radius_vertical, radius_lateral, 
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5, units
         )
         # if SBT:
         # end = time.time()
@@ -1766,6 +1767,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
      State(component_id="diameter-select", component_property="value"),
      State(component_id="Tinj-select", component_property="value"),
      State(component_id="k-select", component_property="value"),
+     State(component_id="quick-unit-selector", component_property="value"),
     ],
 )
 
@@ -1774,7 +1776,7 @@ def update_econ_plots(TandP_dict,
                      Drilling_cost_per_m, Discount_rate, Lifetime, 
                      Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
                      scale, checklist, model,
-                     mdot, L2, L1, grad, D, Tinj, k_m):
+                     mdot, L2, L1, grad, D, Tinj, k_m, units):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the economic results.
@@ -1814,7 +1816,7 @@ def update_econ_plots(TandP_dict,
             additional_properties_CO2v2_pathname,
             tmatrix_pathname,
             model,
-            is_plot_ts
+            is_plot_ts, units
         )
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
