@@ -98,7 +98,7 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
         return np.clip(value, array.min(), array.max())
     
     # Debug print for injection temperature
-    print(f"[contours] Tinj_in={arg_Tinj}°C  Tinj_K={arg_Tinj + to_kelvin_factor}K")
+    print(f"[contours] Tinj_in={arg_Tinj}K (already in Kelvin)")
     
     # Clamp all values to their respective array bounds
     arg_mdot_clamped = clamp_to_bounds(arg_mdot, u_sCO2.mdot)
@@ -106,7 +106,7 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
     arg_L1_clamped = clamp_to_bounds(arg_L1, u_sCO2.L1)
     arg_grad_clamped = clamp_to_bounds(arg_grad, u_sCO2.grad)
     arg_D_clamped = clamp_to_bounds(arg_D, u_sCO2.D)
-    arg_Tinj_clamped = clamp_to_bounds(arg_Tinj + to_kelvin_factor, u_sCO2.Tinj)  # to kelvin
+    arg_Tinj_clamped = clamp_to_bounds(arg_Tinj, u_sCO2.Tinj)  # Already in Kelvin from ui_to_SI
     arg_k_clamped = clamp_to_bounds(arg_k, u_sCO2.k)
 
     arg_mdot_v, arg_mdot_i = find_nearest(u_sCO2.mdot, arg_mdot_clamped) 
@@ -180,10 +180,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             HyperParam3, HyperParam1, HyperParam5, units="metric"
             ):
     
-    # Convert to SI before interpolation/TEA
-    arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k = to_SI(
-        arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, units
-    )
+    # Values are already in SI units when they reach this function
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -223,7 +220,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
 
-    point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
+    point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k) # Already in Kelvin from ui_to_SI
 
     # ** Average calculations
     sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
@@ -384,15 +381,21 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     if fluid == "sCO2" or fluid == "All":
 
+        # Set mass flow rate unit for hover template
+        if units.lower().startswith("imp"):
+            mass_flow_hover_unit = "lb/s"
+        else:
+            mass_flow_hover_unit = "kg/s"
+        
         # kWe_avg and kWt_avg
         fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                      hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Average kWt</b>: %{{y:.3f}} ',
                       line = dict(color='#c26219', width=lw),
                       legendgroup=labels_cat[1], name=labels[1], showlegend=False),
                       # margin=dict(pad=20),
                       row=1, col=1)
         fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                      hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Average kWt</b>: %{{y:.3f}} ',
                       line = dict(color='orange', width=lw),
                       legendgroup=labels_cat[1], name=labels[1], showlegend=False),
                       row=1, col=2)
@@ -444,14 +447,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
         # kWe_avg and kWt_avg
         fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWe_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWe</b>: %{y:.3f} ',
+                      hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Average kWe</b>: %{{y:.3f}} ',
                       line = dict(color='#c26219', width=lw, dash='dash'),
                       legendgroup=labels_cat[0], name=labels[0], showlegend=False),
                       # margin=dict(pad=20),
                       row=1, col=1)
 
         fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWt_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                      hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Average kWt</b>: %{{y:.3f}} ',
                       line = dict(color='orange', width=lw, dash='dash'),
                       legendgroup=labels_cat[0], name=labels[0], showlegend=False),
                       row=1, col=2)
@@ -540,10 +543,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     if param is None:
         param = "Horizontal Extent (m)"  # Default parameter
 
-    # Convert all inputs to SI units first
-    arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k = to_SI(
-        arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, units
-    )
+    # Values are already in SI units when they reach this function
 
     # initializer to prevent errors
     if fluid == "All":
@@ -721,12 +721,18 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
                                                 color = 'white'
                                                 )
                               )
+    # Set mass flow rate unit for hover template
+    if units.lower().startswith("imp"):
+        mass_flow_hover_unit = "lb/s"
+    else:
+        mass_flow_hover_unit = "kg/s"
+    
     fig.add_trace( 
         go.Contour(showscale=False,
             colorbar=dict(title='Average Exergy (kWe)'), #titleside='right'
             colorscale=colorscaleR,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Exergy (kWe)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Exergy (kWe)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWe_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=1 )
@@ -737,7 +743,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Average Thermal Output (kWe)'),
             colorscale=colorscaleY,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Thermal Output (kWt)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Thermal Output (kWt)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWt_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=2 )
@@ -765,12 +771,18 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             z=Tout_display, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=1 )
 
+    # Set mass flow rate unit for hover template
+    if units.lower().startswith("imp"):
+        mass_flow_hover_unit = "lb/s"
+    else:
+        mass_flow_hover_unit = "kg/s"
+    
     fig.add_trace( 
         go.Contour(showscale=False,
             colorbar=dict(title='Outlet Pressure (MPa)'),
             colorscale=colorscaleG,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Pressure (MPa)</b>: %{z:.0f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Outlet Pressure (MPa)</b>: %{{z:.0f}} ',
             contours=contour_formatting,
             z=Pout_flipped / 1000000, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=2 )
@@ -800,8 +812,8 @@ def generate_econ_lineplots(TandP_dict,
                             is_plot_ts_check, units="metric"
                             ):
 
-    # Convert all physical inputs that TEA uses to SI
-    mdot, L2, L1, grad, D, Tinj, k = to_SI(mdot, L2, L1, grad, D, Tinj, k, units)
+    # Values are already in SI units when they reach this function
+    # Only convert the economic parameters that are still in UI units
     Pre_Cooling_Delta_T = delta_to_SI(Pre_Cooling_Delta_T, units)
     Turbine_outlet_pressure = pressure_to_bar(Turbine_outlet_pressure, units)
 

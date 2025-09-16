@@ -1577,38 +1577,39 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
 
 
     # Convert imperial values back to metric for backend calculations
-    # Simple conversion function to convert imperial values back to metric
-    def convert_to_metric(value, from_unit, to_unit, converter_func):
-        """Convert a value from imperial to metric units"""
-        if from_unit != to_unit:
-            return converter_func(value, from_unit, to_unit)
-        return value
-    
-    # Get current unit preferences
+    # Convert UI values to SI for computation
+    from conversions_ui import ui_to_SI
     from unit_conversions import unit_converter
     
-    # Convert all values back to metric for backend calculations
-    L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    D_m = convert_to_metric(D, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    mdot_kg_s = convert_to_metric(mdot, unit_converter.user_preferences.get('mass_flow', 'kg/s'), 'kg/s', unit_converter.convert_mass_flow)
-    Tinj_c = convert_to_metric(Tinj, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
-    grad_k_m = convert_to_metric(grad, unit_converter.user_preferences.get('geothermal_gradient', 'K/m'), 'K/m', unit_converter.convert_geothermal_gradient)
-    k_w_m_k = convert_to_metric(k_m, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'), 'W/m-K', unit_converter.convert_thermal_conductivity)
-    c_j_kg_k = convert_to_metric(c_m, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'), 'J/kg-K', unit_converter.convert_heat_capacity)
-    rho_kg_m3 = convert_to_metric(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3', unit_converter.convert_density)
-    Tsurf_c = convert_to_metric(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    si_vals = ui_to_SI({
+        'Tinj': Tinj,
+        'mdot': mdot,
+        'L1': L1,
+        'L2': L2,
+        'grad': grad,
+        'D': D,
+        'k': k_m,
+    })
+    
+    # Convert additional parameters to SI
+    c_j_kg_k = unit_converter.convert_heat_capacity(c_m, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'), 'J/kg-K')
+    rho_kg_m3 = unit_converter.convert_density(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3')
+    Tsurf_c = unit_converter.convert_temperature(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C')
+    
+    # Decide how to display the figure
+    units_system = 'imperial' if unit_converter.user_preferences.get('length') == 'ft' else 'metric'
     
     try:
         # print('subsurface')
         # if HDF5:
         # start = time.time()
         subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict = generate_subsurface_lineplots(
-            interp_time, fluid, case, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, scale, model,
+            interp_time, fluid, case, si_vals['mdot'], si_vals['L2'], si_vals['L1'], 
+            si_vals['grad'], si_vals['D'], si_vals['Tinj'], si_vals['k'], scale, model,
             Tsurf_c, c_j_kg_k, rho_kg_m3, 
             # radius_vertical, radius_lateral, 
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5, units
+            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5, units_system
         )
         # if SBT:
         # end = time.time()
@@ -1668,36 +1669,39 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     if param is None:
         param = "Horizontal Extent (m)"  # Default parameter
 
-    # Convert all values to metric for backend calculations using the units parameter
-    if units and units.lower().startswith("imp"):
-        # Imperial to metric conversions
-        L2_m = L2 * 0.3048  # ft to m
-        L1_m = L1 * 0.3048  # ft to m
-        D_m = D * 0.3048    # ft to m
-        mdot_kg_s = mdot * 0.45359237  # lb/s to kg/s
-        Tinj_c = (Tinj - 32.0) * (5.0/9.0)  # °F to °C
-        grad_k_m = grad * (5.0/9.0) / 0.3048  # °F/ft to K/m
-        k_w_m_k = k_m * 1.730735  # BTU/(hr·ft·°F) to W/m-K
-    else:
-        # Already in metric units
-        L2_m = L2
-        L1_m = L1
-        D_m = D
-        mdot_kg_s = mdot
-        Tinj_c = Tinj
-        grad_k_m = grad
-        k_w_m_k = k_m
+    # Convert UI values to SI for computation
+    from conversions_ui import ui_to_SI
+    from unit_conversions import unit_converter
+    
+    si_vals = ui_to_SI({
+        'Tinj': Tinj,
+        'mdot': mdot,
+        'L1': L1,
+        'L2': L2,
+        'grad': grad,
+        'D': D,
+        'k': k_m,
+    })
+    
+    # Decide how to display the figure
+    units_system = 'imperial' if unit_converter.user_preferences.get('length') == 'ft' else 'metric'
+    
+    # Debug logging
+    print(f"SI to plot: Tinj={si_vals['Tinj']:.2f} K, mdot={si_vals['mdot']:.3f} kg/s, L1={si_vals['L1']:.1f} m, L2={si_vals['L2']:.1f} m, grad={si_vals['grad']:.5f} K/m, D={si_vals['D']:.4f} m, k={si_vals['k']:.3f} W/m-K")
+    print(f"Display units: {units_system}")
 
     subplots, err_subcontour_dict = generate_subsurface_contours(
-        interp_time, fluid, case, param, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, units
+        interp_time, fluid, case, param, si_vals['mdot'], si_vals['L2'], si_vals['L1'], 
+        si_vals['grad'], si_vals['D'], si_vals['Tinj'], si_vals['k'], units_system
     )
 
     # Generate thermal data for economic calculations with proper unit conversions
     try:
         from plots import generate_subsurface_lineplots
         _, _, _, _, _, TandP_dict = generate_subsurface_lineplots(
-            interp_time, fluid, case, mdot_kg_s, L2_m, L1_m, grad_k_m, D_m, Tinj_c, k_w_m_k, 
-            1, "HDF5", 15, 1000, 2500, 0.1, 0.1, 1, 1, 1, 1, 1, 1, 1, 1
+            interp_time, fluid, case, si_vals['mdot'], si_vals['L2'], si_vals['L1'], 
+            si_vals['grad'], si_vals['D'], si_vals['Tinj'], si_vals['k'], 
+            1, "HDF5", 15, 1000, 2500, 0.1, 0.1, 1, 1, 1, 1, 1, 1, 1, 1, units_system
         )
     except Exception as e:
         TandP_dict = {}

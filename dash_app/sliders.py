@@ -128,13 +128,6 @@ def create_imperial_marks(min_val, max_val, unit):
     elif unit == 'F/ft':
         # For geothermal gradient, show min and max
         return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
-    elif unit == 'ft':  # Regular length unit in feet
-        # For feet, show min and max with ft suffix
-        # Round to 2 decimal places for feet to avoid showing too many decimals
-        min_rounded = round(min_val, 2)
-        max_rounded = round(max_val, 2)
-        result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
-        return result
     else:
         # Default case - just show min and max
         return {min_val: str(min_val), max_val: str(max_val)}
@@ -449,11 +442,11 @@ def slider_card():
                                                             id="grad-container",
                                                             children=[
                                                                     create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle=f"Geothermal Gradient ({get_unit_symbol(unit_converter.user_preferences.get('geothermal_gradient', 'K/m'))})", 
-                                                                            min_v=get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
-                                                                            max_v=get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            min_v=get_geothermal_gradient_converted_values(float(u_sCO2.grad.min()), unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            max_v=get_geothermal_gradient_converted_values(float(u_sCO2.grad.max()), unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
                                                                             mark_dict=create_imperial_marks(
-                                                                                get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
-                                                                                get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
+                                                                                get_geothermal_gradient_converted_values(float(u_sCO2.grad.min()), unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
+                                                                                get_geothermal_gradient_converted_values(float(u_sCO2.grad.max()), unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
                                                                                 unit_converter.user_preferences.get('geothermal_gradient', 'K/m')
                                                                             ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') in ['F/ft'] else grad_dict, 
                                                                             start_v=get_geothermal_gradient_converted_values(start_vals_d["grad"], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
@@ -464,11 +457,11 @@ def slider_card():
                                                             id="k-container",
                                                             children=[
                                                                     create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle=f"Rock Thermal Conductivity ({get_unit_symbol(unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'))})", 
-                                                                            min_v=get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
-                                                                            max_v=get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            min_v=get_thermal_conductivity_converted_values(float(u_sCO2.k.min()), unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            max_v=get_thermal_conductivity_converted_values(float(u_sCO2.k.max()), unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
                                                                             mark_dict=create_imperial_marks(
-                                                                                get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
-                                                                                get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
+                                                                                get_thermal_conductivity_converted_values(float(u_sCO2.k.min()), unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
+                                                                                get_thermal_conductivity_converted_values(float(u_sCO2.k.max()), unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
                                                                                 unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')
                                                                             ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') in ['Btu/ft-h-F'] else k_dict, 
                                                                             start_v=get_thermal_conductivity_converted_values(start_vals_d["k"], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
@@ -508,14 +501,14 @@ def slider_card():
                                                             id="Tinj-container",
                                                             children=[
                                                                 create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle=f"Injection Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
-                                                                        min_v=get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')), 
-                                                                        max_v=get_temperature_converted_values(60.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        min_v=get_temperature_converted_values(float(u_sCO2.Tinj.min() - 273.15), unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        max_v=get_temperature_converted_values(float(u_sCO2.Tinj.max() - 273.15), unit_converter.user_preferences.get('temperature', 'C')), 
                                                                         mark_dict=create_imperial_marks(
-                                                                            get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')),
-                                                                            get_temperature_converted_values(60.0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            get_temperature_converted_values(float(u_sCO2.Tinj.min() - 273.15), unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            get_temperature_converted_values(float(u_sCO2.Tinj.max() - 273.15), unit_converter.user_preferences.get('temperature', 'C')),
                                                                             unit_converter.user_preferences.get('temperature', 'C')
                                                                         ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tinj_dict, 
-                                                                        start_v=get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        start_v=get_temperature_converted_values(start_vals_d["Tinj"], unit_converter.user_preferences.get('temperature', 'C')), 
                                                                         div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
@@ -545,11 +538,11 @@ def slider_card():
                                                             id="diameter-container",
                                                             children=[ 
                                                                 create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle=f"Borehole Diameter ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
-                                                                        min_v=get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')), 
-                                                                        max_v=get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        min_v=get_length_converted_values(float(u_sCO2.D.min()), unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(float(u_sCO2.D.max()), unit_converter.user_preferences.get('length', 'm')), 
                                                                         mark_dict=create_imperial_marks(
-                                                                            get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
-                                                                            get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(float(u_sCO2.D.min()), unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(float(u_sCO2.D.max()), unit_converter.user_preferences.get('length', 'm')),
                                                                             unit_converter.user_preferences.get('length', 'm')
                                                                         ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else D_dict, 
                                                                         start_v=get_length_converted_values(start_vals_d["D"], unit_converter.user_preferences.get('length', 'm')), 
