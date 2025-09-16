@@ -296,25 +296,37 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale):
 	fig.update_layout(legend_title_text='Working Fluid',
 	          		  template='none', margin=dict(l=70, r=70, t=30, b=70),) # ggplot2
 
-	# Subtitles
+	# Remove any previous title-based headers
+	fig.update_layout(title_text=None)
+
+	# Subtitles using annotations to avoid collisions
 	if end_use == "All":
-		fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
-		                    font=dict(size=10)
-		                    )
-		fig.update_layout(annotations=[go.layout.Annotation(
-		                                showarrow=False, text=f'<b>End-Use: Electricity</b>',
-		                                x=0.35, y=0.673, xref='paper', yref='paper',
-		                                font=dict(size=14))]) # y=0.46
+		# top row header
+		fig.add_annotation(
+			text="<b>End-Use: Heating</b>",
+			x=0.20, y=1.06, xref="paper", yref="paper",
+			showarrow=False, font=dict(size=14)
+		)
+		# bottom row header (centered between rows)
+		fig.add_annotation(
+			text="<b>End-Use: Electricity</b>",
+			x=0.20, y=0.52, xref="paper", yref="paper",
+			showarrow=False, font=dict(size=14)
+		)
 
 	if end_use == "Heating":
-		fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
-		                    font=dict(size=10)
-		                    )
+		fig.add_annotation(
+			text="<b>End-Use: Heating</b>",
+			x=0.20, y=1.06, xref="paper", yref="paper",
+			showarrow=False, font=dict(size=14)
+		)
 
 	if end_use == "Electricity":
-		fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=1,
-		                    font=dict(size=10)
-		                    )
+		fig.add_annotation(
+			text="<b>End-Use: Electricity</b>",
+			x=0.20, y=1.06, xref="paper", yref="paper",
+			showarrow=False, font=dict(size=14)
+		)
 
 	return fig
 
@@ -331,17 +343,20 @@ def update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, 
 
 		if fluid == "All":
 		    fig.add_trace(go.Table(#header=dict(values=['Values']),
-		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th', f'H2O LCOH: {lcoh_H2O} $/MWh th']])
+		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th', f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=1, col=5)
 
 		if fluid == "sCO2":
 		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th']])
+		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=1, col=5)
 
 		if fluid == "H2O":
 		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'H2O LCOH: {lcoh_H2O} $/MWh th']])
+		             cells=dict(values=[[f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=1, col=5)
 
 
@@ -350,17 +365,20 @@ def update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, 
 		if fluid == "All":
 
 		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e', f'H2O LCOE: {lcoe_H2O} $/MWh e']])
+		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e', f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=row_num, col=5)
 
 		if fluid == "sCO2":
 		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e']])
+		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=row_num, col=5)
 
 		if fluid == "H2O":
 		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'H2O LCOE: {lcoe_H2O} $/MWh e']])
+		             cells=dict(values=[[f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
+		             domain=dict(y=[0.6, 1.0])
 		             ), row=row_num, col=5)
 
 	return fig

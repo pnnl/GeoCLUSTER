@@ -698,8 +698,8 @@ def generate_econ_lineplots(TandP_dict,
     fig = make_subplots(rows=2, cols=5,
                         specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.13,
-                        vertical_spacing = 0.40
+                        horizontal_spacing = 0.08,
+                        vertical_spacing = 0.50
                         )
 
     teaobj_sCO2 = None
@@ -1043,9 +1043,17 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    print("econ errors!!")
-    print("\n")
-    print(error_messages_dict)
+    # --- Simplified layout fixes to avoid Plotly errors
+    fig.update_layout(
+        margin=dict(l=60, r=120, t=56, b=64),
+        legend=dict(orientation="h", yanchor="bottom", y=1.03, x=0.12, xanchor="left"),
+        template="none"
+    )
+
+    # --- Keep axes/titles from colliding
+    fig.update_yaxes(automargin=True, title_standoff=8)
+    fig.update_xaxes(automargin=True, title_standoff=6)
+
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 

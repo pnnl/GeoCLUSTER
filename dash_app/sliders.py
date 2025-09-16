@@ -17,7 +17,6 @@ def get_temperature_converted_values(base_value_celsius, target_unit):
         return base_value_celsius
     elif target_unit == 'F':
         converted = unit_converter.convert_temperature(base_value_celsius, 'C', 'F')
-        print(f"DEBUG: Converting {base_value_celsius}°C to {converted}°F")
         return converted
     else:
         return base_value_celsius
@@ -28,7 +27,6 @@ def get_length_converted_values(base_value_meters, target_unit):
         return base_value_meters
     elif target_unit == 'ft':
         converted = unit_converter.convert_length(base_value_meters, 'm', 'ft')
-        print(f"DEBUG: Converting {base_value_meters}m to {converted}ft")
         return converted
     else:
         return base_value_meters
@@ -39,7 +37,6 @@ def get_mass_flow_converted_values(base_value_kg_s, target_unit):
         return base_value_kg_s
     elif target_unit == 'lb/s':
         converted = unit_converter.convert_mass_flow(base_value_kg_s, 'kg/s', 'lb/s')
-        print(f"DEBUG: Converting {base_value_kg_s} kg/s to {converted} lb/s")
         return converted
     else:
         return base_value_kg_s
@@ -50,7 +47,6 @@ def get_thermal_conductivity_converted_values(base_value_w_m_k, target_unit):
         return base_value_w_m_k
     elif target_unit == 'Btu/ft-h-F':
         converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/ft-h-F')
-        print(f"DEBUG: Converting {base_value_w_m_k} W/m-K to {converted} Btu/ft-h-F")
         return converted
     else:
         return base_value_w_m_k
@@ -61,7 +57,6 @@ def get_heat_capacity_converted_values(base_value_j_kg_k, target_unit):
         return base_value_j_kg_k
     elif target_unit == 'Btu/lb-F':
         converted = unit_converter.convert_heat_capacity(base_value_j_kg_k, 'J/kg-K', 'Btu/lb-F')
-        print(f"DEBUG: Converting {base_value_j_kg_k} J/kg-K to {converted} Btu/lb-F")
         return converted
     else:
         return base_value_j_kg_k
@@ -72,7 +67,6 @@ def get_density_converted_values(base_value_kg_m3, target_unit):
         return base_value_kg_m3
     elif target_unit == 'lb/ft3':
         converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/ft3')
-        print(f"DEBUG: Converting {base_value_kg_m3} kg/m³ to {converted} lb/ft³")
         return converted
     else:
         return base_value_kg_m3
@@ -83,7 +77,6 @@ def get_pressure_converted_values(base_value_pa, target_unit):
         return base_value_pa
     elif target_unit == 'psi':
         converted = unit_converter.convert_pressure(base_value_pa, 'Pa', 'psi')
-        print(f"DEBUG: Converting {base_value_pa} Pa to {converted} psi")
         return converted
     else:
         return base_value_pa
@@ -94,7 +87,6 @@ def get_geothermal_gradient_converted_values(base_value_k_m, target_unit):
         return base_value_k_m
     elif target_unit == 'F/ft':
         converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/ft')
-        print(f"DEBUG: Converting {base_value_k_m} K/m to {converted} F/ft")
         return converted
     else:
         return base_value_k_m

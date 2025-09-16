@@ -718,7 +718,7 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
+    margin-top: -400px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;
@@ -742,6 +742,10 @@ button:hover{
     z-index: 0;
 }
 
+#graphics-container-econ {
+    height: 600px;
+}
+
 #geothermal_time_plots {
     height: 735px;
     position: relative !important;
@@ -757,7 +761,7 @@ button:hover{
 }
 
 #econ_plots {
-    height: 935px;
+    height: 2500px;
     z-index: 0 !important;
 }
 
@@ -767,40 +771,16 @@ button:hover{
 }
 
 #ts-text {
-    margin-top: -320px;
+    margin-top: -20px;
     margin-left: 40px;
     font-weight: bold;
     color: #333333;
-/*    z-index: 2;*/
     z-index: -1;
     position: sticky;
 }
 
-/*#ts-subtext {
-    margin-top: -320px;
-    margin-left: -400px;
-    font-style: italic;
-    color: #333333;
-    z-index: 3;
-    position: sticky;
-}*/
 
 
-/*#radio-graphic-control3, #radio-graphic-control4 {
-    width: 70px;
-    float: right;
-    background-color: white !important;
-    color: black;
-    padding-left: 10px;
-    padding-right: 0px;
-    border:solid 1px var(--blue) !important;
-    font-size: var(--smaller-fontsize) !important;
-    box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
-    margin-right: 23px;
-    border-radius: 3px 3px 3px 3px;
-    position: sticky;
-}*/
 
 /* Window Adjustments = Most of the Smartphones Mobiles / ipad (Portrait)
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
