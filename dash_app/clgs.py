@@ -111,30 +111,25 @@ class data:
         if target < array[0] or target > array[-1]:
             # Check if this might be an imperial unit conversion
             # We can detect imperial by checking if the values are in typical imperial ranges
-            is_likely_imperial = False
+            is_imperial = False
             
             # Check for common imperial patterns
             if target > 1000 and array[-1] < 100:  # Length: meters vs feet
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 10:  # Geothermal gradient: K/m vs F/ft
-                is_likely_imperial = True
+                is_imperial = True
             elif target > 100 and array[-1] < 10:  # Thermal conductivity: W/m-K vs Btu/ft-h-F
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 100:  # Heat capacity: J/kg-K vs Btu/lb-F
-                is_likely_imperial = True
+                is_imperial = True
             elif target > 50 and array[-1] < 10:  # Density: kg/m³ vs lb/ft³
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 100:  # Pressure: Pa vs psi
-                is_likely_imperial = True
+                is_imperial = True
             
-            if is_likely_imperial:
-                # Don't print warnings for imperial units - this is expected
+            if is_imperial:
                 pass
             else:
-                # This is likely a real metric validation error - suppress warnings for cleaner output
-                # lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                # print(lineprint)
-                # Don't raise exception, but log the warning
                 pass
             
             # For values outside bounds, clamp to the nearest valid range
