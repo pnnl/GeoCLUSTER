@@ -294,22 +294,22 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale):
 
 	fig.update_yaxes(title_text="Heat Production (MWt)", # range=[0, 55], 
 						row=1, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-	fig.update_yaxes(title_text="Annual Heat Production (GWh)", # range=[0, 500], 
+	fig.update_yaxes(title_text="Annual Heat Production<br>(GWh)", # range=[0, 500], 
 					row=1, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 	fig.update_yaxes(title_text="Electricity Production (MWe)", # range=[-1.25, 7], 
 						row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-	fig.update_yaxes(title_text="Annual Electricity Production (GWe)", #range=[-10, 55], 
+	fig.update_yaxes(title_text="Annual Electricity Production<br>(GWe)", #range=[-10, 55], 
 						row=row_num, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
 	if plot_scale == 2:
 
 		fig.update_yaxes(title_text="Heat Production (MWt)", range=[0, 55], row=1, col=1,
 		                    tickfont = dict(size=12), title_font=dict(size=14))
-		fig.update_yaxes(title_text="Annual Heat Production (GWh)", range=[0, 500], row=1, col=3,
+		fig.update_yaxes(title_text="Annual Heat Production<br>(GWh)", range=[0, 500], row=1, col=3,
 		                tickfont = dict(size=12), title_font=dict(size=14))
 		fig.update_yaxes(title_text="Electricity Production (MWe)", range=[-1.25, 7], row=row_num, col=1,
 		                    tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-		fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
+		fig.update_yaxes(title_text="Annual Electricity Production<br>(GWe)", range=[-10, 55], row=row_num, col=3,
 		                    tickfont = dict(size=12), title_font=dict(size=14))
 	# Legend
 	fig.update_layout(legend_title_text='Working Fluid',

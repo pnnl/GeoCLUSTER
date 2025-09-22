@@ -753,16 +753,13 @@ button:hover{
 
 #econ_plots {
     position: relative !important;
+    height: 2500px;
+    z-index: 0 !important;
 }
 
 #geothermal_plots
 {
     height: 735px;
-}
-
-#econ_plots {
-    height: 2500px;
-    z-index: 0 !important;
 }
 
 

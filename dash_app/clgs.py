@@ -129,6 +129,7 @@ class data:
             
             if is_likely_imperial:
                 # Don't print warnings for imperial units - this is expected
+                pass
             else:
                 # This is likely a real metric validation error
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
@@ -160,6 +161,7 @@ class data:
         then it'll slice across the entirety of that coordinate's dimension
         """
         if any(val is None for val in point):
+            pass
         
         indices = [
             self.get_parameter_indices(params, value)

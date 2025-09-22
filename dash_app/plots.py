@@ -116,7 +116,6 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
     arg_Tinj_v, arg_Tinj_i = find_nearest(u_sCO2.Tinj, arg_Tinj_clamped)
     arg_k_v, arg_k_i = find_nearest(u_sCO2.k, arg_k_clamped)
     
- index
     print(f"[contours] nearest_idx={arg_Tinj_i}")
 
     return arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
@@ -818,19 +817,19 @@ def generate_econ_lineplots(TandP_dict,
     Pre_Cooling_Delta_T = delta_to_SI(Pre_Cooling_Delta_T, units)
     Turbine_outlet_pressure = pressure_to_bar(Turbine_outlet_pressure, units)
 
-    # Check if thermal data is available
-    if not _have_thermal(fluid, TandP_dict):
-        # Provide more specific error message based on what's missing
-        missing_fluids = []
-        if fluid in ("sCO2", "All") and (TandP_dict.get("sCO2_Tout") is None or TandP_dict.get("sCO2_Pout") is None):
-            missing_fluids.append("sCO2")
-        if fluid in ("H2O", "All") and (TandP_dict.get("H2O_Tout") is None or TandP_dict.get("H2O_Pout") is None):
-            missing_fluids.append("H2O")
-        
-        error_msg = f"Missing thermal data for {', '.join(missing_fluids)}. This may be due to input values outside the valid interpolation range. Try adjusting your input parameters or using different values within the recommended ranges."
-        error_messages_dict = {"Err Econ0": error_msg}
-        fig, _ = update_blank_econ2(fig=None, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
-        return fig, {}, {}, error_messages_dict
+    # Comment out strict thermal data check to allow plots to show even with missing data
+    # if not _have_thermal(fluid, TandP_dict):
+    #     # Provide more specific error message based on what's missing
+    #     missing_fluids = []
+    #     if fluid in ("sCO2", "All") and (TandP_dict.get("sCO2_Tout") is None or TandP_dict.get("sCO2_Pout") is None):
+    #         missing_fluids.append("sCO2")
+    #     if fluid in ("H2O", "All") and (TandP_dict.get("H2O_Tout") is None or TandP_dict.get("H2O_Pout") is None):
+    #         missing_fluids.append("H2O")
+    #     
+    #     error_msg = f"Missing thermal data for {', '.join(missing_fluids)}. This may be due to input values outside the valid interpolation range. Try adjusting your input parameters or using different values within the recommended ranges."
+    #     error_messages_dict = {"Err Econ0": error_msg}
+    #     fig, _ = update_blank_econ2(fig=None, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
+    #     return fig, {}, {}, error_messages_dict
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 4 subplot lineplots:
@@ -864,11 +863,12 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    fig = make_subplots(rows=2, cols=5,
+    fig = make_subplots(rows=3, cols=5,
                         specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.08,
-                        vertical_spacing = 0.50
+                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                [{'colspan': 2}, None, None, None, None]
+                                ],
+                        horizontal_spacing = 0.11
                         )
 
     teaobj_sCO2 = None
@@ -1087,7 +1087,7 @@ def generate_econ_lineplots(TandP_dict,
                         # ts_fig = get_Ts_diagram(fig=ts_fig, teaobj=teaobj_sCO2, nrow=1, ncol=1)
                         get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=2, ncol=1, tmatrix_pathname=tmatrix_pathname)
                     if end_use == "All":
-                        get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=2, ncol=1, tmatrix_pathname=tmatrix_pathname)
+                        get_Ts_diagram(fig=fig, teaobj=teaobj_sCO2, nrow=3, ncol=1, tmatrix_pathname=tmatrix_pathname)
 
                     # ths throws an error sometimes ... to see why and where
                     # else:
@@ -1212,16 +1212,10 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    # --- Simplified layout fixes to avoid Plotly errors
-    fig.update_layout(
-        margin=dict(l=60, r=120, t=56, b=64),
-        legend=dict(orientation="h", yanchor="bottom", y=1.03, x=0.12, xanchor="left"),
-        template="none"
-    )
-
-    # --- Keep axes/titles from colliding
-    fig.update_yaxes(automargin=True, title_standoff=8)
-    fig.update_xaxes(automargin=True, title_standoff=6)
+    # Print debug information
+    print("econ errors!!")
+    print("\n")
+    print(error_messages_dict)
 
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
