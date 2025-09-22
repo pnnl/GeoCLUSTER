@@ -97,7 +97,6 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
         array = np.asarray(array)
         return np.clip(value, array.min(), array.max())
     
-    # Debug print for injection temperature
     print(f"[contours] Tinj_in={arg_Tinj}K (already in Kelvin)")
     
     # Clamp all values to their respective array bounds
@@ -117,7 +116,7 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
     arg_Tinj_v, arg_Tinj_i = find_nearest(u_sCO2.Tinj, arg_Tinj_clamped)
     arg_k_v, arg_k_i = find_nearest(u_sCO2.k, arg_k_clamped)
     
-    # Debug print for injection temperature index
+ index
     print(f"[contours] nearest_idx={arg_Tinj_i}")
 
     return arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
@@ -310,10 +309,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes3')
+                error_message = parse_error_message(e=e, e_name='Err SubRes3', units=units)
                 # Add more context to the error message
-                if "outside the valid interpolation range" in str(e) or "bounds" in str(e).lower():
-                    error_message += f" (Input values may be outside valid range for {units} units)"
+                # Removed unit system warning as requested
                 error_messages_dict['Err SubRes3'] = error_message
                 is_blank_data = True
                 
@@ -364,7 +362,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes4')
+                error_message = parse_error_message(e=e, e_name='Err SubRes4', units=units)
                 error_messages_dict['Err SubRes4'] = error_message
                 is_blank_data = True
                 
@@ -378,14 +376,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         horizontal_spacing = 0.11,
                         vertical_spacing = 0.21
                         )
+    
+    # Increase figure height to prevent title overlapping
+    fig.update_layout(height=600)
+
+    # Set mass flow rate unit for hover template
+    if units.lower().startswith("imp"):
+        mass_flow_hover_unit = "lb/s"
+    else:
+        mass_flow_hover_unit = "kg/s"
 
     if fluid == "sCO2" or fluid == "All":
-
-        # Set mass flow rate unit for hover template
-        if units.lower().startswith("imp"):
-            mass_flow_hover_unit = "lb/s"
-        else:
-            mass_flow_hover_unit = "kg/s"
         
         # kWe_avg and kWt_avg
         fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
@@ -501,7 +502,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
 
     
-    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale)
+    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale, units=units)
 
     forty_yr_means_dict = {'Mean H2O Tout': mean_H2O_Tout, 
                             'Mean H2O Pout': mean_H2O_Pout,
@@ -935,12 +936,12 @@ def generate_econ_lineplots(TandP_dict,
 
             except ValueError as e:
                 fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ1a')
+                error_message = parse_error_message(e=e, e_name='Err Econ1a', units=units)
                 error_messages_dict['Err Econ1a'] = error_message
             
             except AttributeError as e:
                 fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ1b')
+                error_message = parse_error_message(e=e, e_name='Err Econ1b', units=units)
                 error_messages_dict['Err Econ1b'] = error_message
 
         if fluid == "H2O" or fluid == "All":
@@ -1006,12 +1007,12 @@ def generate_econ_lineplots(TandP_dict,
             
             except ValueError as e:
                 fig, lcoh_H2O = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ2a')
+                error_message = parse_error_message(e=e, e_name='Err Econ2a', units=units)
                 error_messages_dict['Err Econ2a'] = error_message
             
             except AttributeError as e:
                 fig, lcoh_H2O = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ2b')
+                error_message = parse_error_message(e=e, e_name='Err Econ2b', units=units)
                 error_messages_dict['Err Econ2b'] = error_message
 
     if end_use == "Electricity" or end_use == "All":
@@ -1097,12 +1098,12 @@ def generate_econ_lineplots(TandP_dict,
 
             except ValueError as e:
                 fig, lcoe_sCO2 = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ3a')
+                error_message = parse_error_message(e=e, e_name='Err Econ3a', units=units)
                 error_messages_dict['Err Econ3a'] = error_message
 
             except AttributeError as e:
                 fig, lcoe_sCO2 = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ3b')
+                error_message = parse_error_message(e=e, e_name='Err Econ3b', units=units)
                 error_messages_dict['Err Econ3b'] = error_message
 
         if fluid == "H2O" or fluid == "All":
@@ -1174,12 +1175,12 @@ def generate_econ_lineplots(TandP_dict,
 
             except ValueError as e:
                 fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ4a')
+                error_message = parse_error_message(e=e, e_name='Err Econ4a', units=units)
                 error_messages_dict['Err Econ4a'] = error_message
 
             except AttributeError as e:
                 fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
-                error_message = parse_error_message(e=e, e_name='Err Econ4b')
+                error_message = parse_error_message(e=e, e_name='Err Econ4b', units=units)
                 error_messages_dict['Err Econ4b'] = error_message
 
     fig = update_layout_properties_econ_results(fig, end_use, scale)

@@ -128,8 +128,6 @@ class data:
                 is_likely_imperial = True
             
             if is_likely_imperial:
-                print(f"DEBUG: Imperial unit detected - value {target} outside metric bounds ({array[0]}, {array[-1]})")
-                print(f"DEBUG: Continuing with interpolation for imperial units")
                 # Don't print warnings for imperial units - this is expected
             else:
                 # This is likely a real metric validation error
@@ -161,20 +159,14 @@ class data:
         If "all" is passed in as any of the coordinates of the point,
         then it'll slice across the entirety of that coordinate's dimension
         """
-        # Debug: Check for None values in point
         if any(val is None for val in point):
-            print(f"DEBUG: None values found in point: {point}")
-            print(f"DEBUG: parameter_values: {[len(p) for p in parameter_values]}")
         
         indices = [
             self.get_parameter_indices(params, value)
             for value, params in zip(point, parameter_values)
         ]
         
-        # Debug: Check for None values in indices
         if any(idx is None for idx in indices):
-            print(f"DEBUG: None values found in indices: {indices}")
-            print(f"DEBUG: point: {point}")
             # Replace None values with slice(None) as a fallback
             indices = [idx if idx is not None else slice(None) for idx in indices]
         

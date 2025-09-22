@@ -108,20 +108,13 @@ def update_blank_econ2(fig, nrow1, ncol1, nrow2, ncol2):
 	return fig, blank_val1 #, blank_val2
 
 
-def parse_error_message(e, e_name):
+def parse_error_message(e, e_name, units="metric"):
 
 	# print('\t', e)
 
 	if e.__class__.__name__ == "ValueError":
-		dim = re.findall(r'\d+', str(e))
-		if dim != []:
-			err_param = slider_list[int(dim[0])]
-			error_message = f"{err_param} is out of bounds of possible values. Consider changing the value."
-			# print('\t', e)
-			# print(e_name, error_message)
-		else:
-			error_message = str(e)
-			# print(e_name, e)
+		# Use generic message to avoid parameter identification issues
+		error_message = "Input values are out of bounds of possible values. Consider changing the values."
 	else:
 		error_message = str(e)
 		# print(e_name, e)
@@ -151,7 +144,7 @@ def find_nearest(array, value):
 
 
 
-def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
+def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale, units="metric"):
 
 	# --------------------------------------------------------------------------------------------------
 	# Updates the x-axis, y-axis, and annotation properties of the subsurface results Plotly figure(s).
@@ -183,7 +176,8 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 
 		fig.update_yaxes(title_text="Exergy (kWe)", range=[0,13000], # 10k 
 		                    row=2, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-		fig.update_yaxes(title_text="Outlet Temperature (˚C)", range=[0,600-273.15], 
+		temp_label = "Outlet Temperature (°F)" if units.lower().startswith("imp") else "Outlet Temperature (˚C)"
+		fig.update_yaxes(title_text=temp_label, range=[0,600-273.15], 
 		                    row=2, col=2, tickfont = dict(size=12), title_font=dict(size=14))
 		fig.update_yaxes(title_text="Outlet Pressure (MPa)", range=[0,45500000 /1000000],
 		                    row=2, col=3, tickfont = dict(size=12), title_font=dict(size=14))
@@ -196,7 +190,8 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 
 		fig.update_yaxes(title_text="Exergy (kWe)", #range=[0,13000], # 10k 
 		                    row=2, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-		fig.update_yaxes(title_text="Outlet Temperature (˚C)", #range=[0,600-273.15], 
+		temp_label = "Outlet Temperature (°F)" if units.lower().startswith("imp") else "Outlet Temperature (˚C)"
+		fig.update_yaxes(title_text=temp_label, #range=[0,600-273.15], 
 		                    row=2, col=2, tickfont = dict(size=12), title_font=dict(size=14))
 		fig.update_yaxes(title_text="Outlet Pressure (MPa)", #range=[0,45500000 /1000000],
 		                    row=2, col=3, tickfont = dict(size=12), title_font=dict(size=14))
@@ -243,7 +238,7 @@ def update_layout_properties_subsurface_contours(fig, param, units="metric"):
             param_label = "Geothermal Gradient (°F/ft)"
         elif param == "Diameter (m)":
             param_label = "Diameter (ft)"
-        elif param == "Injection Temperature (C)":
+        elif param == "Injection Temperature (˚C)":
             param_label = "Injection Temperature (°F)"
         elif param == "Thermal Conductivity (W/m-K)":
             param_label = "Thermal Conductivity (BTU/(hr·ft·°F))"
@@ -280,9 +275,9 @@ def update_layout_properties_subsurface_contours(fig, param, units="metric"):
 def update_layout_properties_econ_results(fig, end_use, plot_scale):
 
 	if end_use == "Electricity":
-	    row_num = 1
+		row_num = 1
 	else:
-	    row_num = 2
+		row_num = 2
 
 	# Sync Axes
 	fig.update_layout(hovermode="x unified", hoverlabel=dict(font_size=12))
@@ -359,51 +354,50 @@ def update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, 
 
 
 	if end_use == "Electricity":
-	    row_num = 1
+		row_num = 1
 	else:
-	    row_num = 2
+		row_num = 2
 	
 	if end_use == "Heating" or end_use == "All":
 
 		if fluid == "All":
-		    fig.add_trace(go.Table(#header=dict(values=['Values']),
-		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th', f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=1, col=5)
+			fig.add_trace(go.Table(#header=dict(values=['Values']),
+					cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th', f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=1, col=5)
 
 		if fluid == "sCO2":
-		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=1, col=5)
+			fig.add_trace(go.Table(
+					cells=dict(values=[[f'sCO2 LCOH: {lcoh_sCO2} $/MWh th']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=1, col=5)
 
 		if fluid == "H2O":
-		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=1, col=5)
+			fig.add_trace(go.Table(
+					cells=dict(values=[[f'H2O LCOH: {lcoh_H2O} $/MWh th']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=1, col=5)
 
 
 	if end_use == "Electricity" or end_use == "All":
 		
 		if fluid == "All":
-
-		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e', f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=row_num, col=5)
+			fig.add_trace(go.Table(
+					cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e', f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=row_num, col=5)
 
 		if fluid == "sCO2":
-		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=row_num, col=5)
+			fig.add_trace(go.Table(
+					cells=dict(values=[[f'sCO2 LCOE: {lcoe_sCO2} $/MWh e']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=row_num, col=5)
 
 		if fluid == "H2O":
-		    fig.add_trace(go.Table(
-		             cells=dict(values=[[f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
-		             domain=dict(y=[0.6, 1.0])
-		             ), row=row_num, col=5)
+			fig.add_trace(go.Table(
+					cells=dict(values=[[f'H2O LCOE: {lcoe_H2O} $/MWh e']]),
+					domain=dict(y=[0.6, 1.0])
+					), row=row_num, col=5)
 
 	return fig
 

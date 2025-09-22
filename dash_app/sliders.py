@@ -173,6 +173,21 @@ def create_steps(arg_arr, str_round_place, val_round_place):
             list_str[i] = list_str[i] + "k"
         if i >= 1 and i < len(list_str) - 1:
             list_str[i] = ""
+    
+    # Ensure first and last values always have labels (even if empty)
+    if len(list_str) > 0:
+        if not list_str[0] or list_str[0] == "":
+            # For small decimal values, use a more readable format
+            if arg_arr[0] < 1.0 and val_round_place >= 3:
+                list_str[0] = f"{arg_arr[0]:.2f}"
+            else:
+                list_str[0] = str_round_place.format(arg_arr[0])
+        if not list_str[-1] or list_str[-1] == "":
+            # For small decimal values, use a more readable format
+            if arg_arr[-1] < 1.0 and val_round_place >= 3:
+                list_str[-1] = f"{arg_arr[-1]:.2f}"
+            else:
+                list_str[-1] = str_round_place.format(arg_arr[-1])
 
     slider_dict = dict(zip(value_list, list_str))
 
@@ -247,7 +262,8 @@ mdot_dict = create_steps(arg_arr=u_sCO2.mdot, str_round_place='{:.1f}', val_roun
 L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_place=0)
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
-D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
+# Manually create D_dict to ensure min/max labels are always visible
+D_dict = {0.2159: '0.22', 0.3302: '', 0.4445: '0.44'}
 Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 

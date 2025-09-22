@@ -1264,11 +1264,10 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
    [Input(component_id="model-select", component_property="value"),
     Input(component_id="case-select", component_property="value"),
     Input(component_id="quick-unit-selector", component_property="value")],
-   prevent_initial_call=True
+   prevent_initial_call=False
     )
 
 def update_slider_ranges(model, case, unit_system):
-
 
     # Define styles for showing/hiding sliders
     div_block_style = {"width": "98%", "margin": "auto", "margin-bottom": "10px", "display": "block"}
@@ -1352,7 +1351,7 @@ def update_slider_ranges(model, case, unit_system):
                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
                                                     min_v=0.2159, max_v=0.4445, 
-                                                    mark_dict={0.2159: '0.22', 0.4445: '0.44'}, step_i=0.002, 
+                                                    mark_dict={0.2159: '0.22', 0.25: '', 0.3: '', 0.35: '', 0.4: '', 0.4445: '0.44'}, step_i=0.002, 
                                                     start_v=0.3, 
                                                     div_style=div_block_style, parameter_name="Borehole Diameter (m)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
@@ -1434,7 +1433,7 @@ def update_slider_ranges(model, case, unit_system):
                                                    min_v=10, max_v=200, mark_dict={10: '10', 200: '200'}, start_v=100, 
                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
-                                                       min_v=0.2159, max_v=0.4445, mark_dict={0.2159: '0.22', 0.4445: '0.44'}, start_v=0.3, 
+                                                       min_v=0.2159, max_v=0.4445, mark_dict={0.2159: '0.22', 0.25: '', 0.3: '', 0.35: '', 0.4: '', 0.4445: '0.44'}, start_v=0.3, 
                                                        div_style=div_block_style, parameter_name="Borehole Diameter (m)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
                                                  min_v=500, max_v=5000, mark_dict={500: '500', 5000: '5k'}, start_v=2500, 
@@ -1686,7 +1685,6 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     # Decide how to display the figure
     units_system = 'imperial' if unit_converter.user_preferences.get('length') == 'ft' else 'metric'
     
-    # Debug logging
     print(f"SI to plot: Tinj={si_vals['Tinj']:.2f} K, mdot={si_vals['mdot']:.3f} kg/s, L1={si_vals['L1']:.1f} m, L2={si_vals['L2']:.1f} m, grad={si_vals['grad']:.5f} K/m, D={si_vals['D']:.4f} m, k={si_vals['k']:.3f} W/m-K")
     print(f"Display units: {units_system}")
 
