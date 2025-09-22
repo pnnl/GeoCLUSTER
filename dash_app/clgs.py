@@ -91,7 +91,7 @@ class data:
         
         # Handle empty array
         if len(array) == 0:
-            print(f"Warning: Empty array passed to get_parameter_indices")
+            # Warning: Empty array passed to get_parameter_indices
             return slice(0, 1)
 
         if target == "all":
@@ -99,7 +99,7 @@ class data:
         
         # Handle None values - return a slice for the middle of the array
         if target is None:
-            print(f"Warning: None value passed to get_parameter_indices, using middle of array")
+            # Warning: None value passed to get_parameter_indices, using middle of array
             middle_idx = len(array) // 2
             return slice(middle_idx, middle_idx + 1)
         
@@ -131,10 +131,11 @@ class data:
                 # Don't print warnings for imperial units - this is expected
                 pass
             else:
-                # This is likely a real metric validation error
-                lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                print(lineprint)
+                # This is likely a real metric validation error - suppress warnings for cleaner output
+                # lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+                # print(lineprint)
                 # Don't raise exception, but log the warning
+                pass
             
             # For values outside bounds, clamp to the nearest valid range
             if target < array[0]:
@@ -450,7 +451,7 @@ class data:
             Tout = np.reshape(Tout, (len(varied_grid), len(mdot_grid))).T
             Pout = np.reshape(Pout, (len(varied_grid), len(mdot_grid))).T
         except Exception as e:
-            print(f"Error in interp_outlet_states_contour: {e}")
+            # Error in interp_outlet_states_contour
             # Fallback dummy data to avoid callback crash (and make the error visible)
             Tout = np.full((len(mdot_grid), len(varied_grid)), 365.0)
             Pout = np.full((len(mdot_grid), len(varied_grid)), 2.2228604e7)

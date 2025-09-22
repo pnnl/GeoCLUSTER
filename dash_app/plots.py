@@ -97,8 +97,6 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
         array = np.asarray(array)
         return np.clip(value, array.min(), array.max())
     
-    print(f"[contours] Tinj_in={arg_Tinj}K (already in Kelvin)")
-    
     # Clamp all values to their respective array bounds
     arg_mdot_clamped = clamp_to_bounds(arg_mdot, u_sCO2.mdot)
     arg_L2_clamped = clamp_to_bounds(arg_L2, u_sCO2.L2)
@@ -116,7 +114,6 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
     arg_Tinj_v, arg_Tinj_i = find_nearest(u_sCO2.Tinj, arg_Tinj_clamped)
     arg_k_v, arg_k_i = find_nearest(u_sCO2.k, arg_k_clamped)
     
-    print(f"[contours] nearest_idx={arg_Tinj_i}")
 
     return arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
@@ -1212,10 +1209,7 @@ def generate_econ_lineplots(TandP_dict,
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
 
-    # Print debug information
-    print("econ errors!!")
-    print("\n")
-    print(error_messages_dict)
+    # Debug information removed for cleaner output
 
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict

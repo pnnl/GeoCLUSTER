@@ -476,28 +476,23 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
 
     if "btn_xlsx" == ctx.triggered_id:
         try:
-            print("Download button clicked - starting Excel generation...")
-            print(f"Summary data type: {type(df_tbl)}")
-            print(f"Summary data: {df_tbl}")
-            print(f"Thermal mass data: {df_mass_flow_rate}")
-            print(f"Thermal time data: {df_time}")
-            print(f"Economic data: {df_econ}")
+            # Excel generation started
             
             # Check if we have valid data
             if df_tbl is None:
-                print("Warning: Summary data is None")
+                # Summary data is None, using empty dict
                 df_tbl = {}
             
             if df_mass_flow_rate is None:
-                print("Warning: Thermal mass data is None")
+                # Thermal mass data is None, using empty list
                 df_mass_flow_rate = []
                 
             if df_time is None:
-                print("Warning: Thermal time data is None")
+                # Thermal time data is None, using empty list
                 df_time = []
                 
             if df_econ is None:
-                print("Warning: Economic data is None")
+                # Economic data is None, using empty dict
                 df_econ = {}
             
             # Create the Excel file
@@ -505,7 +500,7 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
                                     df_subsurf_res_time=df_time, df_econ=df_econ, 
                                             geoCLUSTER_results_pathname=geoCLUSTER_results_pathname)
             
-            print(f"Excel file created successfully at: {geoCLUSTER_results_pathname}")
+            # Excel file created successfully
             
             # Try to read the file and send as data instead of file path (firewall-friendly)
             try:
@@ -522,7 +517,7 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
                     # Fallback to first available sheet
                     main_df = list(excel_data.values())[0]
                 
-                print("Sending Excel data as DataFrame (firewall-friendly method)")
+                # Sending Excel data as DataFrame (firewall-friendly method)
                 # Use send_data_frame which is more reliable and firewall-friendly
                 return dcc.send_data_frame(
                     main_df.to_excel, 
@@ -531,13 +526,12 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
                 )
                 
             except Exception as file_error:
-                print(f"Error reading Excel file: {file_error}")
-                print("Falling back to file path method...")
+                # Error reading Excel file, falling back to file path method
                 # Fallback to original method
                 return dcc.send_file(geoCLUSTER_results_pathname)
             
         except Exception as e:
-            print(f"Error in download callback: {str(e)}")
+            # Error in download callback
             import traceback
             traceback.print_exc()
             # Return a simple error message instead of crashing
@@ -1685,8 +1679,7 @@ def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, 
     # Decide how to display the figure
     units_system = 'imperial' if unit_converter.user_preferences.get('length') == 'ft' else 'metric'
     
-    print(f"SI to plot: Tinj={si_vals['Tinj']:.2f} K, mdot={si_vals['mdot']:.3f} kg/s, L1={si_vals['L1']:.1f} m, L2={si_vals['L2']:.1f} m, grad={si_vals['grad']:.5f} K/m, D={si_vals['D']:.4f} m, k={si_vals['k']:.3f} W/m-K")
-    print(f"Display units: {units_system}")
+    # Debug prints removed for cleaner output
 
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, si_vals['mdot'], si_vals['L2'], si_vals['L1'], 
