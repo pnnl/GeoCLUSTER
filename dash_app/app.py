@@ -1165,24 +1165,32 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
         
         elif tab == "energy-tab":
             
-            if visibility_state == param_list[0]:
-                return n, n, b, b, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[1]:
-                return n, b, n, b, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[2]:
-                return n, b, b, n, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[3]:
-                return n, b, b, b, n, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[4]: # "Injection Temperature (˚C)"
-                return n, b, b, b, b, n, b, \
-                        n, n, n, n, n, n
-            if visibility_state == param_list[5]:
-                return n, b, b, b, b, b, n, \
-                        n, n, n, n, n, b
+            # Handle parameter visibility based on parameter name, not index
+            # Handle parameter visibility based on parameter name
+            if visibility_state:
+                # Check parameter name directly (works for both metric and imperial)
+                if "Horizontal Extent" in visibility_state:
+                    return n, n, b, b, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Vertical Extent" in visibility_state:
+                    return n, b, n, b, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Geothermal Gradient" in visibility_state:
+                    return n, b, b, n, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Borehole Diameter" in visibility_state:
+                    return n, b, b, b, n, b, b, \
+                            n, n, n, n, n, b
+                elif "Injection Temperature" in visibility_state:
+                    return n, b, b, b, b, n, b, \
+                            n, n, n, n, n, b
+                elif "Thermal Conductivity" in visibility_state:
+                    return n, b, b, b, b, b, n, \
+                            n, n, n, n, n, b
+            
+            # Default case - show all sliders
+            return b, b, b, b, b, b, b, \
+                    n, n, n, n, n, b
         
         elif tab == "economics-time-tab":
             if fluid == "H2O":
@@ -1231,24 +1239,32 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
         
         elif tab == "energy-tab":
             
-            if visibility_state == param_list[0]:
-                return n, n, b, b, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[1]:
-                return n, b, n, b, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[2]:
-                return n, b, b, n, b, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[3]:
-                return n, b, b, b, n, b, b, \
-                        n, n, n, n, n, b
-            if visibility_state == param_list[4]: # "Injection Temperature (˚C)"
-                return n, b, b, b, b, n, b, \
-                        n, n, n, n, n, n
-            if visibility_state == param_list[5]:
-                return n, b, b, b, b, b, n, \
-                        n, n, n, n, n, b
+            # Handle parameter visibility based on parameter name, not index
+            # Handle parameter visibility based on parameter name
+            if visibility_state:
+                # Check parameter name directly (works for both metric and imperial)
+                if "Horizontal Extent" in visibility_state:
+                    return n, n, b, b, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Vertical Extent" in visibility_state:
+                    return n, b, n, b, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Geothermal Gradient" in visibility_state:
+                    return n, b, b, n, b, b, b, \
+                            n, n, n, n, n, b
+                elif "Borehole Diameter" in visibility_state:
+                    return n, b, b, b, n, b, b, \
+                            n, n, n, n, n, b
+                elif "Injection Temperature" in visibility_state:
+                    return n, b, b, b, b, n, b, \
+                            n, n, n, n, n, b
+                elif "Thermal Conductivity" in visibility_state:
+                    return n, b, b, b, b, b, n, \
+                            n, n, n, n, n, b
+            
+            # Default case - show all sliders
+            return b, b, b, b, b, b, b, \
+                    n, n, n, n, n, b
         
         elif tab == "economics-time-tab":
             if fluid == "H2O":
@@ -1338,9 +1354,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=86, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (˚F)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (lb/s)", 
-                                                    min_v=22, max_v=441, 
-                                                    mark_dict={22: '22', 441: '441'}, 
-                                                    start_v=220, 
+                                                    min_v=0.066, max_v=0.154, 
+                                                    mark_dict={0.066: '0.07', 0.154: '0.15'}, 
+                                                    start_v=0.11, 
                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (lb/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (ft)", 
                                                     min_v=0.708, max_v=1.458, 
@@ -1348,14 +1364,14 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=1.0, 
                                                     div_style=div_block_style, parameter_name="Borehole Diameter (ft)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)", 
-                                                    min_v=1640, max_v=16404, 
-                                                    mark_dict={1640: '1.6k', 16404: '16k'}, 
-                                                    start_v=8202, 
+                                                    min_v=0.708, max_v=1.458, 
+                                                    mark_dict={0.708: '0.7', 1.458: '1.5'}, 
+                                                    start_v=1.0, 
                                                     div_style=div_block_style, parameter_name="Horizontal Extent (ft)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)", 
-                                                    min_v=3281, max_v=26247, 
-                                                    mark_dict={3281: '3.3k', 26247: '26k'}, 
-                                                    start_v=16404, 
+                                                    min_v=3281, max_v=16404, 
+                                                    mark_dict={3281: '3.3k', 16404: '16k'}, 
+                                                    start_v=8202, 
                                                     div_style=div_block_style, parameter_name="Drilling Depth (ft)")
         else:
             # Metric HDF5 ranges
@@ -1380,9 +1396,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=30.0, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
-                                                    min_v=10, max_v=200, 
-                                                    mark_dict={10: '10', 200: '200'}, 
-                                                    start_v=100, 
+                                                    min_v=0.03, max_v=0.07, 
+                                                    mark_dict={0.03: '0.03', 0.07: '0.07'}, 
+                                                    start_v=0.05, 
                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
                                                     min_v=0.2159, max_v=0.4445, 
@@ -1390,9 +1406,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=0.3, 
                                                     div_style=div_block_style, parameter_name="Borehole Diameter (m)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
-                                                    min_v=500, max_v=5000, 
-                                                    mark_dict={500: '500', 5000: '5k'}, 
-                                                    start_v=2500, 
+                                                    min_v=0.2159, max_v=0.4445, 
+                                                    mark_dict={0.2159: '0.22', 0.4445: '0.44'}, 
+                                                    start_v=0.3, 
                                                     div_style=div_block_style, parameter_name="Horizontal Extent (m)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", 
                                                     min_v=1000, max_v=8000, 
@@ -1566,6 +1582,7 @@ def update_sliders_hyperparms(model):
      Input(component_id='mass-mode-select', component_property='value'),
      Input(component_id='temp-mode-select', component_property='value'),
      Input(component_id='fluid-mode-select', component_property='value'),
+     Input(component_id="quick-unit-selector", component_property="value"),
 
     ],
 )
@@ -1576,7 +1593,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                         mesh, accuracy, 
                         # mass_mode, temp_mode
-                        HyperParam3, HyperParam4, HyperParam5
+                        HyperParam3, HyperParam4, HyperParam5, units
                         ):
 
     # -----------------------------------------------------------------------------
@@ -1619,24 +1636,34 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Get current unit preferences
     from unit_conversions import unit_converter
     
-    # Determine unit system for plotting labels
-    current_units = unit_converter.user_preferences
-    if current_units.get('mass_flow') == 'lb/s':
-        unit_system = "imperial"
-    else:
-        unit_system = "metric"
+    # Use the units parameter directly instead of inferring from preferences
+    unit_system = units
     
-    # Convert all values back to metric for backend calculations
-    L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    D_m = convert_to_metric(D, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
-    mdot_kg_s = convert_to_metric(mdot, unit_converter.user_preferences.get('mass_flow', 'kg/s'), 'kg/s', unit_converter.convert_mass_flow)
-    Tinj_c = convert_to_metric(Tinj, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
-    grad_k_m = convert_to_metric(grad, unit_converter.user_preferences.get('geothermal_gradient', 'K/m'), 'K/m', unit_converter.convert_geothermal_gradient)
-    k_w_m_k = convert_to_metric(k_m, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'), 'W/m-K', unit_converter.convert_thermal_conductivity)
-    c_j_kg_k = convert_to_metric(c_m, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'), 'J/kg-K', unit_converter.convert_heat_capacity)
-    rho_kg_m3 = convert_to_metric(rho_m, unit_converter.user_preferences.get('density', 'kg/m3'), 'kg/m3', unit_converter.convert_density)
-    Tsurf_c = convert_to_metric(Tsurf, unit_converter.user_preferences.get('temperature', 'C'), 'C', unit_converter.convert_temperature)
+    # Convert imperial slider values to metric for calculations (same approach as contour plots)
+    if units == "imperial":
+        # Convert imperial slider inputs to metric for internal calculations
+        L2_m = L2 * 0.3048  # ft to m
+        L1_m = L1 * 0.3048  # ft to m
+        D_m = D * 0.3048  # ft to m
+        mdot_kg_s = mdot * 0.45359237  # lb/s to kg/s
+        Tinj_c = (Tinj - 32.0) * (5.0/9.0)  # °F to °C
+        grad_k_m = grad * (5.0/9.0) / 0.3048  # °F/ft to K/m
+        k_w_m_k = k_m * 1.730735  # BTU/(hr·ft·°F) to W/m·K
+        c_j_kg_k = c_m * 4186.8  # BTU/(lb·°F) to J/(kg·K)
+        rho_kg_m3 = rho_m * 16.0185  # lb/ft³ to kg/m³
+        Tsurf_c = (Tsurf - 32.0) * (5.0/9.0)  # °F to °C
+    else:
+        # Metric values - pass through as-is
+        L2_m = L2
+        L1_m = L1
+        D_m = D
+        mdot_kg_s = mdot
+        Tinj_c = Tinj
+        grad_k_m = grad
+        k_w_m_k = k_m
+        c_j_kg_k = c_m
+        rho_kg_m3 = rho_m
+        Tsurf_c = Tsurf
     
     try:
         # print('subsurface')
@@ -1683,21 +1710,62 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
      Input(component_id="diameter-select", component_property="value"),
      Input(component_id="Tinj-select", component_property="value"),
      Input(component_id="k-select", component_property="value"),
+     Input(component_id="quick-unit-selector", component_property="value"),
     ],
 )
 
-def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m):
+def update_subsurface_contours_plots(interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, units):
 
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
+    # Convert imperial slider values to metric for calculations
+    if units == "imperial":
+        # Convert imperial slider inputs to metric for internal calculations
+        mdot_metric = mdot * 0.45359237  # lb/s to kg/s
+        L2_metric = L2 * 0.3048  # ft to m
+        L1_metric = L1 * 0.3048  # ft to m
+        grad_metric = grad * (5.0/9.0) / 0.3048  # °F/ft to K/m
+        D_metric = D * 0.3048  # ft to m
+        Tinj_metric = (Tinj - 32.0) * (5.0/9.0)  # °F to °C
+        k_metric = k_m * 1.730735  # BTU/(hr·ft·°F) to W/m·K
+    else:
+        # Metric values - pass through as-is
+        mdot_metric = mdot
+        L2_metric = L2
+        L1_metric = L1
+        grad_metric = grad
+        D_metric = D
+        Tinj_metric = Tinj
+        k_metric = k_m
+
     # print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
-        interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
+        interp_time, fluid, case, param, mdot_metric, L2_metric, L1_metric, grad_metric, D_metric, Tinj_metric, k_metric, units
     )
 
     return subplots, err_subcontour_dict
+
+
+@app.callback(
+    Output("param-select", "options"),
+    Output("param-select", "value"),
+    Input("quick-unit-selector", "value"),
+    prevent_initial_call=True,
+)
+def update_param_dropdown_options(units):
+    """Update parameter dropdown options based on unit system"""
+    from dropdowns import get_param_list
+    
+    if units == "imperial":
+        options = [{"label": i, "value": i} for i in get_param_list("imperial")]
+        value = "Horizontal Extent (ft)"
+    else:
+        options = [{"label": i, "value": i} for i in get_param_list("metric")]
+        value = "Horizontal Extent (m)"
+    
+    return options, value
 
 
 @app.callback(

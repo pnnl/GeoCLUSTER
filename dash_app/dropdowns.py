@@ -14,8 +14,21 @@ case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
 end_use_list = ["All", "Heating", "Electricity"] 
 
-param_list = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Borehole Diameter (m)", 
+param_list_metric = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Borehole Diameter (m)", 
                 "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)"]
+
+param_list_imperial = ["Horizontal Extent (ft)", "Vertical Extent (ft)", "Geothermal Gradient (°F/ft)", "Borehole Diameter (ft)", 
+                "Injection Temperature (˚F)", "Rock Thermal Conductivity (BTU/(hr·ft·°F))"]
+
+# Default to metric
+param_list = param_list_metric
+
+def get_param_list(units="metric"):
+    """Return parameter list based on unit system"""
+    if units.lower().startswith("imp"):
+        return param_list_imperial
+    else:
+        return param_list_metric
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 

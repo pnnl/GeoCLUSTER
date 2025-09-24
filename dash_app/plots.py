@@ -447,7 +447,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
 
 
-def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
+def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, units="metric"):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 4 subplot contours:
@@ -461,17 +461,125 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
     error_messages_dict = {}
 
+    # Handle None param value - provide default
+    if param is None:
+        param = "Horizontal Extent (m)"  # Default parameter
+
+    # Values are already in metric units when they reach this function
+
     # initializer to prevent errors
     if fluid == "All":
         fluid = "H2O"
 
+    # Map parameter name to internal metric name for data access
+    param_for_data = param
+    if units == "imperial":
+        # Map imperial display names to metric internal names for data access
+        param_mapping = {
+            "Horizontal Extent (ft)": "Horizontal Extent (m)",
+            "Vertical Extent (ft)": "Vertical Extent (m)",
+            "Geothermal Gradient (°F/ft)": "Geothermal Gradient (K/m)",
+            "Borehole Diameter (ft)": "Borehole Diameter (m)",
+            "Injection Temperature (°F)": "Injection Temperature (˚C)",
+            "Rock Thermal Conductivity (BTU/(hr·ft·°F))": "Rock Thermal Conductivity (W/m-K)"
+        }
+        param_for_data = param_mapping.get(param, param)
+
     # contour elements
-    param_y = param_dict[(case, fluid, param)]
+    param_y = param_dict[(case, fluid, param_for_data)]
     mdot_x = param_dict[(case, fluid, "mdot")]
+    
+    # Convert data values for imperial display
+    if units == "imperial":
+        if param_for_data == "Horizontal Extent (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Vertical Extent (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Geothermal Gradient (K/m)":
+            param_y = param_y * 0.3048 * (9.0/5.0)  # K/m to °F/ft
+        elif param_for_data == "Borehole Diameter (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Injection Temperature (˚C)":
+            param_y = param_y * (9.0/5.0) + 32.0  # °C to °F
+        elif param_for_data == "Rock Thermal Conductivity (W/m-K)":
+            param_y = param_y / 1.730735  # W/m-K to BTU/(hr·ft·°F)
+        
+        # Convert mass flow rate to imperial
+        mdot_x = mdot_x / 0.45359237  # kg/s to lb/s
+
     mdot_ij, param_ij = np.meshgrid(mdot_x, param_y, indexing='ij') # returns coordinate matrices from coordinate vectors
 
-    arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
-                arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    # First, find the nearest indices for all parameters using the current values
+    arg_mdot_v, arg_mdot_i_nearest, arg_L2_v, arg_L2_i_nearest, arg_L1_v, arg_L1_i_nearest, arg_grad_v, arg_grad_i_nearest, arg_D_v, arg_D_i_nearest, \
+    arg_Tinj_v, arg_Tinj_i_nearest, arg_k_v, arg_k_i_nearest = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    
+    # Now set the indices based on which parameter is being varied for the contour plot
+    # The varied parameter and mass flow rate should use slice(None) for full ranges
+    # All other parameters should use their nearest indices
+    
+    if param_for_data == "Horizontal Extent (m)":
+        # L2 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2 (the varied parameter)
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Vertical Extent (m)":
+        # L1 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = slice(None)    # Full range for L1 (the varied parameter)
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Geothermal Gradient (K/m)":
+        # grad is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = slice(None)  # Full range for grad (the varied parameter)
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Borehole Diameter (m)":
+        # D is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = slice(None)     # Full range for D (the varied parameter)
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Injection Temperature (˚C)":
+        # Tinj is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = slice(None)   # Full range for Tinj (the varied parameter)
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Rock Thermal Conductivity (W/m-K)":
+        # k is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = slice(None)     # Full range for k (the varied parameter)
+    else:
+        # Default case - use L2 and mdot as the two axes
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
 
     # initial time conditions
     # arg_i = 160 # 4
@@ -546,8 +654,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
         if fluid == "sCO2" and case == "utube":
             try:
-                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param, point) 
-                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
+                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param_for_data, point) 
+                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param_for_data, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -557,8 +665,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "sCO2" and case == "coaxial":
             try:
-                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param, point)
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
+                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param_for_data, point)
+                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param_for_data, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -568,8 +676,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "H2O" and case == "utube":
             try:
-                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
+                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param_for_data, point)
+                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param_for_data, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -582,8 +690,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
         if fluid == "H2O" and case == "coaxial":
             try:
-                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
+                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param_for_data, point)
+                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param_for_data, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -592,16 +700,25 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
                 error_messages_dict['Err SubContour4'] = error_message
         
 
+    # Set temperature unit for subplot titles
+    if units == "imperial":
+        temp_subtitle = 'Outlet Temperature (°F)'
+    else:
+        temp_subtitle = 'Outlet Temperature (°C)'
+    
     fig = make_subplots(rows=2, cols=2, start_cell="top-left",
-                        horizontal_spacing = 0.12,
-                        vertical_spacing = 0.12,
+                        horizontal_spacing = 0.15,
+                        vertical_spacing = 0.18,
                         subplot_titles=('40-Year Average Exergy (kWe)', 
                                        '40-Year Average Thermal Output (kWt)',
-                                       'Outlet Temperature (°C)',
+                                       temp_subtitle,
                                        'Outlet Pressure (MPa)')
            )
 
 
+    # Set hover units based on unit system
+    mass_flow_hover_unit = "lb/s" if units == "imperial" else "kg/s"
+    
     contour_formatting = dict(showlabels = True, #coloring ='heatmap'
                               labelfont = dict( size = 14,
                                                 color = 'white'
@@ -612,7 +729,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Average Exergy (kWe)'), #titleside='right'
             colorscale=colorscaleR,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Exergy (kWe)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Exergy (kWe)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWe_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=1 )
@@ -623,20 +740,31 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Average Thermal Output (kWe)'),
             colorscale=colorscaleY,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Thermal Output (kWt)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Thermal Output (kWt)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWt_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=2 )
 
 
+    if units == "imperial":
+        # Convert from Kelvin to Fahrenheit
+        Tout_display = (Tout_flipped - to_kelvin_factor) * (9.0/5.0) + 32.0
+        temp_title = 'Outlet Temperature (°F)'
+        temp_hovertemplate = '<b>Mass Flow Rate (lb/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°F)</b>: %{z:.5f} '
+    else:
+        # Convert from Kelvin to Celsius
+        Tout_display = Tout_flipped - to_kelvin_factor
+        temp_title = 'Outlet Temperature (°C)'
+        temp_hovertemplate = '<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°C)</b>: %{z:.5f} '
+
     fig.add_trace( 
         go.Contour(showscale=False,
-            colorbar=dict(title='Outlet Temperature (°C)'),
+            colorbar=dict(title=temp_title),
             colorscale=colorscaleB,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°C)</b>: %{z:.5f} ',
+            hovertemplate=temp_hovertemplate,
             contours=contour_formatting,
-            z=Tout_flipped - to_kelvin_factor, y=param_ij[0,:], x=mdot_ij[:,0] # to celsius
+            z=Tout_display, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=1 )
 
     fig.add_trace( 
@@ -644,12 +772,12 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Outlet Pressure (MPa)'),
             colorscale=colorscaleG,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Pressure (MPa)</b>: %{z:.0f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Outlet Pressure (MPa)</b>: %{{z:.0f}} ',
             contours=contour_formatting,
             z=Pout_flipped / 1000000, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=2 )
 
-    fig = update_layout_properties_subsurface_contours(fig, param)
+    fig = update_layout_properties_subsurface_contours(fig, param, units)
     
     return fig, error_messages_dict
 
