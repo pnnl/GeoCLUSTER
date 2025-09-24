@@ -1619,6 +1619,13 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
     # Get current unit preferences
     from unit_conversions import unit_converter
     
+    # Determine unit system for plotting labels
+    current_units = unit_converter.user_preferences
+    if current_units.get('mass_flow') == 'lb/s':
+        unit_system = "imperial"
+    else:
+        unit_system = "metric"
+    
     # Convert all values back to metric for backend calculations
     L2_m = convert_to_metric(L2, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
     L1_m = convert_to_metric(L1, unit_converter.user_preferences.get('length', 'm'), 'm', unit_converter.convert_length)
@@ -1640,7 +1647,7 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
             Tsurf_c, c_j_kg_k, rho_kg_m3, 
             # radius_vertical, radius_lateral, 
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
+            mesh, accuracy, HyperParam3, HyperParam4, HyperParam5, unit_system
         )
         # if SBT:
         # end = time.time()

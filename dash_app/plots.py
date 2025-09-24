@@ -106,7 +106,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
             mesh, accuracy, 
             # mass_mode, temp_mode
-            HyperParam3, HyperParam4, HyperParam5
+            HyperParam3, HyperParam4, HyperParam5,
+            unit_system="metric"
             ):
     
     # Debug output
@@ -414,7 +415,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
 
     
-    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale)
+    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale, unit_system=unit_system)
 
     forty_yr_means_dict = {'Mean H2O Tout': mean_H2O_Tout, 
                             'Mean H2O Pout': mean_H2O_Pout,
