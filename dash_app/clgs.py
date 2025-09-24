@@ -118,7 +118,14 @@ class data:
             if value == target:
                 return slice(i, i + 1)
             if value > target:
-                return slice(i - 1, i + 1)
+                if i > 0:
+                    return slice(i - 1, i + 1)
+                else:
+                    # Target is below the minimum value, return first two elements
+                    return slice(0, min(2, len(array)))
+        
+        # Target is above maximum value, return last two elements
+        return slice(max(0, len(array) - 2), len(array))
 
     def read_values_around_point_for_interpolation(
         self, zarr_array, point, parameter_values
@@ -150,6 +157,12 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
+        
+        # Check if any grid dimension is empty
+        for i, grid_dim in enumerate(grid):
+            if len(grid_dim) == 0:
+                raise ValueError(f"Empty grid dimension {i} - cannot interpolate. Check parameter ranges.")
+        
         interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
