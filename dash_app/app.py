@@ -2091,7 +2091,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
                                             children=[
                                                 html.Img(id="error-img3", src=app.get_asset_url('error.png')),
                                                 dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                                html.P("Adjust input values to generate plots."),
+                                                html.P("No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."),
                                                 ]
                                             )
                     else:
