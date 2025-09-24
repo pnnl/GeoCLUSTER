@@ -110,12 +110,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             unit_system="metric"
             ):
     
-    # Debug output
-    print(f"DEBUG: generate_subsurface_lineplots called with:")
-    print(f"  - interp_time: {interp_time}")
-    print(f"  - fluid: {fluid}")
-    print(f"  - case: {case}")
-    print(f"  - model: {model}")
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -434,14 +428,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             "mdot": m_dot,
                             }
 
-    
-    # Debug output to see what's being returned
-    print(f"DEBUG: generate_subsurface_lineplots returning:")
-    print(f"  - fig type: {type(fig)}")
-    print(f"  - forty_yr_means_dict keys: {list(forty_yr_means_dict.keys()) if forty_yr_means_dict else None}")
-    print(f"  - mass_flow_rates_dict keys: {list(mass_flow_rates_dict.keys()) if mass_flow_rates_dict else None}")
-    print(f"  - time_dict keys: {list(time_dict.keys()) if time_dict else None}")
-    print(f"  - TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else None}")
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
 

@@ -92,38 +92,28 @@ class data:
         if target == "all":
             return slice(None)  # slice all of the points
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
-        # Check if the target value is within the array bounds
-        # For metric units, use strict validation
-        # For imperial units, we need to check if this is a converted value
         if target < array[0] or target > array[-1]:
-            # Check if this might be an imperial unit conversion
-            # We can detect imperial by checking if the values are in typical imperial ranges
-            is_likely_imperial = False
+            # Check if this might be imperial units (values outside typical metric ranges)
+            is_imperial = False
             
-            # Check for common imperial patterns
             if target > 1000 and array[-1] < 100:  # Length: meters vs feet
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 10:  # Geothermal gradient: K/m vs F/ft
-                is_likely_imperial = True
+                is_imperial = True
             elif target > 100 and array[-1] < 10:  # Thermal conductivity: W/m-K vs Btu/ft-h-F
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 100:  # Heat capacity: J/kg-K vs Btu/lb-F
-                is_likely_imperial = True
+                is_imperial = True
             elif target > 50 and array[-1] < 10:  # Density: kg/m³ vs lb/ft³
-                is_likely_imperial = True
+                is_imperial = True
             elif target < 1 and array[-1] > 100:  # Pressure: Pa vs psi
-                is_likely_imperial = True
+                is_imperial = True
             
-            if is_likely_imperial:
-                print(f"DEBUG: Imperial unit detected - value {target} outside metric bounds ({array[0]}, {array[-1]})")
-                print(f"DEBUG: Continuing with interpolation for imperial units")
-                # Don't print warnings for imperial units - this is expected
+            if is_imperial:
+                pass
             else:
-                # This is likely a real metric validation error
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
                 print(lineprint)
-                # Don't raise exception, but log the warning
-            # Continue with interpolation in both cases
         for i, value in enumerate(array):
             if value == target:
                 return slice(i, i + 1)
@@ -204,7 +194,6 @@ class data:
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
             times = self.time
-            # print("TEMP OUT: -----****")
             # print(Tout)
 
         else:

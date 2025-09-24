@@ -1332,7 +1332,6 @@ def update_slider_ranges(model, case, unit_system):
     if model == "HDF5":
         # For HDF5, we need to update the sliders with unit-aware values
         if unit_system == "imperial":
-            # Imperial HDF5 ranges
             Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°F)", 
                                                     min_v=32, max_v=104, 
                                                     mark_dict={32: '32', 104: '104'}, 
@@ -1421,7 +1420,6 @@ def update_slider_ranges(model, case, unit_system):
     elif model == "SBT V1.0" or model == "SBT V2.0":
         # Hardcoded values for SBT models
         if unit_system == "imperial":
-            # Imperial SBT ranges
             Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°F)", 
                                                     min_v=32, max_v=104, 
                                                     mark_dict={32: '32', 104: '104'}, 
@@ -1936,15 +1934,15 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  mesh, accuracy, HyperParam3, HyperParam4, HyperParam5,
                  econ_dict, thermal_dict, model, tandp_data):
 
-    # Check for None values that could cause errors during unit conversion
     thermal_params = [mdot, L2, L1, grad, D, Tinj, k]
+    # Check for None values that could cause errors during unit conversion
     if any(param is None for param in thermal_params):
         from plotly.graph_objects import Table
         empty_table = Table()
         return empty_table, {}
 
-    # Check for None economic parameters too
     econ_params = [Drilling_cost_per_m, Discount_rate, Lifetime, Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure]
+    # Check for None economic parameters too
     if any(param is None for param in econ_params):
         from plotly.graph_objects import Table
         empty_table = Table()
@@ -2100,10 +2098,10 @@ def update_error_divs(levelized_cost_dict):
     
     warning_div3 = html.Div(style={'display': 'none'})
 
-    # Check if levelized_cost_dict exists and has the required keys
     if levelized_cost_dict is None:
         return warning_div3
         
+    # Check if levelized_cost_dict exists and has the required keys
     if not isinstance(levelized_cost_dict, dict):
         return warning_div3
 
@@ -2145,7 +2143,6 @@ def update_error_divs(levelized_cost_dict):
 # Info popup callbacks are now handled in info_popups.py
 
 # -----------------------------------------------------------------------------
-# Unit Conversion Callbacks
 # -----------------------------------------------------------------------------
 
 @app.callback(
@@ -2187,7 +2184,6 @@ def update_economic_sliders(unit_system):
     div_block_style = {"width": "98%", "margin": "auto", "margin-bottom": "10px", "display": "block"}
     
     if unit_system == "imperial":
-        # Imperial drilling cost ($/ft)
         drillcost_container = html.Div(
             key=f"drillcost-imperial",
             children=[create_enhanced_slider(
@@ -2200,7 +2196,6 @@ def update_economic_sliders(unit_system):
                 parameter_name="Drilling Cost ($/ft)"
             )]
         )
-        # Imperial pre-cooling (°F)
         precool_container = html.Div(
             key=f"precool-imperial",
             children=[create_enhanced_slider(

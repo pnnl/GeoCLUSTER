@@ -4,6 +4,7 @@
 from dash import dcc, html, Input, Output, State, ctx, ALL
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
+from unit_conversions import unit_converter, get_unit_symbol
 
 PARAMETER_INFO = {
     # Heat Transfer and System Configuration
@@ -548,7 +549,10 @@ def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, 
                     style=div_style,
                     children=[
                        html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
-                           html.P(ptitle, style={"fontWeight": "bold", "margin": 0}),
+                           html.Div([
+                               html.Div("Rock Thermal Conductivity", style={"fontWeight": "bold", "margin": 0}),
+                               html.Div(f"({get_unit_symbol(unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'))})", style={"fontWeight": "bold", "margin": 0})
+                           ]) if "Rock Thermal Conductivity" in ptitle else html.P(ptitle, style={"fontWeight": "bold", "margin": 0}),
                            info_button
                        ]),
                        dcc.Slider(**slider_props),
