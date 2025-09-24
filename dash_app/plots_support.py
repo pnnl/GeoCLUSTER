@@ -140,10 +140,10 @@ def parse_error_message(e, e_name):
             # print('\t', e)
             # print(e_name, error_message)
         else:
-            error_message = str(e)
+            error_message = "Input values need to be adjusted"
             # print(e_name, e)
     else:
-        error_message = str(e)
+        error_message = "Input values need to be adjusted"
         # print(e_name, e)
 
     return error_message
