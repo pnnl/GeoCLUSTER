@@ -2066,17 +2066,19 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         if err_econ_dict and err_econ_dict != {}:
             try:
                 error_message = next(iter(err_econ_dict.values()))
-                if "object has no attribute" in error_message:
-                    error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                # Only show warning if there's a meaningful error message
+                if error_message and error_message.strip() and error_message != "Adjust input values":
+                    if "object has no attribute" in error_message:
+                        error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
 
-                err_div3 = html.Div(#id="error_block_div3",
-                                    style=error_style,
-                                    children=[
-                                        html.Img(id="error-img3", src=app.get_asset_url('error.png')),
-                                        dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                        html.P(error_message),
-                                        ]
-                                    )
+                    err_div3 = html.Div(#id="error_block_div3",
+                                        style=error_style,
+                                        children=[
+                                            html.Img(id="error-img3", src=app.get_asset_url('error.png')),
+                                            dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
+                                            html.P(error_message),
+                                            ]
+                                        )
             except Exception as e:
                 err_div3 = html.Div(style={'display': 'none'})
 

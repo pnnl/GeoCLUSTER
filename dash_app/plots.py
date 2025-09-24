@@ -1322,8 +1322,9 @@ def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
 
 
     fig.update_layout(title_text=f'<b>CO2 Temperature-entropy (T-s) Diagram</b>', 
-                        title_x=0.35, title_y=0.99,
-                        font=dict(size=10)
+                        title_x=0.35, title_y=1.02,
+                        font=dict(size=10),
+                        margin=dict(t=60)
                         )
     fig.update_yaxes(title_text="Temperature (°C)", 
                             row=nrow, col=ncol,

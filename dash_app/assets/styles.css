@@ -749,16 +749,13 @@ button:hover{
 
 #econ_plots {
     position: relative !important;
+    height: 1400px;
+    z-index: 0 !important;
 }
 
 #geothermal_plots
 {
     height: 800px;
-}
-
-#econ_plots {
-    height: 935px;
-    z-index: 0 !important;
 }
 
 
@@ -767,13 +764,13 @@ button:hover{
 }
 
 #ts-text {
-    margin-top: -320px;
-    margin-left: 40px;
+    margin-top: 20px;
+    margin-left: 0px;
     font-weight: bold;
     color: #333333;
-/*    z-index: 2;*/
-    z-index: -1;
-    position: sticky;
+    z-index: 1;
+    position: relative;
+    text-align: center;
 }
 
 /*#ts-subtext {
