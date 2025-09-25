@@ -785,7 +785,8 @@ def generate_econ_lineplots(TandP_dict,
                             additional_properties_CO2v2_pathname,
                             tmatrix_pathname,
                             model,
-                            is_plot_ts_check
+                            is_plot_ts_check,
+                            units="metric"
                             ):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -1120,7 +1121,7 @@ def generate_econ_lineplots(TandP_dict,
                 error_message = parse_error_message(e=e, e_name='Err Econ4b')
                 error_messages_dict['Err Econ4b'] = error_message
 
-    fig = update_layout_properties_econ_results(fig, end_use, scale)
+    fig = update_layout_properties_econ_results(fig, end_use, scale, units)
     fig = update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, lcoe_H2O) # table
     fig.update_traces(cells_font=dict(size = 13), row=1, col=5)
     fig.update_traces(cells_font=dict(size = 13), row=2, col=5)

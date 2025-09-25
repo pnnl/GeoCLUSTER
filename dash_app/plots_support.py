@@ -140,10 +140,10 @@ def parse_error_message(e, e_name):
             # print('\t', e)
             # print(e_name, error_message)
         else:
-            error_message = "Did not plot visual(s).\n\nNo outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+            error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
             # print(e_name, e)
     else:
-        error_message = "Did not plot visual(s).\n\nNo outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+        error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
         # print(e_name, e)
 
     return error_message
@@ -307,7 +307,7 @@ def update_layout_properties_subsurface_contours(fig, param, units="metric"):
 
 
 
-def update_layout_properties_econ_results(fig, end_use, plot_scale):
+def update_layout_properties_econ_results(fig, end_use, plot_scale, units="metric"):
 
     if end_use == "Electricity":
         row_num = 1
@@ -327,24 +327,36 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale):
     fig.update_xaxes(title_text="Time (year)", showgrid=True, range=[0, 40], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
 
-    fig.update_yaxes(title_text="Heat Production<br>(MWt)", # range=[0, 55], 
+    # Set y-axis labels based on units
+    if units == "imperial":
+        heat_prod_label = "Heat Production<br>(MMBtu/hr)"
+        annual_heat_prod_label = "Annual Heat Production<br>(MMBtu)"
+        elec_prod_label = "Electricity Production<br>(MWe)"
+        annual_elec_prod_label = "Annual Electricity Production<br>(GWe)"
+    else:
+        heat_prod_label = "Heat Production<br>(MWt)"
+        annual_heat_prod_label = "Annual Heat Production<br>(GWh)"
+        elec_prod_label = "Electricity Production<br>(MWe)"
+        annual_elec_prod_label = "Annual Electricity Production<br>(GWe)"
+    
+    fig.update_yaxes(title_text=heat_prod_label, # range=[0, 55], 
                         row=1, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Annual Heat Production<br>(GWh)", # range=[0, 500], 
+    fig.update_yaxes(title_text=annual_heat_prod_label, # range=[0, 500], 
                     row=1, col=3, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Electricity Production<br>(MWe)", # range=[-1.25, 7], 
+    fig.update_yaxes(title_text=elec_prod_label, # range=[-1.25, 7], 
                         row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-    fig.update_yaxes(title_text="Annual Electricity Production<br>(GWe)", #range=[-10, 55], 
+    fig.update_yaxes(title_text=annual_elec_prod_label, #range=[-10, 55], 
                         row=row_num, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
     if plot_scale == 2:
 
-        fig.update_yaxes(title_text="Heat Production<br>(MWt)", range=[0, 55], row=1, col=1,
+        fig.update_yaxes(title_text=heat_prod_label, range=[0, 55], row=1, col=1,
                             tickfont = dict(size=12), title_font=dict(size=14))
-        fig.update_yaxes(title_text="Annual Heat Production<br>(GWh)", range=[0, 500], row=1, col=3,
+        fig.update_yaxes(title_text=annual_heat_prod_label, range=[0, 500], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
-        fig.update_yaxes(title_text="Electricity Production<br>(MWe)", range=[-1.25, 7], row=row_num, col=1,
+        fig.update_yaxes(title_text=elec_prod_label, range=[-1.25, 7], row=row_num, col=1,
                             tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-        fig.update_yaxes(title_text="Annual Electricity Production<br>(GWe)", range=[-10, 55], row=row_num, col=3,
+        fig.update_yaxes(title_text=annual_elec_prod_label, range=[-10, 55], row=row_num, col=3,
                             tickfont = dict(size=12), title_font=dict(size=14))
     # Legend
     fig.update_layout(legend_title_text='Working Fluid',

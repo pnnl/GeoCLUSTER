@@ -1353,24 +1353,24 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=86, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (˚F)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (lb/s)", 
-                                                    min_v=0.066, max_v=0.154, 
-                                                    mark_dict={0.066: '0.07', 0.154: '0.15'}, 
-                                                    start_v=0.11, 
+                                                    min_v=0.066, max_v=154, 
+                                                    mark_dict={0.066: '0.07', 154: '154'}, 
+                                                    start_v=53, 
                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (lb/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (ft)", 
                                                     min_v=0.708, max_v=1.458, 
                                                     mark_dict={0.708: '0.7', 1.458: '1.5'}, step_i=0.002, 
-                                                    start_v=1.0, 
+                                                    start_v=1.15, 
                                                     div_style=div_block_style, parameter_name="Borehole Diameter (ft)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)", 
-                                                    min_v=0.708, max_v=1.458, 
-                                                    mark_dict={0.708: '0.7', 1.458: '1.5'}, 
-                                                    start_v=1.0, 
+                                                    min_v=708, max_v=65617, 
+                                                    mark_dict={708: '708', 65617: '65k'}, 
+                                                    start_v=32808, 
                                                     div_style=div_block_style, parameter_name="Horizontal Extent (ft)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)", 
-                                                    min_v=3281, max_v=16404, 
-                                                    mark_dict={3281: '3.3k', 16404: '16k'}, 
-                                                    start_v=8202, 
+                                                    min_v=3281, max_v=26247, 
+                                                    mark_dict={3281: '3.3k', 26247: '26k'}, 
+                                                    start_v=11483, 
                                                     div_style=div_block_style, parameter_name="Drilling Depth (ft)")
         else:
             # Metric HDF5 ranges
@@ -1395,24 +1395,24 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=30.0, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
-                                                    min_v=0.03, max_v=0.07, 
-                                                    mark_dict={0.03: '0.03', 0.07: '0.07'}, 
-                                                    start_v=0.05, 
+                                                    min_v=0.03, max_v=70, 
+                                                    mark_dict={0.03: '0.03', 70: '70'}, 
+                                                    start_v=24, 
                                                     div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", 
                                                     min_v=0.2159, max_v=0.4445, 
                                                     mark_dict={0.2159: '0.22', 0.4445: '0.44'}, step_i=0.002, 
-                                                    start_v=0.3, 
+                                                    start_v=0.35, 
                                                     div_style=div_block_style, parameter_name="Borehole Diameter (m)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
-                                                    min_v=0.2159, max_v=0.4445, 
-                                                    mark_dict={0.2159: '0.22', 0.4445: '0.44'}, 
-                                                    start_v=0.3, 
+                                                    min_v=216, max_v=20000, 
+                                                    mark_dict={216: '216', 20000: '20k'}, 
+                                                    start_v=10000, 
                                                     div_style=div_block_style, parameter_name="Horizontal Extent (m)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", 
                                                     min_v=1000, max_v=8000, 
                                                     mark_dict={1000: '1k', 8000: '8k'}, 
-                                                    start_v=5000, 
+                                                    start_v=3500, 
                                                     div_style=div_block_style, parameter_name="Drilling Depth (m)")
         
         return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
@@ -1466,16 +1466,16 @@ def update_slider_ranges(model, case, unit_system):
         # Tube geometry sliders for SBT models
         if unit_system == "imperial":
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (lb/s)", 
-                                                   min_v=22, max_v=441, mark_dict={22: '22', 441: '441'}, start_v=220, 
+                                                   min_v=22, max_v=441, mark_dict={22: '22', 441: '441'}, start_v=53, 
                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (lb/s)")
             diameter_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (ft)", 
-                                                       min_v=0.708, max_v=1.458, mark_dict={0.708: '0.7', 1.458: '1.5'}, start_v=1.0, 
+                                                       min_v=0.708, max_v=1.458, mark_dict={0.708: '0.7', 1.458: '1.5'}, start_v=1.15, 
                                                        div_style=div_block_style, parameter_name="Borehole Diameter (ft)")
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)", 
-                                                 min_v=1640, max_v=16404, mark_dict={1640: '1.6k', 16404: '16k'}, start_v=8202, 
+                                                 min_v=1640, max_v=65617, mark_dict={1640: '1.6k', 65617: '65k'}, start_v=32808, 
                                                  div_style=div_block_style, parameter_name="Horizontal Extent (ft)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)", 
-                                                 min_v=3281, max_v=26247, mark_dict={3281: '3.3k', 26247: '26k'}, start_v=16404, 
+                                                 min_v=3281, max_v=26247, mark_dict={3281: '3.3k', 26247: '26k'}, start_v=11483, 
                                                  div_style=div_block_style, parameter_name="Drilling Depth (ft)")
         else:
             mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
@@ -1792,6 +1792,7 @@ def update_param_dropdown_options(units):
      Input(component_id='radio-graphic-control4', component_property='value'),
      Input(component_id="checklist", component_property="value"),
      Input(component_id='model-select', component_property='value'),
+     Input(component_id="quick-unit-selector", component_property="value"),  # Add this input
      
      # Thermal parameters as State - these won't trigger the callback but are available for calculations
      State(component_id="mdot-select", component_property="value"),
@@ -1808,7 +1809,7 @@ def update_econ_plots(TandP_dict,
                      interp_time, fluid, case, end_use,
                      Drilling_cost_per_m, Discount_rate, Lifetime, 
                      Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                     scale, checklist, model,
+                     scale, checklist, model, units,  # Add units parameter
                      mdot, L2, L1, grad, D, Tinj, k_m):
 
     # -----------------------------------------------------------------------------
@@ -1823,6 +1824,32 @@ def update_econ_plots(TandP_dict,
         empty_fig = Figure()
         return empty_fig, {}, {}, {}
 
+    # Convert imperial values to metric for calculations (same pattern as subsurface plots)
+    if units == "imperial":
+        # Convert thermal parameters from imperial to metric
+        mdot_metric = mdot * 0.45359237  # lb/s to kg/s
+        L2_metric = L2 * 0.3048  # ft to m
+        L1_metric = L1 * 0.3048  # ft to m
+        grad_metric = grad * (5.0/9.0) / 0.3048  # °F/ft to K/m
+        D_metric = D * 0.3048  # ft to m
+        Tinj_metric = (Tinj - 32.0) * (5.0/9.0)  # °F to °C
+        k_metric = k_m * 1.730735  # BTU/(hr·ft·°F) to W/m·K
+        
+        # Convert economic parameters from imperial to metric
+        Drilling_cost_per_m_metric = Drilling_cost_per_m / 0.3048  # $/ft to $/m
+        Pre_Cooling_Delta_T_metric = Pre_Cooling_Delta_T * (5.0/9.0)  # °F to °C
+    else:
+        # Metric values - pass through as-is
+        mdot_metric = mdot
+        L2_metric = L2
+        L1_metric = L1
+        grad_metric = grad
+        D_metric = D
+        Tinj_metric = Tinj
+        k_metric = k_m
+        Drilling_cost_per_m_metric = Drilling_cost_per_m
+        Pre_Cooling_Delta_T_metric = Pre_Cooling_Delta_T
+
     # print('economics')
 
     if checklist == [' ']:
@@ -1834,16 +1861,17 @@ def update_econ_plots(TandP_dict,
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = generate_econ_lineplots(
             TandP_dict,
             interp_time, case, end_use, fluid, 
-            mdot, L2, L1, grad, D, Tinj, k_m,
-            Drilling_cost_per_m, Discount_rate, Lifetime, 
-            Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
+            mdot_metric, L2_metric, L1_metric, grad_metric, D_metric, Tinj_metric, k_metric,  # Use metric values
+            Drilling_cost_per_m_metric, Discount_rate, Lifetime,  # Use metric drilling cost
+            Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T_metric, Turbine_outlet_pressure,  # Use metric pre-cooling
             scale, 
             properties_H2O_pathname, 
             properties_CO2v2_pathname, 
             additional_properties_CO2v2_pathname,
             tmatrix_pathname,
             model,
-            is_plot_ts
+            is_plot_ts,
+            units
         )
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
@@ -2038,7 +2066,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
             try:
                 error_message = next(iter(err_sub_dict.values()))
                 if "No outputs" in error_message:
-                    error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                    error_message = "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 
                 err_div1 = html.Div(#id="error_block_div1",
                                     style=error_style,
@@ -2085,13 +2113,13 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
                     error_message = next(iter(err_econ_dict.values()))
                     if error_message and error_message.strip():
                         if "object has no attribute" in error_message:
-                            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                            error_message = "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
                         err_div3 = html.Div(#id="error_block_div3",
                                             style=error_style,
                                             children=[
                                                 html.Img(id="error-img3", src=app.get_asset_url('error.png')),
                                                 dcc.Markdown("**Did not plot visual(s).**", style={'display': 'inline-block'}),
-                                                html.P("No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."),
+                                                html.P("No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."),
                                                 ]
                                             )
                     else:
