@@ -193,6 +193,7 @@ hr {
     padding: 1rem;
     margin: auto;
     margin-top: 8px;
+    min-height: 900px;
 
 }
 
@@ -708,7 +709,7 @@ button:hover{
     margin-top: -8px;
 }
 
-#radio-graphic-control3, #radio-graphic-control4 {
+#radio-graphic-control3 {
     width: 70px;
     float: right;
     background-color: white !important;
@@ -718,7 +719,23 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
+    margin-top: 10px;
+    margin-right: 23px;
+    border-radius: 3px 3px 3px 3px;
+    position: sticky;
+}
+
+#radio-graphic-control4 {
+    width: 70px;
+    float: right;
+    background-color: white !important;
+    color: black;
+    padding-left: 10px;
+    padding-right: 0px;
+    border:solid 1px var(--blue) !important;
+    font-size: var(--smaller-fontsize) !important;
+    box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
+    margin-top: -200px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;
@@ -732,9 +749,14 @@ button:hover{
     width: 100% !important;
 }
 
-.econ_plots > div, .econ_plots > div {
+#econ_plots > div, #econ_plots > div {
     height: 100% !important;
     width: 100% !important;
+}
+
+/* Keep it simple - just ensure the container can expand */
+#econ_plots .plot-container.plotly {
+    height: 100% !important;
 }
 
 #graphics-container, #graphics-container-econ {
@@ -749,7 +771,7 @@ button:hover{
 
 #econ_plots {
     position: relative !important;
-    height: 1400px;
+    height: 1000px;
     z-index: 0 !important;
 }
 
@@ -768,9 +790,10 @@ button:hover{
     margin-left: 0px;
     font-weight: bold;
     color: #333333;
-    z-index: 1;
+    z-index: 10;
     position: relative;
     text-align: center;
+    display: block;
 }
 
 /*#ts-subtext {
@@ -793,7 +816,7 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
+    margin-top: 10px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;

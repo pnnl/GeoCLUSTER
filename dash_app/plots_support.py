@@ -348,6 +348,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, units="metri
     fig.update_yaxes(title_text=annual_elec_prod_label, #range=[-10, 55], 
                         row=row_num, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
+    # Set T-S diagram axis labels (for row 3, col 1 when end_use == "All")
+    if end_use == "All":
+        fig.update_xaxes(title_text="Entropy (J/kg·K)", range=[1000, 2300], row=3, col=1,
+                            tickfont = dict(size=12), title_font=dict(size=14))
+        fig.update_yaxes(title_text="Temperature (°C)", row=3, col=1,
+                            tickfont = dict(size=12), title_font=dict(size=14))
+
     if plot_scale == 2:
 
         fig.update_yaxes(title_text=heat_prod_label, range=[0, 55], row=1, col=1,

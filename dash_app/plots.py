@@ -821,19 +821,18 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    fig = make_subplots(rows=2, cols=5,
-                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.11
-                        )
-
     fig = make_subplots(rows=3, cols=5,
                         specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, None, None, None]
                                 ],
-                        horizontal_spacing = 0.11
+                        horizontal_spacing = 0.11,
+                        vertical_spacing = 0.2,
+                        row_heights=[0.35, 0.35, 0.3]
                         )
+    
+    # Set explicit height for the figure
+    fig.update_layout(height=800)
 
     teaobj_sCO2 = None
     teaobj_H2O = None
@@ -1330,7 +1329,7 @@ def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
     fig.update_yaxes(title_text="Temperature (°C)", 
                             row=nrow, col=ncol,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_xaxes(title_text="Entropy (J/kg/°C)", range=[1000, 2300],
+    fig.update_xaxes(title_text="Entropy (J/kg·K)", range=[1000, 2300],
                             row=nrow, col=ncol,
                             tickfont = dict(size=12), title_font=dict(size=14))
     return fig
