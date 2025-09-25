@@ -1950,9 +1950,11 @@ def update_plot_title(fluid, end_use, checklist):
      Input(component_id='fluid-mode-select', component_property='value'),
      
      Input(component_id='econ-memory', component_property='data'),
+     Input(component_id='econ-results', component_property='data'),
      Input(component_id='thermal-memory', component_property='data'),
      Input(component_id='model-select', component_property='value'),
      Input(component_id='TandP-data', component_property='data'),
+     Input(component_id="quick-unit-selector", component_property="value"),
     ],
 )
 
@@ -1961,7 +1963,7 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                  Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
                  Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                  mesh, accuracy, HyperParam3, HyperParam4, HyperParam5,
-                 econ_dict, thermal_dict, model, tandp_data):
+                 econ_dict, econ_results, thermal_dict, model, tandp_data, units):
 
     thermal_params = [mdot, L2, L1, grad, D, Tinj, k]
     # Check for None values that could cause errors during unit conversion
@@ -1977,20 +1979,31 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
         empty_table = Table()
         return empty_table, {}
 
-    # Simplified approach - use values directly since our sliders now provide consistent units
-    # For now, assume all slider values are in metric units for backend calculations
-    # (The frontend display is handled by the slider titles)
-    L2_m = L2
-    L1_m = L1  
-    D_m = D
-    mdot_kg_s = mdot
-    Tinj_c = Tinj
-    grad_k_m = grad
-    k_w_m_k = k
-    # Simplified - assume SBT parameters are also in metric units
-    c_j_kg_k = c_m if c_m is not None else 1000  # Default heat capacity
-    rho_kg_m3 = rho_m if rho_m is not None else 2500  # Default density
-    Tsurf_c = Tsurf if Tsurf is not None else 15  # Default surface temperature
+    # Convert imperial slider values to metric for calculations (same approach as other callbacks)
+    if units == "imperial":
+        # Convert imperial slider inputs to metric for internal calculations
+        L2_m = L2 * 0.3048  # ft to m
+        L1_m = L1 * 0.3048  # ft to m
+        D_m = D * 0.3048  # ft to m
+        mdot_kg_s = mdot * 0.45359237  # lb/s to kg/s
+        Tinj_c = (Tinj - 32.0) * (5.0/9.0)  # °F to °C
+        grad_k_m = grad * (5.0/9.0) / 0.3048  # °F/ft to K/m
+        k_w_m_k = k * 1.730735  # BTU/(hr·ft·°F) to W/m·K
+        c_j_kg_k = c_m * 4186.8 if c_m is not None else 4186.8  # BTU/(lb·°F) to J/(kg·K)
+        rho_kg_m3 = rho_m * 16.0185 if rho_m is not None else 40000  # lb/ft³ to kg/m³
+        Tsurf_c = (Tsurf - 32.0) * (5.0/9.0) if Tsurf is not None else 15  # °F to °C
+    else:
+        # Metric values - pass through as-is
+        L2_m = L2
+        L1_m = L1  
+        D_m = D
+        mdot_kg_s = mdot
+        Tinj_c = Tinj
+        grad_k_m = grad
+        k_w_m_k = k
+        c_j_kg_k = c_m if c_m is not None else 1000  # Default heat capacity
+        rho_kg_m3 = rho_m if rho_m is not None else 2500  # Default density
+        Tsurf_c = Tsurf if Tsurf is not None else 15  # Default surface temperature
     
 
     # Add TandP data to thermal_dict for SBT models
@@ -2014,7 +2027,8 @@ def update_table(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k,
                     thermal_dict, econ_dict,
                     Tsurf=Tsurf_c, c_m=c_j_kg_k, rho_m=rho_kg_m3, Diameter1=Diameter1, Diameter2=Diameter2, 
                     PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
-                    mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5
+                    mesh=mesh, accuracy=accuracy, HyperParam3=HyperParam3, HyperParam4=HyperParam4, HyperParam5=HyperParam5,
+                    units=units
         )
     except Exception as e:
         import traceback
