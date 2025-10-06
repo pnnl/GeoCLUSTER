@@ -836,6 +836,24 @@ def change_dropdown(at, fluid, model):
             return [{"label": i, "value": i} for i in fluid_list], fluid, [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
             # raise PreventUpdate
 
+    elif model == "CovHDF5":
+        # CovHDF5 only supports H2O fluid
+        fluid_list = ["H2O"]
+        interpol_list = ["True"]  # CovHDF5 uses interpolation
+        
+        if at == "energy-time-tab":
+            return [{"label": i, "value": i} for i in fluid_list], "H2O", [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        elif at == "about-tab":
+            return [{"label": i, "value": i} for i in fluid_list], "H2O", [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        elif at == "energy-tab":
+            return [{"label": i, "value": i} for i in fluid_list], "H2O", [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        elif at == "economics-time-tab":
+            return [{"label": i, "value": i} for i in fluid_list], "H2O", [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        elif at == "summary-tab":
+            return [{"label": i, "value": i} for i in fluid_list], "H2O", [{"label": i, "value": i} for i in interpol_list], interpol_list[0]
+        else:
+            raise PreventUpdate
+
     if model == "SBT V1.0" or model == "SBT V2.0":
 
         raise PreventUpdate
@@ -978,6 +996,24 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                     output = (100, 11000, 5000, 0.070, 0.44, 45, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
                 return output + default_output
 
+        else:
+            raise PreventUpdate
+
+    elif model == "CovHDF5":
+        # CovHDF5 scenario values - using permeability instead of thermal conductivity
+        if "btn-nclicks-1" == ctx.triggered_id:
+            # Commercial scale scenario for CovHDF5
+            output = (6, 2500, 3000, 0.045, 0.5, 45)  # mdot, L2, L1, grad, perm_HWR, Tinj
+            # For CovHDF5, we don't have k (thermal conductivity), so we'll use a default value
+            k_value = 3.05  # Default thermal conductivity (W/m-K) - this won't be used in CovHDF5
+            return output + (k_value,) + default_output
+        
+        elif "btn-nclicks-3" == ctx.triggered_id:
+            # Research scale scenario for CovHDF5
+            output = (4, 1500, 2000, 0.035, 0.3, 35)  # mdot, L2, L1, grad, perm_HWR, Tinj
+            k_value = 3.05  # Default thermal conductivity (W/m-K) - this won't be used in CovHDF5
+            return output + (k_value,) + default_output
+        
         else:
             raise PreventUpdate
 
@@ -1572,9 +1608,18 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=45, 
                                                     div_style=div_block_style, parameter_name="Injection Temperature (°C)")
         
-        # For CovHDF5, we don't need Tsurf, k (thermal conductivity), so we'll create empty containers
-        Tsurf_container = html.Div(style={'display': 'none'})
-        k_container = html.Div(style={'display': 'none'})
+        # For CovHDF5, we don't need Tsurf, k (thermal conductivity), so we'll create hidden sliders
+        Tsurf_container = create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (°C)", 
+                                                min_v=25, max_v=25, 
+                                                mark_dict={25: '25'}, 
+                                                start_v=25, 
+                                                div_style={'display': 'none'}, parameter_name="Surface Temperature (°C)")
+        # Create a hidden k-select slider with default value for CovHDF5
+        k_container = create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", 
+                                            min_v=3.0, max_v=3.1, 
+                                            mark_dict={3.0: '3.0', 3.1: '3.1'}, 
+                                            start_v=3.05, 
+                                            div_style={'display': 'none'}, parameter_name="Rock Thermal Conductivity (W/m-K)")
         
         return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, perm_container, L2_container, L1_container
 
