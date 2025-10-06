@@ -35,6 +35,7 @@ inpath_dict = {
 	# Data inpaths and/or outpaths.
 	"h5_filepath": absolute_path + "data/clgs_results_final_float32.h5", 
 	"decompressed_h5_filepath": absolute_path + "data/decompressed_clgs_results_final_float32.h5",
+	"convection_h5_filepath": absolute_path + "data/convection.h5",
 
 	"geoCLUSTER_results_pathname": absolute_path + 'tmp/geoCLUSTER_results.xlsx',
 

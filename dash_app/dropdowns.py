@@ -8,7 +8,7 @@ from dash import dcc, html
 # Define dropdown options.
 # ---------------------------
 
-model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
+model_list = ["HDF5", "SBT V1.0", "SBT V2.0", "CovHDF5"]
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
@@ -20,15 +20,30 @@ param_list_metric = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal
 param_list_imperial = ["Horizontal Extent (ft)", "Vertical Extent (ft)", "Geothermal Gradient (°F/ft)", "Borehole Diameter (ft)", 
                 "Injection Temperature (˚F)", "Rock Thermal Conductivity (BTU/(hr·ft·°F))"]
 
+# Convection model parameter lists (includes permeability instead of borehole diameter and thermal conductivity)
+param_list_convection_metric = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Permeability (HWR)", 
+                "Injection Temperature (˚C)"]
+
+param_list_convection_imperial = ["Horizontal Extent (ft)", "Vertical Extent (ft)", "Geothermal Gradient (°F/ft)", "Permeability (HWR)", 
+                "Injection Temperature (˚F)"]
+
 # Default to metric
 param_list = param_list_metric
 
-def get_param_list(units="metric"):
-    """Return parameter list based on unit system"""
-    if units.lower().startswith("imp"):
-        return param_list_imperial
+def get_param_list(units="metric", model="HDF5"):
+    """Return parameter list based on unit system and model"""
+    if model == "CovHDF5":
+        # Convection model has different parameters
+        if units.lower().startswith("imp"):
+            return param_list_convection_imperial
+        else:
+            return param_list_convection_metric
     else:
-        return param_list_metric
+        # Standard models (HDF5, SBT)
+        if units.lower().startswith("imp"):
+            return param_list_imperial
+        else:
+            return param_list_metric
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 

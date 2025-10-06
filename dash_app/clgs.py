@@ -21,25 +21,51 @@ class data:
         input_loc = "/" + case + "/" + fluid + "/input/"
         output_loc = "/" + case + "/" + fluid + "/output/"
 
+        # Check if this is a convection model by looking for perm_HWR parameter
+        self.is_convection_model = "perm_HWR" in file[input_loc].keys()
+
         # independent vars
         self.mdot = file[input_loc + "mdot"][:]  # i0
         self.L2 = file[input_loc + "L2"][:]  # i1
         self.L1 = file[input_loc + "L1"][:]  # i2
         self.grad = file[input_loc + "grad"][:]  # i3
-        self.D = file[input_loc + "D"][:]  # i4
-        self.Tinj = file[input_loc + "T_i"][:]  # i5
-        self.k = file[input_loc + "k_rock"][:]  # i6
-        self.time = file[input_loc + "time"][:]  # i7
-        self.ivars = (
-            self.mdot,
-            self.L2,
-            self.L1,
-            self.grad,
-            self.D,
-            self.Tinj,
-            self.k,
-            self.time,
-        )
+        
+        if self.is_convection_model:
+            # Convection model parameters
+            self.perm_HWR = file[input_loc + "perm_HWR"][:]  # i4 (replaces D)
+            self.Tinj = file[input_loc + "T_i"][:]  # i5
+            # No k_rock parameter in convection model
+            self.k = None
+        else:
+            # Standard model parameters
+            self.D = file[input_loc + "D"][:]  # i4
+            self.Tinj = file[input_loc + "T_i"][:]  # i5
+            self.k = file[input_loc + "k_rock"][:]  # i6
+            self.perm_HWR = None
+        
+        self.time = file[input_loc + "time"][:]  # i7 (or i6 for convection)
+        
+        if self.is_convection_model:
+            self.ivars = (
+                self.mdot,
+                self.L2,
+                self.L1,
+                self.grad,
+                self.perm_HWR,
+                self.Tinj,
+                self.time,
+            )
+        else:
+            self.ivars = (
+                self.mdot,
+                self.L2,
+                self.L1,
+                self.grad,
+                self.D,
+                self.Tinj,
+                self.k,
+                self.time,
+            )
 
         # fixed vars
         self.Pinj = file[fixed_loc + "Pinj"][()]
@@ -58,17 +84,30 @@ class data:
             Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
         )
 
-        # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
-        self.shape = (
-            len(self.mdot),
-            len(self.L2),
-            len(self.L1),
-            len(self.grad),
-            len(self.D),
-            len(self.Tinj),
-            len(self.k),
-            len(self.time),
-        )
+        # Calculate shape based on model type
+        if self.is_convection_model:
+            # dim = Mdot x L2 x L1 x grad x perm_HWR x Tinj x time
+            self.shape = (
+                len(self.mdot),
+                len(self.L2),
+                len(self.L1),
+                len(self.grad),
+                len(self.perm_HWR),
+                len(self.Tinj),
+                len(self.time),
+            )
+        else:
+            # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
+            self.shape = (
+                len(self.mdot),
+                len(self.L2),
+                len(self.L1),
+                len(self.grad),
+                len(self.D),
+                len(self.Tinj),
+                len(self.k),
+                len(self.time),
+            )
 
         # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
         self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
