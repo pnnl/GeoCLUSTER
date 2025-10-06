@@ -68,8 +68,19 @@ class data:
             )
 
         # fixed vars
-        self.Pinj = file[fixed_loc + "Pinj"][()]
-        self.Tamb = file[fixed_loc + "Tamb"][()]
+        if self.is_convection_model:
+            # Convection model fixed parameters
+            self.borehole_diameter = file[fixed_loc + "borehole_diameter(m)"][()]
+            self.porosity = file[fixed_loc + "porosity"][()]
+            # Set default values for missing parameters
+            self.Pinj = 20e6  # 200 Bar as provided
+            self.Tamb = 300.0  # 300 Kelvin as provided
+        else:
+            # Standard model fixed parameters
+            self.Pinj = file[fixed_loc + "Pinj"][()]
+            self.Tamb = file[fixed_loc + "Tamb"][()]
+            self.borehole_diameter = None
+            self.porosity = None
 
         # dim = Mdot x L2 x L1 x grad x D x Tinj x k
         Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt

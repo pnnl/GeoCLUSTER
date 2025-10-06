@@ -15,7 +15,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 # sourced scripts
-from reader import initialize_data, data_dict
+from reader import initialize_data, data_dict, initialize_convection_data, convection_data_dict
 from econ_support import create_teaobject
 from plots_support import * 
 import traceback
@@ -23,8 +23,20 @@ import traceback
 # -----------------------
 # Read in data.
 # -----------------------
+# Initialize default data (HDF5 model)
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
+
+def get_model_data(model):
+    """Get data objects and parameter dictionary based on model type"""
+    if model == "CovHDF5":
+        # Load convection model data
+        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O = initialize_convection_data()
+        conv_param_dict = convection_data_dict(conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O)
+        return conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict
+    else:
+        # Use standard HDF5 data
+        return u_sCO2, u_H2O, c_sCO2, c_H2O, param_dict
 
 # -----------------------
 # Global properties.

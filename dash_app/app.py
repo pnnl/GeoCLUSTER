@@ -782,6 +782,12 @@ def update_working_fluid(model):
             return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
+    elif model == "CovHDF5":
+        fluid_list = ["H2O"]  # CovHDF5 only supports H2O
+        if ctx.triggered_id == "model-select":
+            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+        else:
+            raise PreventUpdate
     else:
         raise PreventUpdate
 
@@ -1013,6 +1019,10 @@ def show_model_params(model):
     
     if model == "SBT V2.0":
         return b, b, b, b, b, b, n, b, b, n, b
+    
+    if model == "CovHDF5":
+        # CovHDF5: hide SBT params, show standard params (but different ones)
+        return n, n, n, n, n, n, b, n, n, n, n
     
 
 @app.callback(
