@@ -1503,6 +1503,81 @@ def update_slider_ranges(model, case, unit_system):
                        
         return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, diameter_container, L2_container, L1_container
 
+    elif model == "CovHDF5":
+        # For CovHDF5, create sliders with permeability parameter instead of borehole diameter and thermal conductivity
+        if unit_system == "imperial":
+            # Note: CovHDF5 doesn't have imperial units, but we'll use metric ranges for now
+            mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
+                                                    min_v=2, max_v=10, 
+                                                    mark_dict={2: '2', 10: '10'}, 
+                                                    start_v=6, 
+                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+            L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
+                                                    min_v=1000, max_v=5000, 
+                                                    mark_dict={1000: '1k', 2500: '2.5k', 5000: '5k'}, 
+                                                    start_v=2500, 
+                                                    div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Vertical Depth (m)", 
+                                                    min_v=1000, max_v=5000, 
+                                                    mark_dict={1000: '1k', 5000: '5k'}, 
+                                                    start_v=3000, 
+                                                    div_style=div_block_style, parameter_name="Vertical Depth (m)")
+            grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
+                                                    min_v=0.03, max_v=0.06, 
+                                                    mark_dict={0.03: '0.03', 0.06: '0.06'}, 
+                                                    start_v=0.045, 
+                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+            # CovHDF5 uses permeability instead of borehole diameter
+            perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)", 
+                                                    min_v=0.1, max_v=1.0, 
+                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 1.0: '1.0'}, 
+                                                    start_v=0.5, 
+                                                    div_style=div_block_style, parameter_name="Permeability (HWR)")
+            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°C)", 
+                                                    min_v=30, max_v=60, 
+                                                    mark_dict={30: '30', 60: '60'}, 
+                                                    start_v=45, 
+                                                    div_style=div_block_style, parameter_name="Injection Temperature (°C)")
+        else:
+            # Metric CovHDF5 ranges
+            mdot_container = create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", 
+                                                    min_v=2, max_v=10, 
+                                                    mark_dict={2: '2', 10: '10'}, 
+                                                    start_v=6, 
+                                                    div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+            L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", 
+                                                    min_v=1000, max_v=5000, 
+                                                    mark_dict={1000: '1k', 2500: '2.5k', 5000: '5k'}, 
+                                                    start_v=2500, 
+                                                    div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Vertical Depth (m)", 
+                                                    min_v=1000, max_v=5000, 
+                                                    mark_dict={1000: '1k', 5000: '5k'}, 
+                                                    start_v=3000, 
+                                                    div_style=div_block_style, parameter_name="Vertical Depth (m)")
+            grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
+                                                    min_v=0.03, max_v=0.06, 
+                                                    mark_dict={0.03: '0.03', 0.06: '0.06'}, 
+                                                    start_v=0.045, 
+                                                    div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+            # CovHDF5 uses permeability instead of borehole diameter
+            perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)", 
+                                                    min_v=0.1, max_v=1.0, 
+                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 1.0: '1.0'}, 
+                                                    start_v=0.5, 
+                                                    div_style=div_block_style, parameter_name="Permeability (HWR)")
+            Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°C)", 
+                                                    min_v=30, max_v=60, 
+                                                    mark_dict={30: '30', 60: '60'}, 
+                                                    start_v=45, 
+                                                    div_style=div_block_style, parameter_name="Injection Temperature (°C)")
+        
+        # For CovHDF5, we don't need Tsurf, k (thermal conductivity), so we'll create empty containers
+        Tsurf_container = html.Div(style={'display': 'none'})
+        k_container = html.Div(style={'display': 'none'})
+        
+        return Tsurf_container, grad_container, k_container, Tinj_container, mdot_container, perm_container, L2_container, L1_container
+
     else:
         # Default case - return empty containers
         empty_container = html.Div(style={'display': 'none'})
