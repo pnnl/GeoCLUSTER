@@ -72,12 +72,20 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     # to avoid creating extra rows that don't match the CSV template structure
 
     # Handle different data structures for HDF5 vs SBT models
-    if model == "HDF5":
-        # Original HDF5 data structure
-        results = [econ_dict['LCOH H2O'], econ_dict['LCOE H2O'], thermal_dict['Mean H2O Tout'], thermal_dict['Mean H2O Pout'], 
-                   econ_dict['Mean H2O Net HProd'], econ_dict['Mean H2O Net EProd'],
-                   econ_dict['LCOH sCO2'], econ_dict['LCOE sCO2'], thermal_dict['Mean sCO2 Tout'], thermal_dict['Mean sCO2 Pout'],
-                   econ_dict['Mean sCO2 Net HProd'], econ_dict['Mean sCO2 Net EProd']
+    if model == "HDF5" or model == "CovHDF5":
+        # HDF5 and CovHDF5 data structure
+        print(f"DEBUG: Model = {model}")
+        print(f"DEBUG: thermal_dict keys = {thermal_dict.keys()}")
+        print(f"DEBUG: econ_dict keys = {econ_dict.keys()}")
+        print(f"DEBUG: thermal_dict = {thermal_dict}")
+        print(f"DEBUG: econ_dict = {econ_dict}")
+        
+        results = [econ_dict.get('LCOH H2O', '-'), econ_dict.get('LCOE H2O', '-'), 
+                   thermal_dict.get('Mean H2O Tout', '-'), thermal_dict.get('Mean H2O Pout', '-'), 
+                   econ_dict.get('Mean H2O Net HProd', '-'), econ_dict.get('Mean H2O Net EProd', '-'),
+                   econ_dict.get('LCOH sCO2', '-'), econ_dict.get('LCOE sCO2', '-'), 
+                   thermal_dict.get('Mean sCO2 Tout', '-'), thermal_dict.get('Mean sCO2 Pout', '-'),
+                   econ_dict.get('Mean sCO2 Net HProd', '-'), econ_dict.get('Mean sCO2 Net EProd', '-')
                    ]
     else:
         # SBT model data structure - calculate mean values from arrays

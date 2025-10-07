@@ -248,18 +248,34 @@ class data:
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
         if sbt_version == 0:
-            points = list(
-                iter.product(
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                    self.time,
+            # Handle both convection model (6D) and standard model (7D)
+            if self.is_convection_model:
+                # Convection model: mdot, L2, L1, grad, perm_HWR, Tinj, time
+                points = list(
+                    iter.product(
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        self.time,
+                    )
                 )
-            )
+            else:
+                # Standard model: mdot, L2, L1, grad, D, Tinj, k, time
+                points = list(
+                    iter.product(
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                        self.time,
+                    )
+                )
 
             point_to_read_around = (
                 *point,

@@ -65,7 +65,8 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
 
 
-def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i):
+def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, 
+                                   model="HDF5", conv_u_H2O=None, conv_c_H2O=None):
 
     # --------------------------------------------------------------------------------------------------------------
     # For both H2O and sCO2, calculate:
@@ -87,27 +88,35 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     H2O_kWt_avg = None
     error_messages_d = {}
 
-    if case == "utube":
+    if model == "CovHDF5":
+        # CovHDF5 has different data structure (no k dimension)
+        if case == "utube":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = conv_u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+                H2O_kWt_avg = conv_u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+        elif case == "coaxial":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+                H2O_kWt_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+    else:
+        # Standard HDF5 model
+        if case == "utube":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                H2O_kWt_avg = u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
+            if fluid == "sCO2" or fluid == "All":
+                sCO2_kWe_avg = u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                sCO2_kWt_avg = u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
-        if fluid == "H2O" or fluid == "All":
-            H2O_kWe_avg = u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            H2O_kWt_avg = u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+        if case == "coaxial":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                H2O_kWt_avg = c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
-        if fluid == "sCO2" or fluid == "All":
-            sCO2_kWe_avg = u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            sCO2_kWt_avg = u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-
-    if case == "coaxial":
-
-
-        if fluid == "H2O" or fluid == "All":
-            H2O_kWe_avg = c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            H2O_kWt_avg = c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-
-        if fluid == "sCO2" or fluid == "All":
-            sCO2_kWe_avg = c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            sCO2_kWt_avg = c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+            if fluid == "sCO2" or fluid == "All":
+                sCO2_kWe_avg = c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                sCO2_kWt_avg = c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
@@ -188,8 +197,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     time_dict = {"Time (year)": time}
 
     # ** Average calculations
-    sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
-                            get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
+    if model == "CovHDF5":
+        sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+                                get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i,
+                                                               model=model, conv_u_H2O=conv_u_H2O, conv_c_H2O=conv_c_H2O)
+    else:
+        sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+                                get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
 
     error_messages_dict.update(error_messages_d)
 
