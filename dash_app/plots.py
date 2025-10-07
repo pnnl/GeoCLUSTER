@@ -257,7 +257,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 # For SBT models, generate data based on model version
-                if model != "HDF5":
+                if model == "SBT V1.0" or model == "SBT V2.0":
                     # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
@@ -278,6 +278,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                elif model == "CovHDF5":
+                    # For CovHDF5, only H2O is supported and we use convection data
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = conv_u_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = conv_u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    # CovHDF5 doesn't support sCO2
+                    sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
                     # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":
@@ -303,7 +313,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 # For SBT models, generate data based on model version
-                if model != "HDF5":
+                if model == "SBT V1.0" or model == "SBT V2.0":
                     # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
@@ -323,6 +333,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                elif model == "CovHDF5":
+                    # For CovHDF5, only H2O is supported and we use convection data
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = conv_c_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = conv_c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    # CovHDF5 doesn't support sCO2
+                    sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
                     # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":

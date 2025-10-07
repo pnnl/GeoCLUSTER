@@ -249,6 +249,7 @@ class data:
         """
         if sbt_version == 0:
             # Handle both convection model (6D) and standard model (7D)
+            print(f"DEBUG interp_outlet_states: is_convection_model={self.is_convection_model}, point length={len(point)}, case={self.case}, fluid={self.fluid}")
             if self.is_convection_model:
                 # Convection model: mdot, L2, L1, grad, perm_HWR, Tinj, time
                 points = list(
