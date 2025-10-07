@@ -472,6 +472,55 @@ PARAMETER_INFO = {
         "typical_value": "InjectionTemperatures.xlsx",
         "unit": "file",
         "description": "Required when Injection Temperature Mode is set to Variable. First column stores time in seconds, second column stores injection temperature in °C."
+    },
+    
+    # CovHDF5 specific parameters
+    "Permeability (HWR)": {
+        "definition": "Set the horizontal-to-vertical permeability ratio (HWR) for the convection model. This dimensionless parameter controls how easily fluid flows horizontally versus vertically through the rock formation.",
+        "recommended_range": "0.1-1.0",
+        "typical_value": "0.5",
+        "unit": "dimensionless",
+        "description": "Higher values indicate more horizontal flow (anisotropic), while lower values indicate more vertical flow. A value of 1.0 represents isotropic permeability (equal horizontal and vertical flow)."
+    },
+    
+    "Mass Flow Rate (lb/s)": {
+        "definition": "Set the mass flow rate of the working fluid in pounds per second. This controls how much fluid circulates through the system per unit time.",
+        "recommended_range": "4.4-22.0 lb/s",
+        "typical_value": "13.2 lb/s",
+        "unit": "lb/s",
+        "description": "Higher flow rates increase heat extraction but require more pumping power. The range is optimized for CovHDF5 model performance."
+    },
+    
+    "Horizontal Extent (ft)": {
+        "definition": "Set the horizontal distance of the well system in feet. For CovHDF5, this represents the extent of the horizontal well section.",
+        "recommended_range": "3,281-16,404 ft",
+        "typical_value": "8,202 ft",
+        "unit": "ft",
+        "description": "Longer horizontal sections increase heat extraction area but require more drilling. The range is optimized for CovHDF5 model performance."
+    },
+    
+    "Vertical Depth (ft)": {
+        "definition": "Set the vertical drilling depth in feet. For CovHDF5, this represents the depth of the vertical well section.",
+        "recommended_range": "3,281-16,404 ft",
+        "typical_value": "9,843 ft",
+        "unit": "ft",
+        "description": "Greater depth increases access to higher temperature resources but increases drilling costs. The range is optimized for CovHDF5 model performance."
+    },
+    
+    "Geothermal Gradient (°F/ft)": {
+        "definition": "Set the rate of temperature increase with depth in degrees Fahrenheit per foot. This represents how quickly the earth's temperature increases as you go deeper.",
+        "recommended_range": "0.016-0.033 °F/ft",
+        "typical_value": "0.025 °F/ft",
+        "unit": "°F/ft",
+        "description": "Higher gradients provide access to higher temperatures at shallower depths, improving system efficiency. The range is optimized for CovHDF5 model performance."
+    },
+    
+    "Injection Temperature (°F)": {
+        "definition": "Set the temperature of the working fluid when it enters the system in degrees Fahrenheit. This is the temperature at which fluid is injected into the well.",
+        "recommended_range": "86-140 °F",
+        "typical_value": "113 °F",
+        "unit": "°F",
+        "description": "Lower injection temperatures allow for greater heat extraction but may require pre-cooling. The range is optimized for CovHDF5 model performance."
     }
 }
 

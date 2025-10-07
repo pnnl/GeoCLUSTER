@@ -69,12 +69,17 @@ class data:
 
         # fixed vars
         if self.is_convection_model:
-            # Convection model fixed parameters
+            # Convection model fixed parameters (loaded from HDF5 file)
             self.borehole_diameter = file[fixed_loc + "borehole_diameter(m)"][()]
             self.porosity = file[fixed_loc + "porosity"][()]
-            # Set default values for missing parameters
-            self.Pinj = 20e6  # 200 Bar as provided
-            self.Tamb = 300.0  # 300 Kelvin as provided
+            # Hard-coded CovHDF5 parameters (not in HDF5 file)
+            self.Pinj = 20e6  # 200 Bar (20e6 Pascal)
+            self.Tamb = 300.0  # 300 Kelvin ambient temperature
+            self.Tsurf = 298.15  # 298.15 Kelvin surface temperature
+            self.c_rock = 790.0  # 790 J/kg-K rock specific heat capacity
+            self.pipe_roughness = 2.5e-05  # 2.5e-05 m (for Haaland Equation)
+            self.rho_rock = 2750.0  # 2750 kg/m3 rock density
+            self.k_rock = 3.05  # 3.05 W/m-K rock thermal conductivity
         else:
             # Standard model fixed parameters
             self.Pinj = file[fixed_loc + "Pinj"][()]
