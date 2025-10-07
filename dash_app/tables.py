@@ -221,70 +221,137 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
 
     # Convert fixed values to imperial units if needed
     if units == "imperial":
-        # Hard-coded fixed values from CSV converted to imperial
-        fixed_values = [
-            20 * 145.038,  # Inlet Pressure: 20 MPa to psi
-            26.85 * (9.0/5.0) + 32.0,  # Ambient Temperature: 26.85°C to °F
-            25 * (9.0/5.0) + 32.0,  # Surface Temperature: 25°C to °F
-            0.025 * 0.0393701,  # Pipe Roughness: 0.025 mm to inches
-            2750 * 0.062428,  # Rock Density: 2750 kg/m³ to lb/ft³
-            790 * 0.238846,  # Rock Specific Heat: 790 J/kg·K to BTU/lb·°F
-            1,  # Inner Pipe / Annulus Area Ratio (dimensionless)
-            0.0192 * 3.28084,  # Inner Pipe Thickness: 0.0192 m to ft
-            0.06 * 0.577789,  # Inner Pipe Thermal Conductivity: 0.06 W/m·K to BTU/(hr·ft·°F)
-            0.015,  # Operation and Maintenance Cost (dimensionless)
-            0.8,  # Pump Efficiency (dimensionless)
-            0.9,  # Turbine Isentropic Efficiency (dimensionless)
-            0.98,  # Generator Conversion Efficiency (dimensionless)
-            293.15 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 293.15°C to °F
-            100000 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 100000°C to °F
-            0.1,  # Electricity Rate in Direct-Use (dimensionless)
-            '-',  # Empty
-            '-'   # Empty
-        ]
-        
-        # Update parameter names to show imperial units
-        param_names = [
-            "Mass Flow Rate (lb/s)",
-            "Horizontal Extent (ft)", 
-            "Drilling Depth (ft)",
-            "Geothermal Gradient (°F/ft)",
-            "Borehole Diameter (ft)",
-            "Injection Temperature (°F)",
-            "Rock Thermal Conductivity (BTU/(hr·ft·°F))",
-            "Drilling Cost ($/ft)",
-            "Discount Rate (%)",
-            "Lifetime (years)",
-            "Plant CAPEX ($/kWt)",
-            "Plant CAPEX ($/kWe)",
-            "Pre-Cooling (°F)",
-            "Turbine Outlet Pressure (psi)",
-            "Select Interpolation",
-            "Select Heat-Exchanger Design", 
-            "Select Fluid",
-            "-"
-        ]
-        
-        fixed_param_names = [
-            "Inlet Pressure (psi)",
-            "Ambient Temperature (°F)",
-            "Surface Temperature (°F)", 
-            "Pipe Roughness (in)",
-            "Rock Density (lb/ft³)",
-            "Rock Specific Heat (BTU/lb·°F)",
-            "Inner Pipe / Annulus Area Ratio",
-            "Inner Pipe Thickness (ft)",
-            "Inner Pipe Thermal Conductivity (BTU/(hr·ft·°F))",
-            "Operation and Maintence Cost of Plant",
-            "Pump Efficiency For Circulation Pump",
-            "Turbine Isentropic Efficency",
-            "Generator Conversion Efficiency",
-            "Dead-State Temperature (°F)",
-            "Dead-State Temperature (°F)",
-            "Electricity Rate in Direct-Use",
-            "-",
-            "-"
-        ]
+        # CovHDF5 model has different fixed parameters
+        if model == "CovHDF5":
+            # Hard-coded CovHDF5 fixed values converted to imperial
+            fixed_values = [
+                20 * 145.038,  # Inlet Pressure: 20 MPa to psi
+                round((300.0 - 273.15) * (9.0/5.0) + 32.0, 2),  # Ambient Temperature: 300K to °F
+                round((298.15 - 273.15) * (9.0/5.0) + 32.0, 2),  # Surface Temperature: 298.15K to °F
+                0.025 * 0.0393701,  # Pipe Roughness: 0.025 mm to inches
+                2750 * 0.062428,  # Rock Density: 2750 kg/m³ to lb/ft³
+                790 * 0.238846,  # Rock Specific Heat: 790 J/kg·K to BTU/lb·°F
+                0.4445 * 3.28084,  # Borehole Diameter: 0.4445 m to ft
+                0.1,  # Porosity (dimensionless)
+                3.05 * 0.577789,  # Rock Thermal Conductivity: 3.05 W/m·K to BTU/(hr·ft·°F)
+                0.015,  # Operation and Maintenance Cost (dimensionless)
+                0.8,  # Pump Efficiency (dimensionless)
+                0.9,  # Turbine Isentropic Efficiency (dimensionless)
+                0.98,  # Generator Conversion Efficiency (dimensionless)
+                (293.15 - 273.15) * (9.0/5.0) + 32.0,  # Dead-State Temperature: 293.15K to °F
+                100000 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 100000°C to °F (note: this seems like an error in original)
+                0.1,  # Electricity Rate in Direct-Use (dimensionless)
+                '-',  # Empty
+                '-'   # Empty
+            ]
+            
+            # Update parameter names for CovHDF5 (no thermal conductivity slider, has permeability slider)
+            param_names = [
+                "Mass Flow Rate (lb/s)",
+                "Horizontal Extent (ft)", 
+                "Drilling Depth (ft)",
+                "Geothermal Gradient (°F/ft)",
+                "Permeability (HWR)",
+                "Injection Temperature (°F)",
+                "-",  # No Rock Thermal Conductivity slider for CovHDF5
+                "Drilling Cost ($/ft)",
+                "Discount Rate (%)",
+                "Lifetime (years)",
+                "Plant CAPEX ($/kWt)",
+                "Plant CAPEX ($/kWe)",
+                "Pre-Cooling (°F)",
+                "Turbine Outlet Pressure (psi)",
+                "Select Interpolation",
+                "Select Heat-Exchanger Design", 
+                "Select Fluid",
+                "-"
+            ]
+            
+            fixed_param_names = [
+                "Inlet Pressure (psi)",
+                "Ambient Temperature (°F)",
+                "Surface Temperature (°F)", 
+                "Pipe Roughness (in)",
+                "Rock Density (lb/ft³)",
+                "Rock Specific Heat (BTU/lb·°F)",
+                "Borehole Diameter (ft)",
+                "Porosity",
+                "Rock Thermal Conductivity (BTU/(hr·ft·°F))",
+                "Operation and Maintence Cost of Plant",
+                "Pump Efficiency For Circulation Pump",
+                "Turbine Isentropic Efficency",
+                "Generator Conversion Efficiency",
+                "Dead-State Temperature (°F)",
+                "Dead-State Temperature (°F)",
+                "Electricity Rate in Direct-Use",
+                "-",
+                "-"
+            ]
+        else:
+            # Standard HDF5 and SBT fixed values converted to imperial
+            fixed_values = [
+                20 * 145.038,  # Inlet Pressure: 20 MPa to psi
+                26.85 * (9.0/5.0) + 32.0,  # Ambient Temperature: 26.85°C to °F
+                25 * (9.0/5.0) + 32.0,  # Surface Temperature: 25°C to °F
+                0.025 * 0.0393701,  # Pipe Roughness: 0.025 mm to inches
+                2750 * 0.062428,  # Rock Density: 2750 kg/m³ to lb/ft³
+                790 * 0.238846,  # Rock Specific Heat: 790 J/kg·K to BTU/lb·°F
+                1,  # Inner Pipe / Annulus Area Ratio (dimensionless)
+                0.0192 * 3.28084,  # Inner Pipe Thickness: 0.0192 m to ft
+                0.06 * 0.577789,  # Inner Pipe Thermal Conductivity: 0.06 W/m·K to BTU/(hr·ft·°F)
+                0.015,  # Operation and Maintenance Cost (dimensionless)
+                0.8,  # Pump Efficiency (dimensionless)
+                0.9,  # Turbine Isentropic Efficiency (dimensionless)
+                0.98,  # Generator Conversion Efficiency (dimensionless)
+                293.15 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 293.15°C to °F
+                100000 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 100000°C to °F
+                0.1,  # Electricity Rate in Direct-Use (dimensionless)
+                '-',  # Empty
+                '-'   # Empty
+            ]
+            
+            # Update parameter names to show imperial units
+            param_names = [
+                "Mass Flow Rate (lb/s)",
+                "Horizontal Extent (ft)", 
+                "Drilling Depth (ft)",
+                "Geothermal Gradient (°F/ft)",
+                "Borehole Diameter (ft)",
+                "Injection Temperature (°F)",
+                "Rock Thermal Conductivity (BTU/(hr·ft·°F))",
+                "Drilling Cost ($/ft)",
+                "Discount Rate (%)",
+                "Lifetime (years)",
+                "Plant CAPEX ($/kWt)",
+                "Plant CAPEX ($/kWe)",
+                "Pre-Cooling (°F)",
+                "Turbine Outlet Pressure (psi)",
+                "Select Interpolation",
+                "Select Heat-Exchanger Design", 
+                "Select Fluid",
+                "-"
+            ]
+            
+            fixed_param_names = [
+                "Inlet Pressure (psi)",
+                "Ambient Temperature (°F)",
+                "Surface Temperature (°F)", 
+                "Pipe Roughness (in)",
+                "Rock Density (lb/ft³)",
+                "Rock Specific Heat (BTU/lb·°F)",
+                "Inner Pipe / Annulus Area Ratio",
+                "Inner Pipe Thickness (ft)",
+                "Inner Pipe Thermal Conductivity (BTU/(hr·ft·°F))",
+                "Operation and Maintence Cost of Plant",
+                "Pump Efficiency For Circulation Pump",
+                "Turbine Isentropic Efficency",
+                "Generator Conversion Efficiency",
+                "Dead-State Temperature (°F)",
+                "Dead-State Temperature (°F)",
+                "Electricity Rate in Direct-Use",
+                "-",
+                "-"
+            ]
         
         # Update result names to show imperial units
         result_names = [
@@ -312,10 +379,76 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
         fixed_values = [round(val, 4) if isinstance(val, (int, float)) else val for val in fixed_values]
         
     else:
-        # Metric values - use original CSV values
-        param_names = summary_tbl['Variable Parameter'].to_list()
-        fixed_param_names = summary_tbl['Fixed Parameter'].to_list()
-        fixed_values = summary_tbl['Fixed Value'].to_list()
+        # Metric values
+        if model == "CovHDF5":
+            # CovHDF5 metric fixed values
+            fixed_values = [
+                20,  # Inlet Pressure: 20 MPa
+                round(300.0 - 273.15, 2),  # Ambient Temperature: 300K to °C
+                round(298.15 - 273.15, 2),  # Surface Temperature: 298.15K to °C
+                0.025,  # Pipe Roughness: 0.025 mm
+                2750,  # Rock Density: 2750 kg/m³
+                790,  # Rock Specific Heat: 790 J/kg·K
+                0.4445,  # Borehole Diameter: 0.4445 m
+                0.1,  # Porosity (dimensionless)
+                3.05,  # Rock Thermal Conductivity: 3.05 W/m·K
+                0.015,  # Operation and Maintenance Cost (dimensionless)
+                0.8,  # Pump Efficiency (dimensionless)
+                0.9,  # Turbine Isentropic Efficiency (dimensionless)
+                0.98,  # Generator Conversion Efficiency (dimensionless)
+                293.15,  # Dead-State Temperature: 293.15°C
+                100000,  # Dead-State Temperature: 100000°C
+                0.1,  # Electricity Rate in Direct-Use (dimensionless)
+                '-',  # Empty
+                '-'   # Empty
+            ]
+            
+            param_names = [
+                "Mass Flow Rate (kg/s)",
+                "Horizontal Extent (m)", 
+                "Drilling Depth (m)",
+                "Geothermal Gradient (K/m)",
+                "Permeability (HWR)",
+                "Injection Temperature (˚C)",
+                "-",  # No Rock Thermal Conductivity slider for CovHDF5
+                "Drilling Cost ($/m)",
+                "Discount Rate (%)",
+                "Lifetime (years)",
+                "Plant CAPEX ($/kWt)",
+                "Plant CAPEX ($/kWe)",
+                "Pre-Cooling (˚C)",
+                "Turbine Outlet Pressure (bar)",
+                "Select Interpolation",
+                "Select Heat-Exchanger Design", 
+                "Select Fluid",
+                "-"
+            ]
+            
+            fixed_param_names = [
+                "Inlet Pressure (MPa)",
+                "Ambient Temperature (˚C)",
+                "Surface Temperature (˚C)", 
+                "Pipe Roughness (mm)",
+                "Rock Density (kg/m3)",
+                "Rock Specific Heat (J/kg-K)",
+                "Borehole Diameter (m)",
+                "Porosity",
+                "Rock Thermal Conductivity (W/m-K)",
+                "Operation and Maintence Cost of Plant",
+                "Pump Efficiency For Circulation Pump",
+                "Turbine Isentropic Efficency",
+                "Generator Conversion Efficiency",
+                "Dead-State Temperature (˚C)",
+                "Dead-State Temperature (˚C)",
+                "Electricity Rate in Direct-Use",
+                "-",
+                "-"
+            ]
+        else:
+            # Standard HDF5 and SBT - use original CSV values
+            param_names = summary_tbl['Variable Parameter'].to_list()
+            fixed_param_names = summary_tbl['Fixed Parameter'].to_list()
+            fixed_values = summary_tbl['Fixed Value'].to_list()
     
     result_names = [name.replace('X', str(Lifetime)) for name in result_names]
     
