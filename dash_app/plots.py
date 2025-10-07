@@ -142,6 +142,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 1
     elif model == "SBT V2.0":
         sbt_version = 2
+    elif model == "CovHDF5":
+        sbt_version = 0  # CovHDF5 uses HDF5-style interpolation
     else:
         sbt_version = 0
 
@@ -152,16 +154,38 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     error_messages_dict = {}
 
-    time = u_sCO2.time
-    m_dot = u_sCO2.mdot
+    # Load model-specific data
+    if model == "CovHDF5":
+        # Load convection model data
+        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict = get_model_data(model)
+        # For CovHDF5, use H2O data (sCO2 is None)
+        time = conv_u_H2O.time
+        m_dot = conv_u_H2O.mdot
+        
+        # For CovHDF5, arg_D is actually permeability
+        # Find nearest values using convection model data
+        arg_mdot_v, arg_mdot_i = find_nearest(conv_u_H2O.mdot, arg_mdot)
+        arg_L2_v, arg_L2_i = find_nearest(conv_u_H2O.L2, arg_L2)
+        arg_L1_v, arg_L1_i = find_nearest(conv_u_H2O.L1, arg_L1)
+        arg_grad_v, arg_grad_i = find_nearest(conv_u_H2O.grad, arg_grad)
+        arg_D_v, arg_D_i = find_nearest(conv_u_H2O.perm_HWR, arg_D)  # arg_D is permeability for CovHDF5
+        arg_Tinj_v, arg_Tinj_i = find_nearest(conv_u_H2O.Tinj, arg_Tinj + to_kelvin_factor)
+        arg_k_v, arg_k_i = 0, 0  # No thermal conductivity parameter for CovHDF5
+        
+        # Point for interpolation (no k parameter for CovHDF5)
+        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor)
+    else:
+        # Standard HDF5 or SBT models
+        time = u_sCO2.time
+        m_dot = u_sCO2.mdot
+        
+        arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
+                    arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+        
+        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k)
 
     mass_flow_rates_dict = {"Mass Flow Rate (kg/s)": m_dot}
     time_dict = {"Time (year)": time}
-
-    arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
-                arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
-
-    point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
     # ** Average calculations
     sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
@@ -177,25 +201,37 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
         # this doesn't impact the kWe over time
 
-        if case == "utube":
+        if model == "CovHDF5":
+            # CovHDF5 has different data structure (no k dimension)
+            if case == "utube":
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = conv_u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+                    H2O_Pout = conv_u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+            elif case == "coaxial":
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = conv_c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+                    H2O_Pout = conv_c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+        else:
+            # Standard HDF5 model
+            if case == "utube":
 
-            if fluid == "H2O" or fluid == "All":
-                H2O_Tout = u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                H2O_Pout = u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    H2O_Pout = u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-            if fluid == "sCO2" or fluid == "All":
-                sCO2_Tout = u_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                sCO2_Pout = u_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "sCO2" or fluid == "All":
+                    sCO2_Tout = u_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    sCO2_Pout = u_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-        if case == "coaxial":
+            if case == "coaxial":
 
-            if fluid == "H2O" or fluid == "All":
-                H2O_Tout = c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                H2O_Pout = c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    H2O_Pout = c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-            if fluid == "sCO2" or fluid == "All":
-                sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "sCO2" or fluid == "All":
+                    sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
 
 
