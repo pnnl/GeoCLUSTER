@@ -207,8 +207,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     error_messages_dict.update(error_messages_d)
 
-    # print(sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg)
-
     is_blank_data = False
 
     if interp_time == "False":
@@ -304,9 +302,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
-                print(f"DEBUG: ValueError in interpolation for case={case}, fluid={fluid}, model={model}")
-                print(f"DEBUG: Error: {str(e)}")
-                print(f"DEBUG: Point: {point}")
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
                 error_message = parse_error_message(e=e, e_name='Err SubRes3')
                 error_messages_dict['Err SubRes3'] = error_message
@@ -362,9 +357,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
-                print(f"DEBUG: ValueError in interpolation for case={case}, fluid={fluid}, model={model}")
-                print(f"DEBUG: Error: {str(e)}")
-                print(f"DEBUG: Point: {point}")
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
                 error_message = parse_error_message(e=e, e_name='Err SubRes4')
                 error_messages_dict['Err SubRes4'] = error_message
@@ -662,14 +654,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     arg_v = 40 - (0.25*101)
     
     if interp_time == "False":
-
-        # print('FALSE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-        
         if param == "Horizontal Extent (m)":
             arg_L2_i = slice(None)
         if param == "Vertical Extent (m)":
@@ -704,9 +688,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             Tout_flipped = np.transpose(u_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
             Pout_flipped = np.transpose(u_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-            # print(kWe_avg_flipped.shape) # (20, 26)
-            # print('\n')
-
         if fluid == "H2O" and case == "coaxial":
 
             kWe_avg_flipped = np.transpose(c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
@@ -714,16 +695,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             Tout_flipped = np.transpose(c_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
             Pout_flipped = np.transpose(c_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-    if interp_time == "True": # would this even make sense? It doesn't because can manipulate the other factors, when they should be fixed?
-
-        # print('TRUE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-
-        point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
+    if interp_time == "True":
+        point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v)
         # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
         if fluid == "sCO2" and case == "utube":
@@ -758,9 +731,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
                 error_message = parse_error_message(e=e, e_name='Err SubContour3')
                 error_messages_dict['Err SubContour3'] = error_message
-        
-            # print(kWe_avg_flipped.shape) # should have an x and y right for the z component?
-            # print('\n')
 
         if fluid == "H2O" and case == "coaxial":
             try:
@@ -993,9 +963,6 @@ def generate_econ_lineplots(TandP_dict,
                 error_messages_dict['Err Econ1b'] = error_message
 
         if fluid == "H2O" or fluid == "All":
-
-            # print(" ...... H20 HEATING LCOH .... ")
-
             try:
                 # TODO: update D ... based on radial
                 teaobj_H2O = create_teaobject(TandP_dict,
@@ -1010,15 +977,7 @@ def generate_econ_lineplots(TandP_dict,
                                                 is_H20=True, is_heating=True
                                                 )
                 lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
-                # print(lcoh_H2O)
-                # print("Error on LCOH ... ")
-                # print(teaobj_H2O)
-                # print(lcoh_H2O)
 
-                # HERE !!!!! "'TEA' object has no attribute 'LCOH'"
-                # print('here')
-                # print(teaobj_H2O.Linear_time_distribution)
- 
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Instantaneous_heat_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Heat Production (MWt)</b>: %{y:.3f} ',
@@ -1161,11 +1120,6 @@ def generate_econ_lineplots(TandP_dict,
 
                 lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
 
-                # print(" ********* ")
-                # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
-                # print(teaobj_H2O.Linear_time_distribution)
-                # print("\n")
-
                 # Electricity 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
@@ -1236,10 +1190,6 @@ def generate_econ_lineplots(TandP_dict,
 
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
-
-    print("econ errors!!")
-    print("\n")
-    print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 

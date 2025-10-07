@@ -73,13 +73,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
 
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5" or model == "CovHDF5":
-        # HDF5 and CovHDF5 data structure
-        print(f"DEBUG: Model = {model}")
-        print(f"DEBUG: thermal_dict keys = {thermal_dict.keys()}")
-        print(f"DEBUG: econ_dict keys = {econ_dict.keys()}")
-        print(f"DEBUG: thermal_dict = {thermal_dict}")
-        print(f"DEBUG: econ_dict = {econ_dict}")
-        
         results = [econ_dict.get('LCOH H2O', '-'), econ_dict.get('LCOE H2O', '-'), 
                    thermal_dict.get('Mean H2O Tout', '-'), thermal_dict.get('Mean H2O Pout', '-'), 
                    econ_dict.get('Mean H2O Net HProd', '-'), econ_dict.get('Mean H2O Net EProd', '-'),

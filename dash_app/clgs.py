@@ -229,12 +229,6 @@ class data:
             if len(grid_dim) == 0:
                 raise ValueError(f"Empty grid dimension {i} - cannot interpolate. Check parameter ranges.")
         
-        # Debug: print grid bounds for dimension 3 (gradient) when there's an issue
-        if len(point_to_read_around) > 3:
-            print(f"DEBUG interpolate_points: Grid dimension 3 (grad) bounds: {grid[3]}")
-            print(f"DEBUG interpolate_points: Requested point dimension 3: {point_to_read_around[3]}")
-            print(f"DEBUG interpolate_points: Available grad values in dataset: {self.ivars[3]}")
-        
         interpolated_points = interpn(grid, values_around_point, points, bounds_error=False, fill_value=None)
         return interpolated_points
 
@@ -260,7 +254,6 @@ class data:
         """
         if sbt_version == 0:
             # Handle both convection model (6D) and standard model (7D)
-            print(f"DEBUG interp_outlet_states: is_convection_model={self.is_convection_model}, point length={len(point)}, case={self.case}, fluid={self.fluid}")
             if self.is_convection_model:
                 # Convection model: mdot, L2, L1, grad, perm_HWR, Tinj, time
                 points = list(
@@ -296,7 +289,6 @@ class data:
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
             times = self.time
-            # print(Tout)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
@@ -386,8 +378,6 @@ class data:
                 # PipeParam5 = lateral_multiplier
 
             start = time.time()
-            
-            # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
             try:
                 times, Tout, Pout = run_sbt_final(
@@ -546,8 +536,7 @@ class data:
                 np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
             )
         except Exception:
-            print("Flag: Check if SBT model selected")
-            # AB: Dummy data for the contours:
+            # If SBT model fails, return dummy data for the contours:
             Tout = np.full((20, 26), 365)
             Pout = np.full((20, 26), 22228604)
 
