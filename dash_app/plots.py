@@ -304,6 +304,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
+                print(f"DEBUG: ValueError in interpolation for case={case}, fluid={fluid}, model={model}")
+                print(f"DEBUG: Error: {str(e)}")
+                print(f"DEBUG: Point: {point}")
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
                 error_message = parse_error_message(e=e, e_name='Err SubRes3')
                 error_messages_dict['Err SubRes3'] = error_message
@@ -359,6 +362,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
+                print(f"DEBUG: ValueError in interpolation for case={case}, fluid={fluid}, model={model}")
+                print(f"DEBUG: Error: {str(e)}")
+                print(f"DEBUG: Point: {point}")
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
                 error_message = parse_error_message(e=e, e_name='Err SubRes4')
                 error_messages_dict['Err SubRes4'] = error_message

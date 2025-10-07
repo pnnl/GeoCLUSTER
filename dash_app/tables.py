@@ -49,7 +49,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
         k_display = round(k * 0.577789, 4)  # W/m·K to BTU/(hr·ft·°F)
         Drilling_cost_display = round(Drilling_cost_per_m * 0.3048, 4)  # $/m to $/ft
         Pre_Cooling_Delta_T_display = round(Pre_Cooling_Delta_T * (9.0/5.0), 4)  # °C to °F
-        Turbine_outlet_pressure_display = round(Turbine_outlet_pressure * 0.145038, 4)  # Pa to psi
+        Turbine_outlet_pressure_display = round(Turbine_outlet_pressure * 145.038, 4)  # MPa to psi
     else:
         # Metric values - pass through as-is with 4 decimal places
         mdot_display = round(mdot, 4)
@@ -218,7 +218,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                    mean_sco2_net_hprod, mean_sco2_net_eprod]
         
     result_names = summary_tbl['Result'].to_list()
-    result_names = [name.replace('X', str(Lifetime)) for name in result_names]
 
     # Convert fixed values to imperial units if needed
     if units == "imperial":
@@ -293,14 +292,14 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
             "H2O LCOE ($/MWh e)",
             "H2O 40-Year Average Outlet Temperature (°F)",
             "H2O 40-Year Average Outlet Pressure (psi)",
-            "H2O X-Year Average Heat (MWt)",
-            "H2O X-Year Average Electricity Production (MWe)",
+            f"H2O {Lifetime}-Year Average Heat (MWt)",
+            f"H2O {Lifetime}-Year Average Electricity Production (MWe)",
             "sCO2 LCOH ($/MWh th)",
             "sCO2 LCOE ($/ MWh e)",
             "sCO2 40-Year Average Outlet Temperature (°F)",
             "sCO2 40-Year Average Outlet Pressure (psi)",
-            "sCO2 X-Year Average Heat (MWt)",
-            "sCO2 X-Year Average Electricity Production (MWe)",
+            f"sCO2 {Lifetime}-Year Average Heat (MWt)",
+            f"sCO2 {Lifetime}-Year Average Electricity Production (MWe)",
             "-",
             "-",
             "-",
@@ -317,6 +316,28 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
         param_names = summary_tbl['Variable Parameter'].to_list()
         fixed_param_names = summary_tbl['Fixed Parameter'].to_list()
         fixed_values = summary_tbl['Fixed Value'].to_list()
+    
+    result_names = [name.replace('X', str(Lifetime)) for name in result_names]
+    
+    # Fix column lengths to match across all columns
+    row_count = max(
+        len(param_names),
+        len(variable_input_values),
+        len(fixed_param_names),
+        len(fixed_values),
+        len(result_names),
+        len(results),
+    )
+
+    def _pad(lst, target, fill='-'):
+        return list(lst) + [fill] * (target - len(lst))
+
+    param_names = _pad(param_names, row_count)
+    variable_input_values = _pad(variable_input_values, row_count)
+    fixed_param_names = _pad(fixed_param_names, row_count)
+    fixed_values = _pad(fixed_values, row_count)
+    result_names = _pad(result_names, row_count)
+    results = _pad(results, row_count)
 
     # Create the table
     list_of_lists = [param_names, variable_input_values, 

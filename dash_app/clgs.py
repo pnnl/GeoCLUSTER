@@ -224,7 +224,13 @@ class data:
             if len(grid_dim) == 0:
                 raise ValueError(f"Empty grid dimension {i} - cannot interpolate. Check parameter ranges.")
         
-        interpolated_points = interpn(grid, values_around_point, points)
+        # Debug: print grid bounds for dimension 3 (gradient) when there's an issue
+        if len(point_to_read_around) > 3:
+            print(f"DEBUG interpolate_points: Grid dimension 3 (grad) bounds: {grid[3]}")
+            print(f"DEBUG interpolate_points: Requested point dimension 3: {point_to_read_around[3]}")
+            print(f"DEBUG interpolate_points: Available grad values in dataset: {self.ivars[3]}")
+        
+        interpolated_points = interpn(grid, values_around_point, points, bounds_error=False, fill_value=None)
         return interpolated_points
 
     def reshape_output(self, tout):
