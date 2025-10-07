@@ -82,18 +82,24 @@ class data:
             self.borehole_diameter = None
             self.porosity = None
 
-        # dim = Mdot x L2 x L1 x grad x D x Tinj x k
-        Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
-        We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
+        # Load output data based on model type
+        if self.is_convection_model:
+            # Convection model has kWe and kWt directly, not Wt and We
+            self.kWe_avg = file[output_loc + "kWe"][:]
+            self.kWt_avg = file[output_loc + "kWt"][:]
+        else:
+            # Standard model has Wt and We that need to be converted
+            Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
+            We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
 
-        self.GWhr = 1e6 * 3600000.0
+            self.GWhr = 1e6 * 3600000.0
 
-        self.kWe_avg = (
-            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
-        self.kWt_avg = (
-            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
+            self.kWe_avg = (
+                We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+            )
+            self.kWt_avg = (
+                Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+            )
 
         # Calculate shape based on model type
         if self.is_convection_model:
@@ -121,8 +127,13 @@ class data:
             )
 
         # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
-        self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
-        self.Pout = file[f"/{case}/{fluid}/output/Pout_chunked"]
+        # Convection model uses Tout/Pout directly, standard model uses chunked versions
+        if self.is_convection_model:
+            self.Tout = file[f"/{case}/{fluid}/output/Tout"]
+            self.Pout = file[f"/{case}/{fluid}/output/Pout"]
+        else:
+            self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
+            self.Pout = file[f"/{case}/{fluid}/output/Pout_chunked"]
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
