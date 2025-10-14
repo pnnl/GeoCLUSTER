@@ -232,13 +232,13 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 0.9,  # Turbine Isentropic Efficiency (dimensionless)
                 0.98,  # Generator Conversion Efficiency (dimensionless)
                 (293.15 - 273.15) * (9.0/5.0) + 32.0,  # Dead-State Temperature: 293.15K to °F
-                100000 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 100000°C to °F (note: this seems like an error in original)
+                100000 * (9.0/5.0) + 32.0,  # Dead-State Temperature: 100000°C to °F
                 0.1,  # Electricity Rate in Direct-Use (dimensionless)
                 '-',  # Empty
                 '-'   # Empty
             ]
             
-            # Update parameter names for CovHDF5 (no thermal conductivity slider, has permeability slider)
+            # CovHDF5 parameter names
             param_names = [
                 "Mass Flow Rate (lb/s)",
                 "Horizontal Extent (ft)", 
@@ -246,7 +246,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 "Geothermal Gradient (°F/ft)",
                 "Permeability (HWR)",
                 "Injection Temperature (°F)",
-                "-",  # No Rock Thermal Conductivity slider for CovHDF5
+                "-",
                 "Drilling Cost ($/ft)",
                 "Discount Rate (%)",
                 "Lifetime (years)",
@@ -403,7 +403,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 "Geothermal Gradient (K/m)",
                 "Permeability (HWR)",
                 "Injection Temperature (˚C)",
-                "-",  # No Rock Thermal Conductivity slider for CovHDF5
+                "-",
                 "Drilling Cost ($/m)",
                 "Discount Rate (%)",
                 "Lifetime (years)",
