@@ -1567,9 +1567,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=0.0246,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (°F/ft)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)",
-                                                    min_v=0.1, max_v=1.0,
-                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 0.98: '1.0'},
-                                                    start_v=0.5,
+                                                    min_v=0.2159, max_v=0.4445,
+                                                    mark_dict={0.2159: '0.22', 0.33: '0.33', 0.4445: '0.44'},
+                                                    start_v=0.33,
                                                     div_style=div_block_style, parameter_name="Permeability (HWR)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°F)",
                                                     min_v=86, max_v=140,
@@ -1599,9 +1599,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=0.045, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (K/m)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)", 
-                                                    min_v=0.1, max_v=1.0, 
-                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 0.98: '1.0'}, 
-                                                    start_v=0.5, 
+                                                    min_v=0.2159, max_v=0.4445, 
+                                                    mark_dict={0.2159: '0.22', 0.33: '0.33', 0.4445: '0.44'}, 
+                                                    start_v=0.33, 
                                                     div_style=div_block_style, parameter_name="Permeability (HWR)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°C)", 
                                                     min_v=30, max_v=60, 
@@ -2357,6 +2357,7 @@ def handle_quick_unit_changes(unit_system):
    [
     Output(component_id='drillcost-div', component_property='children'),
     Output(component_id='precool-div', component_property='children'),
+    Output(component_id='turb-pout-div', component_property='children'),
    ],
    [Input(component_id="quick-unit-selector", component_property="value")],
    prevent_initial_call=True
@@ -2392,6 +2393,18 @@ def update_economic_sliders(unit_system):
                 parameter_name="Pre-cooling (˚F)"
             )]
         )
+        turb_pout_container = html.Div(
+            key=f"turb-pout-imperial",
+            children=[create_enhanced_slider(
+                DivID="turb-pout-div", ID="turb-pout-select", 
+                ptitle="Turbine Outlet Pressure (psia)", 
+                min_v=1088, max_v=2901, 
+                mark_dict={1088: '1088', 2901: '2901'}, 
+                start_v=1160, 
+                div_style=div_block_style, 
+                parameter_name="Turbine Outlet Pressure (psia)"
+            )]
+        )
     else:
         # Metric drilling cost ($/m)
         drillcost_container = html.Div(
@@ -2419,5 +2432,17 @@ def update_economic_sliders(unit_system):
                 parameter_name="Pre-cooling (˚C)"
             )]
         )
+        turb_pout_container = html.Div(
+            key=f"turb-pout-metric",
+            children=[create_enhanced_slider(
+                DivID="turb-pout-div", ID="turb-pout-select", 
+                ptitle="Turbine Outlet Pressure (bar)", 
+                min_v=75, max_v=200, 
+                mark_dict={75: '75', 200: '200'}, 
+                start_v=80, 
+                div_style=div_block_style, 
+                parameter_name="Turbine Outlet Pressure (bar)"
+            )]
+        )
     
-    return drillcost_container, precool_container
+    return drillcost_container, precool_container, turb_pout_container

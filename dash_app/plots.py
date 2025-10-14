@@ -89,7 +89,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     error_messages_d = {}
 
     if model == "CovHDF5":
-        # CovHDF5 has different data structure (no k dimension)
+        
         if case == "utube":
             if fluid == "H2O" or fluid == "All":
                 H2O_kWe_avg = conv_u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
@@ -97,7 +97,7 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
         elif case == "coaxial":
             if fluid == "H2O" or fluid == "All":
                 H2O_kWe_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
-                H2O_kWt_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+                H2O_kWt_avg = conv_c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
     else:
         # Standard HDF5 model
         if case == "utube":
@@ -163,28 +163,21 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     error_messages_dict = {}
 
-    # Load model-specific data
     if model == "CovHDF5":
-        # Load convection model data
         conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict = get_model_data(model)
-        # For CovHDF5, use H2O data (sCO2 is None)
         time = conv_u_H2O.time
         m_dot = conv_u_H2O.mdot
         
-        # For CovHDF5, arg_D is actually permeability
-        # Find nearest values using convection model data
         arg_mdot_v, arg_mdot_i = find_nearest(conv_u_H2O.mdot, arg_mdot)
         arg_L2_v, arg_L2_i = find_nearest(conv_u_H2O.L2, arg_L2)
         arg_L1_v, arg_L1_i = find_nearest(conv_u_H2O.L1, arg_L1)
         arg_grad_v, arg_grad_i = find_nearest(conv_u_H2O.grad, arg_grad)
-        arg_D_v, arg_D_i = find_nearest(conv_u_H2O.perm_HWR, arg_D)  # arg_D is permeability for CovHDF5
-        arg_Tinj_v, arg_Tinj_i = find_nearest(conv_u_H2O.Tinj, arg_Tinj + to_kelvin_factor)
-        arg_k_v, arg_k_i = 0, 0  # No thermal conductivity parameter for CovHDF5
+        arg_D_v, arg_D_i = find_nearest(conv_u_H2O.perm_HWR, arg_D)
+        arg_Tinj_v, arg_Tinj_i = find_nearest(conv_u_H2O.Tinj, arg_Tinj)
+        arg_k_v, arg_k_i = 0, 0
         
-        # Point for interpolation (no k parameter for CovHDF5)
-        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor)
+        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj)
     else:
-        # Standard HDF5 or SBT models
         time = u_sCO2.time
         m_dot = u_sCO2.mdot
         
@@ -283,7 +276,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             Tsurf, c_m, rho_m, 
                                                             None, None, None, None, None,  # SBT parameters not used for CovHDF5
                                                             mesh, accuracy, None, None, None)
-                        H2O_kWe, H2O_kWt = conv_u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                        point_kelvin = (point[0], point[1], point[2], point[3], point[4], point[5] + to_kelvin_factor)
+                        H2O_kWe, H2O_kWt = conv_u_H2O.interp_kW(point_kelvin, H2O_Tout, H2O_Pout)
                     # CovHDF5 doesn't support sCO2
                     sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
@@ -338,7 +332,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             Tsurf, c_m, rho_m, 
                                                             None, None, None, None, None,  # SBT parameters not used for CovHDF5
                                                             mesh, accuracy, None, None, None)
-                        H2O_kWe, H2O_kWt = conv_c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                        point_kelvin = (point[0], point[1], point[2], point[3], point[4], point[5] + to_kelvin_factor)
+                        H2O_kWe, H2O_kWt = conv_c_H2O.interp_kW(point_kelvin, H2O_Tout, H2O_Pout)
                     # CovHDF5 doesn't support sCO2
                     sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
@@ -863,8 +858,16 @@ def generate_econ_lineplots(TandP_dict,
         sbt_version = 1
     elif model == "SBT V2.0":
         sbt_version = 2
+    elif model == "CovHDF5":
+        sbt_version = 0
     else:
         sbt_version = 0
+
+    if model == "CovHDF5":
+        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict = get_model_data(model)
+        econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O = conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O
+    else:
+        econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O = u_sCO2, u_H2O, c_sCO2, c_H2O
 
     lcoh_sCO2 = '-'
     lcoh_H2O = '-'
@@ -910,7 +913,7 @@ def generate_econ_lineplots(TandP_dict,
 
             try:
                 teaobj_sCO2 = create_teaobject(TandP_dict,
-                                                u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O,
                                                 case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -966,7 +969,7 @@ def generate_econ_lineplots(TandP_dict,
             try:
                 # TODO: update D ... based on radial
                 teaobj_H2O = create_teaobject(TandP_dict,
-                                                u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O,
                                                 case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -1032,7 +1035,7 @@ def generate_econ_lineplots(TandP_dict,
 
             try:
                 teaobj_sCO2 = create_teaobject(TandP_dict, 
-                                                u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O,
                                                 case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
@@ -1104,7 +1107,7 @@ def generate_econ_lineplots(TandP_dict,
 
             try:
                 teaobj_H2O = create_teaobject(TandP_dict,
-                                                u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O,
                                                 case, end_use, fluid, sbt_version,
                                                 mdot, L2, L1, grad, D, Tinj, k,
                                                 Drilling_cost_per_m, Discount_rate, Lifetime, 
