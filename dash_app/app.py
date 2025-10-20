@@ -1563,9 +1563,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=0.0246,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (°F/ft)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)",
-                                                    min_v=0.2159, max_v=0.4445,
-                                                    mark_dict={0.2159: '0.22', 0.33: '0.33', 0.4445: '0.44'},
-                                                    start_v=0.33,
+                                                    min_v=0.1, max_v=1.0,
+                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 0.999: '1.0'},
+                                                    start_v=0.5,
                                                     div_style=div_block_style, parameter_name="Permeability (HWR)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°F)",
                                                     min_v=86, max_v=140,
@@ -1595,9 +1595,9 @@ def update_slider_ranges(model, case, unit_system):
                                                     start_v=0.045, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (K/m)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)", 
-                                                    min_v=0.2159, max_v=0.4445, 
-                                                    mark_dict={0.2159: '0.22', 0.33: '0.33', 0.4445: '0.44'}, 
-                                                    start_v=0.33, 
+                                                    min_v=0.1, max_v=1.0, 
+                                                    mark_dict={0.1: '0.1', 0.5: '0.5', 0.999: '1.0'}, 
+                                                    start_v=0.5, 
                                                     div_style=div_block_style, parameter_name="Permeability (HWR)")
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°C)", 
                                                     min_v=30, max_v=60, 
