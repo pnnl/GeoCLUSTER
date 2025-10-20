@@ -1550,17 +1550,17 @@ def update_slider_ranges(model, case, unit_system):
             L2_container = create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (ft)",
                                                     min_v=3281, max_v=16404,
                                                     mark_dict={3281: '3.3k', 8202: '8.2k', 16404: '16k'},
-                                                    start_v=8202,
+                                                    start_v=32808,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Horizontal Extent (ft)")
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)",
                                                     min_v=3281, max_v=16404,
                                                     mark_dict={3281: '3.3k', 16404: '16k'},
-                                                    start_v=9843,
+                                                    start_v=11483,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Drilling Depth (ft)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (°F/ft)",
                                                     min_v=0.0164, max_v=0.0328,
                                                     mark_dict={0.0164: '0.016', 0.0328: '0.033'},
-                                                    start_v=0.0246,
+                                                    start_v=0.0328,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (°F/ft)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)",
                                                     min_v=0.1, max_v=1.0,
@@ -1570,7 +1570,7 @@ def update_slider_ranges(model, case, unit_system):
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°F)",
                                                     min_v=86, max_v=140,
                                                     mark_dict={86: '86', 140: '140'},
-                                                    start_v=113,
+                                                    start_v=86,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Injection Temperature (°F)")
         else:
             # Metric CovHDF5 ranges
@@ -1587,12 +1587,12 @@ def update_slider_ranges(model, case, unit_system):
             L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", 
                                                     min_v=1000, max_v=5000, 
                                                     mark_dict={1000: '1k', 5000: '5k'}, 
-                                                    start_v=3000, 
+                                                    start_v=3500, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Drilling Depth (m)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
                                                     min_v=0.03, max_v=0.06, 
                                                     mark_dict={0.03: '0.03', 0.06: '0.06'}, 
-                                                    start_v=0.045, 
+                                                    start_v=0.06, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Geothermal Gradient (K/m)")
             perm_container = create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Permeability (HWR)", 
                                                     min_v=0.1, max_v=1.0, 
@@ -1602,7 +1602,7 @@ def update_slider_ranges(model, case, unit_system):
             Tinj_container = create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (°C)", 
                                                     min_v=30, max_v=60, 
                                                     mark_dict={30: '30', 60: '60'}, 
-                                                    start_v=45, 
+                                                    start_v=30, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Injection Temperature (°C)")
         
         # For CovHDF5, we don't need Tsurf, k (thermal conductivity), so we'll create hidden sliders
@@ -1950,6 +1950,13 @@ def update_econ_plots(TandP_dict,
         from plotly.graph_objects import Figure
         empty_fig = Figure()
         return empty_fig, {}, {}, {}
+    
+    # Check if TandP_dict is available
+    if TandP_dict is None:
+        print(f"DEBUG: TandP_dict is None for model {model}")
+        from plotly.graph_objects import Figure
+        empty_fig = Figure()
+        return empty_fig, {}, {}, {'Error': 'TandP_dict is None'}
 
     # Convert imperial values to metric for calculations (same pattern as subsurface plots)
     if units == "imperial":

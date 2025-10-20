@@ -89,8 +89,11 @@ class TEA:
         if self.Gradient_user < 0.03 or self.Gradient_user > 0.07:
             print("Error: Geothermal gradient must be between 0.03 and 0.07 degrees C per m. Simulation terminated.")
             self.error = 1
-        if self.Diameter_user < 0.2159 or self.Diameter_user > 0.4445:
+        if not self.is_convection_model and (self.Diameter_user < 0.2159 or self.Diameter_user > 0.4445):
             print("Error: Wellbore diameter must be between 0.2159 and 0.4445 m. Simulation terminated.")
+            self.error = 1
+        if self.is_convection_model and (self.Diameter_user < 0.1 or self.Diameter_user > 1.0):
+            print("Error: Permeability must be between 0.1 and 1.0. Simulation terminated.")
             self.error = 1
         if self.Tin_user < 303.15 or self.Tin_user > 333.15:
             print("Error: Injection temperature must be between 303.15 and 333.15 K. Simulation terminated.")
