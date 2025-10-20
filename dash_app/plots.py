@@ -152,7 +152,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     elif model == "SBT V2.0":
         sbt_version = 2
     elif model == "CovHDF5":
-        sbt_version = 0  # CovHDF5 uses HDF5-style interpolation
+        sbt_version = 0
     else:
         sbt_version = 0
 
@@ -207,7 +207,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         # this doesn't impact the kWe over time
 
         if model == "CovHDF5":
-            # CovHDF5 has different data structure (no k dimension)
             if case == "utube":
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout = conv_u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
@@ -270,28 +269,25 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 elif model == "CovHDF5":
-                    # For CovHDF5, only H2O is supported and we use convection data
                     if fluid == "H2O" or fluid == "All":
                         H2O_Tout, H2O_Pout, time = conv_u_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         point_kelvin = (point[0], point[1], point[2], point[3], point[4], point[5] + to_kelvin_factor)
                         H2O_kWe, H2O_kWt = conv_u_H2O.interp_kW(point_kelvin, H2O_Tout, H2O_Pout)
-                    # CovHDF5 doesn't support sCO2
                     sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
-                    # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":
                         sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                     if fluid == "H2O" or fluid == "All":
                         H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
@@ -326,28 +322,25 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 elif model == "CovHDF5":
-                    # For CovHDF5, only H2O is supported and we use convection data
                     if fluid == "H2O" or fluid == "All":
                         H2O_Tout, H2O_Pout, time = conv_c_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         point_kelvin = (point[0], point[1], point[2], point[3], point[4], point[5] + to_kelvin_factor)
                         H2O_kWe, H2O_kWt = conv_c_H2O.interp_kW(point_kelvin, H2O_Tout, H2O_Pout)
-                    # CovHDF5 doesn't support sCO2
                     sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
-                    # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":
                         sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                     if fluid == "H2O" or fluid == "All":
                         H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
-                                                            None, None, None, None, None,  # SBT parameters not used for HDF5
+                                                            None, None, None, None, None,
                                                             mesh, accuracy, None, None, None)
                         H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
 
