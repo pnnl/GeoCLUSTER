@@ -9,6 +9,10 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 from sbt_v27 import run_sbt as run_sbt_final
 import time
+import warnings
+
+# Suppress scipy interpolation warnings about bounds
+warnings.filterwarnings("ignore", message="expected given value .* to be between min and max")
 
 class data:
     def __init__(self, fname, case, fluid):

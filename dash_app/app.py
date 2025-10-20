@@ -1805,8 +1805,6 @@ def update_subsurface_results_plots(interp_time, fluid, case, mdot, L2, L1, grad
         # end = time.time()
         # print("run generate_subsurface_lineplots:", end - start)
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         # Return empty/default values on error
         from plotly.subplots import make_subplots
         subplots = make_subplots(rows=2, cols=3)
@@ -1951,12 +1949,6 @@ def update_econ_plots(TandP_dict,
         empty_fig = Figure()
         return empty_fig, {}, {}, {}
     
-    # Check if TandP_dict is available
-    if TandP_dict is None:
-        print(f"DEBUG: TandP_dict is None for model {model}")
-        from plotly.graph_objects import Figure
-        empty_fig = Figure()
-        return empty_fig, {}, {}, {'Error': 'TandP_dict is None'}
 
     # Convert imperial values to metric for calculations (same pattern as subsurface plots)
     if units == "imperial":
