@@ -1552,11 +1552,11 @@ def update_slider_ranges(model, case, unit_system):
                                                     mark_dict={3281: '3.3k', 8202: '8.2k', 16404: '16k'},
                                                     start_v=8202,
                                                     div_style=div_block_style, parameter_name="CovHDF5 Horizontal Extent (ft)")
-            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Vertical Depth (ft)",
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (ft)",
                                                     min_v=3281, max_v=16404,
                                                     mark_dict={3281: '3.3k', 16404: '16k'},
                                                     start_v=9843,
-                                                    div_style=div_block_style, parameter_name="CovHDF5 Vertical Depth (ft)")
+                                                    div_style=div_block_style, parameter_name="CovHDF5 Drilling Depth (ft)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (°F/ft)",
                                                     min_v=0.0164, max_v=0.0328,
                                                     mark_dict={0.0164: '0.016', 0.0328: '0.033'},
@@ -1584,11 +1584,11 @@ def update_slider_ranges(model, case, unit_system):
                                                     mark_dict={1000: '1k', 2500: '2.5k', 5000: '5k'}, 
                                                     start_v=2500, 
                                                     div_style=div_block_style, parameter_name="CovHDF5 Horizontal Extent (m)")
-            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Vertical Depth (m)", 
+            L1_container = create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", 
                                                     min_v=1000, max_v=5000, 
                                                     mark_dict={1000: '1k', 5000: '5k'}, 
                                                     start_v=3000, 
-                                                    div_style=div_block_style, parameter_name="CovHDF5 Vertical Depth (m)")
+                                                    div_style=div_block_style, parameter_name="CovHDF5 Drilling Depth (m)")
             grad_container = create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", 
                                                     min_v=0.03, max_v=0.06, 
                                                     mark_dict={0.03: '0.03', 0.06: '0.06'}, 
