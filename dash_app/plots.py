@@ -863,11 +863,7 @@ def generate_econ_lineplots(TandP_dict,
     else:
         sbt_version = 0
 
-    if model == "CovHDF5":
-        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict = get_model_data(model)
-        econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O = conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O
-    else:
-        econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O = u_sCO2, u_H2O, c_sCO2, c_H2O
+    econ_u_sCO2, econ_u_H2O, econ_c_sCO2, econ_c_H2O, econ_param_dict = get_model_data(model)
 
     lcoh_sCO2 = '-'
     lcoh_H2O = '-'
