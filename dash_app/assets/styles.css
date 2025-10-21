@@ -193,6 +193,7 @@ hr {
     padding: 1rem;
     margin: auto;
     margin-top: 8px;
+    min-height: 900px;
 
 }
 
@@ -337,9 +338,11 @@ hr {
 #dropdown-container {
     width: 100% !important;
     margin-top: -15px !important;
-    display: inline-flex !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
     justify-content: space-between !important;
     text-align: left !important; 
+    gap: 10px !important;
     /* change to inline-block for them to be stacked */
 }
 
@@ -349,6 +352,42 @@ hr {
 
 #dropdown-card4 {
     width: 20%;
+}
+
+#dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4, #dropdown-card5 {
+    flex: 1;
+    min-width: 100px;
+    margin-bottom: 10px;
+}
+
+/* Make dropdowns more compact */
+#dropdown-card1 .Select-control, #dropdown-card2 .Select-control, 
+#dropdown-card3 .Select-control, #dropdown-card4 .Select-control, 
+#dropdown-card5 .Select-control {
+    min-width: 100px !important;
+}
+
+#dropdown-card5 .Select-control {
+    width: 120px !important;
+    max-width: 120px !important;
+}
+
+/* Make the dropdown text smaller and more compact */
+.dropdown-text {
+    font-size: 12px !important;
+    margin-bottom: 5px !important;
+}
+
+#unit-selector-container {
+    display: flex;
+    justify-content: flex-start;
+    gap: 40px;
+    margin-bottom: 20px;
+}
+
+#unit-selector-card0, #unit-selector-card1 {
+    width: 20%;
+    min-width: 150px;
 }
 
 #param-select {
@@ -670,7 +709,7 @@ button:hover{
     margin-top: -8px;
 }
 
-#radio-graphic-control3, #radio-graphic-control4 {
+#radio-graphic-control3 {
     width: 70px;
     float: right;
     background-color: white !important;
@@ -680,7 +719,23 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
+    margin-top: 10px;
+    margin-right: 23px;
+    border-radius: 3px 3px 3px 3px;
+    position: sticky;
+}
+
+#radio-graphic-control4 {
+    width: 70px;
+    float: right;
+    background-color: white !important;
+    color: black;
+    padding-left: 10px;
+    padding-right: 0px;
+    border:solid 1px var(--blue) !important;
+    font-size: var(--smaller-fontsize) !important;
+    box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
+    margin-top: -200px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;
@@ -694,9 +749,14 @@ button:hover{
     width: 100% !important;
 }
 
-.econ_plots > div, .econ_plots > div {
+#econ_plots > div, #econ_plots > div {
     height: 100% !important;
     width: 100% !important;
+}
+
+/* Keep it simple - just ensure the container can expand */
+#econ_plots .plot-container.plotly {
+    height: 100% !important;
 }
 
 #graphics-container, #graphics-container-econ {
@@ -705,22 +765,19 @@ button:hover{
 }
 
 #geothermal_time_plots {
-    height: 735px;
+    height: 900px;
     position: relative !important;
 }
 
 #econ_plots {
     position: relative !important;
+    height: 1000px;
+    z-index: 0 !important;
 }
 
 #geothermal_plots
 {
-    height: 735px;
-}
-
-#econ_plots {
-    height: 935px;
-    z-index: 0 !important;
+    height: 800px;
 }
 
 
@@ -729,13 +786,14 @@ button:hover{
 }
 
 #ts-text {
-    margin-top: -320px;
-    margin-left: 40px;
+    margin-top: 20px;
+    margin-left: 0px;
     font-weight: bold;
     color: #333333;
-/*    z-index: 2;*/
-    z-index: -1;
-    position: sticky;
+    z-index: 10;
+    position: relative;
+    text-align: center;
+    display: block;
 }
 
 /*#ts-subtext {
@@ -758,7 +816,7 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-top: -600px;
+    margin-top: 10px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;
@@ -773,6 +831,47 @@ button:hover{
     margin-left: 2%; }
   .column:first-child, .columns:first-child {
     margin-left: 1%; }
+}
+
+/* Make dropdowns even more compact on medium screens */
+@media only screen and (max-width: 1400px) {
+    #dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4, #dropdown-card5 {
+        min-width: 90px !important;
+    }
+    
+    .dropdown-text {
+        font-size: 11px !important;
+    }
+}
+
+/* Only stack vertically on very small screens */
+@media only screen and (max-width: 900px) {
+    #dropdown-container {
+        flex-direction: column !important;
+    }
+    
+    #dropdown-card1, #dropdown-card2, #dropdown-card3, #dropdown-card4 {
+        width: auto !important;
+        max-width: 200px !important;
+        margin-bottom: 15px !important;
+        min-width: 100px !important;
+    }
+    
+    #dropdown-card5 {
+        width: 120px !important;
+        max-width: 120px !important;
+        margin-bottom: 15px !important;
+        min-width: 120px !important;
+    }
+    
+    #dropdown-card5 .Select-control {
+        width: 120px !important;
+        max-width: 120px !important;
+    }
+    
+    .dropdown-text {
+        font-size: 12px !important;
+    }
 }
 
 @media only screen and (max-width: 975px) { /* 900 */

@@ -64,5 +64,62 @@ def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 	return param_dict
 
 
+def initialize_convection_data():
+	"""
+	Initialize convection model data (CovHDF5)
+	Only supports H2O fluid, includes permeability parameter
+	"""
+	filename = inpath_dict["convection_h5_filepath"]
+	
+	# Load convection data (only H2O available)
+	u_H2O = clgs.data(filename, "utube", "H2O")
+	c_H2O = clgs.data(filename, "coaxial", "H2O")
+	
+	# Return None for sCO2 since convection model doesn't support it
+	u_sCO2 = None
+	c_sCO2 = None
+	
+	return u_sCO2, u_H2O, c_sCO2, c_H2O
+
+
+def convection_data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
+	"""
+	Create parameter dictionary for convection model
+	Note: Only H2O is supported, sCO2 parameters will be None
+	"""
+	param_dict = {
+		# U-tube H2O parameters
+		("utube", "H2O", "mdot"): u_H2O.mdot,
+		("utube", "H2O", "Horizontal Extent (m)"): u_H2O.L2,
+		("utube", "H2O", "Vertical Extent (m)"): u_H2O.L1,
+		("utube", "H2O", "Geothermal Gradient (K/m)"): u_H2O.grad,
+		("utube", "H2O", "Permeability (HWR)"): u_H2O.perm_HWR,  # New parameter
+		("utube", "H2O", "Injection Temperature (˚C)"): u_H2O.Tinj,
+		
+		# Coaxial H2O parameters
+		("coaxial", "H2O", "mdot"): c_H2O.mdot,
+		("coaxial", "H2O", "Horizontal Extent (m)"): c_H2O.L2,
+		("coaxial", "H2O", "Vertical Extent (m)"): c_H2O.L1,
+		("coaxial", "H2O", "Geothermal Gradient (K/m)"): c_H2O.grad,
+		("coaxial", "H2O", "Permeability (HWR)"): c_H2O.perm_HWR,  # New parameter
+		("coaxial", "H2O", "Injection Temperature (˚C)"): c_H2O.Tinj,
+		
+		# sCO2 parameters are None for convection model
+		("utube", "sCO2", "mdot"): None,
+		("utube", "sCO2", "Horizontal Extent (m)"): None,
+		("utube", "sCO2", "Vertical Extent (m)"): None,
+		("utube", "sCO2", "Geothermal Gradient (K/m)"): None,
+		("utube", "sCO2", "Permeability (HWR)"): None,
+		("utube", "sCO2", "Injection Temperature (˚C)"): None,
+		
+		("coaxial", "sCO2", "mdot"): None,
+		("coaxial", "sCO2", "Horizontal Extent (m)"): None,
+		("coaxial", "sCO2", "Vertical Extent (m)"): None,
+		("coaxial", "sCO2", "Geothermal Gradient (K/m)"): None,
+		("coaxial", "sCO2", "Permeability (HWR)"): None,
+		("coaxial", "sCO2", "Injection Temperature (˚C)"): None,
+	}
+	
+	return param_dict
 
 

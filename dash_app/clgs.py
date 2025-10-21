@@ -21,58 +21,124 @@ class data:
         input_loc = "/" + case + "/" + fluid + "/input/"
         output_loc = "/" + case + "/" + fluid + "/output/"
 
+        # Check if this is a convection model by looking for perm_HWR parameter
+        self.is_convection_model = "perm_HWR" in file[input_loc].keys()
+
         # independent vars
         self.mdot = file[input_loc + "mdot"][:]  # i0
         self.L2 = file[input_loc + "L2"][:]  # i1
         self.L1 = file[input_loc + "L1"][:]  # i2
         self.grad = file[input_loc + "grad"][:]  # i3
-        self.D = file[input_loc + "D"][:]  # i4
-        self.Tinj = file[input_loc + "T_i"][:]  # i5
-        self.k = file[input_loc + "k_rock"][:]  # i6
-        self.time = file[input_loc + "time"][:]  # i7
-        self.ivars = (
-            self.mdot,
-            self.L2,
-            self.L1,
-            self.grad,
-            self.D,
-            self.Tinj,
-            self.k,
-            self.time,
-        )
+        
+        if self.is_convection_model:
+            # Convection model parameters
+            self.perm_HWR = file[input_loc + "perm_HWR"][:]  # i4 (replaces D)
+            self.Tinj = file[input_loc + "T_i"][:]  # i5
+            # No k_rock parameter in convection model
+            self.k = None
+        else:
+            # Standard model parameters
+            self.D = file[input_loc + "D"][:]  # i4
+            self.Tinj = file[input_loc + "T_i"][:]  # i5
+            self.k = file[input_loc + "k_rock"][:]  # i6
+            self.perm_HWR = None
+        
+        self.time = file[input_loc + "time"][:]  # i7 (or i6 for convection)
+        
+        if self.is_convection_model:
+            self.ivars = (
+                self.mdot,
+                self.L2,
+                self.L1,
+                self.grad,
+                self.perm_HWR,
+                self.Tinj,
+                self.time,
+            )
+        else:
+            self.ivars = (
+                self.mdot,
+                self.L2,
+                self.L1,
+                self.grad,
+                self.D,
+                self.Tinj,
+                self.k,
+                self.time,
+            )
 
         # fixed vars
-        self.Pinj = file[fixed_loc + "Pinj"][()]
-        self.Tamb = file[fixed_loc + "Tamb"][()]
+        if self.is_convection_model:
+            # Convection model fixed parameters (loaded from HDF5 file)
+            self.borehole_diameter = file[fixed_loc + "borehole_diameter(m)"][()]
+            self.porosity = file[fixed_loc + "porosity"][()]
+            # Hard-coded CovHDF5 parameters (not in HDF5 file)
+            self.Pinj = 20e6  # 200 Bar (20e6 Pascal)
+            self.Tamb = 300.0  # 300 Kelvin ambient temperature
+            self.Tsurf = 298.15  # 298.15 Kelvin surface temperature
+            self.c_rock = 790.0  # 790 J/kg-K rock specific heat capacity
+            self.pipe_roughness = 2.5e-05  # 2.5e-05 m (for Haaland Equation)
+            self.rho_rock = 2750.0  # 2750 kg/m3 rock density
+            self.k_rock = 3.05  # 3.05 W/m-K rock thermal conductivity
+        else:
+            # Standard model fixed parameters
+            self.Pinj = file[fixed_loc + "Pinj"][()]
+            self.Tamb = file[fixed_loc + "Tamb"][()]
+            self.borehole_diameter = None
+            self.porosity = None
 
-        # dim = Mdot x L2 x L1 x grad x D x Tinj x k
-        Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
-        We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
+        # Load output data based on model type
+        if self.is_convection_model:
+            # Convection model has kWe and kWt directly, not Wt and We
+            self.kWe_avg = file[output_loc + "kWe"][:]
+            self.kWt_avg = file[output_loc + "kWt"][:]
+        else:
+            # Standard model has Wt and We that need to be converted
+            Wt = file[output_loc + "Wt"][:]  # int mdot * dh dt
+            We = file[output_loc + "We"][:]  # int mdot * (dh - Too * ds) dt
 
-        self.GWhr = 1e6 * 3600000.0
+            self.GWhr = 1e6 * 3600000.0
 
-        self.kWe_avg = (
-            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
-        self.kWt_avg = (
-            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
+            self.kWe_avg = (
+                We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+            )
+            self.kWt_avg = (
+                Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
+            )
 
-        # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
-        self.shape = (
-            len(self.mdot),
-            len(self.L2),
-            len(self.L1),
-            len(self.grad),
-            len(self.D),
-            len(self.Tinj),
-            len(self.k),
-            len(self.time),
-        )
+        # Calculate shape based on model type
+        if self.is_convection_model:
+            # dim = Mdot x L2 x L1 x grad x perm_HWR x Tinj x time
+            self.shape = (
+                len(self.mdot),
+                len(self.L2),
+                len(self.L1),
+                len(self.grad),
+                len(self.perm_HWR),
+                len(self.Tinj),
+                len(self.time),
+            )
+        else:
+            # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
+            self.shape = (
+                len(self.mdot),
+                len(self.L2),
+                len(self.L1),
+                len(self.grad),
+                len(self.D),
+                len(self.Tinj),
+                len(self.k),
+                len(self.time),
+            )
 
         # if you get an error that these files don't exist, run the make_zarr.py file in the data directory to build these files!
-        self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
-        self.Pout = file[f"/{case}/{fluid}/output/Pout_chunked"]
+        # Convection model uses Tout/Pout directly, standard model uses chunked versions
+        if self.is_convection_model:
+            self.Tout = file[f"/{case}/{fluid}/output/Tout"]
+            self.Pout = file[f"/{case}/{fluid}/output/Pout"]
+        else:
+            self.Tout = file[f"/{case}/{fluid}/output/Tout_chunked"]
+            self.Pout = file[f"/{case}/{fluid}/output/Pout_chunked"]
 
         self.CP_fluid = "CO2"
         if fluid == "H2O":
@@ -93,16 +159,39 @@ class data:
             return slice(None)  # slice all of the points
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
         if target < array[0] or target > array[-1]:
-            lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-            print(lineprint)
-            # raise Exception(
-            #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-            # )
+            # Check if this might be imperial units (values outside typical metric ranges)
+            is_imperial = False
+            
+            if target > 1000 and array[-1] < 100:  # Length: meters vs feet
+                is_imperial = True
+            elif target < 1 and array[-1] > 10:  # Geothermal gradient: K/m vs F/ft
+                is_imperial = True
+            elif target > 100 and array[-1] < 10:  # Thermal conductivity: W/m-K vs Btu/ft-h-F
+                is_imperial = True
+            elif target < 1 and array[-1] > 100:  # Heat capacity: J/kg-K vs Btu/lb-F
+                is_imperial = True
+            elif target > 50 and array[-1] < 10:  # Density: kg/m³ vs lb/ft³
+                is_imperial = True
+            elif target < 1 and array[-1] > 100:  # Pressure: Pa vs psi
+                is_imperial = True
+            
+            if is_imperial:
+                pass
+            else:
+                lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+                print(lineprint)
         for i, value in enumerate(array):
             if value == target:
                 return slice(i, i + 1)
             if value > target:
-                return slice(i - 1, i + 1)
+                if i > 0:
+                    return slice(i - 1, i + 1)
+                else:
+                    # Target is below the minimum value, return first two elements
+                    return slice(0, min(2, len(array)))
+        
+        # Target is above maximum value, return last two elements
+        return slice(max(0, len(array) - 2), len(array))
 
     def read_values_around_point_for_interpolation(
         self, zarr_array, point, parameter_values
@@ -134,7 +223,13 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
-        interpolated_points = interpn(grid, values_around_point, points)
+        
+        # Check if any grid dimension is empty
+        for i, grid_dim in enumerate(grid):
+            if len(grid_dim) == 0:
+                raise ValueError(f"Empty grid dimension {i} - cannot interpolate. Check parameter ranges.")
+        
+        interpolated_points = interpn(grid, values_around_point, points, bounds_error=False, fill_value=None)
         return interpolated_points
 
     def reshape_output(self, tout):
@@ -158,18 +253,34 @@ class data:
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
         if sbt_version == 0:
-            points = list(
-                iter.product(
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                    self.time,
+            # Handle both convection model (6D) and standard model (7D)
+            if self.is_convection_model:
+                # Convection model: mdot, L2, L1, grad, perm_HWR, Tinj, time
+                points = list(
+                    iter.product(
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        self.time,
+                    )
                 )
-            )
+            else:
+                # Standard model: mdot, L2, L1, grad, D, Tinj, k, time
+                points = list(
+                    iter.product(
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                        self.time,
+                    )
+                )
 
             point_to_read_around = (
                 *point,
@@ -178,8 +289,6 @@ class data:
             Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
             Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
             times = self.time
-            # print("TEMP OUT: -----****")
-            # print(Tout)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
@@ -269,8 +378,6 @@ class data:
                 # PipeParam5 = lateral_multiplier
 
             start = time.time()
-            
-            # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
             try:
                 times, Tout, Pout = run_sbt_final(
@@ -429,8 +536,7 @@ class data:
                 np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
             )
         except Exception:
-            print("Flag: Check if SBT model selected")
-            # AB: Dummy data for the contours:
+            # If SBT model fails, return dummy data for the contours:
             Tout = np.full((20, 26), 365)
             Pout = np.full((20, 26), 22228604)
 

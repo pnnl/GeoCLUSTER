@@ -8,6 +8,139 @@ import dash_bootstrap_components as dbc
 # sourced scripts
 from plots import * # u_sCO2, u_H2O, c_sCO2, c_H2O
 from info_popups import create_enhanced_slider, create_enhanced_dropdown, create_enhanced_input_box
+from unit_conversions import unit_converter, get_unit_symbol
+
+def get_temperature_converted_values(base_value_celsius, target_unit):
+    """Convert temperature values from Celsius to target unit"""
+    if target_unit == 'C':
+        return base_value_celsius
+    elif target_unit == 'F':
+        converted = unit_converter.convert_temperature(base_value_celsius, 'C', 'F')
+        return converted
+    else:
+        return base_value_celsius
+
+def get_length_converted_values(base_value_meters, target_unit):
+    """Convert length values from meters to target unit"""
+    if target_unit == 'm':
+        return base_value_meters
+    elif target_unit == 'ft':
+        converted = unit_converter.convert_length(base_value_meters, 'm', 'ft')
+        return converted
+    else:
+        return base_value_meters
+
+def get_mass_flow_converted_values(base_value_kg_s, target_unit):
+    """Convert mass flow from kg/s to target unit"""
+    if target_unit == 'kg/s':
+        return base_value_kg_s
+    elif target_unit == 'lb/s':
+        converted = unit_converter.convert_mass_flow(base_value_kg_s, 'kg/s', 'lb/s')
+        return converted
+    else:
+        return base_value_kg_s
+
+def get_thermal_conductivity_converted_values(base_value_w_m_k, target_unit):
+    """Convert thermal conductivity from W/m-K to target unit"""
+    if target_unit == 'W/m-K':
+        return base_value_w_m_k
+    elif target_unit == 'Btu/ft-h-F':
+        converted = unit_converter.convert_thermal_conductivity(base_value_w_m_k, 'W/m-K', 'Btu/ft-h-F')
+        return converted
+    else:
+        return base_value_w_m_k
+
+def get_heat_capacity_converted_values(base_value_j_kg_k, target_unit):
+    """Convert heat capacity from J/kg-K to target unit"""
+    if target_unit == 'J/kg-K':
+        return base_value_j_kg_k
+    elif target_unit == 'Btu/lb-F':
+        converted = unit_converter.convert_heat_capacity(base_value_j_kg_k, 'J/kg-K', 'Btu/lb-F')
+        return converted
+    else:
+        return base_value_j_kg_k
+
+def get_density_converted_values(base_value_kg_m3, target_unit):
+    """Convert density from kg/m³ to target unit"""
+    if target_unit == 'kg/m3':
+        return base_value_kg_m3
+    elif target_unit == 'lb/ft3':
+        converted = unit_converter.convert_density(base_value_kg_m3, 'kg/m3', 'lb/ft3')
+        return converted
+    else:
+        return base_value_kg_m3
+
+def get_pressure_converted_values(base_value_pa, target_unit):
+    """Convert pressure from Pa to target unit"""
+    if target_unit == 'Pa':
+        return base_value_pa
+    elif target_unit == 'psi':
+        converted = unit_converter.convert_pressure(base_value_pa, 'Pa', 'psi')
+        return converted
+    else:
+        return base_value_pa
+
+def get_geothermal_gradient_converted_values(base_value_k_m, target_unit):
+    """Convert geothermal gradient from K/m to target unit"""
+    if target_unit == 'K/m':
+        return base_value_k_m
+    elif target_unit == 'F/ft':
+        converted = unit_converter.convert_geothermal_gradient(base_value_k_m, 'K/m', 'F/ft')
+        return converted
+    else:
+        return base_value_k_m
+
+def get_drilling_cost_converted_values(base_value_per_meter, target_unit):
+    """Convert drilling cost from $/m to $/ft"""
+    if target_unit == 'm':
+        return base_value_per_meter
+    elif target_unit == 'ft':
+        converted = base_value_per_meter / 3.28084  # 1 m = 3.28084 ft, so $/m / 3.28084 = $/ft
+        return converted
+    else:
+        return base_value_per_meter
+
+def create_imperial_marks(min_val, max_val, unit):
+    """Create min/max marks for imperial units"""
+    
+    if unit == 'ft':
+        # For feet, show min and max with ft suffix
+        # Round to 2 decimal places for feet to avoid showing too many decimals
+        min_rounded = round(min_val, 2)
+        max_rounded = round(max_val, 2)
+        result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
+        return result
+    elif unit == 'F':
+        # For Fahrenheit, show min and max with °F suffix
+        return {min_val: f'{min_val:.0f}°F', max_val: f'{max_val:.0f}°F'}
+    elif unit == 'psi':
+        # For psi, show min and max with psi suffix
+        return {min_val: f'{min_val:.0f} psi', max_val: f'{max_val:.0f} psi'}
+    elif unit == 'lb/s':
+        # For lb/s, show min and max with lb/s suffix
+        return {min_val: f'{min_val:.1f} lb/s', max_val: f'{max_val:.1f} lb/s'}
+    elif unit == 'Btu/ft-h-F':
+        # For thermal conductivity, show min and max
+        return {min_val: f'{min_val:.1f}', max_val: f'{max_val:.1f}'}
+    elif unit == 'Btu/lb-F':
+        # For heat capacity, show min and max
+        return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
+    elif unit == 'lb/ft3':
+        # For density, show min and max
+        return {min_val: f'{min_val:.0f}', max_val: f'{max_val:.0f}'}
+    elif unit == 'F/ft':
+        # For geothermal gradient, show min and max
+        return {min_val: f'{min_val:.2f}', max_val: f'{max_val:.2f}'}
+    elif unit == 'ft':  # Regular length unit in feet
+        # For feet, show min and max with ft suffix
+        # Round to 2 decimal places for feet to avoid showing too many decimals
+        min_rounded = round(min_val, 2)
+        max_rounded = round(max_val, 2)
+        result = {min_rounded: f'{min_rounded:.2f} ft', max_rounded: f'{max_rounded:.2f} ft'}
+        return result
+    else:
+        # Default case - just show min and max
+        return {min_val: str(min_val), max_val: str(max_val)}
 
 # -------------------------------------------------------------------------------------------
 # Create dictionaries to assign the values and boundaries of the parameter siders.
@@ -55,16 +188,65 @@ def create_steps(arg_arr, str_round_place, val_round_place):
 
     return slider_dict
 
+
+def get_dynamic_slider_labels():
+    """Get slider labels with current unit preferences"""
+    temp_unit = get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))
+    length_unit = get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))
+    mass_flow_unit = get_unit_symbol(unit_converter.user_preferences.get('mass_flow', 'kg/s'))
+    thermal_cond_unit = get_unit_symbol(unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K'))
+    heat_cap_unit = get_unit_symbol(unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'))
+    density_unit = get_unit_symbol(unit_converter.user_preferences.get('density', 'kg/m3'))
+    pressure_unit = get_unit_symbol(unit_converter.user_preferences.get('pressure', 'Pa'))
+    grad_unit = get_unit_symbol(unit_converter.user_preferences.get('geothermal_gradient', 'K/m'))
+    
+    return {
+        'wellbore_operations': [
+            f"Injection Temperature ({temp_unit})", 
+            f"Mass Flow Rate ({mass_flow_unit})", 
+            f"Horizontal Extent ({length_unit})", 
+            f"Drilling Depth ({length_unit})"
+        ],
+        'tube_geometry': [
+            f"Wellbore Radius Vertical ({length_unit})", 
+            f"Wellbore Radius Lateral ({length_unit})",
+            "Number of Laterals", 
+            "Lateral Flow Allocation", 
+            "Lateral Flow Multiplier"
+        ],
+        'economic_params': [
+            f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+            "Discount Rate (%)", 
+            "Lifetime (years)", 
+            "Plant CAPEX ($/kWt)", 
+            "Plant CAPEX ($/kWe)", 
+            f"Pre-cooling ({temp_unit})", 
+            f"Turbine Outlet Pressure ({pressure_unit})"
+        ],
+        'geologic_properties': [
+            f"Surface Temperature ({temp_unit})", 
+            f"Geothermal Gradient ({grad_unit})", 
+            f"Rock Thermal Conductivity ({thermal_cond_unit})", 
+            f"Rock Specific Heat Capacity ({heat_cap_unit})", 
+            f"Rock Density ({density_unit})"
+        ]
+    }
+
+# Initialize with default units
 wellbore_operations_l = ["Injection Temperature (˚C)", "Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)"]
+tube_geometry_l = ["Wellbore Radius Vertical (m)", "Wellbore Radius Lateral (m)", "Number of Laterals", "Lateral Flow Allocation", "Lateral Flow Multiplier"]
+economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
+geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (K/m)", "Rock Thermal Conductivity (W/m-K)", "Rock Specific Heat Capacity (J/kg-K)", "Rock Density (kg/m3)"]
 
-tube_geometry_l = ["Wellbore Radius Vertical (m)", "Wellbore Radius Lateral (m)", # "Borehole Diameter (m)",
-                                "Number of Laterals", "Lateral Flow Allocation", "Lateral Flow Multiplier"]
-
-economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
-                    "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
-
-geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (K/m)", "Rock Thermal Conductivity (W/m-K)", 
-                            "Rock Specific Heat Capacity (J/kg-K)", "Rock Density (kg/m3)"]
+def update_slider_labels():
+    """Update slider labels when units change"""
+    global wellbore_operations_l, tube_geometry_l, economic_params_l, geologic_properties_l
+    slider_labels = get_dynamic_slider_labels()
+    wellbore_operations_l = slider_labels['wellbore_operations']
+    tube_geometry_l = slider_labels['tube_geometry']
+    economic_params_l = slider_labels['economic_params']
+    geologic_properties_l = slider_labels['geologic_properties']
+    return slider_labels
                             
 model_finetuning_l = ["Mesh Fineness", "Accuracy", "Mass Flow Rate Mode", "Mass Flow Rate Profile", 
                                             "Injection Temperature Mode", "Injection Temperature Profile"]
@@ -227,6 +409,9 @@ def slider_card():
     #       drillcost, discount-rate, lifetime, kwt, kwe, precool, turb-pout
     #
     # -----------------------------------------------------------------------
+    
+    # Get current unit preferences dynamically
+    from unit_conversions import unit_converter
 
     return html.Div(
         children=[
@@ -253,27 +438,67 @@ def slider_card():
                                                 className="params-div",
                                                 children=[
                                                     html.P("GEOLOGIC PROPERTIES", className="param-class-name"),
-                                                    create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle="Surface Temperature (˚C)", min_v=0, max_v=40.0, 
-                                                            mark_dict=Tsurf_dict, start_v=start_vals_hdf5["Tsurf"], div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
+                                                    create_enhanced_slider(DivID="Tsurf-select-div", ID="Tsurf-select", ptitle=f"Surface Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
+                                                            min_v=get_temperature_converted_values(0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            max_v=get_temperature_converted_values(40.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_temperature_converted_values(0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                get_temperature_converted_values(40.0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                unit_converter.user_preferences.get('temperature', 'C')
+                                                            ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tsurf_dict, 
+                                                            start_v=get_temperature_converted_values(start_vals_hdf5["Tsurf"], unit_converter.user_preferences.get('temperature', 'C')), 
+                                                            div_style=div_none_style, parameter_name="Surface Temperature (˚C)"),
                                                    
                                                     html.Div(
                                                             id="grad-container",
                                                             children=[
-                                                                    create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+                                                                    create_enhanced_slider(DivID="grad-select-div", ID="grad-select", ptitle=f"Geothermal Gradient ({get_unit_symbol(unit_converter.user_preferences.get('geothermal_gradient', 'K/m'))})", 
+                                                                            min_v=get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            max_v=get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            mark_dict=create_imperial_marks(
+                                                                                get_geothermal_gradient_converted_values(0.03, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
+                                                                                get_geothermal_gradient_converted_values(0.07, unit_converter.user_preferences.get('geothermal_gradient', 'K/m')),
+                                                                                unit_converter.user_preferences.get('geothermal_gradient', 'K/m')
+                                                                            ) if unit_converter.user_preferences.get('geothermal_gradient', 'K/m') in ['F/ft'] else grad_dict, 
+                                                                            start_v=get_geothermal_gradient_converted_values(start_vals_d["grad"], unit_converter.user_preferences.get('geothermal_gradient', 'K/m')), 
+                                                                            div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
                                                             ]),
 
                                                     html.Div(
                                                             id="k-container",
                                                             children=[
-                                                                    create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
+                                                                    create_enhanced_slider(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity", 
+                                                                            min_v=get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            max_v=get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            mark_dict=create_imperial_marks(
+                                                                                get_thermal_conductivity_converted_values(1.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
+                                                                                get_thermal_conductivity_converted_values(4.5, unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')),
+                                                                                unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')
+                                                                            ) if unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K') in ['Btu/ft-h-F'] else k_dict, 
+                                                                            start_v=get_thermal_conductivity_converted_values(start_vals_d["k"], unit_converter.user_preferences.get('thermal_conductivity', 'W/m-K')), 
+                                                                            div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)")
                                                                     
                                                             ]),
-                                                    create_enhanced_slider(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
-                                                    create_enhanced_slider(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
-                                                            mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
+                                                    create_enhanced_slider(DivID="c-select-div", ID="c-select", ptitle=f"Rock Specific Heat Capacity ({get_unit_symbol(unit_converter.user_preferences.get('heat_capacity', 'J/kg-K'))})", 
+                                                            min_v=get_heat_capacity_converted_values(500, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
+                                                            max_v=get_heat_capacity_converted_values(2000, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_heat_capacity_converted_values(500, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')),
+                                                                get_heat_capacity_converted_values(2000, unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')),
+                                                                unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')
+                                                            ) if unit_converter.user_preferences.get('heat_capacity', 'J/kg-K') == 'Btu/lb-F' else c_dict, step_i=1, 
+                                                            start_v=get_heat_capacity_converted_values(start_vals_hdf5["c"], unit_converter.user_preferences.get('heat_capacity', 'J/kg-K')), 
+                                                            div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
+                                                    create_enhanced_slider(DivID="rho-select-div", ID="rho-select", ptitle=f"Rock Density ({get_unit_symbol(unit_converter.user_preferences.get('density', 'kg/m3'))})", 
+                                                            min_v=get_density_converted_values(1000, unit_converter.user_preferences.get('density', 'kg/m3')), 
+                                                            max_v=get_density_converted_values(3500, unit_converter.user_preferences.get('density', 'kg/m3')), 
+                                                            mark_dict=create_imperial_marks(
+                                                                get_density_converted_values(1000, unit_converter.user_preferences.get('density', 'kg/m3')),
+                                                                get_density_converted_values(3500, unit_converter.user_preferences.get('density', 'kg/m3')),
+                                                                unit_converter.user_preferences.get('density', 'kg/m3')
+                                                            ) if unit_converter.user_preferences.get('density', 'kg/m3') in ['lb/ft3'] else rho_dict, step_i=1, 
+                                                            start_v=get_density_converted_values(start_vals_hdf5["rho"], unit_converter.user_preferences.get('density', 'kg/m3')), 
+                                                            div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
                                             ),
                                         
@@ -286,14 +511,30 @@ def slider_card():
                                                     html.Div(
                                                             id="Tinj-container",
                                                             children=[
-                                                                create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                                        mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                                create_enhanced_slider(DivID="Tinj-select-div", ID="Tinj-select", ptitle=f"Injection Temperature ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", 
+                                                                        min_v=get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        max_v=get_temperature_converted_values(60.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            get_temperature_converted_values(60.0, unit_converter.user_preferences.get('temperature', 'C')),
+                                                                            unit_converter.user_preferences.get('temperature', 'C')
+                                                                        ) if unit_converter.user_preferences.get('temperature', 'C') == 'F' else Tinj_dict, 
+                                                                        start_v=get_temperature_converted_values(30.0, unit_converter.user_preferences.get('temperature', 'C')), 
+                                                                        div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
                                                             id="mdot-container",
                                                             children=[        
-                                                                create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
-                                                                        mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
+                                                                create_enhanced_slider(DivID="mdot-select-div", ID="mdot-select", ptitle=f"Mass Flow Rate ({get_unit_symbol(unit_converter.user_preferences.get('mass_flow', 'kg/s'))})", 
+                                                                        min_v=get_mass_flow_converted_values(u_sCO2.mdot[0], unit_converter.user_preferences.get('mass_flow', 'kg/s')), 
+                                                                        max_v=get_mass_flow_converted_values(u_sCO2.mdot[-1], unit_converter.user_preferences.get('mass_flow', 'kg/s')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_mass_flow_converted_values(u_sCO2.mdot[0], unit_converter.user_preferences.get('mass_flow', 'kg/s')),
+                                                                            get_mass_flow_converted_values(u_sCO2.mdot[-1], unit_converter.user_preferences.get('mass_flow', 'kg/s')),
+                                                                            unit_converter.user_preferences.get('mass_flow', 'kg/s')
+                                                                        ) if unit_converter.user_preferences.get('mass_flow', 'kg/s') == 'lb/s' else mdot_dict, 
+                                                                        start_v=get_mass_flow_converted_values(start_vals_d["mdot"], unit_converter.user_preferences.get('mass_flow', 'kg/s')), 
+                                                                        div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
                                                             ]),
                                                 ]
 
@@ -307,32 +548,64 @@ def slider_card():
                                                     html.Div(
                                                             id="diameter-container",
                                                             children=[ 
-                                                                create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style, parameter_name="Borehole Diameter (m)")
+                                                                create_enhanced_slider(DivID="diameter-select-div", ID="diameter-select", ptitle=f"Borehole Diameter ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+                                                                        min_v=get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(0.2159, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(0.4445, unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else D_dict, 
+                                                                        start_v=get_length_converted_values(start_vals_d["D"], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        div_style=div_block_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
+                                                                create_enhanced_slider(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle=f"Wellbore Radius Vertical ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')), max_v=get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                mark_dict=create_imperial_marks(
+                                                                    get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
+                                                                    get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                    unit_converter.user_preferences.get('length', 'm')
+                                                                ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else radius_vertical_dict, step_i=0.001, start_v=get_length_converted_values(start_vals_sbt["radius-vertical"], unit_converter.user_preferences.get('length', 'm')), div_style=div_none_style, parameter_name="Wellbore Radius Vertical")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
-                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
+                                                                create_enhanced_slider(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle=f"Wellbore Radius Lateral ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", min_v=get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')), max_v=get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(0.10795, unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(0.22225, unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else radius_lateral_dict, step_i=0.001, start_v=get_length_converted_values(start_vals_sbt["radius-lateral"], unit_converter.user_preferences.get('length', 'm')), div_style=div_none_style, parameter_name="Wellbore Radius Lateral")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
                                                             children=[ 
-                                                                create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style, parameter_name="Horizontal Extent (m)")
+                                                                create_enhanced_slider(DivID="L2-select-div", ID="L2-select", ptitle=f"Horizontal Extent ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+                                                                        min_v=get_length_converted_values(u_sCO2.L2[0], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(u_sCO2.L2[-1], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(u_sCO2.L2[0], unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(u_sCO2.L2[-1], unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else L2_dict, 
+                                                                        start_v=get_length_converted_values(start_vals_d["L2"], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        div_style=div_block_style, parameter_name="Horizontal Extent")
                                                             ]),
                                                     html.Div(
                                                             id="L1-container",
                                                             children=[ 
-                                                                create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
+                                                                create_enhanced_slider(DivID="L1-select-div", ID="L1-select", ptitle=f"Drilling Depth ({get_unit_symbol(unit_converter.user_preferences.get('length', 'm'))})", 
+                                                                        min_v=get_length_converted_values(u_sCO2.L1[0], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        max_v=get_length_converted_values(u_sCO2.L1[-1], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        mark_dict=create_imperial_marks(
+                                                                            get_length_converted_values(u_sCO2.L1[0], unit_converter.user_preferences.get('length', 'm')),
+                                                                            get_length_converted_values(u_sCO2.L1[-1], unit_converter.user_preferences.get('length', 'm')),
+                                                                            unit_converter.user_preferences.get('length', 'm')
+                                                                        ) if unit_converter.user_preferences.get('length', 'm') in ['ft'] else L1_dict, 
+                                                                        start_v=get_length_converted_values(start_vals_d["L1"], unit_converter.user_preferences.get('length', 'm')), 
+                                                                        div_style=div_block_style, parameter_name="Drilling Depth")
                                                             ]),
                                                     html.Div(
                                                             id="num-lat-container",
@@ -366,8 +639,12 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ECONOMIC PARAMETERS", className="param-class-name"),
-                                                        create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
-                                                                mark_dict=drillcost_dict, start_v=start_vals_econ["drillcost"], div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
+                                                                                                                 create_enhanced_slider(DivID="drillcost-div", ID="drillcost-select", ptitle=f"Drilling Cost ($/{get_unit_symbol(unit_converter.user_preferences.get('length', 'm')) if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'})", 
+                                                                 min_v=get_drilling_cost_converted_values(0, unit_converter.user_preferences.get('length', 'm') if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'), 
+                                                                 max_v=get_drilling_cost_converted_values(4000, unit_converter.user_preferences.get('length', 'm')) if unit_converter.user_preferences.get('length', 'm') == 'm' else get_drilling_cost_converted_values(4000, 'ft'), 
+                                                                 mark_dict={0: '0', 4000: '4k'} if unit_converter.user_preferences.get('length', 'm') == 'm' else {0: '0', get_drilling_cost_converted_values(4000, 'ft'): f'{get_drilling_cost_converted_values(4000, "ft"):.0f}'}, 
+                                                                 start_v=get_drilling_cost_converted_values(start_vals_econ["drillcost"], unit_converter.user_preferences.get('length', 'm') if unit_converter.user_preferences.get('length', 'm') == 'm' else 'ft'), 
+                                                                 div_style=div_block_style, parameter_name="Drilling Cost"),
                                                         create_enhanced_slider(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
                                                                 mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style, parameter_name="Discount Rate (%)"),
                                                         # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
@@ -384,10 +661,14 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                                                        create_enhanced_slider(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                        create_enhanced_slider(DivID="precool-div", ID="precool-select", ptitle=f"Pre-cooling ({get_unit_symbol(unit_converter.user_preferences.get('temperature', 'C'))})", min_v=0, max_v=40, 
                                                                 mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style, parameter_name="Pre-cooling (˚C)"),
-                                                        create_enhanced_slider(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
-                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
+                                                        create_enhanced_slider(DivID="turb-pout-div", ID="turb-pout-select", ptitle=f"Turbine Outlet Pressure ({get_unit_symbol(unit_converter.user_preferences.get('pressure', 'bar'))})", 
+                                                                min_v=get_pressure_converted_values(75, unit_converter.user_preferences.get('pressure', 'bar')), 
+                                                                max_v=get_pressure_converted_values(200, unit_converter.user_preferences.get('pressure', 'bar')), 
+                                                                mark_dict=turb_pout_dict, 
+                                                                start_v=get_pressure_converted_values(start_vals_econ["turb-pout"], unit_converter.user_preferences.get('pressure', 'bar')), 
+                                                                div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
                                                         html.Div(id="check-visual-card",
                                                                 children=[
                                                                         dcc.Checklist(id="checklist",

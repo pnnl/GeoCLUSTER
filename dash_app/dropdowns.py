@@ -8,14 +8,42 @@ from dash import dcc, html
 # Define dropdown options.
 # ---------------------------
 
-model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
+model_list = ["HDF5", "SBT V1.0", "SBT V2.0", "CovHDF5"]
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
 end_use_list = ["All", "Heating", "Electricity"] 
 
-param_list = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Borehole Diameter (m)", 
+param_list_metric = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Borehole Diameter (m)", 
                 "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)"]
+
+param_list_imperial = ["Horizontal Extent (ft)", "Vertical Extent (ft)", "Geothermal Gradient (°F/ft)", "Borehole Diameter (ft)", 
+                "Injection Temperature (˚F)", "Rock Thermal Conductivity (BTU/(hr·ft·°F))"]
+
+# Convection model parameter lists (includes permeability instead of borehole diameter and thermal conductivity)
+param_list_convection_metric = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (K/m)", "Permeability (HWR)", 
+                "Injection Temperature (˚C)"]
+
+param_list_convection_imperial = ["Horizontal Extent (ft)", "Vertical Extent (ft)", "Geothermal Gradient (°F/ft)", "Permeability (HWR)", 
+                "Injection Temperature (˚F)"]
+
+# Default to metric
+param_list = param_list_metric
+
+def get_param_list(units="metric", model="HDF5"):
+    """Return parameter list based on unit system and model"""
+    if model == "CovHDF5":
+        # Convection model has different parameters
+        if units.lower().startswith("imp"):
+            return param_list_convection_imperial
+        else:
+            return param_list_convection_metric
+    else:
+        # Standard models (HDF5, SBT)
+        if units.lower().startswith("imp"):
+            return param_list_imperial
+        else:
+            return param_list_metric
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 
@@ -41,7 +69,8 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in model_list],
                                     value=model_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                 ),
                             ]
                         ),
@@ -68,7 +97,8 @@ def dropdown_card():
                                         options=[{"label": i, "value": i} for i in case_list],
                                         value=case_list[0],
                                         clearable=False,
-                                        searchable=False
+                                        searchable=False,
+                                        style={"width": "100%", "minWidth": "100px"}
                                     ),
                                 ]
                             ),
@@ -80,7 +110,8 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in fluid_list],
                                     value=fluid_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                     )
                                 ]
                             ),
@@ -92,7 +123,24 @@ def dropdown_card():
                                     options=[{"label": i, "value": i} for i in end_use_list],
                                     value=end_use_list[0],
                                     clearable=False,
-                                    searchable=False
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
+                                ),
+                            ]
+                        ),
+                        html.Div(id="dropdown-card5",
+                            children=[
+                                html.P("Units", className="dropdown-text"),
+                                dcc.Dropdown(
+                                    id="quick-unit-selector",
+                                    options=[
+                                        {"label": "Metric", "value": "metric"},
+                                        {"label": "Imperial", "value": "imperial"}
+                                    ],
+                                    value="metric",
+                                    clearable=False,
+                                    searchable=False,
+                                    style={"width": "100%", "minWidth": "100px"}
                                 ),
                             ]
                         ),

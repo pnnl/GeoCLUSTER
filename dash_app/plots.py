@@ -15,7 +15,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 
 # sourced scripts
-from reader import initialize_data, data_dict
+from reader import initialize_data, data_dict, initialize_convection_data, convection_data_dict
 from econ_support import create_teaobject
 from plots_support import * 
 import traceback
@@ -23,8 +23,20 @@ import traceback
 # -----------------------
 # Read in data.
 # -----------------------
+# Initialize default data (HDF5 model)
 u_sCO2, u_H2O, c_sCO2, c_H2O = initialize_data() # 3 GB of memory
 param_dict = data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O)
+
+def get_model_data(model):
+    """Get data objects and parameter dictionary based on model type"""
+    if model == "CovHDF5":
+        # Load convection model data
+        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O = initialize_convection_data()
+        conv_param_dict = convection_data_dict(conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O)
+        return conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict
+    else:
+        # Use standard HDF5 data
+        return u_sCO2, u_H2O, c_sCO2, c_H2O, param_dict
 
 # -----------------------
 # Global properties.
@@ -53,7 +65,8 @@ def param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_
                 arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i
 
 
-def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i):
+def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, 
+                                   model="HDF5", conv_u_H2O=None, conv_c_H2O=None):
 
     # --------------------------------------------------------------------------------------------------------------
     # For both H2O and sCO2, calculate:
@@ -75,27 +88,35 @@ def get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_gr
     H2O_kWt_avg = None
     error_messages_d = {}
 
-    if case == "utube":
+    if model == "CovHDF5":
+        # CovHDF5 has different data structure (no k dimension)
+        if case == "utube":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = conv_u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+                H2O_kWt_avg = conv_u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+        elif case == "coaxial":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+                H2O_kWt_avg = conv_c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i]
+    else:
+        # Standard HDF5 model
+        if case == "utube":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                H2O_kWt_avg = u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
+            if fluid == "sCO2" or fluid == "All":
+                sCO2_kWe_avg = u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                sCO2_kWt_avg = u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
-        if fluid == "H2O" or fluid == "All":
-            H2O_kWe_avg = u_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            H2O_kWt_avg = u_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+        if case == "coaxial":
+            if fluid == "H2O" or fluid == "All":
+                H2O_kWe_avg = c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                H2O_kWt_avg = c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
-        if fluid == "sCO2" or fluid == "All":
-            sCO2_kWe_avg = u_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            sCO2_kWt_avg = u_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-
-    if case == "coaxial":
-
-
-        if fluid == "H2O" or fluid == "All":
-            H2O_kWe_avg = c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            H2O_kWt_avg = c_H2O.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-
-        if fluid == "sCO2" or fluid == "All":
-            sCO2_kWe_avg = c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
-            sCO2_kWt_avg = c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+            if fluid == "sCO2" or fluid == "All":
+                sCO2_kWe_avg = c_sCO2.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
+                sCO2_kWt_avg = c_sCO2.kWt_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i]
 
     return sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d
 
@@ -106,8 +127,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
             mesh, accuracy, 
             # mass_mode, temp_mode
-            HyperParam3, HyperParam4, HyperParam5
+            HyperParam3, HyperParam4, HyperParam5,
+            unit_system="metric"
             ):
+    
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 5 subplots:
@@ -128,6 +151,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 1
     elif model == "SBT V2.0":
         sbt_version = 2
+    elif model == "CovHDF5":
+        sbt_version = 0  # CovHDF5 uses HDF5-style interpolation
     else:
         sbt_version = 0
 
@@ -138,24 +163,49 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     error_messages_dict = {}
 
-    time = u_sCO2.time
-    m_dot = u_sCO2.mdot
+    # Load model-specific data
+    if model == "CovHDF5":
+        # Load convection model data
+        conv_u_sCO2, conv_u_H2O, conv_c_sCO2, conv_c_H2O, conv_param_dict = get_model_data(model)
+        # For CovHDF5, use H2O data (sCO2 is None)
+        time = conv_u_H2O.time
+        m_dot = conv_u_H2O.mdot
+        
+        # For CovHDF5, arg_D is actually permeability
+        # Find nearest values using convection model data
+        arg_mdot_v, arg_mdot_i = find_nearest(conv_u_H2O.mdot, arg_mdot)
+        arg_L2_v, arg_L2_i = find_nearest(conv_u_H2O.L2, arg_L2)
+        arg_L1_v, arg_L1_i = find_nearest(conv_u_H2O.L1, arg_L1)
+        arg_grad_v, arg_grad_i = find_nearest(conv_u_H2O.grad, arg_grad)
+        arg_D_v, arg_D_i = find_nearest(conv_u_H2O.perm_HWR, arg_D)  # arg_D is permeability for CovHDF5
+        arg_Tinj_v, arg_Tinj_i = find_nearest(conv_u_H2O.Tinj, arg_Tinj + to_kelvin_factor)
+        arg_k_v, arg_k_i = 0, 0  # No thermal conductivity parameter for CovHDF5
+        
+        # Point for interpolation (no k parameter for CovHDF5)
+        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor)
+    else:
+        # Standard HDF5 or SBT models
+        time = u_sCO2.time
+        m_dot = u_sCO2.mdot
+        
+        arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
+                    arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+        
+        point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k)
 
     mass_flow_rates_dict = {"Mass Flow Rate (kg/s)": m_dot}
     time_dict = {"Time (year)": time}
 
-    arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
-                arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
-
-    point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
-
     # ** Average calculations
-    sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
-                            get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
+    if model == "CovHDF5":
+        sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+                                get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i,
+                                                               model=model, conv_u_H2O=conv_u_H2O, conv_c_H2O=conv_c_H2O)
+    else:
+        sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+                                get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
 
     error_messages_dict.update(error_messages_d)
-
-    # print(sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg)
 
     is_blank_data = False
 
@@ -163,25 +213,39 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
         # this doesn't impact the kWe over time
 
-        if case == "utube":
+        if model == "CovHDF5":
+            # CovHDF5 has different data structure (no k dimension)
+            if case == "utube":
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = conv_u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+                    H2O_Pout = conv_u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+            elif case == "coaxial":
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = conv_c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+                    H2O_Pout = conv_c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, :]
+        else:
+            # Standard HDF5 model
+            if case == "utube":
 
-            if fluid == "H2O" or fluid == "All":
-                H2O_Tout = u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                H2O_Pout = u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = u_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    H2O_Pout = u_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-            if fluid == "sCO2" or fluid == "All":
-                sCO2_Tout = u_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                sCO2_Pout = u_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "sCO2" or fluid == "All":
+                    sCO2_Tout = u_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    sCO2_Pout = u_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-        if case == "coaxial":
+            if case == "coaxial":
 
-            if fluid == "H2O" or fluid == "All":
-                H2O_Tout = c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                H2O_Pout = c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "H2O" or fluid == "All":
+                    H2O_Tout = c_H2O.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    H2O_Pout = c_H2O.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
 
-            if fluid == "sCO2" or fluid == "All":
-                sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
-                sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                if fluid == "sCO2" or fluid == "All":
+                    sCO2_Tout = c_sCO2.Tout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+                    sCO2_Pout = c_sCO2.Pout[arg_mdot_i, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, :]
+
+
 
     if interp_time == "True":
 
@@ -191,7 +255,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 # For SBT models, generate data based on model version
-                if model != "HDF5":
+                if model == "SBT V1.0" or model == "SBT V2.0":
                     # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
@@ -212,6 +276,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                elif model == "CovHDF5":
+                    # For CovHDF5, only H2O is supported and we use convection data
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = conv_u_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = conv_u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    # CovHDF5 doesn't support sCO2
+                    sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
                     # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":
@@ -237,7 +311,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 # For SBT models, generate data based on model version
-                if model != "HDF5":
+                if model == "SBT V1.0" or model == "SBT V2.0":
                     # Generate H2O data (always supported)
                     H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
@@ -257,6 +331,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     else:
                         # SBT V1.0 doesn't support sCO2, so set to None
                         sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
+                elif model == "CovHDF5":
+                    # For CovHDF5, only H2O is supported and we use convection data
+                    if fluid == "H2O" or fluid == "All":
+                        H2O_Tout, H2O_Pout, time = conv_c_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            None, None, None, None, None,  # SBT parameters not used for CovHDF5
+                                                            mesh, accuracy, None, None, None)
+                        H2O_kWe, H2O_kWt = conv_c_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    # CovHDF5 doesn't support sCO2
+                    sCO2_Tout, sCO2_Pout, sCO2_kWe, sCO2_kWt = None, None, None, None
                 else:
                     # For HDF5 models, use the original conditional logic with minimal parameters
                     if fluid == "sCO2" or fluid == "All":
@@ -304,24 +388,27 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                       legendgroup=labels_cat[1], name=labels[1], showlegend=False),
                       row=1, col=2)
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw), # #379dbf
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=True),
-                      row=2, col=1)
-        # temperature
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
-                      line = dict(color='royalblue', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=2)
-        # pressure
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
-                      line = dict(color='#16b8a2', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=3)
+        # kWe vs. time - only plot if data exists
+        if sCO2_kWe is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw), # #379dbf
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=True),
+                          row=2, col=1)
+        # temperature - only plot if data exists
+        if sCO2_Tout is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
+                          line = dict(color='royalblue', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=2)
+        # pressure - only plot if data exists
+        if sCO2_Pout is not None:
+            fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
+                          line = dict(color='#16b8a2', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=3)
 
         if is_blank_data:
             blank_canvas(fig=fig, row_n=2, col_n=1)
@@ -339,7 +426,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         mass_flow_rates_dict["sCO2 40-Year Average of Exergy (kWe)"] = sCO2_kWe_avg
         mass_flow_rates_dict["sCO2 40-Year Average of Available Thermal Output (kWt)"] = sCO2_kWt_avg
 
-        time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
+        if sCO2_kWe is not None:
+            time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
         time_dict["sCO2 Outlet Temperature (˚C)"] = sCO2_Tout - to_kelvin_factor # to celsius
         time_dict["sCO2 Outlet Pressure (MPa)"] = sCO2_Pout / 1000000
 
@@ -359,12 +447,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                       legendgroup=labels_cat[0], name=labels[0], showlegend=False),
                       row=1, col=2)
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw, dash='dash'), # #379dbf
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=True),
-                      row=2, col=1)
+        # kWe vs. time - only plot if data exists
+        if H2O_kWe is not None:
+            fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw, dash='dash'), # #379dbf
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=True),
+                          row=2, col=1)
         # temperature
         fig.add_trace(go.Scatter(x=time, y=H2O_Tout - to_kelvin_factor, # to celsius
                       hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
@@ -394,12 +483,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         mass_flow_rates_dict["H2O 40-Year Average of Exergy (kWe)"] = H2O_kWe_avg
         mass_flow_rates_dict["H2O 40-Year Average of Available Thermal Output (kWt)"] = H2O_kWt_avg
 
-        time_dict["H2O Exergy (kWe)"] = H2O_kWe
+        if H2O_kWe is not None:
+            time_dict["H2O Exergy (kWe)"] = H2O_kWe
         time_dict["H2O Outlet Temperature (˚C)"] = H2O_Tout - to_kelvin_factor # to celsius
         time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
 
     
-    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale)
+    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale, unit_system=unit_system)
 
     forty_yr_means_dict = {'Mean H2O Tout': mean_H2O_Tout, 
                             'Mean H2O Pout': mean_H2O_Pout,
@@ -423,7 +513,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
 
 
-def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k):
+def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, units="metric"):
 
     # -----------------------------------------------------------------------------------------------------------------
     # Creates Plotly with 4 subplot contours:
@@ -437,17 +527,125 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
 
     error_messages_dict = {}
 
+    # Handle None param value - provide default
+    if param is None:
+        param = "Horizontal Extent (m)"  # Default parameter
+
+    # Values are already in metric units when they reach this function
+
     # initializer to prevent errors
     if fluid == "All":
         fluid = "H2O"
 
+    # Map parameter name to internal metric name for data access
+    param_for_data = param
+    if units == "imperial":
+        # Map imperial display names to metric internal names for data access
+        param_mapping = {
+            "Horizontal Extent (ft)": "Horizontal Extent (m)",
+            "Vertical Extent (ft)": "Vertical Extent (m)",
+            "Geothermal Gradient (°F/ft)": "Geothermal Gradient (K/m)",
+            "Borehole Diameter (ft)": "Borehole Diameter (m)",
+            "Injection Temperature (°F)": "Injection Temperature (˚C)",
+            "Rock Thermal Conductivity (BTU/(hr·ft·°F))": "Rock Thermal Conductivity (W/m-K)"
+        }
+        param_for_data = param_mapping.get(param, param)
+
     # contour elements
-    param_y = param_dict[(case, fluid, param)]
+    param_y = param_dict[(case, fluid, param_for_data)]
     mdot_x = param_dict[(case, fluid, "mdot")]
+    
+    # Convert data values for imperial display
+    if units == "imperial":
+        if param_for_data == "Horizontal Extent (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Vertical Extent (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Geothermal Gradient (K/m)":
+            param_y = param_y * 0.3048 * (9.0/5.0)  # K/m to °F/ft
+        elif param_for_data == "Borehole Diameter (m)":
+            param_y = param_y * 3.28084  # m to ft
+        elif param_for_data == "Injection Temperature (˚C)":
+            param_y = param_y * (9.0/5.0) + 32.0  # °C to °F
+        elif param_for_data == "Rock Thermal Conductivity (W/m-K)":
+            param_y = param_y / 1.730735  # W/m-K to BTU/(hr·ft·°F)
+        
+        # Convert mass flow rate to imperial
+        mdot_x = mdot_x / 0.45359237  # kg/s to lb/s
+
     mdot_ij, param_ij = np.meshgrid(mdot_x, param_y, indexing='ij') # returns coordinate matrices from coordinate vectors
 
-    arg_mdot_v, arg_mdot_i, arg_L2_v, arg_L2_i, arg_L1_v, arg_L1_i, arg_grad_v, arg_grad_i, arg_D_v, arg_D_i, \
-                arg_Tinj_v, arg_Tinj_i, arg_k_v, arg_k_i = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    # First, find the nearest indices for all parameters using the current values
+    arg_mdot_v, arg_mdot_i_nearest, arg_L2_v, arg_L2_i_nearest, arg_L1_v, arg_L1_i_nearest, arg_grad_v, arg_grad_i_nearest, arg_D_v, arg_D_i_nearest, \
+    arg_Tinj_v, arg_Tinj_i_nearest, arg_k_v, arg_k_i_nearest = param_nearest_init(arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k)
+    
+    # Now set the indices based on which parameter is being varied for the contour plot
+    # The varied parameter and mass flow rate should use slice(None) for full ranges
+    # All other parameters should use their nearest indices
+    
+    if param_for_data == "Horizontal Extent (m)":
+        # L2 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2 (the varied parameter)
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Vertical Extent (m)":
+        # L1 is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = slice(None)    # Full range for L1 (the varied parameter)
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Geothermal Gradient (K/m)":
+        # grad is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = slice(None)  # Full range for grad (the varied parameter)
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Borehole Diameter (m)":
+        # D is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = slice(None)     # Full range for D (the varied parameter)
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Injection Temperature (˚C)":
+        # Tinj is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = slice(None)   # Full range for Tinj (the varied parameter)
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
+    elif param_for_data == "Rock Thermal Conductivity (W/m-K)":
+        # k is the varied parameter, mdot is the other axis
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = arg_L2_i_nearest    # Use nearest value for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = slice(None)     # Full range for k (the varied parameter)
+    else:
+        # Default case - use L2 and mdot as the two axes
+        arg_mdot_i = slice(None)  # Full range for mass flow
+        arg_L2_i = slice(None)    # Full range for L2
+        arg_L1_i = arg_L1_i_nearest    # Use nearest value for L1
+        arg_grad_i = arg_grad_i_nearest    # Use nearest value for grad
+        arg_D_i = arg_D_i_nearest     # Use nearest value for D
+        arg_Tinj_i = arg_Tinj_i_nearest   # Use nearest value for Tinj
+        arg_k_i = arg_k_i_nearest     # Use nearest value for k
 
     # initial time conditions
     # arg_i = 160 # 4
@@ -456,14 +654,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
     arg_v = 40 - (0.25*101)
     
     if interp_time == "False":
-
-        # print('FALSE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-        
         if param == "Horizontal Extent (m)":
             arg_L2_i = slice(None)
         if param == "Vertical Extent (m)":
@@ -498,9 +688,6 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             Tout_flipped = np.transpose(u_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
             Pout_flipped = np.transpose(u_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-            # print(kWe_avg_flipped.shape) # (20, 26)
-            # print('\n')
-
         if fluid == "H2O" and case == "coaxial":
 
             kWe_avg_flipped = np.transpose(c_H2O.kWe_avg[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i])
@@ -508,22 +695,14 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             Tout_flipped = np.transpose(c_H2O.Tout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
             Pout_flipped = np.transpose(c_H2O.Pout[:, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i, arg_i])
 
-    if interp_time == "True": # would this even make sense? It doesn't because can manipulate the other factors, when they should be fixed?
-
-        # print('TRUE')
-        # print(param)
-        # print(param_y.shape) # (20,)
-        # print(mdot_x.shape) # (26,)
-        # print(mdot_ij[:,0].shape) # (26,)
-        # print(param_ij[0,:].shape) # (20,)
-
-        point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v) # to kelvin
+    if interp_time == "True":
+        point = (arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k, arg_v)
         # point2 = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
         if fluid == "sCO2" and case == "utube":
             try:
-                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param, point) 
-                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
+                sCO2_Tout, sCO2_Pout = u_sCO2.interp_outlet_states_contour(param_for_data, point) 
+                sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW_contour(param_for_data, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -533,8 +712,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "sCO2" and case == "coaxial":
             try:
-                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param, point)
-                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param, point, sCO2_Tout, sCO2_Pout)
+                sCO2_Tout, sCO2_Pout = c_sCO2.interp_outlet_states_contour(param_for_data, point)
+                sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW_contour(param_for_data, point, sCO2_Tout, sCO2_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(sCO2_kWe, sCO2_kWt, sCO2_Tout, sCO2_Pout)
 
             except ValueError as e:
@@ -544,22 +723,19 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         
         if fluid == "H2O" and case == "utube":
             try:
-                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
+                H2O_Tout, H2O_Pout = u_H2O.interp_outlet_states_contour(param_for_data, point)
+                H2O_kWe, H2O_kWt = u_H2O.interp_kW_contour(param_for_data, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = blank_data_kW() 
                 error_message = parse_error_message(e=e, e_name='Err SubContour3')
                 error_messages_dict['Err SubContour3'] = error_message
-        
-            # print(kWe_avg_flipped.shape) # should have an x and y right for the z component?
-            # print('\n')
 
         if fluid == "H2O" and case == "coaxial":
             try:
-                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param, point)
-                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param, point, H2O_Tout, H2O_Pout)
+                H2O_Tout, H2O_Pout = c_H2O.interp_outlet_states_contour(param_for_data, point)
+                H2O_kWe, H2O_kWt = c_H2O.interp_kW_contour(param_for_data, point, H2O_Tout, H2O_Pout)
                 kWe_avg_flipped, kWt_avg_flipped, Tout_flipped, Pout_flipped = rename_for_contour(H2O_kWe, H2O_kWt, H2O_Tout, H2O_Pout)
 
             except ValueError as e:
@@ -568,16 +744,25 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
                 error_messages_dict['Err SubContour4'] = error_message
         
 
+    # Set temperature unit for subplot titles
+    if units == "imperial":
+        temp_subtitle = 'Outlet Temperature (°F)'
+    else:
+        temp_subtitle = 'Outlet Temperature (°C)'
+    
     fig = make_subplots(rows=2, cols=2, start_cell="top-left",
-                        horizontal_spacing = 0.12,
-                        vertical_spacing = 0.12,
+                        horizontal_spacing = 0.15,
+                        vertical_spacing = 0.18,
                         subplot_titles=('40-Year Average Exergy (kWe)', 
                                        '40-Year Average Thermal Output (kWt)',
-                                       'Outlet Temperature (°C)',
+                                       temp_subtitle,
                                        'Outlet Pressure (MPa)')
            )
 
 
+    # Set hover units based on unit system
+    mass_flow_hover_unit = "lb/s" if units == "imperial" else "kg/s"
+    
     contour_formatting = dict(showlabels = True, #coloring ='heatmap'
                               labelfont = dict( size = 14,
                                                 color = 'white'
@@ -588,7 +773,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Average Exergy (kWe)'), #titleside='right'
             colorscale=colorscaleR,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Exergy (kWe)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Exergy (kWe)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWe_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=1 )
@@ -599,20 +784,31 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Average Thermal Output (kWe)'),
             colorscale=colorscaleY,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Thermal Output (kWt)</b>: %{z:.5f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Average Thermal Output (kWt)</b>: %{{z:.5f}} ',
             contours=contour_formatting,
             z=kWt_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=1, col=2 )
 
 
+    if units == "imperial":
+        # Convert from Kelvin to Fahrenheit
+        Tout_display = (Tout_flipped - to_kelvin_factor) * (9.0/5.0) + 32.0
+        temp_title = 'Outlet Temperature (°F)'
+        temp_hovertemplate = '<b>Mass Flow Rate (lb/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°F)</b>: %{z:.5f} '
+    else:
+        # Convert from Kelvin to Celsius
+        Tout_display = Tout_flipped - to_kelvin_factor
+        temp_title = 'Outlet Temperature (°C)'
+        temp_hovertemplate = '<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°C)</b>: %{z:.5f} '
+
     fig.add_trace( 
         go.Contour(showscale=False,
-            colorbar=dict(title='Outlet Temperature (°C)'),
+            colorbar=dict(title=temp_title),
             colorscale=colorscaleB,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Temperature (°C)</b>: %{z:.5f} ',
+            hovertemplate=temp_hovertemplate,
             contours=contour_formatting,
-            z=Tout_flipped - to_kelvin_factor, y=param_ij[0,:], x=mdot_ij[:,0] # to celsius
+            z=Tout_display, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=1 )
 
     fig.add_trace( 
@@ -620,12 +816,12 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             colorbar=dict(title='Outlet Pressure (MPa)'),
             colorscale=colorscaleG,
             name="",
-            hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Outlet Pressure (MPa)</b>: %{z:.0f} ',
+            hovertemplate=f'<b>Mass Flow Rate ({mass_flow_hover_unit})</b>: %{{x:.1f}}<br><b>Y</b>: %{{y:.4f}}<br><b>Outlet Pressure (MPa)</b>: %{{z:.0f}} ',
             contours=contour_formatting,
             z=Pout_flipped / 1000000, y=param_ij[0,:], x=mdot_ij[:,0]
         ), row=2, col=2 )
 
-    fig = update_layout_properties_subsurface_contours(fig, param)
+    fig = update_layout_properties_subsurface_contours(fig, param, units)
     
     return fig, error_messages_dict
 
@@ -647,7 +843,8 @@ def generate_econ_lineplots(TandP_dict,
                             additional_properties_CO2v2_pathname,
                             tmatrix_pathname,
                             model,
-                            is_plot_ts_check
+                            is_plot_ts_check,
+                            units="metric"
                             ):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -682,19 +879,18 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    fig = make_subplots(rows=2, cols=5,
-                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.11
-                        )
-
     fig = make_subplots(rows=3, cols=5,
                         specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                 [{'colspan': 2}, None, None, None, None]
                                 ],
-                        horizontal_spacing = 0.11
+                        horizontal_spacing = 0.11,
+                        vertical_spacing = 0.2,
+                        row_heights=[0.35, 0.35, 0.3]
                         )
+    
+    # Set explicit height for the figure
+    fig.update_layout(height=800)
 
     teaobj_sCO2 = None
     teaobj_H2O = None
@@ -767,9 +963,6 @@ def generate_econ_lineplots(TandP_dict,
                 error_messages_dict['Err Econ1b'] = error_message
 
         if fluid == "H2O" or fluid == "All":
-
-            # print(" ...... H20 HEATING LCOH .... ")
-
             try:
                 # TODO: update D ... based on radial
                 teaobj_H2O = create_teaobject(TandP_dict,
@@ -784,15 +977,7 @@ def generate_econ_lineplots(TandP_dict,
                                                 is_H20=True, is_heating=True
                                                 )
                 lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
-                # print(lcoh_H2O)
-                # print("Error on LCOH ... ")
-                # print(teaobj_H2O)
-                # print(lcoh_H2O)
 
-                # HERE !!!!! "'TEA' object has no attribute 'LCOH'"
-                # print('here')
-                # print(teaobj_H2O.Linear_time_distribution)
- 
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Instantaneous_heat_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Heat Production (MWt)</b>: %{y:.3f} ',
@@ -935,11 +1120,6 @@ def generate_econ_lineplots(TandP_dict,
 
                 lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
 
-                # print(" ********* ")
-                # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
-                # print(teaobj_H2O.Linear_time_distribution)
-                # print("\n")
-
                 # Electricity 
                 fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
@@ -982,7 +1162,7 @@ def generate_econ_lineplots(TandP_dict,
                 error_message = parse_error_message(e=e, e_name='Err Econ4b')
                 error_messages_dict['Err Econ4b'] = error_message
 
-    fig = update_layout_properties_econ_results(fig, end_use, scale)
+    fig = update_layout_properties_econ_results(fig, end_use, scale, units)
     fig = update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, lcoe_H2O) # table
     fig.update_traces(cells_font=dict(size = 13), row=1, col=5)
     fig.update_traces(cells_font=dict(size = 13), row=2, col=5)
@@ -1010,10 +1190,6 @@ def generate_econ_lineplots(TandP_dict,
 
     fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
                       plot_bgcolor='rgba(255,255,255,0)')
-
-    print("econ errors!!")
-    print("\n")
-    print(error_messages_dict)
 
     return fig, econ_data_dict, econ_values_dict, error_messages_dict
 
@@ -1184,13 +1360,14 @@ def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
 
 
     fig.update_layout(title_text=f'<b>CO2 Temperature-entropy (T-s) Diagram</b>', 
-                        title_x=0.35, title_y=0.99,
-                        font=dict(size=10)
+                        title_x=0.35, title_y=1.02,
+                        font=dict(size=10),
+                        margin=dict(t=60)
                         )
     fig.update_yaxes(title_text="Temperature (°C)", 
                             row=nrow, col=ncol,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_xaxes(title_text="Entropy (J/kg/°C)", range=[1000, 2300],
+    fig.update_xaxes(title_text="Entropy (J/kg·K)", range=[1000, 2300],
                             row=nrow, col=ncol,
                             tickfont = dict(size=12), title_font=dict(size=14))
     return fig
