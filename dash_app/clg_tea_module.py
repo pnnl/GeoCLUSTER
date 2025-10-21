@@ -63,9 +63,7 @@ class TEA:
         self.Pre_Cooling_Delta_T = Pre_Cooling_Delta_T
         self.Turbine_outlet_pressure = Turbine_outlet_pressure
 
-        # self.filename = "../../geo-data/clgs_results_final.h5"               #Filename of h5 database with simulation results [-]
-        self.Number_of_points_per_year = 4               #Number of time steps per year in database [-] (must be 4)
-        
+        self.Number_of_points_per_year = 4
         self.point = (Flow_user, Hor_length_user, Depth_user, Gradient_user, Diameter_user, Tin_user, krock_user)
         
         self.P_in = 2e7         #Constant Injection pressure [Pa]
@@ -91,8 +89,11 @@ class TEA:
         if self.Gradient_user < 0.03 or self.Gradient_user > 0.07:
             print("Error: Geothermal gradient must be between 0.03 and 0.07 degrees C per m. Simulation terminated.")
             self.error = 1
-        if self.Diameter_user < 0.2159 or self.Diameter_user > 0.4445:
+        if not self.is_convection_model and (self.Diameter_user < 0.2159 or self.Diameter_user > 0.4445):
             print("Error: Wellbore diameter must be between 0.2159 and 0.4445 m. Simulation terminated.")
+            self.error = 1
+        if self.is_convection_model and (self.Diameter_user < 0.1 or self.Diameter_user > 1.0):
+            print("Error: Permeability must be between 0.1 and 1.0. Simulation terminated.")
             self.error = 1
         if self.Tin_user < 303.15 or self.Tin_user > 333.15:
             print("Error: Injection temperature must be between 303.15 and 333.15 K. Simulation terminated.")
@@ -155,41 +156,61 @@ class TEA:
     
     def initialize(self, TandP_dict, u_sCO2, u_H2O, c_sCO2, c_H2O, properties_H2O_pathname, properties_CO2v2_pathname, additional_properties_CO2v2_pathname):
         
+        self.is_convection_model = False
+        
         if self.Fluid == 1:
             if self.Configuration == 1:
-                self.u_H2O = u_H2O # clgs_v2.data(self.filename, "utube", "H2O")
+                self.u_H2O = u_H2O
             elif self.Configuration == 2:
-                self.u_H2O = c_H2O # clgs_v2.data(self.filename, "coaxial", "H2O")
-            # self.timearray = self.u_H2O.time
+                self.u_H2O = c_H2O
+            
             self.timearray = self.u_H2O.time
-            # self.timearray = np.array(TandP_dict["time"])
-            self.FlowRateVector = self.u_H2O.mdot #length of 26
-            self.HorizontalLengthVector = self.u_H2O.L2 #length of 20
-            self.DepthVector = self.u_H2O.L1 #length of 9
-            self.GradientVector = self.u_H2O.grad #length of 5
-            self.DiameterVector = self.u_H2O.D #length of 3
-            self.TinVector = self.u_H2O.Tinj #length of 3
-            self.KrockVector = self.u_H2O.k #length of 3
+            self.FlowRateVector = self.u_H2O.mdot
+            self.HorizontalLengthVector = self.u_H2O.L2
+            self.DepthVector = self.u_H2O.L1
+            self.GradientVector = self.u_H2O.grad
+            
+            self.is_convection_model = hasattr(self.u_H2O, 'is_convection_model') and self.u_H2O.is_convection_model
+            if self.is_convection_model:
+                self.PermVector = self.u_H2O.perm_HWR
+                self.DiameterVector = np.array([self.Diameter_user])
+                self.KrockVector = np.array([self.krock_user])
+            else:
+                self.DiameterVector = self.u_H2O.D
+                self.KrockVector = self.u_H2O.k
+                self.PermVector = None
+            
+            self.TinVector = self.u_H2O.Tinj
             self.Fluid_name = 'Water'
+            
         elif self.Fluid == 2:
             if self.Configuration == 1:
-                self.u_sCO2 = u_sCO2 # clgs_v2.data(self.filename, "utube", "sCO2")
+                self.u_sCO2 = u_sCO2
             elif self.Configuration == 2:
-                self.u_sCO2 = c_sCO2 # clgs_v2.data(self.filename, "coaxial", "sCO2")
-            self.timearray = self.u_sCO2.time
-            # self.timearray = np.array(TandP_dict["time"])
-            self.FlowRateVector = self.u_sCO2.mdot #length of 26
-            self.HorizontalLengthVector = self.u_sCO2.L2 #length of 20
-            self.DepthVector = self.u_sCO2.L1 #length of 9
-            self.GradientVector = self.u_sCO2.grad #length of 5
-            self.DiameterVector = self.u_sCO2.D #length of 3
-            self.TinVector = self.u_sCO2.Tinj #length of 3
-            self.KrockVector = self.u_sCO2.k #length of 3   
-            self.Fluid_name = 'CarbonDioxide'     
-
-   
+                self.u_sCO2 = c_sCO2
             
-        self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
+            self.timearray = self.u_sCO2.time
+            self.FlowRateVector = self.u_sCO2.mdot
+            self.HorizontalLengthVector = self.u_sCO2.L2
+            self.DepthVector = self.u_sCO2.L1
+            self.GradientVector = self.u_sCO2.grad
+            
+            self.is_convection_model = hasattr(self.u_sCO2, 'is_convection_model') and self.u_sCO2.is_convection_model if self.u_sCO2 is not None else False
+            if self.is_convection_model:
+                self.PermVector = self.u_sCO2.perm_HWR if self.u_sCO2 is not None else None
+                self.DiameterVector = np.array([self.Diameter_user])
+                self.KrockVector = np.array([self.krock_user])
+            else:
+                self.DiameterVector = self.u_sCO2.D
+                self.KrockVector = self.u_sCO2.k
+                self.PermVector = None
+            
+            self.Fluid_name = 'CarbonDioxide'
+            
+        if self.is_convection_model:
+            self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.PermVector)*len(self.TinVector)
+        else:
+            self.numberofcases = len(self.FlowRateVector)*len(self.HorizontalLengthVector)*len(self.DepthVector)*len(self.GradientVector)*len(self.DiameterVector)*len(self.TinVector)*len(self.KrockVector)
         
         
         self.Time_array = np.linspace(0,self.Lifetime*365*24*3600,1+self.Lifetime*self.Number_of_points_per_year) #[s]

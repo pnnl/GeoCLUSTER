@@ -515,20 +515,20 @@ PARAMETER_INFO = {
         "description": "Longer horizontal sections increase heat extraction area but require more drilling."
     },
     
-    "CovHDF5 Vertical Depth (m)": {
-        "definition": "Set the vertical drilling depth. For CovHDF5, this represents the depth of the vertical well section.",
+    "CovHDF5 Drilling Depth (m)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 3 km targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
         "recommended_range": "1,000-5,000 m",
         "typical_value": "3,000 m",
         "unit": "m",
-        "description": "Greater depth increases access to higher temperature resources but increases drilling costs."
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
     
-    "CovHDF5 Vertical Depth (ft)": {
-        "definition": "Set the vertical drilling depth. For CovHDF5, this represents the depth of the vertical well section.",
+    "CovHDF5 Drilling Depth (ft)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 9,843 ft targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
         "recommended_range": "3,281-16,404 ft",
         "typical_value": "9,843 ft",
         "unit": "ft",
-        "description": "Greater depth increases access to higher temperature resources but increases drilling costs."
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
     
     "CovHDF5 Geothermal Gradient (K/m)": {
