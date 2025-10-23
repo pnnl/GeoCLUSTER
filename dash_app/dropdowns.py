@@ -8,7 +8,7 @@ from dash import dcc, html
 # Define dropdown options.
 # ---------------------------
 
-model_list = ["HDF5", "SBT V1.0", "SBT V2.0", "CovHDF5"]
+model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
@@ -129,6 +129,7 @@ def dropdown_card():
                             ]
                         ),
                         html.Div(id="dropdown-card5",
+                            style={'display': 'none'},
                             children=[
                                 html.P("Units", className="dropdown-text"),
                                 dcc.Dropdown(
