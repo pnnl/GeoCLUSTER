@@ -40,6 +40,12 @@ from paths import inpath_dict
 from sliders import *  # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from plots.py
 from tables import generate_summary_table
 from text import *
+from info_popups import (
+    PARAMETER_INFO,
+    create_info_button,
+    create_info_modal,
+    register_info_modal_callbacks,
+)
 from write2excel import write_excelsheet
 
 # -----------------------------------------------------------------------------
@@ -515,8 +521,13 @@ app.layout = html.Div(
                 ),
             ],
         ),
+        # Information Modal
+        create_info_modal(),
     ],
 )
+
+# Register info popup callbacks
+register_info_modal_callbacks(app)
 
 
 # -----------------------------------------------------------------------------
@@ -1429,6 +1440,7 @@ def update_slider_ranges(model):
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
+            parameter_name="Geothermal Gradient (K/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -1439,6 +1451,8 @@ def update_slider_ranges(model):
             mark_dict=k_dict,
             start_v=start_vals_d["k"],
             div_style=div_block_style,
+            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            custom_title=True,
         )
         # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15,
         #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
@@ -1451,6 +1465,7 @@ def update_slider_ranges(model):
             mark_dict=Tinj_dict,
             start_v=30.0,
             div_style=div_block_style,
+            parameter_name="Injection Temperature (˚C)",
         )
         mdot_container = slider2(
             DivID="mdot-select-div",
@@ -1461,6 +1476,7 @@ def update_slider_ranges(model):
             mark_dict=mdot_dict,
             start_v=start_vals_d["mdot"],
             div_style=div_block_style,
+            parameter_name="Mass Flow Rate (kg/s)",
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
@@ -1472,6 +1488,7 @@ def update_slider_ranges(model):
             step_i=0.002,
             start_v=start_vals_d["D"],
             div_style=div_block_style,
+            parameter_name="Borehole Diameter (m)",
         )
         L2_container = slider2(
             DivID="L2-select-div",
@@ -1482,6 +1499,7 @@ def update_slider_ranges(model):
             mark_dict=L2_dict,
             start_v=start_vals_d["L2"],
             div_style=div_block_style,
+            parameter_name="Horizontal Extent (m)",
         )
         L1_container = slider2(
             DivID="L1-select-div",
@@ -1492,6 +1510,7 @@ def update_slider_ranges(model):
             mark_dict=L1_dict,
             start_v=start_vals_d["L1"],
             div_style=div_block_style,
+            parameter_name="Drilling Depth (m)",
         )
 
         return (
@@ -1528,6 +1547,7 @@ def update_slider_ranges(model):
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
+            parameter_name="Geothermal Gradient (K/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -1538,6 +1558,8 @@ def update_slider_ranges(model):
             mark_dict=k_dict,
             start_v=start_vals_d["k"],
             div_style=div_block_style,
+            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            custom_title=True,
         )
         Tinj_container = slider2(
             DivID="Tinj-select-div",
