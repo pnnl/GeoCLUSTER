@@ -291,7 +291,7 @@ def slider_card():
                                                                     
                                                             ]),
                                                     slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style),
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
                                                     slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
                                                             mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
@@ -328,31 +328,31 @@ def slider_card():
                                                             id="diameter-container",
                                                             children=[ 
                                                                 slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.4445, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style)
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
                                                                 slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style)
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
                                                                 slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
-                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style)
+                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
                                                             children=[ 
                                                                 slider2(DivID="L2-select-div", ID="L2-select", ptitle="Horizontal Extent (m)", min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1], 
-                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style)
+                                                                        mark_dict=L2_dict, start_v=start_vals_d["L2"], div_style=div_block_style, parameter_name="Horizontal Extent (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L1-container",
                                                             children=[ 
                                                                 slider2(DivID="L1-select-div", ID="L1-select", ptitle="Drilling Depth (m)", min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1], 
-                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style)
+                                                                        mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
                                                             ]),
                                                     html.Div(
                                                             id="num-lat-container",
@@ -419,15 +419,15 @@ def slider_card():
                                                         slider2(DivID="drillcost-div", ID="drillcost-select", ptitle="Drilling Cost ($/m)", min_v=0, max_v=4000, 
                                                                 mark_dict=drillcost_dict, start_v=start_vals_econ["drillcost"], div_style=div_block_style, parameter_name="Drilling Cost ($/m)"),
                                                         slider2(DivID="discount-rate-div", ID="discount-rate-select", ptitle="Discount Rate (%)", min_v=0, max_v=20, 
-                                                                mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style),
+                                                                mark_dict=discount_dict, start_v=start_vals_econ["discount-rate"], div_style=div_block_style, parameter_name="Discount Rate (%)"),
                                                         # slider2(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
                                                         #         mark_dict=lifetime_dict, start_v=30),
                                                         slider1(DivID="lifetime-div", ID="lifetime-select", ptitle="Lifetime (years)", min_v=10, max_v=40, 
-                                                                mark_dict=lifetime_dict, step_i=1, start_v=start_vals_econ["lifetime"], div_style=div_block_style),
+                                                                mark_dict=lifetime_dict, step_i=1, start_v=start_vals_econ["lifetime"], div_style=div_block_style, parameter_name="Lifetime (years)"),
                                                         slider2(DivID="kwt-div", ID="kwt-select", ptitle="Plant CAPEX ($/kWt)", min_v=0, max_v=1000, 
-                                                                mark_dict=kwt_dict, start_v=start_vals_econ["kwt"], div_style=div_block_style),
+                                                                mark_dict=kwt_dict, start_v=start_vals_econ["kwt"], div_style=div_block_style, parameter_name="Plant CAPEX ($/kWt)"),
                                                         slider2(DivID="kwe-div", ID="kwe-select", ptitle="Plant CAPEX ($/kWe)", min_v=0, max_v=10000, 
-                                                                mark_dict=kwe_dict, start_v=start_vals_econ["kwe"], div_style=div_block_style),
+                                                                mark_dict=kwe_dict, start_v=start_vals_econ["kwe"], div_style=div_block_style, parameter_name="Plant CAPEX ($/kWe)"),
                                                     ]
                                                     ),
                                             html.Div(id="sCO2-card",
@@ -435,9 +435,9 @@ def slider_card():
                                                     children=[
                                                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
                                                         slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
-                                                                mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style),
+                                                                mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style, parameter_name="Pre-cooling (˚C)"),
                                                         slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
-                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style),
+                                                                mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
                                                         html.Div(id="check-visual-card",
                                                                 children=[
                                                                         dcc.Checklist(id="checklist",
@@ -459,9 +459,9 @@ def slider_card():
                                                 children=[
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
-                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style),
+                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
                                                     slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style),
+                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
                                                 
                                                     html.Div(
                                                             id="hyperparam1-container",

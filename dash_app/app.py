@@ -1571,6 +1571,7 @@ def update_slider_ranges(model):
             mark_dict=Tinj_dict,
             start_v=start_vals_d["Tinj"],
             div_style=div_block_style,
+            parameter_name="Injection Temperature (˚C)",
         )
         mdot_container = slider2(
             DivID="mdot-select-div",
@@ -1582,6 +1583,7 @@ def update_slider_ranges(model):
             mark_dict=mdot_dict,
             start_v=start_vals_d["mdot"],
             div_style=div_block_style,
+            parameter_name="Mass Flow Rate (kg/s)",
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
@@ -1604,6 +1606,7 @@ def update_slider_ranges(model):
             mark_dict=L2_dict,
             start_v=start_vals_d["L2"],
             div_style=div_block_style,
+            parameter_name="Horizontal Extent (m)",
         )
         L1_container = slider2(
             DivID="L1-select-div",
@@ -1615,6 +1618,7 @@ def update_slider_ranges(model):
             mark_dict=L1_dict,
             start_v=start_vals_d["L1"],
             div_style=div_block_style,
+            parameter_name="Drilling Depth (m)",
         )
 
         return (
@@ -1906,6 +1910,7 @@ def update_sliders_hyperparms(model):
             step_i=0.1,
             start_v=start_vals_sbt["inletpressure"],
             div_style=div_block_style,
+            parameter_name="Inlet Pressure (MPa)",
         )
         hyperparam3 = slider1(
             DivID="temp-flow-mode-div",
@@ -1917,6 +1922,7 @@ def update_sliders_hyperparms(model):
             step_i=0.000001,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_block_style,
+            parameter_name="Pipe Roughness (m)",
         )
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",

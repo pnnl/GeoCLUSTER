@@ -40,11 +40,27 @@ PARAMETER_INFO = {
         "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
     },
     
+    "Surface Temperature (˚F)": {
+        "definition": "Set the ground-level or ambient temperature. A value of 77°F is a typical average surface temperature in temperate regions during geothermal operation.",
+        "recommended_range": "32-104°F",
+        "typical_value": "77°F",
+        "unit": "°F",
+        "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
+    },
+    
     "Geothermal Gradient (K/m)": {
         "definition": "Set the rate at which temperature increases with depth. A value of 0.05 K/m means that the temperature increases by 50°C for every kilometer of depth. 50°C/km represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
         "recommended_range": "0.015-0.200 K/m",
         "typical_value": "0.05 K/m",
         "unit": "K/m",
+        "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
+    },
+    
+    "Geothermal Gradient (˚F/ft)": {
+        "definition": "Set the rate at which temperature increases with depth. A value of 0.027°F/ft means that the temperature increases by 27°F for every 1000 feet of depth. This represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
+        "recommended_range": "0.008-0.109°F/ft",
+        "typical_value": "0.027°F/ft",
+        "unit": "°F/ft",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
@@ -56,6 +72,14 @@ PARAMETER_INFO = {
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
     
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)": {
+        "definition": "Set how quickly heat moves through rock. A value of 1.73 Btu/ft-h-°F represents moderately conductive rock, such as granite.",
+        "recommended_range": "0.23-2.89 Btu/ft-h-°F",
+        "typical_value": "1.73 Btu/ft-h-°F",
+        "unit": "Btu/ft-h-°F",
+        "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
+    },
+    
     "Rock Specific Heat Capacity (J/kg-K)": {
         "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.051 J/kg-K represents an average for various dry rocks.",
         "recommended_range": "500-2000 J/kg-K",
@@ -64,11 +88,27 @@ PARAMETER_INFO = {
         "description": "Affects the thermal storage capacity of the rock formation."
     },
     
+    "Rock Specific Heat Capacity (Btu/lb-˚F)": {
+        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°F, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.000012 Btu/lb-°F represents an average for various dry rocks.",
+        "recommended_range": "0.119-0.477 Btu/lb-°F",
+        "typical_value": "0.000012 Btu/lb-°F",
+        "unit": "Btu/lb-°F",
+        "description": "Affects the thermal storage capacity of the rock formation."
+    },
+    
     "Rock Density (kg/m3)": {
-        "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 2750 kg/m³ represents typical rock density for geothermal formations.",
+        "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 790 kg/m³ implies the rock is highly porous, fractured, or contains gas-filled voids. Typical rock densities usually range from 2,000 to 3,000 kg/m³.",
         "recommended_range": "1000-3500 kg/m³",
-        "typical_value": "2750 kg/m³",
+        "typical_value": "790 kg/m³",
         "unit": "kg/m³",
+        "description": "Density influences the thermal mass and heat storage capacity of the formation."
+    },
+    
+    "Rock Density (lb/ft3)": {
+        "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 49.3 lb/ft³ implies the rock is highly porous, fractured, or contains gas-filled voids. Typical rock densities usually range from 124.9 to 218.6 lb/ft³.",
+        "recommended_range": "62.4-218.6 lb/ft³",
+        "typical_value": "49.3 lb/ft³",
+        "unit": "lb/ft³",
         "description": "Density influences the thermal mass and heat storage capacity of the formation."
     },
     
@@ -81,11 +121,27 @@ PARAMETER_INFO = {
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
     },
     
+    "Injection Temperature (˚F)": {
+        "definition": "Set the temperature of the fluid entering the subsurface. A value of 86°F is a common injection temperature for low-enthalpy systems.",
+        "recommended_range": "86-140°F",
+        "typical_value": "86°F",
+        "unit": "°F",
+        "description": "Lower injection temperatures generally improve heat extraction efficiency."
+    },
+    
     "Mass Flow Rate (kg/s)": {
         "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 24 kg/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
         "recommended_range": "5-300 kg/s",
         "typical_value": "24 kg/s",
         "unit": "kg/s",
+        "description": "Higher flow rates increase heat extraction but may require more pumping power."
+    },
+    
+    "Mass Flow Rate (lb/s)": {
+        "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 52.9 lb/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
+        "recommended_range": "11.0-661.4 lb/s",
+        "typical_value": "52.9 lb/s",
+        "unit": "lb/s",
         "description": "Higher flow rates increase heat extraction but may require more pumping power."
     },
     
@@ -98,6 +154,14 @@ PARAMETER_INFO = {
         "description": "Larger diameters allow for higher flow rates but increase drilling costs."
     },
     
+    "Borehole Diameter (ft)": {
+        "definition": "Set the width of the hole drilled into the ground to access the geothermal reservoir. A value of 1.15 ft can manage frictional pressure losses where lower widths can increase pressure drops and reduce heat transfer.",
+        "recommended_range": "0.71-1.46 ft",
+        "typical_value": "1.15 ft",
+        "unit": "ft",
+        "description": "Larger diameters allow for higher flow rates but increase drilling costs."
+    },
+    
     "Wellbore Radius Vertical (m)": {
         "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
         "recommended_range": "0.10795-0.22225 m",
@@ -106,7 +170,40 @@ PARAMETER_INFO = {
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
+    "Wellbore Radius Vertical (ft)": {
+        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.35-0.73 ft",
+        "typical_value": "0.73 ft",
+        "unit": "ft",
+        "description": "Affects the heat transfer area and flow resistance in the vertical section."
+    },
+    
     "Wellbore Radius Lateral (m)": {
+        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.10795-0.22225 m",
+        "typical_value": "0.222 m",
+        "unit": "m",
+        "description": "Influences heat transfer and flow characteristics in the lateral sections."
+    },
+    
+    "Wellbore Radius Lateral (ft)": {
+        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.35-0.73 ft",
+        "typical_value": "0.73 ft",
+        "unit": "ft",
+        "description": "Influences heat transfer and flow characteristics in the lateral sections."
+    },
+    
+    # Base parameter names (without units) for pattern matching
+    "Wellbore Radius Vertical": {
+        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.10795-0.22225 m",
+        "typical_value": "0.222 m",
+        "unit": "m",
+        "description": "Affects the heat transfer area and flow resistance in the vertical section."
+    },
+    
+    "Wellbore Radius Lateral": {
         "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
         "recommended_range": "0.10795-0.22225 m",
         "typical_value": "0.222 m",
@@ -122,11 +219,27 @@ PARAMETER_INFO = {
         "description": "Longer horizontal extents increase heat extraction area but require more drilling."
     },
     
+    "Horizontal Extent (ft)": {
+        "definition": "Set the horizontal length of the well. A value of 32,808 ft represents long multi-lateral systems. A value of 164,042 ft far exceeds directional drilling and would require massive pressure support and well integrity.",
+        "recommended_range": "3,281-164,042 ft",
+        "typical_value": "32,808 ft",
+        "unit": "ft",
+        "description": "Longer horizontal extents increase heat extraction area but require more drilling."
+    },
+    
     "Drilling Depth (m)": {
         "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 3.5 km targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
         "recommended_range": "1000-10000 m",
         "typical_value": "3500 m",
         "unit": "m",
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
+    },
+    
+    "Drilling Depth (ft)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 11,483 ft targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
+        "recommended_range": "3,281-32,808 ft",
+        "typical_value": "11,483 ft",
+        "unit": "ft",
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
     
@@ -155,7 +268,24 @@ PARAMETER_INFO = {
         "description": "A major component of geothermal project costs, varies with depth and geology."
     },
     
-    "Discount Rate (%)": {
+    "Drilling Cost ($/ft)": {
+        "definition": "Set the cost per foot drilled. A value of $305/ft represents an average cost.",
+        "recommended_range": "0-1,220 $/ft",
+        "typical_value": "305 $/ft",
+        "unit": "$/ft",
+        "description": "A major component of geothermal project costs, varies with depth and geology."
+    },
+    
+    # Base parameter name (without units) for pattern matching
+    "Drilling Cost": {
+        "definition": "Set the cost per meter drilled. A value of $1,000/m represents an average cost.",
+        "recommended_range": "0-4000 $/m",
+        "typical_value": "1000 $/m",
+        "unit": "$/m",
+        "description": "A major component of geothermal project costs, varies with depth and geology."
+    },
+    
+  "Discount Rate (%)": {
         "definition": "Set the percentage that reflects how much future money is worth today, accounting for both the time and value of money and project risk. A 7% rate reflects moderate risk and cost of capital.",
         "recommended_range": "0-20%",
         "typical_value": "7%",
@@ -195,11 +325,27 @@ PARAMETER_INFO = {
         "description": "Optimizes turbine efficiency and power output for sCO2 cycles."
     },
     
+    "Pre-cooling (˚F)": {
+        "definition": "Set the temperature to which the working fluid is cooled before it's injected back underground. This temperature reflects the lowest temperature that can be consistently and economically achieved to help maximize the thermal gradient between the rock and the fluid. A value of 55.4°F is a realistic baseline for a system that includes ambient air cooling or mechanical chillers.",
+        "recommended_range": "32-104°F",
+        "typical_value": "55.4°F",
+        "unit": "°F",
+        "description": "Optimizes turbine efficiency and power output for sCO2 cycles."
+    },
+    
     "Turbine Outlet Pressure (bar)": {
         "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 80 bar keeps the working fluid in a dense supercritical or subcooled state.",
         "recommended_range": "75-200 bar",
         "typical_value": "80 bar",
         "unit": "bar",
+        "description": "Critical parameter for sCO2 cycle efficiency and power output."
+    },
+    
+    "Turbine Outlet Pressure (psi)": {
+        "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 1,160 psi keeps the working fluid in a dense supercritical or subcooled state.",
+        "recommended_range": "1,088-2,901 psi",
+        "typical_value": "1,160 psi",
+        "unit": "psi",
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
     },
     
@@ -246,70 +392,175 @@ PARAMETER_INFO = {
     },
     
     # Additional Parameters
-    "Lateral Flow Allocation": {
-        "definition": "Set the distribution of flow among lateral branches in a multi-lateral well system.",
-        "recommended_range": "0-1",
-        "typical_value": "0.5",
-        "unit": "fraction",
-        "description": "Controls how flow is distributed between different lateral branches."
-    },
-    
-    "Wellbore Radius (m)": {
-        "definition": "Set the radius of the wellbore for coaxial systems.",
-        "recommended_range": "0.1-0.5 m",
-        "typical_value": "0.2 m",
+    "Pipe Roughness (m)": {
+        "definition": "Set a measure of how smooth the inside surface of the pipe or borehole is, which affects how much friction the fluid encounters as it flows. A value of 1e-6 is very smooth – like new steel casting.",
+        "recommended_range": "1e-6 to 3e-6 m",
+        "typical_value": "0.000001 m",
         "unit": "m",
-        "description": "Affects the flow area and heat transfer characteristics in coaxial systems."
-    },
-    
-    "Center Pipe Radius (m)": {
-        "definition": "Set the radius of the center pipe in coaxial well systems.",
-        "recommended_range": "0.05-0.2 m",
-        "typical_value": "0.1 m",
-        "unit": "m",
-        "description": "Determines the inner flow area and affects pressure losses in coaxial systems."
-    },
-    
-    "Center Pipe Thickness (m)": {
-        "definition": "Set the wall thickness of the center pipe in coaxial systems.",
-        "recommended_range": "0.005-0.02 m",
-        "typical_value": "0.01 m",
-        "unit": "m",
-        "description": "Affects structural integrity and thermal resistance in coaxial systems."
-    },
-    
-    "Insulation Thermal Conductivity (W/m-K)": {
-        "definition": "Set the thermal conductivity of insulation material used in coaxial systems.",
-        "recommended_range": "0.02-0.1 W/m-K",
-        "typical_value": "0.04 W/m-K",
-        "unit": "W/m-K",
-        "description": "Lower values provide better thermal insulation and reduce heat losses."
-    },
-    
-    "Coaxial Flow Type": {
-        "definition": "Set the flow direction in coaxial systems - whether fluid is injected through the annulus or center pipe.",
-        "recommended_range": "Inject in Annulus, Inject in Center Pipe",
-        "typical_value": "Inject in Annulus",
-        "unit": "mode",
-        "description": "Affects flow patterns and heat transfer characteristics in coaxial systems."
+        "description": "Lower roughness values reduce friction losses and improve flow efficiency."
     },
     
     "Inlet Pressure (MPa)": {
-        "definition": "Set the pressure at the inlet of the geothermal system.",
-        "recommended_range": "5-50 MPa",
+        "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells.",
+        "recommended_range": "5-20 MPa",
         "typical_value": "10 MPa",
         "unit": "MPa",
         "description": "Higher inlet pressures can improve flow rates but increase pumping requirements."
     },
     
-    "Pipe Roughness (m)": {
-        "definition": "Set the surface roughness of the pipe walls, which affects frictional pressure losses.",
-        "recommended_range": "1e-6 to 1e-3 m",
-        "typical_value": "1e-5 m",
+    "Wellbore Radius (m)": {
+        "definition": "Set the outer radius of the coaxial borehole. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
+        "recommended_range": "0.10795-0.22225 m",
+        "typical_value": "0.229 m",
         "unit": "m",
-        "description": "Smoother pipes reduce pressure losses but may be more expensive to manufacture."
+        "description": "Affects the heat transfer area and flow resistance in coaxial systems."
     },
     
+    "Center Pipe Radius (m)": {
+        "definition": "Set the inner radius of the injection pipe. A value of 0.010 m (1 cm) is standard for high-velocity flow.",
+        "recommended_range": "0.0635-0.174 m",
+        "typical_value": "0.010 m",
+        "unit": "m",
+        "description": "Affects the annular flow area and heat transfer characteristics in coaxial systems."
+    },
+    
+    "Center Pipe Thickness (m)": {
+        "definition": "Set the wall thickness of the inner pipe. A value of 0.013 m (13 mm) provides structural integrity and thermal isolation.",
+        "recommended_range": "0.005-0.025 m",
+        "typical_value": "0.013 m",
+        "unit": "m",
+        "description": "Thicker walls provide more structural strength but reduce flow area."
+    },
+    
+    "Insulation Thermal Conductivity (W/m-K)": {
+        "definition": "Set the insulation performance of the inner pipe. A value of 0.025 W/m-K is a good approximation of a well-insulated pipe layer.",
+        "recommended_range": "0.025-0.5 W/m-K",
+        "typical_value": "0.025 W/m-K",
+        "unit": "W/m-K",
+        "description": "Lower conductivity values provide better thermal insulation."
+    },
+    
+    "Coaxial Flow Type": {
+        "definition": "Set the flow direction as either sending cold fluid down the outer pipe (\"Inject in Annulus\") or down the inner pipe (\"Inject in Center Pipe\").",
+        "recommended_range": "Inject in Annulus, Inject in Center Pipe",
+        "typical_value": "Inject in Annulus",
+        "unit": "mode",
+        "description": "Determines whether fluid is injected through the annular space or the center pipe."
+    },
+    
+    # Legacy parameters (keeping for backward compatibility)
+    "Lateral Flow Allocation": {
+        "definition": "The fraction of total flow allocated to lateral sections.",
+        "recommended_range": "0-1",
+        "typical_value": "0.33",
+        "unit": "fraction",
+        "description": "Controls how flow is distributed between vertical and lateral sections."
+    },
+    
+    "Mass Flow Rate Profile": {
+        "definition": "User-provided Excel file containing mass flow rate profile over time.",
+        "recommended_range": "Excel file with time and flow rate columns",
+        "typical_value": "MassFlowRate.xlsx",
+        "unit": "file",
+        "description": "Required when Mass Flow Rate Mode is set to Variable. First column stores time in seconds, second column stores mass flow rate in kg/s."
+    },
+    
+    "Injection Temperature Profile": {
+        "definition": "User-provided Excel file containing injection temperature profile over time.",
+        "recommended_range": "Excel file with time and temperature columns",
+        "typical_value": "InjectionTemperatures.xlsx",
+        "unit": "file",
+        "description": "Required when Injection Temperature Mode is set to Variable. First column stores time in seconds, second column stores injection temperature in °C."
+    },
+    
+    # CovHDF5 specific parameters
+    "Permeability (HWR)": {
+        "definition": "Set the horizontal-to-vertical permeability ratio (HWR) for the convection model. This dimensionless parameter controls how easily fluid flows horizontally versus vertically through the rock formation.",
+        "recommended_range": "0.1-1.0",
+        "typical_value": "0.5",
+        "unit": "dimensionless",
+        "description": "Higher values indicate more horizontal flow (anisotropic), while lower values indicate more vertical flow. A value of 1.0 represents isotropic permeability (equal horizontal and vertical flow)."
+    },
+    
+    "CovHDF5 Mass Flow Rate (kg/s)": {
+        "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 6 kg/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
+        "recommended_range": "2-10 kg/s",
+        "typical_value": "6 kg/s",
+        "unit": "kg/s",
+        "description": "Higher flow rates increase heat extraction but may require more pumping power."
+    },
+    
+    "CovHDF5 Mass Flow Rate (lb/s)": {
+        "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 13.2 lb/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
+        "recommended_range": "4.4-22.0 lb/s",
+        "typical_value": "13.2 lb/s",
+        "unit": "lb/s",
+        "description": "Higher flow rates increase heat extraction but may require more pumping power."
+    },
+    
+    "CovHDF5 Horizontal Extent (m)": {
+        "definition": "Set the horizontal distance of the well system. For CovHDF5, this represents the extent of the horizontal well section.",
+        "recommended_range": "1,000-5,000 m",
+        "typical_value": "2,500 m",
+        "unit": "m",
+        "description": "Longer horizontal sections increase heat extraction area but require more drilling."
+    },
+    
+    "CovHDF5 Horizontal Extent (ft)": {
+        "definition": "Set the horizontal distance of the well system. For CovHDF5, this represents the extent of the horizontal well section.",
+        "recommended_range": "3,281-16,404 ft",
+        "typical_value": "8,202 ft",
+        "unit": "ft",
+        "description": "Longer horizontal sections increase heat extraction area but require more drilling."
+    },
+    
+    "CovHDF5 Drilling Depth (m)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 3 km targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
+        "recommended_range": "1,000-5,000 m",
+        "typical_value": "3,000 m",
+        "unit": "m",
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
+    },
+    
+    "CovHDF5 Drilling Depth (ft)": {
+        "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 9,843 ft targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
+        "recommended_range": "3,281-16,404 ft",
+        "typical_value": "9,843 ft",
+        "unit": "ft",
+        "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
+    },
+    
+    "CovHDF5 Geothermal Gradient (K/m)": {
+        "definition": "Set the rate of temperature increase with depth. This represents how quickly the earth's temperature increases as you go deeper.",
+        "recommended_range": "0.03-0.06 K/m",
+        "typical_value": "0.045 K/m",
+        "unit": "K/m",
+        "description": "Higher gradients provide access to higher temperatures at shallower depths, improving system efficiency."
+    },
+    
+    "CovHDF5 Geothermal Gradient (°F/ft)": {
+        "definition": "Set the rate of temperature increase with depth. This represents how quickly the earth's temperature increases as you go deeper.",
+        "recommended_range": "0.016-0.033 °F/ft",
+        "typical_value": "0.025 °F/ft",
+        "unit": "°F/ft",
+        "description": "Higher gradients provide access to higher temperatures at shallower depths, improving system efficiency."
+    },
+    
+    "CovHDF5 Injection Temperature (°C)": {
+        "definition": "Set the temperature of the working fluid when it enters the system. This is the temperature at which fluid is injected into the well.",
+        "recommended_range": "30-60 °C",
+        "typical_value": "45 °C",
+        "unit": "°C",
+        "description": "Lower injection temperatures generally improve heat extraction efficiency."
+    },
+    
+    "CovHDF5 Injection Temperature (°F)": {
+        "definition": "Set the temperature of the working fluid when it enters the system. This is the temperature at which fluid is injected into the well.",
+        "recommended_range": "86-140 °F",
+        "typical_value": "113 °F",
+        "unit": "°F",
+        "description": "Lower injection temperatures generally improve heat extraction efficiency."
+    }
 }
 
 def param_name_to_id_suffix(name: str) -> str:
@@ -357,12 +608,89 @@ def create_info_button(parameter_name, button_id=None):
                 "justifyContent": "center",
                 "lineHeight": "1",
                 "textAlign": "center",
-                "transform": "translateX(-1px) translateY(-4px)",
+                "transform": "translateX(-1px) translateY(-2px)",
                 "position": "relative",
                 "top": "-2px"
             }
         )
     ])
+
+
+
+def create_enhanced_slider(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, step_i=None):
+    """Create a slider with an information button."""
+    info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    slider_props = {
+        "id": ID,
+        "min": min_v,
+        "max": max_v,
+        "marks": mark_dict,
+        "value": start_v,
+        "tooltip": {"placement": "bottom", "always_visible": True}
+    }
+    
+    if step_i is not None:
+        slider_props["step"] = step_i
+    
+    return html.Div(id=DivID,
+                    style=div_style,
+                    children=[
+                       html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                           html.P(ptitle, style={"fontWeight": "bold", "margin": 0}),
+                           info_button
+                       ]),
+                       dcc.Slider(**slider_props),
+                       ]
+                    )
+
+def create_enhanced_dropdown(DivID, ID, ptitle, options, disabled, div_style, parameter_name=None):
+    """Create a dropdown with an information button."""
+    info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    if options and isinstance(options[0], dict):
+        default_value = options[0]["value"]
+    else:
+        default_value = options[0] if options else None
+    
+    value = None if not options else default_value
+    
+    return html.Div(
+            id=DivID,
+            className="name-input-container-dd",
+            style=div_style,
+            children=[
+                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                        html.P(ptitle, className="input-title", style={"margin": 0}),
+                        info_button
+                    ]),
+                    dcc.Dropdown(
+                            id=ID,
+                            options=options,
+                            value=value,
+                            clearable=False,
+                            searchable=False,
+                            disabled=disabled,
+                            className="select-dropdown"
+                    ),
+            ])
+
+def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style, parameter_name=None):
+    """Create an input box with an information button."""
+    info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    return html.Div(
+            id=DivID,
+            style=div_style,
+            className="name-input-container",
+            children=[
+                html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                    html.P(ptitle, className="input-title", style={"margin": 0}),
+                    info_button
+                ]),
+                dcc.Input(id=ID, disabled=True,
+                            value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
+        ])
 
 def create_info_modal():
     """Create the info modal component with timestamp store to prevent automatic opening when switching models or units"""
@@ -445,4 +773,4 @@ def register_info_modal_callbacks(app):
     def close_modal(n_clicks):
         if n_clicks:
             return False
-        raise PreventUpdate
+        raise PreventUpdate 
