@@ -120,10 +120,10 @@ def parse_error_message(e, e_name):
 			# print('\t', e)
 			# print(e_name, error_message)
 		else:
-			error_message = str(e)
+			error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 			# print(e_name, e)
 	else:
-		error_message = str(e)
+		error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 		# print(e_name, e)
 
 	return error_message
