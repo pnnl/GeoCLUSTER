@@ -191,19 +191,12 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             try:
                 if fluid == "sCO2" or fluid == "All":
-                    print(f"DEBUG CO2 Plot Generation (utube):")
                     sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam3, HyperParam4, HyperParam5
                                                         )
-                    print(f"  Plot sCO2_Tout shape: {sCO2_Tout.shape}")
-                    print(f"  Plot sCO2_Pout shape: {sCO2_Pout.shape}")
-                    print(f"  Plot time shape: {time.shape}")
-                    print(f"  Plot time monotonic: {np.all(np.diff(time) > 0)}")
-                    print(f"  Plot sCO2_Tout range: {sCO2_Tout[0]:.3f} to {sCO2_Tout[-1]:.3f}")
-                    print(f"  Plot sCO2_Pout range: {sCO2_Pout[0]:.3f} to {sCO2_Pout[-1]:.3f}")
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
                 if fluid == "H2O" or fluid == "All":
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,

@@ -286,24 +286,7 @@ class data:
                     # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
             )
             
-            # DEBUG: Check CO2 data quality
-            print(f"DEBUG CO2 SBT {sbt_version}:")
-            print(f"  Raw times shape: {times.shape if times is not None else 'None'}")
-            print(f"  Raw Tout shape: {Tout.shape if Tout is not None else 'None'}")
-            print(f"  Raw Pout shape: {Pout.shape if Pout is not None else 'None'}")
-            if times is not None and len(times) > 0:
-                print(f"  Times range: {times[0]:.3f} to {times[-1]:.3f}")
-                print(f"  Times monotonic: {np.all(np.diff(times) > 0)}")
-                print(f"  Times has NaN: {np.any(np.isnan(times))}")
-            if Tout is not None and len(Tout) > 0:
-                print(f"  Tout range: {Tout[0]:.3f} to {Tout[-1]:.3f}")
-                print(f"  Tout has NaN: {np.any(np.isnan(Tout))}")
-            if Pout is not None and len(Pout) > 0:
-                print(f"  Pout range: {Pout[0]:.3f} to {Pout[-1]:.3f}")
-                print(f"  Pout has NaN: {np.any(np.isnan(Pout))}")
-            
             if Pout is None:
-                print("  WARNING: Pout is None, using constant pressure fallback")
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
                 # constant_pressure = 22228604.37405011
                 Pout = constant_pressure * np.ones_like(Tout)
@@ -312,13 +295,9 @@ class data:
             # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
             # self.time = times
 
-            print(f"  Before truncation - times length: {len(times)}")
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
-            print(f"  After truncation - times length: {len(times)}")
-            print(f"  After truncation - times range: {times[0]:.3f} to {times[-1]:.3f}")
-            print(f"  After truncation - times monotonic: {np.all(np.diff(times) > 0)}")
 
         return Tout, Pout, times
 

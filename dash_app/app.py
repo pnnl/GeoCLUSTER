@@ -778,9 +778,9 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 )
 def update_working_fluid(model):
     if model == "SBT V2.0":
-        fluid_list = ["H2O"]
+        fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
-            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+            return "All", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     elif model == "SBT V1.0":
@@ -1175,10 +1175,10 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, b, n, n
+        return b, b, b, b, b, b, n, n, n, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, n, b, n, b
+        return b, b, b, b, b, b, n, n, n, n, b
 
 
 @app.callback(
@@ -1283,14 +1283,6 @@ def show_hide_detailed_card(tab, fluid, end_use):
                 {"display": "block"},
                 {"display": "inline-block"},
             )
-    
-    # Show sCO2 card for all other tabs when using sCO2 or All fluids
-    if fluid == "sCO2" or fluid == "All":
-        return (
-            {"border": "solid 3px #c4752f", "display": "block"},
-            {"display": "block"},
-            {"display": "inline-block"},
-        )
 
 
 @app.callback(
