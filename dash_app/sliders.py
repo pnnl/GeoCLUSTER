@@ -115,7 +115,7 @@ inlet_pressure_dict = {5: '5', 20: '20'}
 pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
-start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2750, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
+start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
 start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.05, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
@@ -140,7 +140,7 @@ div_none_style = {'display': 'none'}
 p_bold_style = {"fontWeight": "bold", "textAlign": "center", "width": "100%"}
 
 
-def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_style, parameter_name=None):
+def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_style, parameter_name=None, custom_title=False):
 
     # ---------------------------------------------------------------------------
     # Create a Div with the name and the slider stacked **with** the option to 
@@ -156,7 +156,10 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                     children=[
                        html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "center", "alignItems": "center"}, children=[
                            html.Div([
-                               html.P(ptitle, style=p_bold_style),
+                               html.Div([
+                                   html.Div("Rock Specific Heat Capacity", style={"textAlign": "center", "fontWeight": "bold"}),
+                                   html.Div("(J/kg-K)", style={"textAlign": "center", "fontWeight": "bold"})
+                               ]) if custom_title and "Rock Specific Heat Capacity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
                        ]),
@@ -188,7 +191,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                            html.Div([
                                html.Div([
                                    html.Div("Rock Thermal Conductivity", style={"textAlign": "center", "fontWeight": "bold"}),
-                                   html.Div("(W/m-K)", style={"textAlign": "center", "fontWeight": "bold", "fontSize": "0.9em"})
+                                   html.Div("(W/m-K)", style={"textAlign": "center", "fontWeight": "bold"})
                                ]) if custom_title and "Rock Thermal Conductivity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
@@ -291,7 +294,7 @@ def slider_card():
                                                                     
                                                             ]),
                                                     slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)"),
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)", custom_title=True),
                                                     slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
                                                             mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]

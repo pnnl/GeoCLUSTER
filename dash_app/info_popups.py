@@ -99,7 +99,7 @@ PARAMETER_INFO = {
     "Rock Density (kg/m3)": {
         "definition": "Set the mass of rock per unit volume, which affects heat storage and fluid flow behavior in a geothermal system. For example, denser rock holds more heat and changes temperature more slowly. A value of 790 kg/m³ implies the rock is highly porous, fractured, or contains gas-filled voids. Typical rock densities usually range from 2,000 to 3,000 kg/m³.",
         "recommended_range": "1000-3500 kg/m³",
-        "typical_value": "790 kg/m³",
+        "typical_value": "2800 kg/m³",
         "unit": "kg/m³",
         "description": "Density influences the thermal mass and heat storage capacity of the formation."
     },
