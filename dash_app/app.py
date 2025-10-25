@@ -1175,10 +1175,10 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, b, b, n, n
+        return b, b, b, b, b, b, n, n, n, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, b
+        return b, b, b, b, b, b, n, n, n, n, b
 
 
 @app.callback(
