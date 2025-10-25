@@ -815,16 +815,18 @@ def generate_econ_lineplots(TandP_dict,
                                                 additional_properties_CO2v2_pathname)
                 
                 # convert any negative value to 0
-                teaobj_sCO2.Inst_Net_Electricity_production[teaobj_sCO2.Inst_Net_Electricity_production<0] = 0
+                if teaobj_sCO2.Inst_Net_Electricity_production is not None:
+                    teaobj_sCO2.Inst_Net_Electricity_production[teaobj_sCO2.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_sCO2 = format( teaobj_sCO2.LCOE, '.2f')
+                lcoe_sCO2 = format( teaobj_sCO2.LCOE, '.2f') if teaobj_sCO2.LCOE is not None else "N/A"
 
                 # Electricity 
-                fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Inst_Net_Electricity_production/1e3,
-                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
-                              line = dict(color='black', width=lw),
-                              legendgroup=labels_cat[1], name=labels[1], showlegend=is_display_legend
-                              ),
+                if teaobj_sCO2.Inst_Net_Electricity_production is not None:
+                    fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Inst_Net_Electricity_production/1e3,
+                                  hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
+                                  line = dict(color='black', width=lw),
+                                  legendgroup=labels_cat[1], name=labels[1], showlegend=is_display_legend
+                                  ),
                               row=row_num, col=1)
 
                 
@@ -843,10 +845,11 @@ def generate_econ_lineplots(TandP_dict,
                               row=row_num, col=3)
 
                 # Table Data
-                time_dict = {"Time (year)": teaobj_sCO2.Linear_time_distribution,
-                             "sCO2 Electricity Production (MWe)": teaobj_sCO2.Inst_Net_Electricity_production/1e3,
-                             "sCO2 Annual Electricity Production (GWe)": teaobj_sCO2.Annual_electricity_production/1e6}
-                econ_values_dict.update(time_dict)
+                if teaobj_sCO2.Inst_Net_Electricity_production is not None:
+                    time_dict = {"Time (year)": teaobj_sCO2.Linear_time_distribution,
+                                 "sCO2 Electricity Production (MWe)": teaobj_sCO2.Inst_Net_Electricity_production/1e3,
+                                 "sCO2 Annual Electricity Production (GWe)": teaobj_sCO2.Annual_electricity_production/1e6}
+                    econ_values_dict.update(time_dict)
 
                 if is_plot_ts_check:
                     # if fluid == 2 and np.in1d(3000,teaobj_sCO2.error_codes) == False and np.in1d(4000,teaobj_sCO2.error_codes) == False:
@@ -861,7 +864,7 @@ def generate_econ_lineplots(TandP_dict,
                     #     ts_fig = blank_canvas(fig=ts_fig, row_n=1, col_n=1)
 
                 # mean_sCO2_Net_HProd = round(np.mean(teaobj_sCO2.Instantaneous_heat_production/1e3),2)
-                mean_sCO2_Net_EProd = round(np.mean(teaobj_sCO2.Inst_Net_Electricity_production/1e3),2)
+                mean_sCO2_Net_EProd = round(np.mean(teaobj_sCO2.Inst_Net_Electricity_production/1e3),2) if teaobj_sCO2.Inst_Net_Electricity_production is not None else 0
 
             except ValueError as e:
                 fig, lcoe_sCO2 = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
@@ -889,9 +892,10 @@ def generate_econ_lineplots(TandP_dict,
                                                 )
                 
                 # convert any negative value to 0
-                teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
+                if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                    teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_H2O = format(teaobj_H2O.LCOE, '.2f')
+                lcoe_H2O = format(teaobj_H2O.LCOE, '.2f') if teaobj_H2O.LCOE is not None else "N/A"
 
                 # print(" ********* ")
                 # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
@@ -899,11 +903,12 @@ def generate_econ_lineplots(TandP_dict,
                 # print("\n")
 
                 # Electricity 
-                fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
-                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
-                              line = dict(color='black', width=lw, dash='dash'),
-                              legendgroup=labels_cat[0], name=labels[0], showlegend=is_display_legend
-                              ),
+                if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                    fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
+                                  hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
+                                  line = dict(color='black', width=lw, dash='dash'),
+                                  legendgroup=labels_cat[0], name=labels[0], showlegend=is_display_legend
+                                  ),
                               row=row_num, col=1)
                 
                 # Annual Electricity
@@ -921,14 +926,15 @@ def generate_econ_lineplots(TandP_dict,
                               row=row_num, col=3)
 
                 # Table Data
-                time_dict = {"Time (year)": teaobj_H2O.Linear_time_distribution,
-                             "H2O Electricity Production (MWe)": teaobj_H2O.Inst_Net_Electricity_production/1e3,
-                             "H2O Annual Electricity Production (GWe)": teaobj_H2O.Annual_electricity_production/1e6}
-                econ_values_dict.update(time_dict)
+                if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                    time_dict = {"Time (year)": teaobj_H2O.Linear_time_distribution,
+                                 "H2O Electricity Production (MWe)": teaobj_H2O.Inst_Net_Electricity_production/1e3,
+                                 "H2O Annual Electricity Production (GWe)": teaobj_H2O.Annual_electricity_production/1e6}
+                    econ_values_dict.update(time_dict)
 
 
                 # mean_H2O_Net_HProd = round(np.mean(teaobj_H2O.Instantaneous_heat_production/1e3),2)
-                mean_H2O_Net_EProd = round(np.mean(teaobj_H2O.Inst_Net_Electricity_production/1e3),2)
+                mean_H2O_Net_EProd = round(np.mean(teaobj_H2O.Inst_Net_Electricity_production/1e3),2) if teaobj_H2O.Inst_Net_Electricity_production is not None else 0
 
             except ValueError as e:
                 fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)

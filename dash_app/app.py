@@ -1156,7 +1156,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
             component_id="fluid-mode-div", component_property="style"
         ),  # hide HDF5 and v1, show v2
         Output(component_id="num-lat-div", component_property="style"),
-        Output(component_id="lat-allocation-div", component_property="style"),
+        Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
         Output(component_id="lat-flow-mul-div", component_property="style"),
     ],
@@ -1219,7 +1219,7 @@ def econ_sliders_visibility(tab, fluid, end_use):
         "margin-bottom": "5px",
         "margin-right": "5px",
         "padding-bottom": "5px",
-        "border-bottom": "none",
+        "borderBottom": "none",
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -1694,7 +1694,7 @@ def update_sliders_heat_exchanger(model, case):
                 div_style=div_block_style,
             )
             lateral_flow = input_box(
-                DivID="lat-allocation-div",
+                DivID="lat-allo-container",
                 ID="lateral-flow-select",
                 ptitle="Lateral Flow Allocation",
                 min_v=0,
@@ -1827,7 +1827,7 @@ def update_sliders_heat_exchanger(model, case):
             div_style=div_none_style,
         )
         lateral_flow = input_box(
-            DivID="lat-allocation-div",
+            DivID="lat-allo-container",
             ID="lateral-flow-select",
             ptitle="Lateral Flow Allocation",
             min_v=0,
@@ -2168,49 +2168,62 @@ def update_econ_plots(
     checklist,
     model,
 ):
-    # -----------------------------------------------------------------------------
-    # Creates and displays Plotly subplots of the economic results.
-    # -----------------------------------------------------------------------------
+    try:
+        # Handle None values
+        if TandP_dict is None:
+            TandP_dict = {}
+        if checklist is None:
+            checklist = []
+            
+        # -----------------------------------------------------------------------------
+        # Creates and displays Plotly subplots of the economic results.
+        # -----------------------------------------------------------------------------
 
-    # print('economics')
+        # print('economics')
 
-    if checklist == [" "]:
-        is_plot_ts = True
-    else:
-        is_plot_ts = False
+        if checklist == [" "]:
+            is_plot_ts = True
+        else:
+            is_plot_ts = False
 
-    economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
-        generate_econ_lineplots(
-            TandP_dict,
-            interp_time,
-            case,
-            end_use,
-            fluid,
-            mdot,
-            L2,
-            L1,
-            grad,
-            D,
-            Tinj,
-            k_m,
-            Drilling_cost_per_m,
-            Discount_rate,
-            Lifetime,
-            Direct_use_heat_cost_per_kWth,
-            Power_plant_cost_per_kWe,
-            Pre_Cooling_Delta_T,
-            Turbine_outlet_pressure,
-            scale,
-            properties_H2O_pathname,
-            properties_CO2v2_pathname,
-            additional_properties_CO2v2_pathname,
-            tmatrix_pathname,
-            model,
-            is_plot_ts,
+        economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
+            generate_econ_lineplots(
+                TandP_dict,
+                interp_time,
+                case,
+                end_use,
+                fluid,
+                mdot,
+                L2,
+                L1,
+                grad,
+                D,
+                Tinj,
+                k_m,
+                Drilling_cost_per_m,
+                Discount_rate,
+                Lifetime,
+                Direct_use_heat_cost_per_kWth,
+                Power_plant_cost_per_kWe,
+                Pre_Cooling_Delta_T,
+                Turbine_outlet_pressure,
+                scale,
+                properties_H2O_pathname,
+                properties_CO2v2_pathname,
+                additional_properties_CO2v2_pathname,
+                tmatrix_pathname,
+                model,
+                is_plot_ts_check=is_plot_ts,
+            )
         )
-    )
 
-    return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
+        return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
+    except Exception as e:
+        print(f"Error in update_econ_plots: {e}")
+        # Return empty figure and empty data on error
+        import plotly.graph_objects as go
+        empty_fig = go.Figure()
+        return empty_fig, {}, {}, {}
 
 
 @app.callback(
@@ -2264,6 +2277,8 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="turb-pout-select", component_property="value"),
         Input(component_id="econ-memory", component_property="data"),
         Input(component_id="thermal-memory", component_property="data"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="TandP-data", component_property="data"),
     ],
 )
 def update_table(
@@ -2286,30 +2301,52 @@ def update_table(
     Turbine_outlet_pressure,
     econ_dict,
     thermal_dict,
+    model,
+    tandp_data,
 ):
-    tbl, summary_dict = generate_summary_table(
-        mdot,
-        L2,
-        L1,
-        grad,
-        D,
-        Tinj,
-        k,
-        Drilling_cost_per_m,
-        Discount_rate,
-        Lifetime,
-        Direct_use_heat_cost_per_kWth,
-        Power_plant_cost_per_kWe,
-        Pre_Cooling_Delta_T,
-        Turbine_outlet_pressure,
-        interp_time,
-        case,
-        fluid,
-        thermal_dict,
-        econ_dict,
-    )
+    try:
+        # Handle None values
+        if econ_dict is None:
+            econ_dict = {}
+        if thermal_dict is None:
+            thermal_dict = {}
+        if tandp_data is None:
+            tandp_data = None
+            
+        # Add TandP data to thermal_dict for SBT models
+        if model != "HDF5" and tandp_data:
+            thermal_dict["TandP-data"] = tandp_data
 
-    return tbl, summary_dict
+        tbl, summary_dict = generate_summary_table(
+            mdot,
+            L2,
+            L1,
+            grad,
+            D,
+            Tinj,
+            k,
+            Drilling_cost_per_m,
+            Discount_rate,
+            Lifetime,
+            Direct_use_heat_cost_per_kWth,
+            Power_plant_cost_per_kWe,
+            Pre_Cooling_Delta_T,
+            Turbine_outlet_pressure,
+            interp_time,
+            case,
+            fluid,
+            model,
+            thermal_dict,
+            econ_dict,
+        )
+
+        return tbl, summary_dict
+    except Exception as e:
+        print(f"Error in update_table: {e}")
+        # Return empty table and empty summary on error
+        import plotly.graph_objects as go
+        empty_table = go.Figure()
+        return empty_table, {}
 
 
 @app.callback(
@@ -2325,10 +2362,13 @@ def update_table(
     ],
 )
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
-    # print(err_sub_dict)
-    # print(err_contour_dict)
-    # print(err_econ_dict)
-    # print('\n')
+    # Handle None values
+    if err_sub_dict is None:
+        err_sub_dict = {}
+    if err_contour_dict is None:
+        err_contour_dict = {}
+    if err_econ_dict is None:
+        err_econ_dict = {}
 
     err_div1 = html.Div(  # id="error_block_div1",
         style={"display": "none"}
@@ -2353,7 +2393,12 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         "color": darkergrey,
     }
     if err_sub_dict != {}:
-        error_message = next(iter(err_sub_dict.values()))
+        try:
+            error_message = next(iter(err_sub_dict.values()))
+            if error_message is None:
+                error_message = "Unknown error occurred"
+        except (StopIteration, TypeError):
+            error_message = "Unknown error occurred"
 
         if "No outputs" in error_message:
             error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
@@ -2370,7 +2415,12 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         )
 
     if err_contour_dict != {}:
-        error_message = next(iter(err_contour_dict.values()))
+        try:
+            error_message = next(iter(err_contour_dict.values()))
+            if error_message is None:
+                error_message = "Unknown error occurred"
+        except (StopIteration, TypeError):
+            error_message = "Unknown error occurred"
 
         err_div2 = html.Div(  # id="error_block_div2",
             style=error_style,
@@ -2384,7 +2434,12 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         )
 
     if err_econ_dict != {}:
-        error_message = next(iter(err_econ_dict.values()))
+        try:
+            error_message = next(iter(err_econ_dict.values()))
+            if error_message is None:
+                error_message = "Unknown error occurred"
+        except (StopIteration, TypeError):
+            error_message = "Unknown error occurred"
 
         if "object has no attribute" in error_message:
             error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
@@ -2410,6 +2465,10 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
 def update_error_divs(levelized_cost_dict):
     warning_div3 = html.Div(style={"display": "none"})
 
+    # Handle None or missing data
+    if levelized_cost_dict is None:
+        return warning_div3
+        
     error_style = {
         "display": "block",
         "width": "100%",
@@ -2421,10 +2480,11 @@ def update_error_divs(levelized_cost_dict):
         "color": darkergrey,
     }
 
-    if (
-        levelized_cost_dict["LCOE sCO2"] == "9999.00"
-        or levelized_cost_dict["LCOE H2O"] == "9999.00"
-    ):
+    # Safely check for LCOE values
+    lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
+    lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
+    
+    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
         warning_div3 = html.Div(  # id="error_block_div3",
             style=error_style,
             children=[
