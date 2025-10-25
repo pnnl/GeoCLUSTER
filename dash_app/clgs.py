@@ -354,7 +354,7 @@ class data:
                     )
                 )
                 var_index = 2
-            if param == "Geothermal Gradient (K/m)":
+            if param == "Geothermal Gradient (°C/m)":
                 points = list(
                     iter.product(
                         self.mdot,

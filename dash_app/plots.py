@@ -433,7 +433,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             arg_L2_i = slice(None)
         if param == "Vertical Extent (m)":
             arg_L1_i = slice(None)
-        if param == "Geothermal Gradient (K/m)":
+        if param == "Geothermal Gradient (°C/m)":
             arg_grad_i = slice(None)
         if param == "Borehole Diameter (m)":
             arg_D_i = slice(None)

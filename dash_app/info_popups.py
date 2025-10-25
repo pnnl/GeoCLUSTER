@@ -48,11 +48,11 @@ PARAMETER_INFO = {
         "description": "Surface temperature affects the initial conditions for geothermal calculations and heat transfer modeling."
     },
     
-    "Geothermal Gradient (K/m)": {
-        "definition": "Set the rate at which temperature increases with depth. A value of 0.05 K/m means that the temperature increases by 50°C for every kilometer of depth. 50°C/km represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
-        "recommended_range": "0.015-0.200 K/m",
-        "typical_value": "0.05 K/m",
-        "unit": "K/m",
+    "Geothermal Gradient (°C/m)": {
+        "definition": "Set the rate at which temperature increases with depth. The western United States typically exhibits a higher geothermal gradient (~0.035 °C/m) than the eastern U.S. (~0.025 °C/m).",
+        "recommended_range": "0.015-0.050°C/m",
+        "typical_value": "0.03°C/m",
+        "unit": "°C/m",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
@@ -530,11 +530,11 @@ PARAMETER_INFO = {
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
     },
     
-    "CovHDF5 Geothermal Gradient (K/m)": {
+    "CovHDF5 Geothermal Gradient (°C/m)": {
         "definition": "Set the rate of temperature increase with depth. This represents how quickly the earth's temperature increases as you go deeper.",
-        "recommended_range": "0.03-0.06 K/m",
-        "typical_value": "0.045 K/m",
-        "unit": "K/m",
+        "recommended_range": "0.03-0.06°C/m",
+        "typical_value": "0.045°C/m",
+        "unit": "°C/m",
         "description": "Higher gradients provide access to higher temperatures at shallower depths, improving system efficiency."
     },
     

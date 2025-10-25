@@ -62,7 +62,7 @@ tube_geometry_l = ["Wellbore Radius Vertical (m)", "Wellbore Radius Lateral (m)"
 economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
                     "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
 
-geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (K/m)", "Rock Thermal Conductivity (W/m-K)", 
+geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (°C/m)", "Rock Thermal Conductivity (W/m-K)", 
                             "Rock Specific Heat Capacity (J/kg-K)", "Rock Density (kg/m3)"]
                             
 model_finetuning_l = ["Mesh Fineness", "Accuracy", "Mass Flow Rate Mode", "Mass Flow Rate Profile", 
@@ -116,7 +116,7 @@ pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
-start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.05, "D": 0.3500, "k": 3.0}
+start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.03, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,
@@ -282,8 +282,8 @@ def slider_card():
                                                     html.Div(
                                                             id="grad-container",
                                                             children=[
-                                                    slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (K/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
-                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (K/m)")
+                                                    slider2(DivID="grad-select-div", ID="grad-select", ptitle="Geothermal Gradient (°C/m)", min_v=u_sCO2.grad[0], max_v=u_sCO2.grad[-1], 
+                                                            mark_dict=grad_dict, start_v=start_vals_d["grad"], div_style=div_block_style, parameter_name="Geothermal Gradient (°C/m)")
                                                             ]),
 
                                                     html.Div(

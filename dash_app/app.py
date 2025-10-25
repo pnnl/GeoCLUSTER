@@ -1442,13 +1442,13 @@ def update_slider_ranges(model):
         grad_container = slider2(
             DivID="grad-select-div",
             ID="grad-select",
-            ptitle="Geothermal Gradient (K/m)",
+            ptitle="Geothermal Gradient (°C/m)",
             min_v=u_sCO2.grad[0],
             max_v=u_sCO2.grad[-1],
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
-            parameter_name="Geothermal Gradient (K/m)",
+            parameter_name="Geothermal Gradient (°C/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -1549,13 +1549,13 @@ def update_slider_ranges(model):
         grad_container = slider2(
             DivID="grad-select-div",
             ID="grad-select",
-            ptitle="Geothermal Gradient (K/m)",  # min_v=0.01, max_v=0.1,
+            ptitle="Geothermal Gradient (°C/m)",  # min_v=0.01, max_v=0.1,
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
-            parameter_name="Geothermal Gradient (K/m)",
+            parameter_name="Geothermal Gradient (°C/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
