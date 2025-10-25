@@ -778,9 +778,9 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 )
 def update_working_fluid(model):
     if model == "SBT V2.0":
-        fluid_list = ["All", "H2O", "sCO2"]
+        fluid_list = ["H2O"]
         if ctx.triggered_id == "model-select":
-            return "All", [{"label": i, "value": i} for i in fluid_list]
+            return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     elif model == "SBT V1.0":
