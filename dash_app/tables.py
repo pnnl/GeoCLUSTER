@@ -56,8 +56,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
         # Process TandP data for SBT models
         tandp_data = thermal_dict.get('TandP-data', None)
         if model != "HDF5" and tandp_data:
-            # Debug: Print TandP data structure for SBT models
-            print(f"DEBUG: SBT {model} TandP-data keys: {list(tandp_data.keys()) if tandp_data else 'None'}")
             # Calculate mean values from arrays for SBT models
             if 'H2O_Tout' in tandp_data and tandp_data['H2O_Tout'] is not None:
                 h2o_tout_array = np.array(tandp_data['H2O_Tout'])
@@ -128,7 +126,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 mean_sco2_pout = '-'
         else:
             # For SBT models without TandP-data or HDF5 models, use existing thermal_dict values and convert if needed
-            print(f"DEBUG: No TandP-data for {model}, using thermal_dict values")
             if units == "imperial":
                 # Convert from metric to imperial
                 h2o_tout_c = thermal_dict.get('Mean H2O Tout', '-')
@@ -163,7 +160,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
 
         # Get economic values and handle None/9999 values
         def format_value(value):
-            print(f"DEBUG: format_value received: {value} (type: {type(value)})")
             # Check for various 9999 formats
             if (value is None or 
                 value == 9999 or 
@@ -173,7 +169,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 str(value) == "9999.00" or
                 str(value) == "9999" or
                 (isinstance(value, (int, float)) and abs(value - 9999) < 0.01)):
-                print(f"DEBUG: Converting {value} to '-'")
                 return '-'
             return value
             
