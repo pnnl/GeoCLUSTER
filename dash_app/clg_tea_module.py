@@ -292,13 +292,42 @@ class TEA:
             # times = TandP_dict["time"]
 
         elif self.Fluid == 2:
+            # DEBUG: Check CO2 interpolation data
+            print(f"DEBUG CO2 TEA Interpolation:")
+            print(f"  TandP_dict keys: {list(TandP_dict.keys())}")
+            if "time" in TandP_dict:
+                sbt_times = np.array(TandP_dict["time"])
+                print(f"  SBT times shape: {sbt_times.shape}")
+                print(f"  SBT times range: {sbt_times[0]:.3f} to {sbt_times[-1]:.3f}")
+                print(f"  SBT times monotonic: {np.all(np.diff(sbt_times) > 0)}")
+                print(f"  SBT times has NaN: {np.any(np.isnan(sbt_times))}")
+            if "sCO2_Tout" in TandP_dict:
+                sbt_tout = np.array(TandP_dict["sCO2_Tout"])
+                print(f"  SBT sCO2_Tout shape: {sbt_tout.shape}")
+                print(f"  SBT sCO2_Tout range: {sbt_tout[0]:.3f} to {sbt_tout[-1]:.3f}")
+                print(f"  SBT sCO2_Tout has NaN: {np.any(np.isnan(sbt_tout))}")
+            if "sCO2_Pout" in TandP_dict:
+                sbt_pout = np.array(TandP_dict["sCO2_Pout"])
+                print(f"  SBT sCO2_Pout shape: {sbt_pout.shape}")
+                print(f"  SBT sCO2_Pout range: {sbt_pout[0]:.3f} to {sbt_pout[-1]:.3f}")
+                print(f"  SBT sCO2_Pout has NaN: {np.any(np.isnan(sbt_pout))}")
+            
+            print(f"  HDF5 times shape: {hdf5_times.shape}")
+            print(f"  HDF5 times range: {hdf5_times[0]:.3f} to {hdf5_times[-1]:.3f}")
+            
             # self.Tout = np.array(TandP_dict["sCO2_Tout"])
             f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
             try:
                 self.Tout = f(np.array(hdf5_times))
+                print(f"  Interpolated Tout shape: {self.Tout.shape}")
+                print(f"  Interpolated Tout range: {self.Tout[0]:.3f} to {self.Tout[-1]:.3f}")
+                print(f"  Interpolated Tout has NaN: {np.any(np.isnan(self.Tout))}")
             except Exception as e:
-                print(e)
+                print(f"  ERROR in CO2 temperature interpolation: {e}")
             self.Pout = np.array(TandP_dict["sCO2_Pout"])
+            print(f"  Final Pout shape: {self.Pout.shape}")
+            print(f"  Final Pout range: {self.Pout[0]:.3f} to {self.Pout[-1]:.3f}")
+            print(f"  Final Pout has NaN: {np.any(np.isnan(self.Pout))}")
             # times = TandP_dict["time"]
             # self.timearray = TandP_dict["time"]
             # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)

@@ -40,15 +40,42 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid]
 
+    # Get economic values and handle None/9999 values
+    def format_value(value):
+        print(f"DEBUG: format_value received: {value} (type: {type(value)})")
+        # Check for various 9999 formats
+        if (value is None or 
+            value == 9999 or 
+            value == 9999.0 or 
+            value == "9999.00" or 
+            value == "9999" or 
+            str(value) == "9999.00" or
+            str(value) == "9999" or
+            (isinstance(value, (int, float)) and abs(value - 9999) < 0.01)):
+            print(f"DEBUG: Converting {value} to '-'")
+            return '-'
+        return value
+
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5" or model == "CovHDF5":
-        results = [econ_dict.get('LCOH H2O', '-'), econ_dict.get('LCOE H2O', '-'), 
-                   thermal_dict.get('Mean H2O Tout', '-'), thermal_dict.get('Mean H2O Pout', '-'), 
-                   econ_dict.get('Mean H2O Net HProd', '-'), econ_dict.get('Mean H2O Net EProd', '-'),
-                   econ_dict.get('LCOH sCO2', '-'), econ_dict.get('LCOE sCO2', '-'), 
-                   thermal_dict.get('Mean sCO2 Tout', '-'), thermal_dict.get('Mean sCO2 Pout', '-'),
-                   econ_dict.get('Mean sCO2 Net HProd', '-'), econ_dict.get('Mean sCO2 Net EProd', '-')
-                   ]
+        # For HDF5 models, get values directly from dictionaries and format them
+        lcoh_h2o = format_value(econ_dict.get('LCOH H2O', '-'))
+        lcoe_h2o = format_value(econ_dict.get('LCOE H2O', '-'))
+        mean_h2o_tout = format_value(thermal_dict.get('Mean H2O Tout', '-'))
+        mean_h2o_pout = format_value(thermal_dict.get('Mean H2O Pout', '-'))
+        mean_h2o_net_hprod = format_value(econ_dict.get('Mean H2O Net HProd', '-'))
+        mean_h2o_net_eprod = format_value(econ_dict.get('Mean H2O Net EProd', '-'))
+        lcoh_sco2 = format_value(econ_dict.get('LCOH sCO2', '-'))
+        lcoe_sco2 = format_value(econ_dict.get('LCOE sCO2', '-'))
+        mean_sco2_tout = format_value(thermal_dict.get('Mean sCO2 Tout', '-'))
+        mean_sco2_pout = format_value(thermal_dict.get('Mean sCO2 Pout', '-'))
+        mean_sco2_net_hprod = format_value(econ_dict.get('Mean sCO2 Net HProd', '-'))
+        mean_sco2_net_eprod = format_value(econ_dict.get('Mean sCO2 Net EProd', '-'))
+        
+        results = [lcoh_h2o, lcoe_h2o, mean_h2o_tout, mean_h2o_pout, 
+                   mean_h2o_net_hprod, mean_h2o_net_eprod,
+                   lcoh_sco2, lcoe_sco2, mean_sco2_tout, mean_sco2_pout,
+                   mean_sco2_net_hprod, mean_sco2_net_eprod]
     else:
         # SBT model data structure - calculate mean values from arrays
         import numpy as np
@@ -161,22 +188,7 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                 mean_sco2_tout = thermal_dict.get('Mean sCO2 Tout', '-')
                 mean_sco2_pout = thermal_dict.get('Mean sCO2 Pout', '-')
 
-        # Get economic values and handle None/9999 values
-        def format_value(value):
-            print(f"DEBUG: format_value received: {value} (type: {type(value)})")
-            # Check for various 9999 formats
-            if (value is None or 
-                value == 9999 or 
-                value == 9999.0 or 
-                value == "9999.00" or 
-                value == "9999" or 
-                str(value) == "9999.00" or
-                str(value) == "9999" or
-                (isinstance(value, (int, float)) and abs(value - 9999) < 0.01)):
-                print(f"DEBUG: Converting {value} to '-'")
-                return '-'
-            return value
-            
+        # Get economic values and format them
         lcoh_h2o = format_value(econ_dict.get('LCOH H2O', '-'))
         lcoe_h2o = format_value(econ_dict.get('LCOE H2O', '-'))
         lcoh_sco2 = format_value(econ_dict.get('LCOH sCO2', '-'))
