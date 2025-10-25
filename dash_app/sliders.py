@@ -116,7 +116,7 @@ pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
-start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 30.0, "grad": 0.03, "D": 0.3500, "k": 3.0}
+start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 50.0, "grad": 0.03, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,

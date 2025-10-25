@@ -1408,7 +1408,7 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
         Output(component_id="L1-container", component_property="children"),
     ],
     [Input(component_id="model-select", component_property="value")],
-    prevent_initial_call=True,
+    prevent_initial_call='initial_duplicate',
 )
 def update_slider_ranges(model):
     grad_dict = create_steps(
@@ -1461,9 +1461,9 @@ def update_slider_ranges(model):
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=30.0,
-            max_v=60.0,
-            mark_dict=Tinj_dict,
-            start_v=30.0,
+            max_v=100.0,
+            mark_dict={30: "30", 50: "50", 60: "60", 80: "80", 100: "100"},
+            start_v=50.0,
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -1569,7 +1569,7 @@ def update_slider_ranges(model):
             max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=start_vals_d["Tinj"],
+            start_v=50.0,
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
