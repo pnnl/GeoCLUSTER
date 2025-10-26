@@ -631,9 +631,15 @@ def toggle_collapse(n, is_open):
 )
 def update_tabs(selected_model):
     if selected_model == "HDF5":
+        print(" ----------------------------- ")
+        print("HDF5")
+
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
+        print(" ----------------------------- ")
+        print("SBT")
+        # TODO: update tabs styline
         return {"display": "none"}, {"display": "none"}, {"display": "none"}
 
     else:
@@ -2136,6 +2142,7 @@ def update_subsurface_contours_plots(
         Input(component_id="radio-graphic-control4", component_property="value"),
         Input(component_id="checklist", component_property="value"),
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="thermal-memory", component_property="data"),
     ],
 )
 def update_econ_plots(
@@ -2161,6 +2168,7 @@ def update_econ_plots(
     scale,
     checklist,
     model,
+    thermal_dict,
 ):
     try:
         # Handle None values

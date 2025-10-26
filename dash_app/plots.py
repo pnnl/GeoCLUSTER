@@ -364,16 +364,22 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             'Mean sCO2 Tout': mean_sCO2_Tout,
                             'Mean sCO2 Pout': mean_sCO2_Pout}
    
-    TandP_dict = {"sCO2_Tout": sCO2_Tout,
-                            "sCO2_Pout": sCO2_Pout,
-                            "H2O_Tout": H2O_Tout,
-                            "H2O_Pout": H2O_Pout,
-                            "sCO2_kWe": sCO2_kWe,
-                            "sCO2_kWt": sCO2_kWt,
-                            "H2O_kWe": H2O_kWe,
-                            "H2O_kWt": H2O_kWt,
-                            "time": time,
-                            "mdot": m_dot,
+    # Convert numpy arrays to lists for JSON serialization (needed for dcc.Store)
+    def convert_to_list(value):
+        if value is not None and hasattr(value, 'tolist'):
+            return value.tolist()
+        return value
+    
+    TandP_dict = {"sCO2_Tout": convert_to_list(sCO2_Tout),
+                            "sCO2_Pout": convert_to_list(sCO2_Pout),
+                            "H2O_Tout": convert_to_list(H2O_Tout),
+                            "H2O_Pout": convert_to_list(H2O_Pout),
+                            "sCO2_kWe": convert_to_list(sCO2_kWe),
+                            "sCO2_kWt": convert_to_list(sCO2_kWt),
+                            "H2O_kWe": convert_to_list(H2O_kWe),
+                            "H2O_kWt": convert_to_list(H2O_kWt),
+                            "time": convert_to_list(time),
+                            "mdot": convert_to_list(m_dot),
                             }
 
     

@@ -422,6 +422,7 @@ class data:
                 np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
             )
         except Exception:
+            print("Flag: Check if SBT model selected")
             # AB: Dummy data for the contours:
             Tout = np.full((20, 26), 365)
             Pout = np.full((20, 26), 22228604)
