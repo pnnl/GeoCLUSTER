@@ -196,7 +196,7 @@ class data:
 
             if self.CP_fluid == "H20":
                 fluid = 1
-            if self.CP_fluid == "CO2":
+            elif self.CP_fluid == "CO2":
                 fluid = 2
             else:
                 fluid = 1 # water
@@ -262,12 +262,20 @@ class data:
                 PipeParam4 = [PipeParam4]
                 # PipeParam5 = lateral_multiplier
 
-            # print(f"sbt_version: {sbt_version} mesh_fineness: 0 clg_configuration: {case} fluid: {fluid}") ## uloop
+            # SIMULATION LOGGING - Track all simulation attempts
+            print(f"🚀 STARTING SIMULATION:")
+            print(f"   Model: SBT v{sbt_version}")
+            print(f"   Configuration: {case}")
+            print(f"   Fluid: {self.CP_fluid} (fluid_id={fluid})")
+            print(f"   Parameters: mdot={mdot}, L2={L2}, L1={L1}, grad={grad}, D={D}, Tinj={Tinj}, k={k}")
+            print(f"   Hyperparams: {hyperparam1}, {hyperparam2}, {hyperparam3}, {hyperparam4}, {hyperparam5}")
+            
             start = time.time()
             
             # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
-            times, Tout, Pout = run_sbt_final(
+            try:
+                times, Tout, Pout = run_sbt_final(
                     ## Model Specifications 
                     sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
                     HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
@@ -284,7 +292,22 @@ class data:
                     ## Geologic Properties
                     Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
                     # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
-            )
+                )
+                
+            except Exception as e:
+                end = time.time()
+                duration = end - start
+                
+                # SIMULATION FAILURE LOGGING
+                print(f"❌ SIMULATION FAILED!")
+                print(f"   Duration before failure: {duration:.2f} seconds")
+                print(f"   Error: {str(e)}")
+                print(f"   Error type: {type(e).__name__}")
+                print(f"   Model: SBT v{sbt_version}, Fluid: {self.CP_fluid}")
+                print(f"   Parameters: mdot={mdot}, L2={L2}, L1={L1}, grad={grad}, D={D}, Tinj={Tinj}, k={k}")
+                
+                # Re-raise the exception so the calling code knows it failed
+                raise
             
             if Pout is None:
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
@@ -292,6 +315,16 @@ class data:
                 Pout = constant_pressure * np.ones_like(Tout)
                 
             end = time.time()
+            duration = end - start
+            
+            # SIMULATION SUCCESS LOGGING
+            print(f"✅ SIMULATION COMPLETED SUCCESSFULLY!")
+            print(f"   Duration: {duration:.2f} seconds")
+            print(f"   Results: times={times.shape}, Tout={Tout.shape}, Pout={Pout.shape}")
+            if len(Tout) > 0:
+                print(f"   Final T: {Tout[-1]:.2f}°C, Final P: {Pout[-1]/1e5:.2f} bar")
+            print(f"   Model: SBT v{sbt_version}, Fluid: {self.CP_fluid}")
+            
             # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
             # self.time = times
 
