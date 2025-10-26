@@ -631,15 +631,9 @@ def toggle_collapse(n, is_open):
 )
 def update_tabs(selected_model):
     if selected_model == "HDF5":
-        print(" ----------------------------- ")
-        print("HDF5")
-
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
-        print(" ----------------------------- ")
-        print("SBT")
-        # TODO: update tabs styline
         return {"display": "none"}, {"display": "none"}, {"display": "none"}
 
     else:
@@ -2279,6 +2273,20 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="thermal-memory", component_property="data"),
         Input(component_id="model-select", component_property="value"),
         Input(component_id="TandP-data", component_property="data"),
+        # SBT-specific inputs
+        Input(component_id="Tsurf-select", component_property="value"),
+        Input(component_id="c-select", component_property="value"),
+        Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mesh-select", component_property="value"),
+        Input(component_id="accuracy-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
 def update_table(
@@ -2303,6 +2311,19 @@ def update_table(
     thermal_dict,
     model,
     tandp_data,
+    Tsurf,
+    c_m,
+    rho_m,
+    Diameter1,
+    Diameter2,
+    PipeParam3,
+    PipeParam4,
+    PipeParam5,
+    mesh,
+    accuracy,
+    HyperParam3,
+    HyperParam4,
+    HyperParam5,
 ):
     try:
         # Handle None values
