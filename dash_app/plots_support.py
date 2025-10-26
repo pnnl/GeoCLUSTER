@@ -23,7 +23,7 @@ colorscaleB = [[0, '#042140'], [0.5, '#0554ad'], [1, '#02a2f2']]
 colorscaleG = [[0, '#043336'], [0.5, '#10a4ad'], [1, '#abebdc']]
 
 
-slider_list = ["Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)", "Geothermal Gradient (K/m)",
+slider_list = ["Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)", "Geothermal Gradient (°C/m)",
                 "Borehole Diameter (m)", "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)", 
                     "Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
                     "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
@@ -120,10 +120,10 @@ def parse_error_message(e, e_name):
 			# print('\t', e)
 			# print(e_name, error_message)
 		else:
-			error_message = str(e)
+			error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 			# print(e_name, e)
 	else:
-		error_message = str(e)
+		error_message = "Did not plot visual(s).\n\nNo outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
 		# print(e_name, e)
 
 	return error_message

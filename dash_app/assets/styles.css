@@ -34,10 +34,6 @@
     --main-fontfamily: Acumin;
 }
 
-@font-face {
-    font-family: var(--main-fontfamily);
-    font-weight: bold;
-}
 
 #app-container {
     width: 100%;
@@ -380,10 +376,16 @@ hr {
 }
 
 .param-class-name {
-    text-align: left;
+    text-align: center;
     padding-left: 10px;
     color: var(--darkorange);
     text-transform: uppercase;
+}
+
+
+/* Handle line breaks in slider titles */
+.title-button-container p {
+    white-space: normal;
 }
 
 .params-div {
@@ -394,10 +396,6 @@ hr {
     padding-bottom: 5px;
 }
 
-#economics-params-div {
-    /* border-radius: 10px 10px 0px 0px;
-    border-bottom: none; */
-}
 
 .loader-wrapper > div {
     visibility: visible !important;

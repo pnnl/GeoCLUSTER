@@ -40,6 +40,12 @@ from paths import inpath_dict
 from sliders import *  # u_sCO2, u_H2O, c_sCO2, c_H2O, and imports functions from plots.py
 from tables import generate_summary_table
 from text import *
+from info_popups import (
+    PARAMETER_INFO,
+    create_info_button,
+    create_info_modal,
+    register_info_modal_callbacks,
+)
 from write2excel import write_excelsheet
 
 # -----------------------------------------------------------------------------
@@ -515,8 +521,13 @@ app.layout = html.Div(
                 ),
             ],
         ),
+        # Information Modal
+        create_info_modal(),
     ],
 )
+
+# Register info popup callbacks
+register_info_modal_callbacks(app)
 
 
 # -----------------------------------------------------------------------------
@@ -620,14 +631,9 @@ def toggle_collapse(n, is_open):
 )
 def update_tabs(selected_model):
     if selected_model == "HDF5":
-        print(" ----------------------------- ")
-        print("HDF5")
-
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
-        print(" ----------------------------- ")
-        print("SBT")
         # TODO: update tabs styline
         return {"display": "none"}, {"display": "none"}, {"display": "none"}
 
@@ -767,9 +773,9 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 )
 def update_working_fluid(model):
     if model == "SBT V2.0":
-        fluid_list = ["All", "H2O", "sCO2"]
+        fluid_list = ["H2O"]
         if ctx.triggered_id == "model-select":
-            return "All", [{"label": i, "value": i} for i in fluid_list]
+            return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     elif model == "SBT V1.0":
@@ -1145,7 +1151,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
             component_id="fluid-mode-div", component_property="style"
         ),  # hide HDF5 and v1, show v2
         Output(component_id="num-lat-div", component_property="style"),
-        Output(component_id="lat-allocation-div", component_property="style"),
+        Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
         Output(component_id="lat-flow-mul-div", component_property="style"),
     ],
@@ -1164,10 +1170,10 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, b, b, n, n
+        return b, b, b, b, b, b, n, n, n, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, b
+        return b, b, b, b, b, b, n, n, n, n, b
 
 
 @app.callback(
@@ -1208,7 +1214,7 @@ def econ_sliders_visibility(tab, fluid, end_use):
         "margin-bottom": "5px",
         "margin-right": "5px",
         "padding-bottom": "5px",
-        "border-bottom": "none",
+        "borderBottom": "none",
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -1397,7 +1403,7 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
         Output(component_id="L1-container", component_property="children"),
     ],
     [Input(component_id="model-select", component_property="value")],
-    prevent_initial_call=True,
+    prevent_initial_call='initial_duplicate',
 )
 def update_slider_ranges(model):
     grad_dict = create_steps(
@@ -1423,12 +1429,13 @@ def update_slider_ranges(model):
         grad_container = slider2(
             DivID="grad-select-div",
             ID="grad-select",
-            ptitle="Geothermal Gradient (K/m)",
+            ptitle="Geothermal Gradient (°C/m)",
             min_v=u_sCO2.grad[0],
             max_v=u_sCO2.grad[-1],
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
+            parameter_name="Geothermal Gradient (°C/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -1439,6 +1446,8 @@ def update_slider_ranges(model):
             mark_dict=k_dict,
             start_v=start_vals_d["k"],
             div_style=div_block_style,
+            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            custom_title=True,
         )
         # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15,
         #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
@@ -1449,8 +1458,9 @@ def update_slider_ranges(model):
             min_v=30.0,
             max_v=60.0,
             mark_dict=Tinj_dict,
-            start_v=30.0,
+            start_v=50.0,
             div_style=div_block_style,
+            parameter_name="Injection Temperature (˚C)",
         )
         mdot_container = slider2(
             DivID="mdot-select-div",
@@ -1461,6 +1471,7 @@ def update_slider_ranges(model):
             mark_dict=mdot_dict,
             start_v=start_vals_d["mdot"],
             div_style=div_block_style,
+            parameter_name="Mass Flow Rate (kg/s)",
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
@@ -1472,6 +1483,7 @@ def update_slider_ranges(model):
             step_i=0.002,
             start_v=start_vals_d["D"],
             div_style=div_block_style,
+            parameter_name="Borehole Diameter (m)",
         )
         L2_container = slider2(
             DivID="L2-select-div",
@@ -1482,6 +1494,7 @@ def update_slider_ranges(model):
             mark_dict=L2_dict,
             start_v=start_vals_d["L2"],
             div_style=div_block_style,
+            parameter_name="Horizontal Extent (m)",
         )
         L1_container = slider2(
             DivID="L1-select-div",
@@ -1492,6 +1505,7 @@ def update_slider_ranges(model):
             mark_dict=L1_dict,
             start_v=start_vals_d["L1"],
             div_style=div_block_style,
+            parameter_name="Drilling Depth (m)",
         )
 
         return (
@@ -1522,12 +1536,13 @@ def update_slider_ranges(model):
         grad_container = slider2(
             DivID="grad-select-div",
             ID="grad-select",
-            ptitle="Geothermal Gradient (K/m)",  # min_v=0.01, max_v=0.1,
+            ptitle="Geothermal Gradient (°C/m)",  # min_v=0.01, max_v=0.1,
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
             start_v=start_vals_d["grad"],
             div_style=div_block_style,
+            parameter_name="Geothermal Gradient (°C/m)",
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -1538,17 +1553,20 @@ def update_slider_ranges(model):
             mark_dict=k_dict,
             start_v=start_vals_d["k"],
             div_style=div_block_style,
+            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            custom_title=True,
         )
         Tinj_container = slider2(
             DivID="Tinj-select-div",
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=30.0,
-            max_v=100.0,
+            max_v=60.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=start_vals_d["Tinj"],
+            start_v=50.0,
             div_style=div_block_style,
+            parameter_name="Injection Temperature (˚C)",
         )
         mdot_container = slider2(
             DivID="mdot-select-div",
@@ -1560,6 +1578,7 @@ def update_slider_ranges(model):
             mark_dict=mdot_dict,
             start_v=start_vals_d["mdot"],
             div_style=div_block_style,
+            parameter_name="Mass Flow Rate (kg/s)",
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
@@ -1582,6 +1601,7 @@ def update_slider_ranges(model):
             mark_dict=L2_dict,
             start_v=start_vals_d["L2"],
             div_style=div_block_style,
+            parameter_name="Horizontal Extent (m)",
         )
         L1_container = slider2(
             DivID="L1-select-div",
@@ -1593,6 +1613,7 @@ def update_slider_ranges(model):
             mark_dict=L1_dict,
             start_v=start_vals_d["L1"],
             div_style=div_block_style,
+            parameter_name="Drilling Depth (m)",
         )
 
         return (
@@ -1668,7 +1689,7 @@ def update_sliders_heat_exchanger(model, case):
                 div_style=div_block_style,
             )
             lateral_flow = input_box(
-                DivID="lat-allocation-div",
+                DivID="lat-allo-container",
                 ID="lateral-flow-select",
                 ptitle="Lateral Flow Allocation",
                 min_v=0,
@@ -1801,7 +1822,7 @@ def update_sliders_heat_exchanger(model, case):
             div_style=div_none_style,
         )
         lateral_flow = input_box(
-            DivID="lat-allocation-div",
+            DivID="lat-allo-container",
             ID="lateral-flow-select",
             ptitle="Lateral Flow Allocation",
             min_v=0,
@@ -1884,6 +1905,7 @@ def update_sliders_hyperparms(model):
             step_i=0.1,
             start_v=start_vals_sbt["inletpressure"],
             div_style=div_block_style,
+            parameter_name="Inlet Pressure (MPa)",
         )
         hyperparam3 = slider1(
             DivID="temp-flow-mode-div",
@@ -1895,6 +1917,7 @@ def update_sliders_hyperparms(model):
             step_i=0.000001,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_block_style,
+            parameter_name="Pipe Roughness (m)",
         )
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",
@@ -2114,6 +2137,20 @@ def update_subsurface_contours_plots(
         Input(component_id="radio-graphic-control4", component_property="value"),
         Input(component_id="checklist", component_property="value"),
         Input(component_id="model-select", component_property="value"),
+        # SBT-specific inputs to trigger recalculation
+        Input(component_id="Tsurf-select", component_property="value"),
+        Input(component_id="c-select", component_property="value"),
+        Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mesh-select", component_property="value"),
+        Input(component_id="accuracy-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
 def update_econ_plots(
@@ -2139,50 +2176,76 @@ def update_econ_plots(
     scale,
     checklist,
     model,
+    Tsurf,
+    c_m,
+    rho_m,
+    Diameter1,
+    Diameter2,
+    PipeParam3,
+    PipeParam4,
+    PipeParam5,
+    mesh,
+    accuracy,
+    HyperParam3,
+    HyperParam4,
+    HyperParam5,
 ):
-    # -----------------------------------------------------------------------------
-    # Creates and displays Plotly subplots of the economic results.
-    # -----------------------------------------------------------------------------
+    try:
+        # Handle None values
+        if TandP_dict is None:
+            TandP_dict = {}
+        if checklist is None:
+            checklist = []
+            
+        # -----------------------------------------------------------------------------
+        # Creates and displays Plotly subplots of the economic results.
+        # -----------------------------------------------------------------------------
 
-    # print('economics')
+        # print('economics')
 
-    if checklist == [" "]:
-        is_plot_ts = True
-    else:
-        is_plot_ts = False
+        if checklist == [" "]:
+            is_plot_ts = True
+        else:
+            is_plot_ts = False
 
-    economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
-        generate_econ_lineplots(
-            TandP_dict,
-            interp_time,
-            case,
-            end_use,
-            fluid,
-            mdot,
-            L2,
-            L1,
-            grad,
-            D,
-            Tinj,
-            k_m,
-            Drilling_cost_per_m,
-            Discount_rate,
-            Lifetime,
-            Direct_use_heat_cost_per_kWth,
-            Power_plant_cost_per_kWe,
-            Pre_Cooling_Delta_T,
-            Turbine_outlet_pressure,
-            scale,
-            properties_H2O_pathname,
-            properties_CO2v2_pathname,
-            additional_properties_CO2v2_pathname,
-            tmatrix_pathname,
-            model,
-            is_plot_ts,
+        economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
+            generate_econ_lineplots(
+                TandP_dict,
+                interp_time,
+                case,
+                end_use,
+                fluid,
+                mdot,
+                L2,
+                L1,
+                grad,
+                D,
+                Tinj,
+                k_m,
+                Drilling_cost_per_m,
+                Discount_rate,
+                Lifetime,
+                Direct_use_heat_cost_per_kWth,
+                Power_plant_cost_per_kWe,
+                Pre_Cooling_Delta_T,
+                Turbine_outlet_pressure,
+                scale,
+                properties_H2O_pathname,
+                properties_CO2v2_pathname,
+                additional_properties_CO2v2_pathname,
+                tmatrix_pathname,
+                model,
+                is_plot_ts_check=is_plot_ts,
+            )
         )
-    )
 
-    return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
+        return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
+    except Exception as e:
+        print(f"Error in update_econ_plots: {e}")
+        # Return empty figure and empty data on error
+        import plotly.graph_objects as go
+        empty_fig = go.Figure()
+        return empty_fig, {}, {}, {}
 
 
 @app.callback(
@@ -2236,6 +2299,22 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="turb-pout-select", component_property="value"),
         Input(component_id="econ-memory", component_property="data"),
         Input(component_id="thermal-memory", component_property="data"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="TandP-data", component_property="data"),
+        # SBT-specific inputs
+        Input(component_id="Tsurf-select", component_property="value"),
+        Input(component_id="c-select", component_property="value"),
+        Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mesh-select", component_property="value"),
+        Input(component_id="accuracy-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
 def update_table(
@@ -2258,30 +2337,65 @@ def update_table(
     Turbine_outlet_pressure,
     econ_dict,
     thermal_dict,
+    model,
+    tandp_data,
+    Tsurf,
+    c_m,
+    rho_m,
+    Diameter1,
+    Diameter2,
+    PipeParam3,
+    PipeParam4,
+    PipeParam5,
+    mesh,
+    accuracy,
+    HyperParam3,
+    HyperParam4,
+    HyperParam5,
 ):
-    tbl, summary_dict = generate_summary_table(
-        mdot,
-        L2,
-        L1,
-        grad,
-        D,
-        Tinj,
-        k,
-        Drilling_cost_per_m,
-        Discount_rate,
-        Lifetime,
-        Direct_use_heat_cost_per_kWth,
-        Power_plant_cost_per_kWe,
-        Pre_Cooling_Delta_T,
-        Turbine_outlet_pressure,
-        interp_time,
-        case,
-        fluid,
-        thermal_dict,
-        econ_dict,
-    )
+    try:
+        # Handle None values
+        if econ_dict is None:
+            econ_dict = {}
+        if thermal_dict is None:
+            thermal_dict = {}
+        if tandp_data is None:
+            tandp_data = None
+            
+        # Add TandP data to thermal_dict for SBT models
+        if model != "HDF5" and tandp_data:
+            thermal_dict["TandP-data"] = tandp_data
 
-    return tbl, summary_dict
+        tbl, summary_dict = generate_summary_table(
+            mdot,
+            L2,
+            L1,
+            grad,
+            D,
+            Tinj,
+            k,
+            Drilling_cost_per_m,
+            Discount_rate,
+            Lifetime,
+            Direct_use_heat_cost_per_kWth,
+            Power_plant_cost_per_kWe,
+            Pre_Cooling_Delta_T,
+            Turbine_outlet_pressure,
+            interp_time,
+            case,
+            fluid,
+            model,
+            thermal_dict,
+            econ_dict,
+        )
+
+        return tbl, summary_dict
+    except Exception as e:
+        print(f"Error in update_table: {e}")
+        # Return empty table and empty summary on error
+        import plotly.graph_objects as go
+        empty_table = go.Figure()
+        return empty_table, {}
 
 
 @app.callback(
@@ -2294,13 +2408,19 @@ def update_table(
         Input(component_id="thermal-results-errors", component_property="data"),
         Input(component_id="thermal-contours-errors", component_property="data"),
         Input(component_id="econ-errors", component_property="data"),
+        Input(component_id="econ-results", component_property="data"),
     ],
 )
-def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
-    # print(err_sub_dict)
-    # print(err_contour_dict)
-    # print(err_econ_dict)
-    # print('\n')
+def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_results_dict):
+    # Handle None values
+    if err_sub_dict is None:
+        err_sub_dict = {}
+    if err_contour_dict is None:
+        err_contour_dict = {}
+    if err_econ_dict is None:
+        err_econ_dict = {}
+    if econ_results_dict is None:
+        econ_results_dict = {}
 
     err_div1 = html.Div(  # id="error_block_div1",
         style={"display": "none"}
@@ -2325,7 +2445,12 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         "color": darkergrey,
     }
     if err_sub_dict != {}:
-        error_message = next(iter(err_sub_dict.values()))
+        try:
+            error_message = next(iter(err_sub_dict.values()))
+            if error_message is None:
+                error_message = "Unknown error occurred"
+        except (StopIteration, TypeError):
+            error_message = "Unknown error occurred"
 
         if "No outputs" in error_message:
             error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
@@ -2342,7 +2467,12 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         )
 
     if err_contour_dict != {}:
-        error_message = next(iter(err_contour_dict.values()))
+        try:
+            error_message = next(iter(err_contour_dict.values()))
+            if error_message is None:
+                error_message = "Unknown error occurred"
+        except (StopIteration, TypeError):
+            error_message = "Unknown error occurred"
 
         err_div2 = html.Div(  # id="error_block_div2",
             style=error_style,
@@ -2356,21 +2486,53 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
         )
 
     if err_econ_dict != {}:
-        error_message = next(iter(err_econ_dict.values()))
+        try:
+            # Check if plots are actually being generated by looking at econ_results_dict
+            plots_have_data = False
+            if econ_results_dict and isinstance(econ_results_dict, dict):
+                # Check if there are meaningful economic values (not just "-")
+                lcoe_sco2 = econ_results_dict.get("LCOE sCO2", "")
+                lcoe_h2o = econ_results_dict.get("LCOE H2O", "")
+                lcoh_sco2 = econ_results_dict.get("LCOH sCO2", "")
+                lcoh_h2o = econ_results_dict.get("LCOH H2O", "")
 
-        if "object has no attribute" in error_message:
-            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
+                # If any of these have meaningful values (not "-"), then plots are being generated
+                plots_have_data = (
+                    lcoe_sco2 != "-"
+                    or lcoe_h2o != "-"
+                    or lcoh_sco2 != "-"
+                    or lcoh_h2o != "-"
+                )
 
-        err_div3 = html.Div(  # id="error_block_div3",
-            style=error_style,
-            children=[
-                html.Img(id="error-img3", src=app.get_asset_url("error.png")),
-                dcc.Markdown(
-                    "**Did not plot visual(s).**", style={"display": "inline-block"}
-                ),
-                html.P(error_message),
-            ],
-        )
+            # Only show warning if plots are NOT being generated
+            if not plots_have_data:
+                error_message = next(iter(err_econ_dict.values()))
+                if error_message and error_message.strip():
+                    if "object has no attribute" in error_message:
+                        error_message = "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
+                    err_div3 = html.Div(  # id="error_block_div3",
+                        style=error_style,
+                        children=[
+                            html.Img(
+                                id="error-img3", src=app.get_asset_url("error.png")
+                            ),
+                            dcc.Markdown(
+                                "**Did not plot visual(s).**",
+                                style={"display": "inline-block"},
+                            ),
+                            html.P(
+                                "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
+                            ),
+                        ],
+                    )
+                else:
+                    err_div3 = html.Div(style={"display": "none"})
+            else:
+                # Plots are being generated, don't show warning
+                err_div3 = html.Div(style={"display": "none"})
+
+        except Exception as e:
+            err_div3 = html.Div(style={"display": "none"})
 
     return err_div1, err_div2, err_div3
 
@@ -2379,9 +2541,13 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict):
     Output(component_id="warning_block_div3", component_property="children"),
     Input(component_id="econ-memory", component_property="data"),
 )
-def update_error_divs(levelized_cost_dict):
+def update_warning_divs(levelized_cost_dict):
     warning_div3 = html.Div(style={"display": "none"})
 
+    # Handle None or missing data
+    if levelized_cost_dict is None:
+        return warning_div3
+        
     error_style = {
         "display": "block",
         "width": "100%",
@@ -2393,10 +2559,11 @@ def update_error_divs(levelized_cost_dict):
         "color": darkergrey,
     }
 
-    if (
-        levelized_cost_dict["LCOE sCO2"] == "9999.00"
-        or levelized_cost_dict["LCOE H2O"] == "9999.00"
-    ):
+    # Safely check for LCOE values
+    lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
+    lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
+    
+    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
         warning_div3 = html.Div(  # id="error_block_div3",
             style=error_style,
             children=[
