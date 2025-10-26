@@ -310,7 +310,7 @@ def slider_card():
                                                             id="Tinj-container",
                                                             children=[
                                                                 slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                                        mark_dict=Tinj_dict, start_v=30.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                                        mark_dict=Tinj_dict, start_v=50.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
                                                             id="mdot-container",
