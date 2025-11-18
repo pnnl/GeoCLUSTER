@@ -646,19 +646,23 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    fig = make_subplots(rows=2, cols=5,
-                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                        horizontal_spacing = 0.11
-                        )
-
-    fig = make_subplots(rows=3, cols=5,
-                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                [{'colspan': 2}, None, None, None, None]
-                                ],
-                        horizontal_spacing = 0.11
-                        )
+    # Conditionally create subplot layout based on whether T-S diagram is shown
+    if is_plot_ts_check:
+        fig = make_subplots(rows=3, cols=5,
+                            specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                    [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                    [{'colspan': 2}, None, None, None, None]
+                                    ],
+                            horizontal_spacing = 0.11,
+                            vertical_spacing = 0.12
+                            )
+    else:
+        fig = make_subplots(rows=2, cols=5,
+                            specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                    [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
+                            horizontal_spacing = 0.11,
+                            vertical_spacing = 0.12
+                            )
 
     teaobj_sCO2 = None
     teaobj_H2O = None
@@ -978,7 +982,7 @@ def generate_econ_lineplots(TandP_dict,
                         "error_codes": error_codes}
 
 
-    fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)', # or 0.40
+    fig.update_layout(paper_bgcolor='rgba(255,255,255,0.10)',
                       plot_bgcolor='rgba(255,255,255,0)')
 
     # print(error_messages_dict)
