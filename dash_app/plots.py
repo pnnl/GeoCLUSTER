@@ -691,7 +691,7 @@ def generate_econ_lineplots(TandP_dict,
                                                 properties_CO2v2_pathname, 
                                                 additional_properties_CO2v2_pathname,
                                                 is_heating=True)
-                lcoh_sCO2 = format( teaobj_sCO2.LCOH, '.2f')
+                lcoh_sCO2 = "Not Calculated" if (teaobj_sCO2.LCOH is None or teaobj_sCO2.LCOH >= 9999) else format(teaobj_sCO2.LCOH, '.2f')
 
                 # Heat Production 
                 fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Instantaneous_heat_production/1e3,
@@ -751,7 +751,7 @@ def generate_econ_lineplots(TandP_dict,
                                                 additional_properties_CO2v2_pathname,
                                                 is_H20=True, is_heating=True
                                                 )
-                lcoh_H2O = format(teaobj_H2O.LCOH, '.2f')
+                lcoh_H2O = "Not Calculated" if (teaobj_H2O.LCOH is None or teaobj_H2O.LCOH >= 9999) else format(teaobj_H2O.LCOH, '.2f')
                 # print(lcoh_H2O)
                 # print("Error on LCOH ... ")
                 # print(teaobj_H2O)
@@ -828,7 +828,7 @@ def generate_econ_lineplots(TandP_dict,
                 if teaobj_sCO2.Inst_Net_Electricity_production is not None:
                     teaobj_sCO2.Inst_Net_Electricity_production[teaobj_sCO2.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_sCO2 = format( teaobj_sCO2.LCOE, '.2f') if teaobj_sCO2.LCOE is not None else "N/A"
+                lcoe_sCO2 = "Not Calculated" if (teaobj_sCO2.LCOE is None or teaobj_sCO2.LCOE >= 9999) else format(teaobj_sCO2.LCOE, '.2f')
 
                 # Electricity 
                 if teaobj_sCO2.Inst_Net_Electricity_production is not None:
@@ -905,7 +905,7 @@ def generate_econ_lineplots(TandP_dict,
                 if teaobj_H2O.Inst_Net_Electricity_production is not None:
                     teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_H2O = format(teaobj_H2O.LCOE, '.2f') if teaobj_H2O.LCOE is not None else "N/A"
+                lcoe_H2O = "Not Calculated" if (teaobj_H2O.LCOE is None or teaobj_H2O.LCOE >= 9999) else format(teaobj_H2O.LCOE, '.2f')
 
                 # print(" ********* ")
                 # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
