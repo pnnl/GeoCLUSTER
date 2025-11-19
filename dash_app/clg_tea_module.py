@@ -422,7 +422,7 @@ class TEA:
             
             # Relaxed condition: Allow production temps that reach 100°C at some point
             # The interpolation will handle values below 100°C (returns 0 via left=0 parameter)
-            if self.T_in >= 50 and max(self.Linear_production_temperature) >= 100 and max(self.Linear_production_temperature) <= 385:
+            if self.T_in >= 50 and min(self.Linear_production_temperature) >= 100 and max(self.Linear_production_temperature) <= 385:
                 self.Instantaneous_utilization_efficiency_method_1 = np.interp(self.Linear_production_temperature,self.Utilization_efficiency_correlation_temperatures,self.Utilization_efficiency_correlation_conversion,left = 0) #Utilization efficiency based on conversion of produced exergy to electricity
                 self.Instantaneous_electricity_production_method_1 = self.Instantaneous_exergy_production*self.Instantaneous_utilization_efficiency_method_1 #[kW]
                 self.Instantaneous_themal_efficiency = np.interp(self.Linear_production_temperature,self.Heat_to_power_efficiency_correlation_temperatures,self.Heat_to_power_efficiency_correlation_conversion,left = 0) #Utilization efficiency based on conversion of produced exergy to electricity
