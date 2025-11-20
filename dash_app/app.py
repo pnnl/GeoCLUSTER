@@ -1413,9 +1413,7 @@ def update_slider_ranges(model):
     D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place="{:.4f}", val_round_place=4)
 
     if model == "HDF5":  # hide the other params (happens in the next callback)
-        Tinj_dict = create_steps(
-            arg_arr=u_sCO2.Tinj - 273.15, str_round_place="{:.1f}", val_round_place=2
-        )
+        Tinj_dict = {30: "30", 60: "60"}
         mdot_dict = create_steps(
             arg_arr=u_sCO2.mdot, str_round_place="{:.1f}", val_round_place=1
         )
@@ -1449,16 +1447,14 @@ def update_slider_ranges(model):
             parameter_name="Rock Thermal Conductivity (W/m-K)",
             custom_title=True,
         )
-        # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15,
-        #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
         Tinj_container = slider2(
             DivID="Tinj-select-div",
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
-            min_v=30.0,
-            max_v=60.0,
+            min_v=u_sCO2.Tinj[0] - 273.15,
+            max_v=u_sCO2.Tinj[-1] - 273.15,
             mark_dict=Tinj_dict,
-            start_v=50.0,
+            start_v=60.0,
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -1561,10 +1557,10 @@ def update_slider_ranges(model):
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=30.0,
-            max_v=60.0,
+            max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=50.0,
+            start_v=60.0,
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -2020,56 +2016,66 @@ def update_subsurface_results_plots(
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
-    # print('subsurface')
-    # if HDF5:
-    # start = time.time()
-    (
-        subplots,
-        forty_yr_TPmeans_dict,
-        df_mass_flow_rate,
-        df_time,
-        err_subres_dict,
-        TandP_dict,
-    ) = generate_subsurface_lineplots(
-        interp_time,
-        fluid,
-        case,
-        mdot,
-        L2,
-        L1,
-        grad,
-        D,
-        Tinj,
-        k_m,
-        scale,
-        model,
-        Tsurf,
-        c_m,
-        rho_m,
-        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-        Diameter1,
-        Diameter2,
-        PipeParam3,
-        PipeParam4,
-        PipeParam5,
-        mesh,
-        accuracy,
-        HyperParam3,
-        HyperParam4,
-        HyperParam5,
-    )
-    # if SBT:
-    # end = time.time()
-    # print("run generate_subsurface_lineplots:", end - start)
+    try:
+        # print('subsurface')
+        # if HDF5:
+        # start = time.time()
+        (
+            subplots,
+            forty_yr_TPmeans_dict,
+            df_mass_flow_rate,
+            df_time,
+            err_subres_dict,
+            TandP_dict,
+        ) = generate_subsurface_lineplots(
+            interp_time,
+            fluid,
+            case,
+            mdot,
+            L2,
+            L1,
+            grad,
+            D,
+            Tinj,
+            k_m,
+            scale,
+            model,
+            Tsurf,
+            c_m,
+            rho_m,
+            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+            Diameter1,
+            Diameter2,
+            PipeParam3,
+            PipeParam4,
+            PipeParam5,
+            mesh,
+            accuracy,
+            HyperParam3,
+            HyperParam4,
+            HyperParam5,
+        )
+        # if SBT:
+        # end = time.time()
+        # print("run generate_subsurface_lineplots:", end - start)
 
-    return (
-        subplots,
-        forty_yr_TPmeans_dict,
-        df_mass_flow_rate,
-        df_time,
-        err_subres_dict,
-        TandP_dict,
-    )
+        return (
+            subplots,
+            forty_yr_TPmeans_dict,
+            df_mass_flow_rate,
+            df_time,
+            err_subres_dict,
+            TandP_dict,
+        )
+    except Exception as e:
+        print(f"Error in update_subsurface_results_plots: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return empty/default values on error
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        empty_fig = make_subplots(rows=2, cols=3)
+        return empty_fig, {}, {}, {}, {}, {}
 
 
 @app.callback(
