@@ -2104,6 +2104,10 @@ def update_subsurface_contours_plots(
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
 
+    # Check for None values on initial load
+    if fluid is None or case is None or param is None or mdot is None or L2 is None or L1 is None or Tinj is None or D is None or grad is None or k_m is None:
+        raise PreventUpdate
+
     # print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
