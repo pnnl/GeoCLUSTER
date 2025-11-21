@@ -150,10 +150,25 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     point = (arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj + to_kelvin_factor, arg_k) # to kelvin
 
     # ** Average calculations
-    sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
-                            get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
-
-    error_messages_dict.update(error_messages_d)
+    # For SBT models, HDF5 array access may fail, so wrap in try-except
+    try:
+        sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg, error_messages_d = \
+                                get_kWe_kWt_over_mass_or_time(case, fluid, point, arg_L2_i, arg_L1_i, arg_grad_i, arg_D_i, arg_Tinj_i, arg_k_i)
+        error_messages_dict.update(error_messages_d)
+    except (IndexError, ValueError, KeyError) as e:
+        # For SBT models, HDF5 arrays may not have data for these parameter ranges
+        # Set averages to None and continue - SBT calculations will still work
+        sCO2_kWe_avg = None
+        sCO2_kWt_avg = None
+        H2O_kWe_avg = None
+        H2O_kWt_avg = None
+        if model in ["SBT V1.0", "SBT V2.0"]:
+            # Don't add error for SBT models - this is expected
+            pass
+        else:
+            # For HDF5 models, this is a real error
+            error_message = parse_error_message(e=e, e_name='Err SubResAvg', model=model)
+            error_messages_dict['Err SubResAvg'] = error_message
 
     # print(sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg)
 
@@ -208,7 +223,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes3')
+                error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
                 error_messages_dict['Err SubRes3'] = error_message
                 is_blank_data = True
                 
@@ -232,7 +247,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
             except ValueError as e:
                 sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes4')
+                error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
                 error_messages_dict['Err SubRes4'] = error_message
                 is_blank_data = True
                 

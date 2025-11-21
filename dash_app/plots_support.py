@@ -108,15 +108,19 @@ def update_blank_econ2(fig, nrow1, ncol1, nrow2, ncol2):
 	return fig, blank_val1 #, blank_val2
 
 
-def parse_error_message(e, e_name):
+def parse_error_message(e, e_name, model=None):
 
 	# print('\t', e)
 
 	if e.__class__.__name__ == "ValueError":
 		dim = re.findall(r'\d+', str(e))
 		if dim != []:
-			err_param = slider_list[int(dim[0])]
-			error_message = f"{err_param} is out of bounds of possible values. Consider changing the value."
+			# For SBT models, show generic message instead of specific parameter
+			if model and model in ["SBT V1.0", "SBT V2.0"]:
+				error_message = "Cannot calculate results for these parameter values. Consider adjusting the parameter values."
+			else:
+				err_param = slider_list[int(dim[0])]
+				error_message = f"{err_param} is out of bounds of possible values. Consider changing the value."
 			# print('\t', e)
 			# print(e_name, error_message)
 		else:
