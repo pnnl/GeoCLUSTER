@@ -699,8 +699,9 @@ def update_loading(selected_model):
 def update_tabs(selected_model):
     if selected_model == "HDF5":
         return {"display": "block"}
-
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
+        return {"display": "none"}
+    else:
         return {"display": "none"}
 
 
@@ -2095,15 +2096,19 @@ def update_subsurface_results_plots(
         Input(component_id="diameter-select", component_property="value"),
         Input(component_id="Tinj-select", component_property="value"),
         Input(component_id="k-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
     ],
 )
 def update_subsurface_contours_plots(
-    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
+    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, model
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
-
+    # Contours are only available for HDF5 models, not SBT models
+    if model is None or model in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
     # Check for None values on initial load
     if fluid is None or case is None or param is None or mdot is None or L2 is None or L1 is None or Tinj is None or D is None or grad is None or k_m is None:
         raise PreventUpdate
