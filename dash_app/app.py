@@ -1455,7 +1455,7 @@ def update_slider_ranges(model):
             min_v=u_sCO2.Tinj[0] - 273.15,
             max_v=u_sCO2.Tinj[-1] - 273.15,
             mark_dict=Tinj_dict,
-            start_v=60.0,
+            start_v=55.0,
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
