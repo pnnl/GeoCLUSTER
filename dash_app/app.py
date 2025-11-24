@@ -1537,7 +1537,7 @@ def update_slider_ranges(model):
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
-            start_v=start_vals_d["grad"],
+            start_v=0.05,
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -1573,7 +1573,7 @@ def update_slider_ranges(model):
             max_v=300,
             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=start_vals_d["mdot"],
+            start_v=20.0,
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
         )
@@ -2578,19 +2578,21 @@ def update_warning_divs(levelized_cost_dict):
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
     
-    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
-        warning_div3 = html.Div(  # id="error_block_div3",
-            style=error_style,
-            children=[
-                html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                dcc.Markdown(
-                    "**LCOE is too high.**", style={"display": "inline-block"}
-                ),
-                html.P(
-                    "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
-                ),
-            ],
-        )
+    # Disabled warning: LCOE too high / outlet temperature too low
+    # This warning was showing even when parameters were valid, so it's been disabled
+    # if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
+    #     warning_div3 = html.Div(  # id="error_block_div3",
+    #         style=error_style,
+    #         children=[
+    #             html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+    #             dcc.Markdown(
+    #                 "**LCOE is too high.**", style={"display": "inline-block"}
+    #             ),
+    #             html.P(
+    #                 "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
+    #             ),
+    #         ],
+    #     )
 
     return warning_div3
 
