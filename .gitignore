@@ -1,4 +1,5 @@
 venv/*
+.venv/*
 **/**/__pycache__/*
 dash_app/data/decompressed_clgs_results_final_float32.h5
 *.zarr
