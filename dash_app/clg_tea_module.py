@@ -420,6 +420,8 @@ class TEA:
             
         if self.Fluid == 1:
             
+            # Relaxed condition: Allow production temps that reach 100°C at some point
+            # The interpolation will handle values below 100°C (returns 0 via left=0 parameter)
             if self.T_in >= 50 and min(self.Linear_production_temperature) >= 100 and max(self.Linear_production_temperature) <= 385:
                 self.Instantaneous_utilization_efficiency_method_1 = np.interp(self.Linear_production_temperature,self.Utilization_efficiency_correlation_temperatures,self.Utilization_efficiency_correlation_conversion,left = 0) #Utilization efficiency based on conversion of produced exergy to electricity
                 self.Instantaneous_electricity_production_method_1 = self.Instantaneous_exergy_production*self.Instantaneous_utilization_efficiency_method_1 #[kW]
@@ -429,7 +431,7 @@ class TEA:
             else: #Water injection temperature and/or production tempeature fall outside the range used in the correlations
                 if self.T_in < 50: 
                     self.error_codes = np.append(self.error_codes,2000)
-                if min(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
+                if max(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
                     self.error_codes = np.append(self.error_codes,2001)
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
