@@ -1231,10 +1231,10 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, n, n, n
+        return b, b, b, b, b, b, n, n, b, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, n, n, n, b
+        return b, b, b, b, b, b, n, n, b, n, n
 
 
 @app.callback(
@@ -2039,7 +2039,7 @@ def update_sliders_hyperparms(model):
             ptitle="Mass Flow Rate Mode",
             options=["Constant", "Variable"],
             disabled=True,
-            div_style=div_block_style,
+            div_style=div_none_style,
         )
         hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",

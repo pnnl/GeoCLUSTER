@@ -214,7 +214,7 @@ def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
             className="name-input-container",
             children=[
                 html.P(ptitle, className="input-title"),
-                dcc.Input(id=ID, disabled=True,
+                dcc.Input(id=ID, disabled=False,
                             value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
         ])
 
@@ -464,13 +464,13 @@ def slider_card():
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
                                                     slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
+                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_none_style, parameter_name="Accuracy"),
                                                 
                                                     html.Div(
                                                             id="hyperparam1-container",
                                                             children=[
                                                                 dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
                                                         ]),
                                                     html.Div(
                                                         id="hyperparam3-container",
