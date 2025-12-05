@@ -491,6 +491,7 @@ app.layout = html.Div(
         dcc.Store(id="thermal-contours-errors"),
         dcc.Store(id="summary-memory"),
         dcc.Store(id="TandP-data"),
+        dcc.Store(id="slider-values-store", data={}),  # Store slider values per model
         # Left column
         html.Div(
             id="left-column",
@@ -699,8 +700,9 @@ def update_loading(selected_model):
 def update_tabs(selected_model):
     if selected_model == "HDF5":
         return {"display": "block"}
-
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
+        return {"display": "none"}
+    else:
         return {"display": "none"}
 
 
@@ -1402,20 +1404,28 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
         Output(component_id="L2-container", component_property="children"),
         Output(component_id="L1-container", component_property="children"),
     ],
-    [Input(component_id="model-select", component_property="value")],
+    [
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
     prevent_initial_call='initial_duplicate',
 )
-def update_slider_ranges(model):
+def update_slider_ranges(model, store_data):
     grad_dict = create_steps(
         arg_arr=u_sCO2.grad, str_round_place="{:.2f}", val_round_place=2
     )
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place="{:.1f}", val_round_place=1)
     D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place="{:.4f}", val_round_place=4)
 
+    # Get saved values for this model from store
+    if store_data is None:
+        store_data = {}
+    saved_values = store_data.get(model, {})
+
     if model == "HDF5":  # hide the other params (happens in the next callback)
-        Tinj_dict = create_steps(
-            arg_arr=u_sCO2.Tinj - 273.15, str_round_place="{:.1f}", val_round_place=2
-        )
+        Tinj_dict = {30: "30", 60: "60"}
         mdot_dict = create_steps(
             arg_arr=u_sCO2.mdot, str_round_place="{:.1f}", val_round_place=1
         )
@@ -1433,7 +1443,7 @@ def update_slider_ranges(model):
             min_v=u_sCO2.grad[0],
             max_v=u_sCO2.grad[-1],
             mark_dict=grad_dict,
-            start_v=start_vals_d["grad"],
+            start_v=saved_values.get("grad", start_vals_d["grad"]),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -1444,21 +1454,19 @@ def update_slider_ranges(model):
             min_v=u_sCO2.k[0],
             max_v=u_sCO2.k[-1],
             mark_dict=k_dict,
-            start_v=start_vals_d["k"],
+            start_v=saved_values.get("k", start_vals_d["k"]),
             div_style=div_block_style,
             parameter_name="Rock Thermal Conductivity (W/m-K)",
             custom_title=True,
         )
-        # Tinj_container = slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=u_sCO2.Tinj[0] - 273.15, max_v=u_sCO2.Tinj[-1] - 273.15,
-        #                                         mark_dict=Tinj_dict, start_v=303.15-273.15, div_style=div_block_style)
         Tinj_container = slider2(
             DivID="Tinj-select-div",
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
-            min_v=30.0,
-            max_v=60.0,
+            min_v=u_sCO2.Tinj[0] - 273.15,
+            max_v=u_sCO2.Tinj[-1] - 273.15,
             mark_dict=Tinj_dict,
-            start_v=50.0,
+            start_v=saved_values.get("Tinj", 55.0),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -1469,7 +1477,7 @@ def update_slider_ranges(model):
             min_v=u_sCO2.mdot[0],
             max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=start_vals_d["mdot"],
+            start_v=saved_values.get("mdot", start_vals_d["mdot"]),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
         )
@@ -1481,7 +1489,7 @@ def update_slider_ranges(model):
             max_v=0.4445,
             mark_dict=D_dict,
             step_i=0.002,
-            start_v=start_vals_d["D"],
+            start_v=saved_values.get("D", start_vals_d["D"]),
             div_style=div_block_style,
             parameter_name="Borehole Diameter (m)",
         )
@@ -1492,7 +1500,7 @@ def update_slider_ranges(model):
             min_v=u_sCO2.L2[0],
             max_v=u_sCO2.L2[-1],
             mark_dict=L2_dict,
-            start_v=start_vals_d["L2"],
+            start_v=saved_values.get("L2", start_vals_d["L2"]),
             div_style=div_block_style,
             parameter_name="Horizontal Extent (m)",
         )
@@ -1503,7 +1511,7 @@ def update_slider_ranges(model):
             min_v=u_sCO2.L1[0],
             max_v=u_sCO2.L1[-1],
             mark_dict=L1_dict,
-            start_v=start_vals_d["L1"],
+            start_v=saved_values.get("L1", start_vals_d["L1"]),
             div_style=div_block_style,
             parameter_name="Drilling Depth (m)",
         )
@@ -1540,7 +1548,7 @@ def update_slider_ranges(model):
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
-            start_v=start_vals_d["grad"],
+            start_v=saved_values.get("grad", start_vals_d["grad"]),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -1551,7 +1559,7 @@ def update_slider_ranges(model):
             min_v=0.4,
             max_v=5.0,
             mark_dict=k_dict,
-            start_v=start_vals_d["k"],
+            start_v=saved_values.get("k", start_vals_d["k"]),
             div_style=div_block_style,
             parameter_name="Rock Thermal Conductivity (W/m-K)",
             custom_title=True,
@@ -1561,10 +1569,10 @@ def update_slider_ranges(model):
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=30.0,
-            max_v=60.0,
+            max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=50.0,
+            start_v=saved_values.get("Tinj", 60.0),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -1576,7 +1584,7 @@ def update_slider_ranges(model):
             max_v=300,
             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=start_vals_d["mdot"],
+            start_v=saved_values.get("mdot", start_vals_d["mdot"]),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
         )
@@ -1588,7 +1596,7 @@ def update_slider_ranges(model):
             max_v=0.4445,
             mark_dict=D_dict,
             step_i=0.002,
-            start_v=start_vals_d["D"],
+            start_v=saved_values.get("D", start_vals_d["D"]),
             div_style=div_none_style,
         )
         L2_container = slider2(
@@ -1599,7 +1607,7 @@ def update_slider_ranges(model):
             max_v=50000,
             # min_v=u_sCO2.L2[0], max_v=u_sCO2.L2[-1],
             mark_dict=L2_dict,
-            start_v=start_vals_d["L2"],
+            start_v=saved_values.get("L2", start_vals_d["L2"]),
             div_style=div_block_style,
             parameter_name="Horizontal Extent (m)",
         )
@@ -1611,7 +1619,7 @@ def update_slider_ranges(model):
             max_v=10000,
             # min_v=u_sCO2.L1[0], max_v=u_sCO2.L1[-1],
             mark_dict=L1_dict,
-            start_v=start_vals_d["L1"],
+            start_v=saved_values.get("L1", start_vals_d["L1"]),
             div_style=div_block_style,
             parameter_name="Drilling Depth (m)",
         )
@@ -1627,6 +1635,105 @@ def update_slider_ranges(model):
         )
     else:
         raise PreventUpdate
+
+
+@app.callback(
+    Output(component_id="slider-values-store", component_property="data"),
+    [
+        Input(component_id="mdot-select", component_property="value"),
+        Input(component_id="L2-select", component_property="value"),
+        Input(component_id="L1-select", component_property="value"),
+        Input(component_id="grad-select", component_property="value"),
+        Input(component_id="diameter-select", component_property="value"),
+        Input(component_id="Tinj-select", component_property="value"),
+        Input(component_id="k-select", component_property="value"),
+        Input(component_id="Tsurf-select", component_property="value"),
+        Input(component_id="c-select", component_property="value"),
+        Input(component_id="rho-select", component_property="value"),
+    ],
+    [
+        State(component_id="model-select", component_property="value"),
+        State(component_id="slider-values-store", component_property="data"),
+    ],
+    prevent_initial_call=True,
+)
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, store_data):
+    """Save slider values to store, keyed by model"""
+    if model is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Save current slider values for this model
+    store_data[model] = {
+        "mdot": mdot,
+        "L2": L2,
+        "L1": L1,
+        "grad": grad,
+        "D": D,
+        "Tinj": Tinj,
+        "k": k,
+        "Tsurf": Tsurf,
+        "c": c,
+        "rho": rho,
+    }
+    
+    return store_data
+
+
+@app.callback(
+    [
+        Output(component_id="mdot-select", component_property="value", allow_duplicate=True),
+        Output(component_id="L2-select", component_property="value", allow_duplicate=True),
+        Output(component_id="L1-select", component_property="value", allow_duplicate=True),
+        Output(component_id="grad-select", component_property="value", allow_duplicate=True),
+        Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
+        Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
+        Output(component_id="k-select", component_property="value", allow_duplicate=True),
+        Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
+        Output(component_id="c-select", component_property="value", allow_duplicate=True),
+        Output(component_id="rho-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="model-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_slider_values(mdot_container, store_data, model):
+    """Restore slider values from store after sliders are created"""
+    if model is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Get saved values for this model
+    saved_values = store_data.get(model, {})
+    
+    # Only restore if we have saved values for this model
+    if saved_values:
+        mdot = saved_values.get("mdot")
+        L2 = saved_values.get("L2")
+        L1 = saved_values.get("L1")
+        grad = saved_values.get("grad")
+        D = saved_values.get("D")
+        Tinj = saved_values.get("Tinj")
+        k = saved_values.get("k")
+        Tsurf = saved_values.get("Tsurf", start_vals_hdf5.get("Tsurf", 25))
+        c = saved_values.get("c", start_vals_hdf5.get("c", 790.0))
+        rho = saved_values.get("rho", start_vals_hdf5.get("rho", 2800))
+        
+        # Return saved values if we have the key ones
+        if mdot is not None and L2 is not None and L1 is not None and grad is not None and D is not None and Tinj is not None and k is not None:
+            return mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho
+    
+    # If no saved values, don't update (let update_slider_ranges set defaults)
+    raise PreventUpdate
 
 
 @app.callback(
@@ -2020,56 +2127,66 @@ def update_subsurface_results_plots(
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
-    # print('subsurface')
-    # if HDF5:
-    # start = time.time()
-    (
-        subplots,
-        forty_yr_TPmeans_dict,
-        df_mass_flow_rate,
-        df_time,
-        err_subres_dict,
-        TandP_dict,
-    ) = generate_subsurface_lineplots(
-        interp_time,
-        fluid,
-        case,
-        mdot,
-        L2,
-        L1,
-        grad,
-        D,
-        Tinj,
-        k_m,
-        scale,
-        model,
-        Tsurf,
-        c_m,
-        rho_m,
-        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-        Diameter1,
-        Diameter2,
-        PipeParam3,
-        PipeParam4,
-        PipeParam5,
-        mesh,
-        accuracy,
-        HyperParam3,
-        HyperParam4,
-        HyperParam5,
-    )
-    # if SBT:
-    # end = time.time()
-    # print("run generate_subsurface_lineplots:", end - start)
+    try:
+        # print('subsurface')
+        # if HDF5:
+        # start = time.time()
+        (
+            subplots,
+            forty_yr_TPmeans_dict,
+            df_mass_flow_rate,
+            df_time,
+            err_subres_dict,
+            TandP_dict,
+        ) = generate_subsurface_lineplots(
+            interp_time,
+            fluid,
+            case,
+            mdot,
+            L2,
+            L1,
+            grad,
+            D,
+            Tinj,
+            k_m,
+            scale,
+            model,
+            Tsurf,
+            c_m,
+            rho_m,
+            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+            Diameter1,
+            Diameter2,
+            PipeParam3,
+            PipeParam4,
+            PipeParam5,
+            mesh,
+            accuracy,
+            HyperParam3,
+            HyperParam4,
+            HyperParam5,
+        )
+        # if SBT:
+        # end = time.time()
+        # print("run generate_subsurface_lineplots:", end - start)
 
-    return (
-        subplots,
-        forty_yr_TPmeans_dict,
-        df_mass_flow_rate,
-        df_time,
-        err_subres_dict,
-        TandP_dict,
-    )
+        return (
+            subplots,
+            forty_yr_TPmeans_dict,
+            df_mass_flow_rate,
+            df_time,
+            err_subres_dict,
+            TandP_dict,
+        )
+    except Exception as e:
+        print(f"Error in update_subsurface_results_plots: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return empty/default values on error
+        import plotly.graph_objects as go
+        from plotly.subplots import make_subplots
+        empty_fig = make_subplots(rows=2, cols=3)
+        return empty_fig, {}, {}, {}, {}, {}
 
 
 @app.callback(
@@ -2089,14 +2206,22 @@ def update_subsurface_results_plots(
         Input(component_id="diameter-select", component_property="value"),
         Input(component_id="Tinj-select", component_property="value"),
         Input(component_id="k-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
     ],
 )
 def update_subsurface_contours_plots(
-    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
+    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, model
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
+    # Contours are only available for HDF5 models, not SBT models
+    if model is None or model in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    # Check for None values on initial load
+    if fluid is None or case is None or param is None or mdot is None or L2 is None or L1 is None or Tinj is None or D is None or grad is None or k_m is None:
+        raise PreventUpdate
 
     # print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
@@ -2563,19 +2688,21 @@ def update_warning_divs(levelized_cost_dict):
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
     
-    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
-        warning_div3 = html.Div(  # id="error_block_div3",
-            style=error_style,
-            children=[
-                html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                dcc.Markdown(
-                    "**LCOE is too high.**", style={"display": "inline-block"}
-                ),
-                html.P(
-                    "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
-                ),
-            ],
-        )
+    # Disabled warning: LCOE too high / outlet temperature too low
+    # This warning was showing even when parameters were valid, so it's been disabled
+    # if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
+    #     warning_div3 = html.Div(  # id="error_block_div3",
+    #         style=error_style,
+    #         children=[
+    #             html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+    #             dcc.Markdown(
+    #                 "**LCOE is too high.**", style={"display": "inline-block"}
+    #             ),
+    #             html.P(
+    #                 "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
+    #             ),
+    #         ],
+    #     )
 
     return warning_div3
 

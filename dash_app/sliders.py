@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
+Tinj_dict = {30: "30", 60: "60"}
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
@@ -116,7 +116,7 @@ pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
-start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 50.0, "grad": 0.03, "D": 0.3500, "k": 3.0}
+start_vals_d = {"mdot": 30.0, "L2": 10000, "L1": 3500 , "Tinj": 60.0, "grad": 0.065, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,
@@ -310,7 +310,7 @@ def slider_card():
                                                             id="Tinj-container",
                                                             children=[
                                                                 slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                                        mark_dict=Tinj_dict, start_v=50.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                                        mark_dict=Tinj_dict, start_v=60.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
                                                             id="mdot-container",
