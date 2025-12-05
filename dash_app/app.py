@@ -775,7 +775,7 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 )
 def update_working_fluid(model):
     if model == "SBT V2.0":
-        fluid_list = ["H2O"]
+        fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
             return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
@@ -864,7 +864,66 @@ def change_dropdown(at, fluid, model):
             )
             # raise PreventUpdate
 
-    if model == "SBT V1.0" or model == "SBT V2.0":
+    if model == "SBT V2.0":
+        if at == "energy-time-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return (
+                [{"label": i, "value": i} for i in fluid_list],
+                fluid,
+                [{"label": i, "value": i} for i in interpol_list],
+                interpol_list[0],
+            )
+
+        elif at == "about-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return (
+                [{"label": i, "value": i} for i in fluid_list],
+                fluid,
+                [{"label": i, "value": i} for i in interpol_list],
+                interpol_list[0],
+            )
+
+        elif at == "energy-tab":
+            fluid_list = ["H2O", "sCO2"]
+            interpol_list = ["True"]
+            if fluid != "All":
+                return (
+                    [{"label": i, "value": i} for i in fluid_list],
+                    fluid,
+                    [{"label": i, "value": i} for i in interpol_list],
+                    interpol_list[0],
+                )
+            else:
+                return (
+                    [{"label": i, "value": i} for i in fluid_list],
+                    fluid_list[0],
+                    [{"label": i, "value": i} for i in interpol_list],
+                    interpol_list[0],
+                )
+
+        elif at == "economics-time-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return (
+                [{"label": i, "value": i} for i in fluid_list],
+                fluid,
+                [{"label": i, "value": i} for i in interpol_list],
+                interpol_list[0],
+            )
+
+        elif at == "summary-tab":
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return (
+                [{"label": i, "value": i} for i in fluid_list],
+                fluid,
+                [{"label": i, "value": i} for i in interpol_list],
+                interpol_list[0],
+            )
+
+    if model == "SBT V1.0":
         raise PreventUpdate
 
 
