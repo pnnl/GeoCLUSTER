@@ -56,7 +56,7 @@ def create_steps(arg_arr, str_round_place, val_round_place):
 
 wellbore_operations_l = ["Injection Temperature (˚C)", "Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)"]
 
-tube_geometry_l = ["Wellbore Radius Vertical (m)", "Wellbore Radius Lateral (m)", # "Borehole Diameter (m)",
+tube_geometry_l = ["Wellbore Diameter Vertical (m)", "Wellbore Diameter Lateral (m)", # "Borehole Diameter (m)",
                                 "Number of Laterals", "Lateral Flow Allocation", "Lateral Flow Multiplier"]
 
 economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
@@ -106,8 +106,8 @@ rho_dict = {1000: '1000', 3500: '3500'}
 # L2_dict = {1000: '1k', 50000: '50k'}
 # L1_dict = {1000: '1k', 10000: '10k'}
 
-radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
-radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+diameter_vertical_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
+diameter_lateral_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
 radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
@@ -336,14 +336,14 @@ def slider_card():
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
-                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
+                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Diameter Vertical (m)", min_v=0.2159, max_v=0.4445,
+                                                                mark_dict=diameter_vertical_dict, step_i=0.002, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Diameter Vertical (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
-                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
+                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Diameter Lateral (m)", min_v=0.2159, max_v=0.4445,
+                                                                        mark_dict=diameter_lateral_dict, step_i=0.002, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Diameter Lateral (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",

@@ -1597,8 +1597,8 @@ def update_slider_ranges(model, store_data):
         L1_dict = {1000: "1k", 10000: "10k"}
         k_dict = {0.4: "0.4", 5: "5.0"}
 
-        radius_vertical_dict = {0.10795: "0.10795", 0.22225: "0.22225"}
-        radius_lateral_dict = {0.10795: "0.10795", 0.22225: "0.22225"}
+        diameter_vertical_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
+        diameter_lateral_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
 
         grad_container = slider2(
             DivID="grad-select-div",
@@ -1825,22 +1825,22 @@ def update_sliders_heat_exchanger(model, case):
             radius_vertical = slider1(
                 DivID="radius-vertical-select-div",
                 ID="radius-vertical-select",
-                ptitle="Wellbore Radius Vertical (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_vertical_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter Vertical (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_vertical_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius-vertical"],
                 div_style=div_block_style,
             )
             radius_lateral = slider1(
                 DivID="radius-lateral-select-div",
                 ID="radius-lateral-select",
-                ptitle="Wellbore Radius Lateral (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_lateral_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter Lateral (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_lateral_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius-lateral"],
                 div_style=div_block_style,
             )
@@ -1889,11 +1889,11 @@ def update_sliders_heat_exchanger(model, case):
             radius = slider1(
                 DivID="radius-vertical-select-div",
                 ID="radius-vertical-select",
-                ptitle="Wellbore Radius (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_vertical_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_vertical_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius"],
                 div_style=div_block_style,
             )
@@ -1958,22 +1958,22 @@ def update_sliders_heat_exchanger(model, case):
         radius_vertical = slider1(
             DivID="radius-vertical-select-div",
             ID="radius-vertical-select",
-            ptitle="Wellbore Radius Vertical (m)",
-            min_v=0.2,
-            max_v=0.6,
-            mark_dict=radius_vertical_dict,
-            step_i=0.001,
+            ptitle="Wellbore Diameter Vertical (m)",
+            min_v=0.4,
+            max_v=1.2,
+            mark_dict=diameter_vertical_dict,
+            step_i=0.002,
             start_v=start_vals_sbt["radius-vertical"],
             div_style=div_none_style,
         )
         radius_lateral = slider1(
             DivID="radius-lateral-select-div",
             ID="radius-lateral-select",
-            ptitle="Wellbore Radius Lateral (m)",
-            min_v=0.2,
-            max_v=0.6,
-            mark_dict=radius_lateral_dict,
-            step_i=0.001,
+            ptitle="Wellbore Diameter Lateral (m)",
+            min_v=0.4,
+            max_v=1.2,
+            mark_dict=diameter_lateral_dict,
+            step_i=0.002,
             start_v=start_vals_sbt["radius-lateral"],
             div_style=div_none_style,
         )
