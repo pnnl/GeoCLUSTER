@@ -623,6 +623,63 @@ def toggle_collapse(n, is_open):
 
 @app.callback(
     [
+        Output(component_id="collapse-more-params", component_property="is_open"),
+        Output(component_id="collapse-button-more-params", component_property="children"),
+    ],
+    [Input(component_id="collapse-button-more-params", component_property="n_clicks")],
+    [State(component_id="collapse-more-params", component_property="is_open")],
+)
+def toggle_more_params_collapse(n, is_open):
+    if n:
+        new_state = not is_open
+    else:
+        new_state = is_open
+    
+    button_text = "Show less parameters" if new_state else "Show more parameters"
+    return new_state, button_text
+
+
+@app.callback(
+    Output(component_id="hyperparam1-container-collapse", component_property="style"),
+    [Input(component_id="model-select", component_property="value")],
+)
+def show_hide_mass_flow_mode_collapse(model):
+    div_block_style = {"display": "block"}
+    div_none_style = {"display": "none"}
+    
+    if model == "SBT V1.0":
+        return div_block_style
+    else:
+        return div_none_style
+
+
+@app.callback(
+    [
+        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-multiplier-select-collapse", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def sync_lateral_multiplier(tube_val, collapse_val):
+    ctx_info = ctx
+    if not ctx_info.triggered:
+        raise PreventUpdate
+    
+    triggered_id = ctx_info.triggered[0]["prop_id"].split(".")[0]
+    
+    if triggered_id == "lateral-multiplier-select":
+        return dash.no_update, tube_val
+    elif triggered_id == "lateral-multiplier-select-collapse":
+        return collapse_val, dash.no_update
+    raise PreventUpdate
+
+
+@app.callback(
+    [
         Output(component_id="scenario1-div", component_property="style"),
         Output(component_id="scenario3-div", component_property="style"),
         Output(component_id="hr-break1", component_property="style"),
@@ -1231,10 +1288,10 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, n, n, n
+        return b, b, b, b, b, b, n, n, b, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, n, n, n, b
+        return b, b, b, b, b, b, n, n, b, n, n
 
 
 @app.callback(
@@ -1271,11 +1328,14 @@ def econ_sliders_visibility(tab, fluid, end_use):
     econ_parms_div_style_2 = {
         "display": "block",
         "border": "solid 3px #c4752f",
+        "border-top": "solid 3px #c4752f",
+        "border-left": "solid 3px #c4752f",
+        "border-right": "solid 3px #c4752f",
+        "border-bottom": "none",
         "border-radius": "10px 10px 0px 0px",
         "margin-bottom": "5px",
         "margin-right": "5px",
         "padding-bottom": "5px",
-        "borderBottom": "none",
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -1597,8 +1657,8 @@ def update_slider_ranges(model, store_data):
         L1_dict = {1000: "1k", 10000: "10k"}
         k_dict = {0.4: "0.4", 5: "5.0"}
 
-        radius_vertical_dict = {0.10795: "0.10795", 0.22225: "0.22225"}
-        radius_lateral_dict = {0.10795: "0.10795", 0.22225: "0.22225"}
+        diameter_vertical_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
+        diameter_lateral_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
 
         grad_container = slider2(
             DivID="grad-select-div",
@@ -1825,22 +1885,22 @@ def update_sliders_heat_exchanger(model, case):
             radius_vertical = slider1(
                 DivID="radius-vertical-select-div",
                 ID="radius-vertical-select",
-                ptitle="Wellbore Radius Vertical (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_vertical_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter Vertical (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_vertical_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius-vertical"],
                 div_style=div_block_style,
             )
             radius_lateral = slider1(
                 DivID="radius-lateral-select-div",
                 ID="radius-lateral-select",
-                ptitle="Wellbore Radius Lateral (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_lateral_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter Lateral (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_lateral_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius-lateral"],
                 div_style=div_block_style,
             )
@@ -1872,7 +1932,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=1,
                 start_v=start_vals_hdf5["lateral-multiplier"],
                 step_i=0.05,
-                div_style=div_block_style,
+                div_style=div_none_style,
             )
 
             return (
@@ -1889,11 +1949,11 @@ def update_sliders_heat_exchanger(model, case):
             radius = slider1(
                 DivID="radius-vertical-select-div",
                 ID="radius-vertical-select",
-                ptitle="Wellbore Radius (m)",
-                min_v=0.10795,
-                max_v=0.22225,
-                mark_dict=radius_vertical_dict,
-                step_i=0.001,
+                ptitle="Wellbore Diameter (m)",
+                min_v=0.2159,
+                max_v=0.4445,
+                mark_dict=diameter_vertical_dict,
+                step_i=0.002,
                 start_v=start_vals_sbt["radius"],
                 div_style=div_block_style,
             )
@@ -1958,22 +2018,22 @@ def update_sliders_heat_exchanger(model, case):
         radius_vertical = slider1(
             DivID="radius-vertical-select-div",
             ID="radius-vertical-select",
-            ptitle="Wellbore Radius Vertical (m)",
-            min_v=0.2,
-            max_v=0.6,
-            mark_dict=radius_vertical_dict,
-            step_i=0.001,
+            ptitle="Wellbore Diameter Vertical (m)",
+            min_v=0.4,
+            max_v=1.2,
+            mark_dict=diameter_vertical_dict,
+            step_i=0.002,
             start_v=start_vals_sbt["radius-vertical"],
             div_style=div_none_style,
         )
         radius_lateral = slider1(
             DivID="radius-lateral-select-div",
             ID="radius-lateral-select",
-            ptitle="Wellbore Radius Lateral (m)",
-            min_v=0.2,
-            max_v=0.6,
-            mark_dict=radius_lateral_dict,
-            step_i=0.001,
+            ptitle="Wellbore Diameter Lateral (m)",
+            min_v=0.4,
+            max_v=1.2,
+            mark_dict=diameter_lateral_dict,
+            step_i=0.002,
             start_v=start_vals_sbt["radius-lateral"],
             div_style=div_none_style,
         )
@@ -2039,7 +2099,7 @@ def update_sliders_hyperparms(model):
             ptitle="Mass Flow Rate Mode",
             options=["Constant", "Variable"],
             disabled=True,
-            div_style=div_block_style,
+            div_style=div_none_style,
         )
         hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
@@ -2054,7 +2114,7 @@ def update_sliders_hyperparms(model):
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
             options=["Constant", "Variable"],
-            disabled=True,
+            disabled=False,
             div_style=div_none_style,
         )
 
@@ -2090,7 +2150,7 @@ def update_sliders_hyperparms(model):
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
             options=["Variable", "Constant"],
-            disabled=True,
+            disabled=False,
             div_style=div_block_style,
         )
 
@@ -2146,6 +2206,9 @@ def update_sliders_hyperparms(model):
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5
+        Input(
+            component_id="lateral-multiplier-select-collapse", component_property="value"
+        ),  # PipeParam5 (collapse version)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2175,6 +2238,7 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     # mass_mode, temp_mode
@@ -2218,7 +2282,7 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5,
+            PipeParam5 if PipeParam5 is not None else PipeParam5Collapse,
             mesh,
             accuracy,
             HyperParam3,
@@ -2330,6 +2394,7 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2368,6 +2433,7 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     HyperParam3,
@@ -2386,12 +2452,11 @@ def update_econ_plots(
         # -----------------------------------------------------------------------------
 
         # print('economics')
-
+        
         if checklist == [" "]:
             is_plot_ts = True
         else:
             is_plot_ts = False
-
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
             generate_econ_lineplots(
                 TandP_dict,
@@ -2425,7 +2490,9 @@ def update_econ_plots(
 
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
-        print(f"Error in update_econ_plots: {e}")
+        print(f"[ERROR] Error in update_econ_plots: {e}")
+        import traceback
+        traceback.print_exc()
         # Return empty figure and empty data on error
         import plotly.graph_objects as go
         empty_fig = go.Figure()
@@ -2494,6 +2561,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2531,6 +2599,7 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     HyperParam3,

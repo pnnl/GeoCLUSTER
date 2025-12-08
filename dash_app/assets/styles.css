@@ -626,6 +626,64 @@ button:hover{
 
 }
 
+/* Move accuracy slider first label slightly to the right */
+#accuracy-select .rc-slider-mark-text:first-child {
+  margin-left: 5px !important;
+}
+
+/* Move accuracy slider last label (5 (fine)) slightly to the left and prevent wrapping */
+#accuracy-select .rc-slider-mark-text:last-child {
+  margin-right: 5px !important;
+  margin-left: -5px !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* Move mesh fineness slider first label (0 (coarse)) slightly to the right */
+#mesh-select .rc-slider-mark-text:first-child {
+  margin-left: 5px !important;
+}
+
+/* Move mesh fineness slider last label (2 (fine)) slightly to the left and prevent wrapping */
+#mesh-select .rc-slider-mark-text:last-child {
+  margin-right: 5px !important;
+  margin-left: -5px !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* Add spacing above and below Number of Laterals */
+#num-lat-div {
+  margin-top: 15px !important;
+  margin-bottom: 15px !important;
+}
+
+/* Add spacing above and below Lateral Flow Multiplier */
+#lat-flow-mul-div,
+#lat-flow-mul-div-collapse {
+  margin-top: 15px !important;
+  margin-bottom: 15px !important;
+}
+
+/* Move pipe roughness slider first label (1e-6) slightly to the right */
+#temp-mode-select .rc-slider-mark-text:first-child {
+  margin-left: 5px !important;
+}
+
+/* Move pipe roughness slider last label (3e-6) slightly to the left and prevent wrapping */
+#temp-mode-select .rc-slider-mark-text:last-child {
+  margin-right: 5px !important;
+  margin-left: -5px !important;
+  white-space: nowrap !important;
+  text-align: right !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
 /* Images
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
