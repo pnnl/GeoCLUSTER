@@ -640,6 +640,20 @@ def toggle_more_params_collapse(n, is_open):
 
 
 @app.callback(
+    Output(component_id="hyperparam1-container-collapse", component_property="style"),
+    [Input(component_id="model-select", component_property="value")],
+)
+def show_hide_mass_flow_mode_collapse(model):
+    div_block_style = {"display": "block"}
+    div_none_style = {"display": "none"}
+    
+    if model == "SBT V1.0":
+        return div_block_style
+    else:
+        return div_none_style
+
+
+@app.callback(
     [
         Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
         Output(component_id="lateral-multiplier-select-collapse", component_property="value", allow_duplicate=True),
