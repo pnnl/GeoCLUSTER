@@ -162,51 +162,51 @@ PARAMETER_INFO = {
         "description": "Larger diameters allow for higher flow rates but increase drilling costs."
     },
     
-    "Wellbore Radius Vertical (m)": {
-        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.10795-0.22225 m",
-        "typical_value": "0.222 m",
+    "Wellbore Diameter Vertical (m)": {
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.2159-0.4445 m",
+        "typical_value": "0.444 m",
         "unit": "m",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
-    "Wellbore Radius Vertical (ft)": {
-        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.35-0.73 ft",
-        "typical_value": "0.73 ft",
+    "Wellbore Diameter Vertical (ft)": {
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 1.46 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.71-1.46 ft",
+        "typical_value": "1.46 ft",
         "unit": "ft",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
-    "Wellbore Radius Lateral (m)": {
-        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.10795-0.22225 m",
-        "typical_value": "0.222 m",
+    "Wellbore Diameter Lateral (m)": {
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.2159-0.4445 m",
+        "typical_value": "0.444 m",
         "unit": "m",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
-    "Wellbore Radius Lateral (ft)": {
-        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.73 ft is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.35-0.73 ft",
-        "typical_value": "0.73 ft",
+    "Wellbore Diameter Lateral (ft)": {
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 1.46 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.71-1.46 ft",
+        "typical_value": "1.46 ft",
         "unit": "ft",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
     # Base parameter names (without units) for pattern matching
-    "Wellbore Radius Vertical": {
-        "definition": "Set the radius of the vertical injection and production well of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.10795-0.22225 m",
-        "typical_value": "0.222 m",
+    "Wellbore Diameter Vertical": {
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.2159-0.4445 m",
+        "typical_value": "0.444 m",
         "unit": "m",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
-    "Wellbore Radius Lateral": {
-        "definition": "Set the radius of the lateral branches of the U-tube design. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.10795-0.22225 m",
-        "typical_value": "0.222 m",
+    "Wellbore Diameter Lateral": {
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.2159-0.4445 m",
+        "typical_value": "0.444 m",
         "unit": "m",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
@@ -408,10 +408,10 @@ PARAMETER_INFO = {
         "description": "Higher inlet pressures can improve flow rates but increase pumping requirements."
     },
     
-    "Wellbore Radius (m)": {
-        "definition": "Set the outer radius of the coaxial borehole. A value of 0.222 m is a relatively large open-hole radius for maximizing heat transfer surface area.",
-        "recommended_range": "0.10795-0.22225 m",
-        "typical_value": "0.229 m",
+    "Wellbore Diameter (m)": {
+        "definition": "Set the outer diameter of the coaxial borehole. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "recommended_range": "0.2159-0.4445 m",
+        "typical_value": "0.458 m",
         "unit": "m",
         "description": "Affects the heat transfer area and flow resistance in coaxial systems."
     },

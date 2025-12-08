@@ -268,7 +268,13 @@ class data:
                 # Diameter1 = radius_vertical
                 # Diameter2 = radius_lateral
                 # PipeParam3 = n_laterals
-                PipeParam4 = [PipeParam4]
+                # Convert single lateral flow allocation value to array matching number of laterals
+                # The backend expects an array where each element is the flow allocation per lateral
+                # Distribute evenly: 3 laterals becomes [1/3, 1/3, 1/3] (will be normalized by backend)
+                num_laterals = int(PipeParam3) if PipeParam3 is not None else 1
+                num_laterals = max(1, num_laterals)  # Ensure at least 1 lateral
+                allocation_per_lateral = 1.0 / num_laterals
+                PipeParam4 = [allocation_per_lateral] * num_laterals
                 # PipeParam5 = lateral_multiplier
 
             start = time.time()
