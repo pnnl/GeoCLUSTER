@@ -382,16 +382,19 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
     if sbt_version == 2:
 
         if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
-            # Define vectors for pressure and temperature
-            Pvector = [1, 1e9]
-            Tvector = [1, 1e4]
+            # Define vectors for pressure and temperature (convert to numpy arrays)
+            Pvector = np.array([1, 1e9])
+            Tvector = np.array([1, 1e4])
         
             # Create 2x2 arrays with constant fluid properties
-            density = [[rho_f] * 2] * 2
-            heatcapacity = [[cp_f] * 2] * 2
-            thermalconductivity = [[k_f] * 2] * 2
-            viscosity = [[mu_f] * 2] * 2
-            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
+            density = np.array([[rho_f] * 2] * 2)
+            enthalpy = np.array([[0] * 2] * 2)  # Enthalpy difference not used in constant mode
+            entropy = np.array([[0] * 2] * 2)  # Entropy difference not used in constant mode
+            heatcapacity = np.array([[cp_f] * 2] * 2)
+            phase = np.array([[1] * 2] * 2)  # Assume liquid phase (1) for constant properties
+            thermalconductivity = np.array([[k_f] * 2] * 2)
+            viscosity = np.array([[mu_f] * 2] * 2)
+            thermalexpansion = np.array([[0] * 2] * 2)  # Incompressible fluid has zero thermal expansion coefficient
         else:  # If variable fluid properties, import pre-generated tables
             # print('Loading fluid properties...')
             if fluid == 1:  # H2O

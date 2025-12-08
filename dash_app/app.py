@@ -623,6 +623,49 @@ def toggle_collapse(n, is_open):
 
 @app.callback(
     [
+        Output(component_id="collapse-more-params", component_property="is_open"),
+        Output(component_id="collapse-button-more-params", component_property="children"),
+    ],
+    [Input(component_id="collapse-button-more-params", component_property="n_clicks")],
+    [State(component_id="collapse-more-params", component_property="is_open")],
+)
+def toggle_more_params_collapse(n, is_open):
+    if n:
+        new_state = not is_open
+    else:
+        new_state = is_open
+    
+    button_text = "Show less parameters" if new_state else "Show more parameters"
+    return new_state, button_text
+
+
+@app.callback(
+    [
+        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-multiplier-select-collapse", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def sync_lateral_multiplier(tube_val, collapse_val):
+    ctx_info = ctx
+    if not ctx_info.triggered:
+        raise PreventUpdate
+    
+    triggered_id = ctx_info.triggered[0]["prop_id"].split(".")[0]
+    
+    if triggered_id == "lateral-multiplier-select":
+        return dash.no_update, tube_val
+    elif triggered_id == "lateral-multiplier-select-collapse":
+        return collapse_val, dash.no_update
+    raise PreventUpdate
+
+
+@app.callback(
+    [
         Output(component_id="scenario1-div", component_property="style"),
         Output(component_id="scenario3-div", component_property="style"),
         Output(component_id="hr-break1", component_property="style"),
@@ -1271,11 +1314,14 @@ def econ_sliders_visibility(tab, fluid, end_use):
     econ_parms_div_style_2 = {
         "display": "block",
         "border": "solid 3px #c4752f",
+        "border-top": "solid 3px #c4752f",
+        "border-left": "solid 3px #c4752f",
+        "border-right": "solid 3px #c4752f",
+        "border-bottom": "none",
         "border-radius": "10px 10px 0px 0px",
         "margin-bottom": "5px",
         "margin-right": "5px",
         "padding-bottom": "5px",
-        "borderBottom": "none",
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -1872,7 +1918,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=1,
                 start_v=start_vals_hdf5["lateral-multiplier"],
                 step_i=0.05,
-                div_style=div_block_style,
+                div_style=div_none_style,
             )
 
             return (
@@ -2054,7 +2100,7 @@ def update_sliders_hyperparms(model):
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
             options=["Constant", "Variable"],
-            disabled=True,
+            disabled=False,
             div_style=div_none_style,
         )
 
@@ -2090,7 +2136,7 @@ def update_sliders_hyperparms(model):
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
             options=["Variable", "Constant"],
-            disabled=True,
+            disabled=False,
             div_style=div_block_style,
         )
 
@@ -2146,6 +2192,9 @@ def update_sliders_hyperparms(model):
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5
+        Input(
+            component_id="lateral-multiplier-select-collapse", component_property="value"
+        ),  # PipeParam5 (collapse version)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2175,6 +2224,7 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     # mass_mode, temp_mode
@@ -2218,7 +2268,7 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5,
+            PipeParam5 if PipeParam5 is not None else PipeParam5Collapse,
             mesh,
             accuracy,
             HyperParam3,
@@ -2330,6 +2380,7 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2368,6 +2419,7 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     HyperParam3,
@@ -2386,12 +2438,11 @@ def update_econ_plots(
         # -----------------------------------------------------------------------------
 
         # print('economics')
-
+        
         if checklist == [" "]:
             is_plot_ts = True
         else:
             is_plot_ts = False
-
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
             generate_econ_lineplots(
                 TandP_dict,
@@ -2425,7 +2476,9 @@ def update_econ_plots(
 
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
-        print(f"Error in update_econ_plots: {e}")
+        print(f"[ERROR] Error in update_econ_plots: {e}")
+        import traceback
+        traceback.print_exc()
         # Return empty figure and empty data on error
         import plotly.graph_objects as go
         empty_fig = go.Figure()
@@ -2494,6 +2547,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2531,6 +2585,7 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    PipeParam5Collapse,
     mesh,
     accuracy,
     HyperParam3,

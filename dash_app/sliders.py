@@ -112,7 +112,7 @@ radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
-pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
+pipe_roughness_dict =  {0.000001: '1e-6', 0.000002: '', 0.000003: '3e-6'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
@@ -375,6 +375,36 @@ def slider_card():
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
                                                             ]),
+                                                    dbc.Button(
+                                                        "Show more parameters",
+                                                        id="collapse-button-more-params",
+                                                        className="mb-2",
+                                                        outline=True,
+                                                        n_clicks=0,
+                                                        style={"fontSize": "12px", "marginTop": "10px", "color": "black", "borderColor": "black"}
+                                                    ),
+                                                    dbc.Collapse(
+                                                        html.Div(
+                                                            children=[
+                                                                html.Div(
+                                                                    id="lat-flow-mul-container-collapse",
+                                                                    children=[
+                                                                        input_box(DivID="lat-flow-mul-div-collapse", ID="lateral-multiplier-select-collapse", ptitle="Lateral Flow Multiplier", 
+                                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
+                                                                    ]),
+                                                                slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
+                                                                            mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
+                                                                html.Div(
+                                                                    id="hyperparam1-container-collapse",
+                                                                    children=[
+                                                                        dropdown_box(DivID="mass-flow-mode-div-collapse", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=False, div_style=div_block_style)
+                                                                    ]),
+                                                            ]
+                                                        ),
+                                                        id="collapse-more-params",
+                                                        is_open=False,
+                                                    ),
                                                     # html.Div(
                                                     #     id="num-lat-div",
                                                     #     style=div_none_style,
@@ -463,18 +493,9 @@ def slider_card():
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
-                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_none_style, parameter_name="Accuracy"),
-                                                
                                                     html.Div(
-                                                            id="hyperparam1-container",
+                                                            id="hyperparam3-container",
                                                             children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
-                                                        ]),
-                                                    html.Div(
-                                                        id="hyperparam3-container",
-                                                        children=[
                                                                 dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
                                                                                         options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
                                                         ]),
@@ -482,8 +503,14 @@ def slider_card():
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style)
+                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
                                                     ]),
+                                                    html.Div(
+                                                            id="hyperparam1-container",
+                                                            children=[
+                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
+                                                        ]),
                                                 ]
 
                                             ),
