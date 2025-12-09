@@ -1312,11 +1312,27 @@ def show_model_params(model):
 
 
 @app.callback(
-    Output(component_id="new-section-title", component_property="children"),
+    [Output(component_id="new-section-title", component_property="children"),
+     Output(component_id="new-section-text-hdf5", component_property="style"),
+     Output(component_id="new-section-text-sbt1-bold", component_property="style"),
+     Output(component_id="new-section-text-sbt1-normal", component_property="style"),
+     Output(component_id="new-section-text-sbt2", component_property="style")],
     [Input(component_id="model-select", component_property="value")],
 )
 def update_new_section_title(model):
-    return model_labels.get(model, model)
+    title = model_labels.get(model, model)
+    
+    default_style = {"fontWeight": "normal"}
+    bold_style = {"fontWeight": "bold"}
+    
+    if model == "HDF5":
+        return title, bold_style, default_style, default_style, default_style
+    elif model == "SBT V1.0":
+        return title, default_style, bold_style, default_style, default_style
+    elif model == "SBT V2.0":
+        return title, default_style, default_style, default_style, bold_style
+    else:
+        return title, default_style, default_style, default_style, default_style
 
 
 @app.callback(
