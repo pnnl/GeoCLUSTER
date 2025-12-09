@@ -335,6 +335,11 @@ hr {
     font-weight: bold !important;
 }
 
+#dropdown-card0 {
+    width: 18% !important;
+    min-width: 200px !important;
+}
+
 #dropdown-card4 {
     width: 20%;
 }

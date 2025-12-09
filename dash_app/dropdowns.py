@@ -9,6 +9,11 @@ from dash import dcc, html
 # ---------------------------
 
 model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
+model_labels = {
+    "HDF5": "Database (H2O & CO2)",
+    "SBT V1.0": "Simulator (H2O only)",
+    "SBT V2.0": "Simulator (H2O & CO2)"
+}
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
@@ -38,7 +43,7 @@ def dropdown_card():
                                 html.P("Model Version", className="dropdown-text"),
                                 dcc.Dropdown(
                                     id="model-select",
-                                    options=[{"label": i, "value": i} for i in model_list],
+                                    options=[{"label": model_labels[i], "value": i} for i in model_list],
                                     value=model_list[0],
                                     clearable=False,
                                     searchable=False
