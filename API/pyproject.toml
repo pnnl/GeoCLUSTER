@@ -1,0 +1,27 @@
+# pyproject.toml
+
+[project]
+name = "geocluster_api"
+version = "0.0.1"
+requires-python = "==3.12.*"
+dependencies = [
+    "coolprop>=7.1.0",
+    "coverage>=7.13.0",
+    "fastapi[standard]>=0.117.1",
+    "h5py>=3.14.0",
+    "httpx>=0.28.1",
+    "matplotlib>=3.10.6",
+    "pandas>=2.3.2",
+    "plotly>=6.3.0",
+    "pytest>=9.0.1",
+    "python-dotenv>=1.1.1",
+    "scipy>=1.16.2",
+    "uvicorn>=0.36.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath="src"
+testpaths=["test"]
+
+[tool.mypy]
+mypy_path = "src"

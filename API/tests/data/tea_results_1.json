@@ -1,0 +1,11 @@
+{
+  "AveProductionTemperature": 75.43854764856006,
+  "AveProductionPressure": 204.3874641090351,
+  "TotalCAPEX": 17.34393117815196,
+  "CAPEX_Drilling": 17.0,
+  "CAPEX_Surface_Plant": 0.343931178151957,
+  "AverageOPEX_Plant": 0.005158967672279355,
+  "AveInstHeatProduction": 2539.0604830713723,
+  "FirstYearHeatProduction": 28610389.32230372,
+  "LCOH": 52.326724438729286
+}
