@@ -358,13 +358,27 @@ hr {
 
 #slider-container {
     display: flex;
+    flex-direction: column;
     position: relative;
+}
+
+#slider-columns-wrapper {
+    display: flex;
+    width: 100%;
+    justify-content: center;
 }
 
 #therm-sliders, #econ-sliders {
     width: 49%;
     display: inline-block;
 /*    padding-bottom: 40px;*/
+}
+
+#new-section-div {
+    width: 97% !important;
+    margin-top: 5px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #kwe-div {
