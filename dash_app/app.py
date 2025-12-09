@@ -1810,6 +1810,23 @@ def update_slider_ranges(model, store_data):
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
+        Input(component_id="drillcost-select", component_property="value"),
+        Input(component_id="discount-rate-select", component_property="value"),
+        Input(component_id="lifetime-select", component_property="value"),
+        Input(component_id="kwt-select", component_property="value"),
+        Input(component_id="kwe-select", component_property="value"),
+        Input(component_id="precool-select", component_property="value"),
+        Input(component_id="turb-pout-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mesh-select", component_property="value"),
+        Input(component_id="accuracy-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="fluid-mode-select", component_property="value"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -1817,16 +1834,22 @@ def update_slider_ranges(model, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, store_data):
-    """Save slider values to store, keyed by model"""
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, 
+                       drillcost, discount_rate, lifetime, kwt, kwe, precool, turb_pout,
+                       radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                       mesh, accuracy, mass_mode, temp_mode, fluid_mode, model, store_data):
+    """Save all slider values to store, keyed by model"""
     if model is None:
         raise PreventUpdate
     
     if store_data is None:
         store_data = {}
     
+    if model not in store_data:
+        store_data[model] = {}
+    
     # Save current slider values for this model
-    store_data[model] = {
+    store_data[model].update({
         "mdot": mdot,
         "L2": L2,
         "L1": L1,
@@ -1837,7 +1860,52 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         "Tsurf": Tsurf,
         "c": c,
         "rho": rho,
-    }
+        "drillcost": drillcost,
+        "discount_rate": discount_rate,
+        "lifetime": lifetime,
+        "kwt": kwt,
+        "kwe": kwe,
+        "precool": precool,
+        "turb_pout": turb_pout,
+        "radius_vertical": radius_vertical,
+        "radius_lateral": radius_lateral,
+        "n_laterals": n_laterals,
+        "lateral_flow": lateral_flow,
+        "lateral_multiplier": lateral_multiplier,
+        "mesh": mesh,
+        "accuracy": accuracy,
+    })
+    
+    # Save dropdown/slider values separately (only if they exist and are not None)
+    # For SBT V2.0, mass-mode and temp-mode are sliders (numeric)
+    # For SBT V1.0, they are dropdowns (strings)
+    # fluid-mode is always a dropdown (string)
+    if mass_mode is not None:
+        # For SBT V2.0, ensure it's numeric; for SBT V1.0, ensure it's a string
+        if model == "SBT V2.0" and isinstance(mass_mode, (int, float)):
+            store_data[model]["mass_mode"] = mass_mode
+        elif model != "SBT V2.0" and isinstance(mass_mode, str):
+            store_data[model]["mass_mode"] = mass_mode
+        elif model == "SBT V2.0":
+            # Don't save string values for SBT V2.0 sliders
+            pass
+        else:
+            store_data[model]["mass_mode"] = mass_mode
+            
+    if temp_mode is not None:
+        # For SBT V2.0, ensure it's numeric; for SBT V1.0, ensure it's a string
+        if model == "SBT V2.0" and isinstance(temp_mode, (int, float)):
+            store_data[model]["temp_mode"] = temp_mode
+        elif model != "SBT V2.0" and isinstance(temp_mode, str):
+            store_data[model]["temp_mode"] = temp_mode
+        elif model == "SBT V2.0":
+            # Don't save string values for SBT V2.0 sliders
+            pass
+        else:
+            store_data[model]["temp_mode"] = temp_mode
+            
+    if fluid_mode is not None and isinstance(fluid_mode, str):
+        store_data[model]["fluid_mode"] = fluid_mode
     
     return store_data
 
@@ -1854,18 +1922,31 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
         Output(component_id="c-select", component_property="value", allow_duplicate=True),
         Output(component_id="rho-select", component_property="value", allow_duplicate=True),
+        Output(component_id="drillcost-select", component_property="value", allow_duplicate=True),
+        Output(component_id="discount-rate-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lifetime-select", component_property="value", allow_duplicate=True),
+        Output(component_id="kwt-select", component_property="value", allow_duplicate=True),
+        Output(component_id="kwe-select", component_property="value", allow_duplicate=True),
+        Output(component_id="precool-select", component_property="value", allow_duplicate=True),
+        Output(component_id="turb-pout-select", component_property="value", allow_duplicate=True),
+        Output(component_id="radius-vertical-select", component_property="value", allow_duplicate=True),
+        Output(component_id="radius-lateral-select", component_property="value", allow_duplicate=True),
+        Output(component_id="n-laterals-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+        Output(component_id="mesh-select", component_property="value", allow_duplicate=True),
+        Output(component_id="accuracy-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
+        Input(component_id="model-select", component_property="value"),  # Trigger when model changes
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="model-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def restore_slider_values(mdot_container, store_data, model):
-    """Restore slider values from store after sliders are created"""
+def restore_slider_values(model, store_data):
+    """Restore all slider values from store when model changes"""
     if model is None:
         raise PreventUpdate
     
@@ -1875,24 +1956,113 @@ def restore_slider_values(mdot_container, store_data, model):
     # Get saved values for this model
     saved_values = store_data.get(model, {})
     
-    # Only restore if we have saved values for this model
-    if saved_values:
-        mdot = saved_values.get("mdot")
-        L2 = saved_values.get("L2")
-        L1 = saved_values.get("L1")
-        grad = saved_values.get("grad")
-        D = saved_values.get("D")
-        Tinj = saved_values.get("Tinj")
-        k = saved_values.get("k")
-        Tsurf = saved_values.get("Tsurf", start_vals_hdf5.get("Tsurf", 25))
-        c = saved_values.get("c", start_vals_hdf5.get("c", 790.0))
-        rho = saved_values.get("rho", start_vals_hdf5.get("rho", 2800))
-        
-        # Return saved values if we have the key ones
-        if mdot is not None and L2 is not None and L1 is not None and grad is not None and D is not None and Tinj is not None and k is not None:
-            return mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho
+    # If we have saved values, restore them
+    # If not, use dash.no_update to keep existing values or let defaults apply
+    from dash import no_update
     
-    # If no saved values, don't update (let update_slider_ranges set defaults)
+    # Get default values for fallback
+    from sliders import start_vals_hdf5, start_vals_d, start_vals_sbt, start_vals_econ
+    
+    # Restore all values, using saved if available, otherwise no_update
+    outputs = [
+        saved_values.get("mdot", no_update),
+        saved_values.get("L2", no_update),
+        saved_values.get("L1", no_update),
+        saved_values.get("grad", no_update),
+        saved_values.get("D", no_update),
+        saved_values.get("Tinj", no_update),
+        saved_values.get("k", no_update),
+        saved_values.get("Tsurf", no_update),
+        saved_values.get("c", no_update),
+        saved_values.get("rho", no_update),
+        saved_values.get("drillcost", no_update),
+        saved_values.get("discount_rate", no_update),
+        saved_values.get("lifetime", no_update),
+        saved_values.get("kwt", no_update),
+        saved_values.get("kwe", no_update),
+        saved_values.get("precool", no_update),
+        saved_values.get("turb_pout", no_update),
+        saved_values.get("radius_vertical", no_update),
+        saved_values.get("radius_lateral", no_update),
+        saved_values.get("n_laterals", no_update),
+        saved_values.get("lateral_flow", no_update),
+        saved_values.get("lateral_multiplier", no_update),
+        saved_values.get("mesh", no_update),
+        saved_values.get("accuracy", no_update),
+    ]
+    
+    # Only return if we have at least some saved values (otherwise let defaults apply)
+    if any(val is not no_update for val in outputs):
+        return tuple(outputs)
+    
+    raise PreventUpdate
+
+
+@app.callback(
+    [
+        Output(component_id="mass-mode-select", component_property="value", allow_duplicate=True),
+        Output(component_id="temp-mode-select", component_property="value", allow_duplicate=True),
+        Output(component_id="fluid-mode-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_dropdown_values(model, store_data):
+    """Restore dropdown/slider values from store when model changes"""
+    if model is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    saved_values = store_data.get(model, {})
+    
+    from dash import no_update
+    
+    # For SBT V2.0, mass-mode-select and temp-mode-select are sliders (numeric)
+    # For SBT V1.0, they are dropdowns (strings)  
+    # fluid-mode-select is always a dropdown (string)
+    
+    if model == "SBT V2.0":
+        # For V2.0, mass-mode and temp-mode are sliders, so only restore numeric values
+        mass_mode = saved_values.get("mass_mode", no_update)
+        temp_mode = saved_values.get("temp_mode", no_update)
+        fluid_mode = saved_values.get("fluid_mode", no_update)
+        
+        # Type checking - only restore if types match expected component types
+        if not isinstance(mass_mode, (int, float)) and mass_mode is not no_update:
+            mass_mode = no_update
+        if not isinstance(temp_mode, (int, float)) and temp_mode is not no_update:
+            temp_mode = no_update
+        if not isinstance(fluid_mode, str) and fluid_mode is not no_update:
+            fluid_mode = no_update
+            
+    elif model == "SBT V1.0":
+        # For V1.0, mass-mode and temp-mode are dropdowns (strings)
+        mass_mode = saved_values.get("mass_mode", no_update)
+        temp_mode = saved_values.get("temp_mode", no_update)
+        fluid_mode = saved_values.get("fluid_mode", no_update)
+        
+        # Type checking - only restore if types match expected component types (strings)
+        if not isinstance(mass_mode, str) and mass_mode is not no_update:
+            mass_mode = no_update
+        if not isinstance(temp_mode, str) and temp_mode is not no_update:
+            temp_mode = no_update
+        if not isinstance(fluid_mode, str) and fluid_mode is not no_update:
+            fluid_mode = no_update
+    else:
+        # For HDF5, these components don't exist, so don't restore
+        raise PreventUpdate
+    
+    # Only return if we have at least one saved value of the correct type
+    if any(val is not no_update for val in [mass_mode, temp_mode, fluid_mode]):
+        return mass_mode, temp_mode, fluid_mode
+    
     raise PreventUpdate
 
 
