@@ -56,7 +56,7 @@ def create_steps(arg_arr, str_round_place, val_round_place):
 
 wellbore_operations_l = ["Injection Temperature (˚C)", "Mass Flow Rate (kg/s)", "Horizontal Extent (m)", "Drilling Depth (m)"]
 
-tube_geometry_l = ["Wellbore Diameter Vertical (m)", "Wellbore Diameter Lateral (m)", # "Borehole Diameter (m)",
+tube_geometry_l = ["Wellbore Radius Vertical (m)", "Wellbore Radius Lateral (m)", # "Borehole Diameter (m)",
                                 "Number of Laterals", "Lateral Flow Allocation", "Lateral Flow Multiplier"]
 
 economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = {30: "30", 60: "60"}
+Tinj_dict = create_steps(arg_arr=u_sCO2.Tinj - 273.15, str_round_place='{:.1f}', val_round_place=2)
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
@@ -106,17 +106,17 @@ rho_dict = {1000: '1000', 3500: '3500'}
 # L2_dict = {1000: '1k', 50000: '50k'}
 # L1_dict = {1000: '1k', 10000: '10k'}
 
-diameter_vertical_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
-diameter_lateral_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
+radius_vertical_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
+radius_lateral_dict = {0.10795: '0.10795', 0.22225: '0.22225'}
 radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
-pipe_roughness_dict =  {0.000001: '1e-6', 0.000002: '', 0.000003: '3e-6'}
+pipe_roughness_dict =  {0.000001: '0.000001', 0.000003: '0.000003'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
-start_vals_d = {"mdot": 30.0, "L2": 10000, "L1": 3500 , "Tinj": 60.0, "grad": 0.065, "D": 0.3500, "k": 3.0}
+start_vals_d = {"mdot": 24.0, "L2": 10000, "L1": 3500 , "Tinj": 50.0, "grad": 0.03, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,
@@ -214,7 +214,7 @@ def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
             className="name-input-container",
             children=[
                 html.P(ptitle, className="input-title"),
-                dcc.Input(id=ID, disabled=False,
+                dcc.Input(id=ID, disabled=True,
                             value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
         ])
 
@@ -310,7 +310,7 @@ def slider_card():
                                                             id="Tinj-container",
                                                             children=[
                                                                 slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
-                                                                        mark_dict=Tinj_dict, start_v=60.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
+                                                                        mark_dict=Tinj_dict, start_v=50.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
                                                             id="mdot-container",
@@ -336,14 +336,14 @@ def slider_card():
                                                     html.Div(
                                                             id="Diameter1-container",
                                                             children=[
-                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Diameter Vertical (m)", min_v=0.2159, max_v=0.4445,
-                                                                mark_dict=diameter_vertical_dict, step_i=0.002, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Diameter Vertical (m)")
+                                                                slider1(DivID="radius-vertical-select-div", ID="radius-vertical-select", ptitle="Wellbore Radius Vertical (m)", min_v=0.10795, max_v=0.22225,
+                                                                mark_dict=radius_vertical_dict, step_i=0.001, start_v=start_vals_sbt["radius-vertical"], div_style=div_none_style, parameter_name="Wellbore Radius Vertical (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter2-container",
                                                             children=[
-                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Diameter Lateral (m)", min_v=0.2159, max_v=0.4445,
-                                                                        mark_dict=diameter_lateral_dict, step_i=0.002, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Diameter Lateral (m)")
+                                                                slider1(DivID="radius-lateral-select-div", ID="radius-lateral-select", ptitle="Wellbore Radius Lateral (m)", min_v=0.10795, max_v=0.22225,
+                                                                        mark_dict=radius_lateral_dict, step_i=0.001, start_v=start_vals_sbt["radius-lateral"], div_style=div_none_style, parameter_name="Wellbore Radius Lateral (m)")
                                                             ]),
                                                     html.Div(
                                                             id="L2-container",
@@ -375,36 +375,6 @@ def slider_card():
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
                                                             ]),
-                                                    dbc.Button(
-                                                        "Show more parameters",
-                                                        id="collapse-button-more-params",
-                                                        className="mb-2",
-                                                        outline=True,
-                                                        n_clicks=0,
-                                                        style={"fontSize": "12px", "marginTop": "10px", "color": "black", "borderColor": "black"}
-                                                    ),
-                                                    dbc.Collapse(
-                                                        html.Div(
-                                                            children=[
-                                                                html.Div(
-                                                                    id="lat-flow-mul-container-collapse",
-                                                                    children=[
-                                                                        input_box(DivID="lat-flow-mul-div-collapse", ID="lateral-multiplier-select-collapse", ptitle="Lateral Flow Multiplier", 
-                                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
-                                                                    ]),
-                                                                slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                            mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
-                                                                html.Div(
-                                                                    id="hyperparam1-container-collapse",
-                                                                    children=[
-                                                                        dropdown_box(DivID="mass-flow-mode-div-collapse", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=False, div_style=div_block_style)
-                                                                    ]),
-                                                            ]
-                                                        ),
-                                                        id="collapse-more-params",
-                                                        is_open=False,
-                                                    ),
                                                     # html.Div(
                                                     #     id="num-lat-div",
                                                     #     style=div_none_style,
@@ -493,9 +463,18 @@ def slider_card():
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
+                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
+                                                                mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
+                                                
                                                     html.Div(
-                                                            id="hyperparam3-container",
+                                                            id="hyperparam1-container",
                                                             children=[
+                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                        ]),
+                                                    html.Div(
+                                                        id="hyperparam3-container",
+                                                        children=[
                                                                 dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
                                                                                         options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
                                                         ]),
@@ -503,14 +482,8 @@ def slider_card():
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
+                                                                                                options=["Variable", "Constant"], disabled=True, div_style=div_none_style)
                                                     ]),
-                                                    html.Div(
-                                                            id="hyperparam1-container",
-                                                            children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
-                                                        ]),
                                                 ]
 
                                             ),

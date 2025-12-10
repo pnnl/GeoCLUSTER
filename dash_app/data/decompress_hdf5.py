@@ -1,7 +1,6 @@
 import h5py
 from paths import inpath_dict
 import numpy as np
-import os
 
 def copy_hdf5(source_path, destination_path):
     """Copies an HDF5 file from source to destination."""
@@ -13,23 +12,9 @@ def decompress__hdf5():
     #uncompressing hdf5 files and saving them as chunked files if they dont' exist
     print("decompressing hdf5...")
 
+    # copy hdf5 
     in_filename = inpath_dict["h5_filepath"]
     out_filename = inpath_dict["decompressed_h5_filepath"]
-    
-    if not os.path.exists(in_filename):
-        alt_paths = [
-            "dash_app/data/clgs_results_final_float32.h5",
-            "data/clgs_results_final_float32.h5",
-            os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "clgs_results_final_float32.h5")
-        ]
-        for alt_path in alt_paths:
-            if os.path.exists(alt_path):
-                in_filename = alt_path
-                print(f"Found HDF5 file at: {in_filename}")
-                break
-        else:
-            raise FileNotFoundError(f"Could not find HDF5 file. Tried: {inpath_dict['h5_filepath']} and {alt_paths}")
-    
     copy_hdf5(source_path=in_filename, destination_path=out_filename)
 
     shape = (26, 20, 9, 5, 3, 3, 3, 161)

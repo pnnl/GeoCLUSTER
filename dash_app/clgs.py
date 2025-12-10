@@ -92,18 +92,9 @@ class data:
         if target == "all":
             return slice(None)  # slice all of the points
         # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
-        # Suppress warning for SBT models which use different parameter ranges
-        # Only warn if value is slightly outside range (interpolation case), not way outside (SBT case)
         if target < array[0] or target > array[-1]:
-            # Check if value is way outside range (likely SBT model) - suppress warning
-            array_range = array[-1] - array[0]
-            if target < array[0] - array_range * 0.1 or target > array[-1] + array_range * 0.1:
-                # Value is significantly outside range, likely SBT model - don't warn
-                pass
-            else:
-                # Value is slightly outside range, might be interpolation - warn
-                lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                print(lineprint)
+            lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+            print(lineprint)
             # raise Exception(
             #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
             # )
@@ -268,13 +259,7 @@ class data:
                 # Diameter1 = radius_vertical
                 # Diameter2 = radius_lateral
                 # PipeParam3 = n_laterals
-                # Convert single lateral flow allocation value to array matching number of laterals
-                # The backend expects an array where each element is the flow allocation per lateral
-                # Distribute evenly: 3 laterals becomes [1/3, 1/3, 1/3] (will be normalized by backend)
-                num_laterals = int(PipeParam3) if PipeParam3 is not None else 1
-                num_laterals = max(1, num_laterals)  # Ensure at least 1 lateral
-                allocation_per_lateral = 1.0 / num_laterals
-                PipeParam4 = [allocation_per_lateral] * num_laterals
+                PipeParam4 = [PipeParam4]
                 # PipeParam5 = lateral_multiplier
 
             start = time.time()

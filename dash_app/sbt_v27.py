@@ -143,7 +143,7 @@ def run_sbt(
                 interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity = \
                     prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
-                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f, variableflowrate=variableflowrate)
+                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
 
     ### GET INJECTION TEMPERATURE as an array AND MASS FLOW RATE PROFILES as an array
     # e.g. [30.  0.  0.  0.  0. ....] or similar

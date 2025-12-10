@@ -188,7 +188,7 @@ hr {
     padding: 1rem;
     margin: auto;
     margin-top: 8px;
-    min-height: 800px;
+
 }
 
 #geothermal_card > b {
@@ -626,64 +626,6 @@ button:hover{
 
 }
 
-/* Move accuracy slider first label slightly to the right */
-#accuracy-select .rc-slider-mark-text:first-child {
-  margin-left: 5px !important;
-}
-
-/* Move accuracy slider last label (5 (fine)) slightly to the left and prevent wrapping */
-#accuracy-select .rc-slider-mark-text:last-child {
-  margin-right: 5px !important;
-  margin-left: -5px !important;
-  white-space: nowrap !important;
-  text-align: right !important;
-  width: auto !important;
-  max-width: none !important;
-}
-
-/* Move mesh fineness slider first label (0 (coarse)) slightly to the right */
-#mesh-select .rc-slider-mark-text:first-child {
-  margin-left: 5px !important;
-}
-
-/* Move mesh fineness slider last label (2 (fine)) slightly to the left and prevent wrapping */
-#mesh-select .rc-slider-mark-text:last-child {
-  margin-right: 5px !important;
-  margin-left: -5px !important;
-  white-space: nowrap !important;
-  text-align: right !important;
-  width: auto !important;
-  max-width: none !important;
-}
-
-/* Add spacing above and below Number of Laterals */
-#num-lat-div {
-  margin-top: 15px !important;
-  margin-bottom: 15px !important;
-}
-
-/* Add spacing above and below Lateral Flow Multiplier */
-#lat-flow-mul-div,
-#lat-flow-mul-div-collapse {
-  margin-top: 15px !important;
-  margin-bottom: 15px !important;
-}
-
-/* Move pipe roughness slider first label (1e-6) slightly to the right */
-#temp-mode-select .rc-slider-mark-text:first-child {
-  margin-left: 5px !important;
-}
-
-/* Move pipe roughness slider last label (3e-6) slightly to the left and prevent wrapping */
-#temp-mode-select .rc-slider-mark-text:last-child {
-  margin-right: 5px !important;
-  margin-left: -5px !important;
-  white-space: nowrap !important;
-  text-align: right !important;
-  width: auto !important;
-  max-width: none !important;
-}
-
 /* Images
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
@@ -731,17 +673,10 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
+    margin-top: -600px;
     margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
     position: sticky;
-}
-
-#radio-graphic-control3 {
-    margin-top: -450px;
-}
-
-#radio-graphic-control4 {
-    margin-top: -800px;
 }
 
 /* Graphs
@@ -762,30 +697,9 @@ button:hover{
     z-index: 0;
 }
 
-#graphics-container-econ {
-    min-height: 1000px;
-}
-
-#graphics-parent-econ {
-    min-height: 1000px;
-}
-
-#graphics-container {
-    height: 650px;
-}
-
-#graphics-parent {
-    height: 700px;
-}
-
 #geothermal_time_plots {
-    height: 700px !important;
+    height: 735px;
     position: relative !important;
-}
-
-#geothermal_time_plots .js-plotly-plot,
-#geothermal_time_plots .plot-container {
-    height: 100% !important;
 }
 
 #econ_plots {
@@ -794,16 +708,11 @@ button:hover{
 
 #geothermal_plots
 {
-    height: 700px !important;
-}
-
-#geothermal_plots .js-plotly-plot,
-#geothermal_plots .plot-container {
-    height: 100% !important;
+    height: 735px;
 }
 
 #econ_plots {
-    height: 1000px !important;
+    height: 935px;
     z-index: 0 !important;
 }
 

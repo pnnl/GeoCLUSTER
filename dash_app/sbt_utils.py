@@ -373,110 +373,25 @@ def calc_tube_min_time_steps(clg_configuration, radius, radiusvector, alpha_m, D
     return timeforpointssource, timeforlinesource, timeforfinitelinesource,
 
 
-def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f, variableflowrate=None):
+def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
 
     interpolator_density = interpolator_enthalpy = interpolator_entropy = None
     interpolator_heatcapacity = interpolator_heatcapacity = interpolator_phase = None 
     interpolator_thermalconductivity = interpolator_thermalexpansion = interpolator_viscosity = None
 
-    if sbt_version == 1:
-        if fluid == 2:  # CO2
-            if variableflowrate == 1:  # Variable Mass Flow Rate Mode
-                try:
-                    mat1 = scipy.io.loadmat(inpath_dict["properties_CO2_pathname_sbtv2"])
-                    mat2 = scipy.io.loadmat(inpath_dict["properties_CO2v2_pathname"])
-                    Pvector = mat1['Pvector']
-                    Tvector = mat1['Tvector']
-                    density = mat1['density']
-                    enthalpy = mat1['enthalpy']
-                    entropy = mat1['entropy']
-                    heatcapacity = mat1['heatcapacity']
-                    phase = mat1['phase']
-                    thermalconductivity = mat1['thermalconductivity']
-                    thermalexpansion = mat1['thermalexpansion']
-                    viscosity = mat1['viscosity']
-                    Pvector_1d = Pvector.ravel()
-                    Tvector_1d = Tvector.ravel()
-                    interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-                    interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-                    interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
-                    interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-                    interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
-                    interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
-                    interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
-                    interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
-                except Exception as e:
-                    print(f"Error loading CO2 properties files for SBT v1 (Variable Mass Flow Rate Mode): {e}")
-                    raise
-            else:  # Constant Mass Flow Rate Mode
-                try:
-                    mat = scipy.io.loadmat(inpath_dict["properties_CO2_pathname_sbtv2"])
-                    Pvector = mat['Pvector']
-                    Tvector = mat['Tvector']
-                    density = mat['density']
-                    enthalpy = mat['enthalpy']
-                    entropy = mat['entropy']
-                    heatcapacity = mat['heatcapacity']
-                    phase = mat['phase']
-                    thermalconductivity = mat['thermalconductivity']
-                    thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']
-                    Pvector_1d = Pvector.ravel()
-                    Tvector_1d = Tvector.ravel()
-                    interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-                    interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-                    interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
-                    interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-                    interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
-                    interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
-                    interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
-                    interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
-                except Exception as e:
-                    print(f"Error loading CO2 properties file for SBT v1 (Constant Mass Flow Rate Mode): {e}")
-                    raise
-        elif fluid == 1:  # H2O
-            try:
-                mat = scipy.io.loadmat(inpath_dict["properties_H2O_pathname_sbtv2"])
-                Pvector = mat['Pvector']
-                Tvector = mat['Tvector']
-                density = mat['density']
-                enthalpy = mat['enthalpy']
-                entropy = mat['entropy']
-                heatcapacity = mat['heatcapacity']
-                phase = mat['phase']
-                thermalconductivity = mat['thermalconductivity']
-                thermalexpansion = mat['thermalexpansion']
-                viscosity = mat['viscosity']
-                Pvector_1d = Pvector.ravel()
-                Tvector_1d = Tvector.ravel()
-                interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
-                interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
-                interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
-                interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
-                interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
-                interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
-                interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
-                interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
-            except Exception as e:
-                print(f"Error loading H2O properties file for SBT v1: {e}")
-                raise
-
     if sbt_version == 2:
 
         if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
-            # Define vectors for pressure and temperature (convert to numpy arrays)
-            Pvector = np.array([1, 1e9])
-            Tvector = np.array([1, 1e4])
+            # Define vectors for pressure and temperature
+            Pvector = [1, 1e9]
+            Tvector = [1, 1e4]
         
             # Create 2x2 arrays with constant fluid properties
-            density = np.array([[rho_f] * 2] * 2)
-            enthalpy = np.array([[0] * 2] * 2)  # Enthalpy difference not used in constant mode
-            entropy = np.array([[0] * 2] * 2)  # Entropy difference not used in constant mode
-            heatcapacity = np.array([[cp_f] * 2] * 2)
-            phase = np.array([[1] * 2] * 2)  # Assume liquid phase (1) for constant properties
-            thermalconductivity = np.array([[k_f] * 2] * 2)
-            viscosity = np.array([[mu_f] * 2] * 2)
-            thermalexpansion = np.array([[0] * 2] * 2)  # Incompressible fluid has zero thermal expansion coefficient
+            density = [[rho_f] * 2] * 2
+            heatcapacity = [[cp_f] * 2] * 2
+            thermalconductivity = [[k_f] * 2] * 2
+            viscosity = [[mu_f] * 2] * 2
+            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
         else:  # If variable fluid properties, import pre-generated tables
             # print('Loading fluid properties...')
             if fluid == 1:  # H2O
