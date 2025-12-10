@@ -28,7 +28,7 @@ import dash
 import dash_bootstrap_components as dbc  # Adds bootstrap components for more web themes and templates
 import dash_daq as daq  # Adds more data acquisition (DAQ) and controls to dash callbacks
 from dash import Dash, ctx, dcc, html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 from dropdowns import *
 from flask import send_from_directory
@@ -257,6 +257,125 @@ def graph_guidance_card(btnID, cardID, dropdown_children):
     )
 
 
+def create_resource_card(card_id, title, description, link=None, pdf_path=None, expanded_content=None):
+    """Create an expandable resource card with title, description, and expand icon."""
+    expand_icon_id = {"type": "resource-expand-icon", "index": card_id}
+    collapse_id = {"type": "resource-collapse", "index": card_id}
+    button_id = {"type": "resource-button", "index": card_id}
+    
+    # Determine if card should be clickable (has link or pdf) or expandable (has expanded_content)
+    is_clickable = link is not None or pdf_path is not None
+    has_expandable_content = expanded_content is not None
+    
+    # Build expanded content if provided
+    if expanded_content is None and not is_clickable:
+        expanded_content = html.Div()
+    
+    # Create click handler URL
+    click_url = None
+    if link:
+        click_url = link
+    elif pdf_path:
+        click_url = app.get_asset_url(pdf_path)
+    
+    header_style = {
+        "position": "relative",
+        "cursor": "pointer",
+        "padding": "15px",
+        "border": "1px solid #C9C9C9",
+        "borderRadius": "16px",
+        "marginBottom": "10px",
+        "backgroundColor": "#fff",
+    }
+    
+    # Wrap header in link if clickable
+    header_children = [
+        html.Div(
+            style={"paddingRight": "35px"},
+            children=[
+                html.H6(title, style={"margin": "0", "fontWeight": "bold", "fontSize": "16px"}),
+                html.Div(description, style={"margin": "5px 0 0 0", "fontSize": "14px", "color": "#666"}),
+            ]
+        ),
+        html.Img(
+            id=expand_icon_id if has_expandable_content else f"{card_id}-icon",
+            src=app.get_asset_url("expand_closed.svg"),
+            className="resource-expand-icon",
+            style={
+                "width": "21px",
+                "height": "21px",
+                "position": "absolute",
+                "top": "15px",
+                "right": "15px",
+            },
+        ),
+    ]
+    
+    # Check if description contains clipboard-wrapper (special case for API card)
+    has_clipboard = False
+    if isinstance(description, html.Div):
+        # Check if any child has clipboard-wrapper id
+        def check_for_clipboard(children):
+            if isinstance(children, list):
+                for child in children:
+                    if check_for_clipboard(child):
+                        return True
+            elif hasattr(children, 'id') and children.id == 'clipboard-wrapper':
+                return True
+            elif hasattr(children, 'children'):
+                return check_for_clipboard(children.children)
+            return False
+        has_clipboard = check_for_clipboard(description)
+    
+    if is_clickable and not has_expandable_content:
+        if has_clipboard:
+            # For cards with clipboard, use div with onClick to open link, but exclude clipboard clicks
+            header_element = html.Div(
+                className="resource-card-header",
+                style=header_style,
+                children=header_children,
+                **{"data-href": click_url, "data-target": "_blank" if link else None}
+            )
+        else:
+            # Card opens link directly - wrap in anchor tag
+            header_element = html.A(
+                className="resource-card-header",
+                href=click_url,
+                target="_blank" if link else None,
+                rel="noopener noreferrer" if link else None,
+                download=pdf_path if pdf_path else None,
+                style=header_style,
+                children=header_children,
+            )
+    else:
+        # Card expands - use div with click handler
+        div_props = {
+            "className": "resource-card-header",
+            "style": header_style,
+            "children": header_children,
+        }
+        if has_expandable_content:
+            div_props["id"] = button_id
+            div_props["n_clicks"] = 0
+        header_element = html.Div(**div_props)
+    
+    card_children = [header_element]
+    if has_expandable_content:
+        card_children.append(
+            dbc.Collapse(
+                id=collapse_id,
+                is_open=False,
+                children=expanded_content,
+            )
+        )
+    
+    return html.Div(
+        id=card_id,
+        className="resource-card",
+        children=card_children,
+    )
+
+
 # -------------------------------------------------------------------------------------------------
 # Defines tab contents for 5 of the following tabs:
 #
@@ -280,36 +399,139 @@ about_tab = dcc.Tab(
                         html.P("About Our Research", id="ab-title1"),
                         html.P(note, id="ab-note"),
                         html.P(note2, id="ab-note2"),
-                        html.P("Navigating the Results", id="ab-title2"),
-                        html.P(note3, id="ab-note3"),
                         html.P("Resources", id="ab-title3"),
-                        html.Label(
-                            [
-                                html.P("Download the contributing", id="shorttext1"),
-                                html.A(
-                                    "papers",
-                                    href="https://gdr.openei.org/submissions/1473",
-                                    id="hyperlink1",
+                        html.P("Explore our APIs, research papers, and open-source code.", id="ab-note4"),
+                        html.Div(
+                            id="resource-cards-container",
+                            children=[
+                                html.Div(
+                                    id="resource-card-1",
+                                    className="resource-card",
+                                    children=[
+                                        html.A(
+                                            className="resource-card-header",
+                                            href="https://apps.openei.org/services/",
+                                            target="_blank",
+                                            rel="noopener noreferrer",
+                                            style={
+                                                "position": "relative",
+                                                "cursor": "pointer",
+                                                "padding": "15px",
+                                                "border": "1px solid #C9C9C9",
+                                                "borderBottom": "none",
+                                                "borderRadius": "16px 16px 0 0",
+                                                "marginBottom": "0",
+                                                "backgroundColor": "#fff",
+                                                "textDecoration": "none",
+                                                "color": "inherit",
+                                                "display": "block"
+                                            },
+                                            children=[
+                                                html.Div(
+                                                    style={"paddingRight": "35px"},
+                                                    children=[
+                                                        html.H6("GeoCLUSTER APIs", style={"margin": "0", "fontWeight": "bold", "fontSize": "16px"}),
+                                                        html.Div([
+                                                            html.P("Access the closed-loop geothermal techno-economic model programmatically for scenario runs, individually or in batch. Last updated 12/2025.", style={"margin": "0"}),
+                                                            html.P("An API key is required - sign up at OpenEI to get your key.", style={"margin": "5px 0 0 0"}),
+                                                        ], style={"margin": "5px 0 -2px 0", "fontSize": "14px", "color": "#666"}),
+                                                    ]
+                                                ),
+                                                html.Img(
+                                                    src=app.get_asset_url("expand_closed.svg"),
+                                                    className="resource-expand-icon",
+                                                    style={
+                                                        "width": "21px",
+                                                        "height": "21px",
+                                                        "position": "absolute",
+                                                        "top": "15px",
+                                                        "right": "15px",
+                                                    },
+                                                ),
+                                            ]
+                                        ),
+                                        html.Div(
+                                            style={
+                                                "padding": "0 15px 15px 15px",
+                                                "border": "1px solid #C9C9C9",
+                                                "borderTop": "none",
+                                                "borderRadius": "0 0 16px 16px",
+                                                "backgroundColor": "#fff",
+                                                "marginBottom": "10px",
+                                                "marginTop": "-5px",
+                                            },
+                                            children=[
+                                                html.P("Add it to the URL:", style={"margin": "2px 0 0 0", "fontSize": "14px", "color": "#666"}),
+                                                html.Div(
+                                                    [
+                                                        html.Div(
+                                                            "https://api.openei.org/geocluster_api/?api_key=YOUR_KEY_HERE",
+                                                            id="api-url-text",
+                                                            style={
+                                                                "fontSize": "12px", 
+                                                                "wordBreak": "break-all", 
+                                                                "color": "#0066cc",
+                                                                "userSelect": "all",
+                                                                "display": "inline-block",
+                                                                "padding": "4px",
+                                                                "backgroundColor": "#f5f5f5",
+                                                                "borderRadius": "4px",
+                                                                "fontFamily": "monospace",
+                                                                "margin": "0",
+                                                                "flex": "1",
+                                                                "paddingRight": "35px"
+                                                            }
+                                                        ),
+                                                        html.Div(
+                                                            dcc.Clipboard(
+                                                                id="api-clipboard",
+                                                                target_id="api-url-text",
+                                                                style={
+                                                                    "display": "inline-block",
+                                                                    "cursor": "pointer"
+                                                                }
+                                                            ),
+                                                            id="clipboard-wrapper",
+                                                            style={
+                                                                "position": "absolute",
+                                                                "right": "15px",
+                                                                "top": "45%",
+                                                                "transform": "translateY(-50%)",
+                                                                "zIndex": "1000"
+                                                            },
+                                                        ),
+                                                    ],
+                                                    style={"display": "flex", "alignItems": "center", "gap": "8px", "position": "relative"}
+                                                ),
+                                            ]
+                                        ),
+                                    ]
                                 ),
-                                html.P("and", id="shorttext2"),
-                                html.A(
-                                    "code",
-                                    href="https://github.com/pnnl/GeoCLUSTER",
-                                    id="hyperlink2",
+                                create_resource_card(
+                                    "resource-card-2",
+                                    "GeoCLUSTER Code Repository",
+                                    "Code for the Python-based closed-loop geothermal techno-economic simulator with customizable reservoir and wellbore models.",
                                 ),
-                                html.P(".", id="shorttext3"),
+                                create_resource_card(
+                                    "resource-card-3",
+                                    "Geothermal Rising Conference, 2021",
+                                    "Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                ),
+                                create_resource_card(
+                                    "resource-card-4",
+                                    "Geothermal Rising Conference, 2021",
+                                    "Vasilyi, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                ),
                             ],
-                            id="ab-note4",
                         ),
                     ],
                 ),
                 html.Div(
                     id="image-container",
                     children=[
-                        html.Img(
-                            id="cluster-img",
-                            src=app.get_asset_url("CLGWG3.png"),
-                        ),
+                        html.P("Closed-Loop Geothermal Working Group", id="ab-title4"),
+                        html.P("This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of CLGSs involving four national laboratories and two universities.", id="ab-note5"),
+                        html.P("Closed-Loop Geothermal System", id="ab-title5"),
                         dbc.Carousel(
                             id="carousel-ride",
                             items=[
@@ -330,6 +552,8 @@ about_tab = dcc.Tab(
                             controls=True,
                             indicators=False,
                         ),
+                        html.P("Navigating the Results", id="ab-title2"),
+                        html.P(note3, id="ab-note3"),
                     ],
                 ),
             ],
@@ -492,6 +716,7 @@ app.layout = html.Div(
         dcc.Store(id="summary-memory"),
         dcc.Store(id="TandP-data"),
         dcc.Store(id="slider-values-store", data={}),  # Store slider values per model
+        dcc.Store(id="clipboard-init", data=0),  # Store to trigger clipboard event listener setup
         # Left column
         html.Div(
             id="left-column",
@@ -524,6 +749,18 @@ app.layout = html.Div(
         ),
         # Information Modal
         create_info_modal(),
+        # Clipboard toast notification
+        dbc.Toast(
+            id="clipboard-toast",
+            header="Copied!",
+            children="URL copied to clipboard",
+            is_open=False,
+            dismissable=True,
+            duration=2000,
+            style={"position": "fixed", "top": 66, "right": 10, "width": 350, "zIndex": 9999},
+        ),
+        # Hidden button to trigger toast
+        html.Button(id="clipboard-toast-trigger-btn", style={"display": "none"}, n_clicks=0),
     ],
 )
 
@@ -534,6 +771,117 @@ register_info_modal_callbacks(app)
 # -----------------------------------------------------------------------------
 # Define dash app callbacks begin here.
 # -----------------------------------------------------------------------------
+
+# Resource cards expand/collapse callbacks
+@app.callback(
+    Output({"type": "resource-collapse", "index": MATCH}, "is_open"),
+    [Input({"type": "resource-button", "index": MATCH}, "n_clicks")],
+    [State({"type": "resource-collapse", "index": MATCH}, "is_open")],
+    prevent_initial_call=True,
+)
+def toggle_resource_card(n_clicks, is_open):
+    """Toggle resource card expand/collapse."""
+    if n_clicks:
+        return not is_open
+    return is_open
+
+
+# Show toast when clipboard is clicked - using client-side callback to detect clicks
+app.clientside_callback(
+    """
+    function(data) {
+        setTimeout(function() {
+            var clipboardBtn = document.querySelector('#clipboard-wrapper button');
+            if (clipboardBtn && !clipboardBtn.dataset.listenerAdded) {
+                clipboardBtn.dataset.listenerAdded = 'true';
+                clipboardBtn.addEventListener('click', function() {
+                    setTimeout(function() {
+                        // Click the hidden button to trigger the callback
+                        var triggerBtn = document.getElementById('clipboard-toast-trigger-btn');
+                        if (triggerBtn) {
+                            triggerBtn.click();
+                        }
+                    }, 100);
+                });
+            }
+        }, 500);
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('clipboard-init', 'data'),
+    Input('clipboard-init', 'data'),
+)
+
+
+@app.callback(
+    Output("clipboard-toast", "is_open"),
+    Input("clipboard-toast-trigger-btn", "n_clicks"),
+    State("clipboard-toast", "is_open"),
+    prevent_initial_call=True,
+)
+def show_clipboard_toast(n_clicks, is_open):
+    """Show toast notification when clipboard is clicked."""
+    if n_clicks:
+        return True
+    return False
+
+
+# Handle card clicks for cards with clipboard (div-based) and prevent clipboard clicks from opening link
+app.clientside_callback(
+    """
+    function(data) {
+        setTimeout(function() {
+            // Handle div-based card headers (for cards with clipboard)
+            var divHeaders = document.querySelectorAll('.resource-card-header[data-href]');
+            divHeaders.forEach(function(header) {
+                if (!header.dataset.listenerAdded) {
+                    header.dataset.listenerAdded = 'true';
+                    header.addEventListener('click', function(e) {
+                        // Check if click was on clipboard wrapper or its children
+                        var clickedElement = e.target;
+                        var clipboardWrapper = document.getElementById('clipboard-wrapper');
+                        if (clipboardWrapper && (clickedElement === clipboardWrapper || clipboardWrapper.contains(clickedElement))) {
+                            // Don't open link if clicking clipboard
+                            return;
+                        }
+                        // Open the link
+                        var href = header.getAttribute('data-href');
+                        var target = header.getAttribute('data-target');
+                        if (href) {
+                            if (target === '_blank') {
+                                window.open(href, '_blank', 'noopener,noreferrer');
+                            } else {
+                                window.location.href = href;
+                            }
+                        }
+                    });
+                }
+            });
+            
+            // Prevent clipboard clicks from triggering card links
+            var wrapper = document.getElementById('clipboard-wrapper');
+            if (wrapper && !wrapper.dataset.listenerAdded) {
+                wrapper.dataset.listenerAdded = 'true';
+                wrapper.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }, true);
+                
+                var clipboardBtn = wrapper.querySelector('button');
+                if (clipboardBtn) {
+                    clipboardBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }, true);
+                }
+            }
+        }, 1000);
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('clipboard-init', 'data'),
+    Input('clipboard-init', 'data'),
+)
 
 
 @app.callback(

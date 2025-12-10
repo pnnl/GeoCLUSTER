@@ -200,7 +200,7 @@ hr {
 /* Description Text Styling
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
-#ab-title1, #ab-title2, #ab-title3 {
+#ab-title1, #ab-title2, #ab-title3, #ab-title4, #ab-title5 {
     font-weight: bold;
     padding: 15px;
 }
@@ -981,4 +981,42 @@ button:hover{
         margin-top: 40px;
     }
 
+}
+
+/* Resource Cards Styles */
+.resource-card-header {
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
+
+.resource-card-header:hover {
+    background-color: #F5F5F5 !important;
+    border: 1px solid #C9C9C9 !important;
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+.resource-card-header:hover .resource-expand-icon {
+    filter: brightness(0) saturate(100%) invert(38%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%);
+}
+
+#clipboard-wrapper {
+    position: absolute;
+    right: 15px;
+    top: 45%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    pointer-events: auto;
+}
+
+#clipboard-wrapper * {
+    pointer-events: auto;
+}
+
+.resource-card-header a #clipboard-wrapper,
+.resource-card-header a #clipboard-wrapper * {
+    pointer-events: auto !important;
 }
