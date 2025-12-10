@@ -404,8 +404,14 @@ about_tab = dcc.Tab(
                         html.Div(
                             id="resource-cards-container",
                             children=[
+                                create_resource_card(
+                                    "resource-card-1",
+                                    "GeoCLUSTER Code Repository",
+                                    "Access the code behind the Python-based closed-loop geothermal techno-economic simulator with customizable reservoir and wellbore models. Last updated 12/2025.",
+                                    link="https://github.com/pnnl/GeoCLUSTER",
+                                ),
                                 html.Div(
-                                    id="resource-card-1",
+                                    id="resource-card-2",
                                     className="resource-card",
                                     children=[
                                         html.A(
@@ -508,19 +514,9 @@ about_tab = dcc.Tab(
                                     ]
                                 ),
                                 create_resource_card(
-                                    "resource-card-2",
-                                    "GeoCLUSTER Code Repository",
-                                    "Code for the Python-based closed-loop geothermal techno-economic simulator with customizable reservoir and wellbore models.",
-                                ),
-                                create_resource_card(
                                     "resource-card-3",
-                                    "Geothermal Rising Conference, 2021",
-                                    "Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
-                                ),
-                                create_resource_card(
-                                    "resource-card-4",
-                                    "Geothermal Rising Conference, 2021",
-                                    "Vasilyi, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    "Geothermal Rising Conference, 2025",
+                                    "Hakes, Raquel S.P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems. Geothermal Rising Conference, 2025.",
                                 ),
                             ],
                         ),
@@ -786,25 +782,71 @@ def toggle_resource_card(n_clicks, is_open):
     return is_open
 
 
-# Show toast when clipboard is clicked - using client-side callback to detect clicks
+# Combined client-side callback for clipboard and card click handling
 app.clientside_callback(
     """
     function(data) {
         setTimeout(function() {
-            var clipboardBtn = document.querySelector('#clipboard-wrapper button');
-            if (clipboardBtn && !clipboardBtn.dataset.listenerAdded) {
-                clipboardBtn.dataset.listenerAdded = 'true';
-                clipboardBtn.addEventListener('click', function() {
-                    setTimeout(function() {
-                        // Click the hidden button to trigger the callback
-                        var triggerBtn = document.getElementById('clipboard-toast-trigger-btn');
-                        if (triggerBtn) {
-                            triggerBtn.click();
-                        }
-                    }, 100);
+            try {
+                // Show toast when clipboard is clicked
+                var clipboardBtn = document.querySelector('#clipboard-wrapper button');
+                if (clipboardBtn && !clipboardBtn.dataset.toastListenerAdded) {
+                    clipboardBtn.dataset.toastListenerAdded = 'true';
+                    clipboardBtn.addEventListener('click', function() {
+                        setTimeout(function() {
+                            var triggerBtn = document.getElementById('clipboard-toast-trigger-btn');
+                            if (triggerBtn) {
+                                triggerBtn.click();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                // Handle div-based card headers (for cards with clipboard)
+                var divHeaders = document.querySelectorAll('.resource-card-header[data-href]');
+                divHeaders.forEach(function(header) {
+                    if (!header.dataset.listenerAdded) {
+                        header.dataset.listenerAdded = 'true';
+                        header.addEventListener('click', function(e) {
+                            var clickedElement = e.target;
+                            var clipboardWrapper = document.getElementById('clipboard-wrapper');
+                            if (clipboardWrapper && (clickedElement === clipboardWrapper || clipboardWrapper.contains(clickedElement))) {
+                                return;
+                            }
+                            var href = header.getAttribute('data-href');
+                            var target = header.getAttribute('data-target');
+                            if (href) {
+                                if (target === '_blank') {
+                                    window.open(href, '_blank', 'noopener,noreferrer');
+                                } else {
+                                    window.location.href = href;
+                                }
+                            }
+                        });
+                    }
                 });
+                
+                // Prevent clipboard clicks from triggering card links
+                var wrapper = document.getElementById('clipboard-wrapper');
+                if (wrapper && !wrapper.dataset.propagationListenerAdded) {
+                    wrapper.dataset.propagationListenerAdded = 'true';
+                    wrapper.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }, true);
+                    
+                    var clipboardBtn2 = wrapper.querySelector('button');
+                    if (clipboardBtn2) {
+                        clipboardBtn2.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                        }, true);
+                    }
+                }
+            } catch(e) {
+                console.log('Client-side callback error:', e);
             }
-        }, 500);
+        }, 1000);
         return window.dash_clientside.no_update;
     }
     """,
@@ -824,64 +866,6 @@ def show_clipboard_toast(n_clicks, is_open):
     if n_clicks:
         return True
     return False
-
-
-# Handle card clicks for cards with clipboard (div-based) and prevent clipboard clicks from opening link
-app.clientside_callback(
-    """
-    function(data) {
-        setTimeout(function() {
-            // Handle div-based card headers (for cards with clipboard)
-            var divHeaders = document.querySelectorAll('.resource-card-header[data-href]');
-            divHeaders.forEach(function(header) {
-                if (!header.dataset.listenerAdded) {
-                    header.dataset.listenerAdded = 'true';
-                    header.addEventListener('click', function(e) {
-                        // Check if click was on clipboard wrapper or its children
-                        var clickedElement = e.target;
-                        var clipboardWrapper = document.getElementById('clipboard-wrapper');
-                        if (clipboardWrapper && (clickedElement === clipboardWrapper || clipboardWrapper.contains(clickedElement))) {
-                            // Don't open link if clicking clipboard
-                            return;
-                        }
-                        // Open the link
-                        var href = header.getAttribute('data-href');
-                        var target = header.getAttribute('data-target');
-                        if (href) {
-                            if (target === '_blank') {
-                                window.open(href, '_blank', 'noopener,noreferrer');
-                            } else {
-                                window.location.href = href;
-                            }
-                        }
-                    });
-                }
-            });
-            
-            // Prevent clipboard clicks from triggering card links
-            var wrapper = document.getElementById('clipboard-wrapper');
-            if (wrapper && !wrapper.dataset.listenerAdded) {
-                wrapper.dataset.listenerAdded = 'true';
-                wrapper.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                }, true);
-                
-                var clipboardBtn = wrapper.querySelector('button');
-                if (clipboardBtn) {
-                    clipboardBtn.addEventListener('click', function(e) {
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                    }, true);
-                }
-            }
-        }, 1000);
-        return window.dash_clientside.no_update;
-    }
-    """,
-    Output('clipboard-init', 'data'),
-    Input('clipboard-init', 'data'),
-)
 
 
 @app.callback(
