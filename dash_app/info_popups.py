@@ -31,6 +31,14 @@ PARAMETER_INFO = {
         "description": "Water is the most common working fluid due to availability and favorable thermal properties."
     },
     
+    "Model Version": {
+        "definition": "Select the computational model for simulating closed-loop geothermal systems.",
+        "recommended_range": "Database (H2O & CO2), Simulator (H2O only), Simulator (H2O & CO2)",
+        "typical_value": "Database (H2O & CO2)",
+        "unit": "model",
+        "description": "Database (H2O & CO2): Use pre-calculated database model for fast results from pre-computed scenarios. Simulator (H2O only): Fastest live model for simulating scenarios not in the database, including depths deeper than 5 km, geothermal gradients larger than 70°C/km, and number of laterals greater than 1. Simulator (H2O & CO2): Most comprehensive live model with support for both water and supercritical CO2 working fluids."
+    },
+    
     # Geologic Properties
     "Surface Temperature (˚C)": {
         "definition": "Set the ground-level or ambient temperature. A value of 25°C is a typical average surface temperature in temperate regions during geothermal operation.",
@@ -563,6 +571,19 @@ PARAMETER_INFO = {
     }
 }
 
+# Model-specific descriptions for Model Version popup
+MODEL_DESCRIPTIONS = {
+    "HDF5": "If you want to use our pre-calculated database model, select \"Database (H2O & CO2)\" for fast results from pre-computed scenarios.",
+    "SBT V1.0": "If you want to use our fastest live model, select \"Simulator (H2O only)\" for model into GeoCLUSTER to allow simulating closed-loop geothermal scenarios and configurations that were not originally included in the pre-calculated database Beckers et al. (2023). For example, with the SBT model, designs can be simulated for depths deeper than 5 km, geothermal gradients larger than 70°C/km and with number of laterals greater than 1, which were originally upper limits considered for the respective parameters when generating the database.",
+    "SBT V2.0": "If you want to use our slowest but most comprehensive live model, select \"Simulator (H2O and CO2)\""
+}
+
+MODEL_LABELS = {
+    "HDF5": "Database (H2O & CO2)",
+    "SBT V1.0": "Simulator (H2O only)",
+    "SBT V2.0": "Simulator (H2O & CO2)"
+}
+
 def param_name_to_id_suffix(name: str) -> str:
     """
     Turn a PARAMETER_INFO key into a consistent id suffix.
@@ -723,10 +744,11 @@ def register_info_modal_callbacks(app):
         [
             State("info-btn-last-ts", "data"),
             State("info-modal", "is_open"),
+            State("model-select", "value"),
         ],
         prevent_initial_call=True,
     )
-    def toggle_info_modal(ts_list, last_ts, is_open):
+    def toggle_info_modal(ts_list, last_ts, is_open, selected_model):
         """Handle info popup clicks for all parameters dynamically using pattern matching with timestamps."""
         # No buttons mounted or nothing ever clicked
         if not ts_list:
@@ -753,6 +775,65 @@ def register_info_modal_callbacks(app):
         if not info:
             raise PreventUpdate
 
+        if param == "Model Version":
+            if selected_model and selected_model in MODEL_LABELS:
+                model_label = MODEL_LABELS[selected_model]
+                
+                hdf5_desc = MODEL_DESCRIPTIONS.get("HDF5", "")
+                sbt1_full_desc = MODEL_DESCRIPTIONS.get("SBT V1.0", "")
+                sbt2_desc = MODEL_DESCRIPTIONS.get("SBT V2.0", "")
+                
+                sbt1_bold_part = "If you want to use our fastest live model, select \"Simulator (H2O only)\" for model into GeoCLUSTER"
+                sbt1_rest_part = sbt1_full_desc.replace(sbt1_bold_part, "").strip()
+                if selected_model == "HDF5":
+                    hdf5_style = {"fontWeight": "bold"}
+                    sbt1_bold_style = {"fontWeight": "normal"}
+                    sbt1_rest_style = {"fontWeight": "normal"}
+                    sbt2_style = {"fontWeight": "normal"}
+                elif selected_model == "SBT V1.0":
+                    hdf5_style = {"fontWeight": "normal"}
+                    sbt1_bold_style = {"fontWeight": "bold"}
+                    sbt1_rest_style = {"fontWeight": "normal"}
+                    sbt2_style = {"fontWeight": "normal"}
+                elif selected_model == "SBT V2.0":
+                    hdf5_style = {"fontWeight": "normal"}
+                    sbt1_bold_style = {"fontWeight": "normal"}
+                    sbt1_rest_style = {"fontWeight": "normal"}
+                    sbt2_style = {"fontWeight": "bold"}
+                else:
+                    hdf5_style = {"fontWeight": "normal"}
+                    sbt1_bold_style = {"fontWeight": "normal"}
+                    sbt1_rest_style = {"fontWeight": "normal"}
+                    sbt2_style = {"fontWeight": "normal"}
+                
+                modal_content = [
+                    html.P([
+                        html.Span(hdf5_desc, style=hdf5_style),
+                        " ",
+                        html.Span(sbt1_bold_part, style=sbt1_bold_style),
+                        " ",
+                        html.Span(sbt1_rest_part, style=sbt1_rest_style),
+                        " ",
+                        html.Span(sbt2_desc, style=sbt2_style),
+                    ], className="mb-3"),
+                ]
+                return True, model_label, modal_content, current_max
+            else:
+                hdf5_desc = MODEL_DESCRIPTIONS.get("HDF5", "")
+                sbt1_desc = MODEL_DESCRIPTIONS.get("SBT V1.0", "")
+                sbt2_desc = MODEL_DESCRIPTIONS.get("SBT V2.0", "")
+                modal_content = [
+                    html.P([
+                        hdf5_desc,
+                        " ",
+                        sbt1_desc,
+                        " ",
+                        sbt2_desc,
+                    ], className="mb-3"),
+                ]
+                return True, "Model Version", modal_content, current_max
+
+        # Standard handling for other parameters
         modal_content = [
             html.H6("Definition:", className="text-primary"),
             html.P(info["definition"], className="mb-3"),

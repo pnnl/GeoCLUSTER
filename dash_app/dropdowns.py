@@ -3,6 +3,7 @@
 
 # web app and interactive graphics libraries 
 from dash import dcc, html
+from info_popups import create_info_button
 
 # ---------------------------
 # Define dropdown options.
@@ -40,7 +41,10 @@ def dropdown_card():
                         html.Div(id="dropdown-card0",
                             # style={'display': 'none'},
                             children=[
-                                html.P("Model Version", className="dropdown-text"),
+                                html.Div([
+                                    html.P("Model Version", className="dropdown-text", style={"display": "inline-block", "margin": "0", "verticalAlign": "middle"}),
+                                    create_info_button("Model Version")
+                                ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                     id="model-select",
                                     options=[{"label": model_labels[i], "value": i} for i in model_list],

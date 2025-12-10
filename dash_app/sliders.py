@@ -268,51 +268,6 @@ def slider_card():
                             ##
                             html.Div(id="slider-container",
                                     children=[
-                                    html.Div(
-                                        id="new-section-div",
-                                        className="params-div",
-                                        style=div_block_style,
-                                        children=[
-                                            html.Div(
-                                                style={"display": "flex", "justifyContent": "center", "alignItems": "center", "cursor": "pointer"},
-                                                children=[
-                                                    html.P(
-                                                        id="new-section-title",
-                                                        className="param-class-name",
-                                                        style={"margin": "0px", "cursor": "pointer"}
-                                                    ),
-                                                    html.Span(id="new-section-toggle-icon", children="▼", style={"marginLeft": "10px", "marginTop": "4px", "fontSize": "12px", "color": "var(--darkorange)"})
-                                                ],
-                                                id="new-section-toggle-button",
-                                                n_clicks=0
-                                            ),
-                                            dbc.Collapse(
-                                                html.P(
-                                                    children=[
-                                                        html.Span(
-                                                            id="new-section-text-hdf5",
-                                                            children="If you want to use our pre-calculated database model, select \"Database (H2O & CO2)\" for fast results from pre-computed scenarios. "
-                                                        ),
-                                                        html.Span(
-                                                            id="new-section-text-sbt1-bold",
-                                                            children="If you want to use our fastest live model, select \"Simulator (H2O only)\" "
-                                                        ),
-                                                        html.Span(
-                                                            id="new-section-text-sbt1-normal",
-                                                            children="for model into GeoCLUSTER to allow simulating closed-loop geothermal scenarios and configurations that were not originally included in the pre-calculated database Beckers et al. (2023). For example, with the SBT model, designs can be simulated for depths deeper than 5 km, geothermal gradients larger than 70°C/km and with number of laterals greater than 1, which were originally upper limits considered for the respective parameters when generating the database.​ "
-                                                        ),
-                                                        html.Span(
-                                                            id="new-section-text-sbt2",
-                                                            children="If you want to use our slowest but most comprehensive live model, select \"Simulator (H2O and CO2)\""
-                                                        ),
-                                                    ],
-                                                    style={"fontSize": "14px", "color": "black", "padding": "10px", "margin": "0px"}
-                                                ),
-                                                id="new-section-collapse",
-                                                is_open=True,
-                                            ),
-                                        ]
-                                    ),
                                     html.Div(id="slider-columns-wrapper",
                                         style={"display": "flex", "width": "100%"},
                                         children=[

@@ -640,23 +640,6 @@ def toggle_more_params_collapse(n, is_open):
 
 
 @app.callback(
-    [Output(component_id="new-section-collapse", component_property="is_open"),
-     Output(component_id="new-section-toggle-icon", component_property="children")],
-    [Input(component_id="new-section-toggle-button", component_property="n_clicks")],
-    [State(component_id="new-section-collapse", component_property="is_open")],
-    prevent_initial_call=True,
-)
-def toggle_new_section_collapse(n, is_open):
-    if n:
-        new_state = not is_open
-    else:
-        new_state = True
-    
-    icon = "▼" if new_state else "▶"
-    return new_state, icon
-
-
-@app.callback(
     Output(component_id="hyperparam1-container-collapse", component_property="style"),
     [Input(component_id="model-select", component_property="value")],
 )
@@ -1309,30 +1292,6 @@ def show_model_params(model):
 
     if model == "SBT V2.0":
         return b, b, b, b, b, b, n, n, b, n, n
-
-
-@app.callback(
-    [Output(component_id="new-section-title", component_property="children"),
-     Output(component_id="new-section-text-hdf5", component_property="style"),
-     Output(component_id="new-section-text-sbt1-bold", component_property="style"),
-     Output(component_id="new-section-text-sbt1-normal", component_property="style"),
-     Output(component_id="new-section-text-sbt2", component_property="style")],
-    [Input(component_id="model-select", component_property="value")],
-)
-def update_new_section_title(model):
-    title = model_labels.get(model, model)
-    
-    default_style = {"fontWeight": "normal"}
-    bold_style = {"fontWeight": "bold"}
-    
-    if model == "HDF5":
-        return title, bold_style, default_style, default_style, default_style
-    elif model == "SBT V1.0":
-        return title, default_style, bold_style, default_style, default_style
-    elif model == "SBT V2.0":
-        return title, default_style, default_style, default_style, bold_style
-    else:
-        return title, default_style, default_style, default_style, default_style
 
 
 @app.callback(
@@ -2910,7 +2869,7 @@ def aasa():
 if __name__ == "__main__":
     # test change.
     # app.run_server(port=8060, debug=True)
-    app.run_server(
+    app.run(
         # host="127.0.0.1",
         port=8060,
         debug=False,  # needs to be False in production

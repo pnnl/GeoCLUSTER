@@ -338,6 +338,27 @@ hr {
 #dropdown-card0 {
     width: 18% !important;
     min-width: 200px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+#dropdown-card0 > div:first-child {
+    margin-bottom: 0 !important;
+    line-height: 1.5 !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin-top: 0 !important;
+}
+
+#dropdown-card0 .info-button {
+    margin-top: 3px !important;
+}
+
+#model-select {
+    margin-top: 12px !important;
+    align-self: stretch !important;
+    width: 100% !important;
 }
 
 #dropdown-card4 {
@@ -372,13 +393,6 @@ hr {
     width: 49%;
     display: inline-block;
 /*    padding-bottom: 40px;*/
-}
-
-#new-section-div {
-    width: 97% !important;
-    margin-top: 5px;
-    margin-left: auto;
-    margin-right: auto;
 }
 
 #kwe-div {
