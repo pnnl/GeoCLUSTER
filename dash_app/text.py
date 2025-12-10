@@ -48,10 +48,7 @@ dropdown_econ_text2 = "Finally, different assumptions were defined based on the 
 
 note = "This work explores closed-loop geothermal systems (CLGSs). These deep geothermal systems are \
 designed to extract thermal energy at the commercial scale for applications, \
-such as district heating and electricity generation. \
-This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency \
-and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of CLGSs involving four national \
-laboratories and two universities."
+such as district heating and electricity generation."
 
 
 note2 = "CLGSs extract thermal energy from hot-dry-rock (HDR) by circulating a working fluid through \
