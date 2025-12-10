@@ -834,14 +834,15 @@ def register_info_modal_callbacks(app):
                 return True, "Model Version", modal_content, current_max
 
         # Standard handling for other parameters
+        header_style = {"fontSize": "16px", "fontWeight": "bold"}
         modal_content = [
-            html.H6("Definition:", className="text-primary"),
+            html.H6("Definition:", className="text-primary", style=header_style),
             html.P(info["definition"], className="mb-3"),
-            html.H6("Recommended Range:", className="text-primary"),
+            html.H6("Recommended Range:", className="text-primary", style=header_style),
             html.P(info["recommended_range"], className="mb-3"),
-            html.H6("Typical Value:", className="text-primary"),
+            html.H6("Typical Value:", className="text-primary", style=header_style),
             html.P(f"{info['typical_value']}", className="mb-3"),
-            html.H6("Description:", className="text-primary"),
+            html.H6("Description:", className="text-primary", style=header_style),
             html.P(info["description"], className="mb-3"),
         ]
         return True, f"Information: {param}", modal_content, current_max
