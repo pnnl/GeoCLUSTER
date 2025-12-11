@@ -2007,7 +2007,7 @@ def update_slider_ranges(model, store_data):
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
-            start_v=saved_values.get("grad", start_vals_d["grad"]),
+            start_v=saved_values.get("grad", 0.080),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -3425,21 +3425,118 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict):
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
     
-    # Show warning if LCOE is invalid (9999.00 or "-")
-    # This indicates outlet temperature is too low or system is losing heat
-    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
-        warning_div3 = html.Div(
-            style=error_style,
-            children=[
-                html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                dcc.Markdown(
-                    "**LCOE is too high.**", style={"display": "inline-block"}
-                ),
-                html.P(
-                    "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
-                ),
-            ],
-        )
+    # Helper function to check if LCOE value is valid (numeric and reasonable)
+    def is_valid_lcoe(value):
+        if value is None or value == "-" or value == "Insufficient Inputs":
+            return False
+        if value == "9999.00" or value == "9999":
+            return False
+        try:
+            # Check if it's a valid number
+            num_val = float(value)
+            # Valid if it's a positive number less than 9999
+            return 0 < num_val < 9999
+        except (ValueError, TypeError):
+            return False
+    
+    # Check if we have any valid LCOE values
+    has_valid_lcoe = is_valid_lcoe(lcoe_sco2) or is_valid_lcoe(lcoe_h2o)
+    
+    # Check if a calculation has been attempted (to avoid showing warning on initial load)
+    # A calculation has been attempted if:
+    # 1. econ_results_dict exists and has data, OR
+    # 2. levelized_cost_dict has values that aren't just the default "-" (including "Insufficient Inputs")
+    calculation_attempted = False
+    if econ_results_dict and isinstance(econ_results_dict, dict) and len(econ_results_dict) > 0:
+        calculation_attempted = True
+    elif levelized_cost_dict and isinstance(levelized_cost_dict, dict):
+        # Check if we have any non-default values (not just "-")
+        # "Insufficient Inputs" means a calculation was attempted, so count it
+        has_non_default = False
+        for key, value in levelized_cost_dict.items():
+            if value != "-" and value is not None:
+                has_non_default = True
+                break
+        calculation_attempted = has_non_default
+    
+    # Only show warning if we DON'T have any valid LCOE values AND a calculation was attempted
+    # This prevents showing warning when at least one LCOE is valid
+    lcoe_is_insufficient = (
+        lcoe_sco2 == "Insufficient Inputs" or lcoe_h2o == "Insufficient Inputs"
+    )
+    lcoe_is_other_invalid = (
+        lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or 
+        lcoe_sco2 == "-" or lcoe_h2o == "-"
+    )
+    
+    # Show warning only if: 
+    # - No valid LCOE values exist, AND
+    # - (LCOE is "Insufficient Inputs" OR (other invalid AND calculation attempted))
+    if not has_valid_lcoe and (lcoe_is_insufficient or (lcoe_is_other_invalid and calculation_attempted)):
+        # Different messages for different error types - provide actionable guidance
+        if lcoe_is_insufficient:
+            # "Insufficient Inputs" means we can't calculate LCOE (likely 0 or negative electricity production)
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Insufficient inputs to calculate LCOE.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "To get valid LCOE values, try increasing: Outlet Temperature (increase Geothermal Gradient, Depth, or Injection Temperature), or reducing Mass Flow Rate."
+                    ),
+                ],
+            )
+        else:
+            # LCOE is invalid (9999.00 or "-")
+            # Check error codes to provide more specific guidance
+            error_codes = econ_results_dict.get("error_codes", [])
+            has_error_6000 = 6000 in error_codes  # Zero electricity production
+            has_error_7000 = 7000 in error_codes  # Negative LCOE
+            
+            if has_error_6000:
+                # Zero electricity production - can't calculate LCOE
+                warning_div3 = html.Div(
+                    style=error_style,
+                    children=[
+                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                        dcc.Markdown(
+                            "**Cannot calculate LCOE - zero electricity production.**", style={"display": "inline-block"}
+                        ),
+                        html.P(
+                            "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
+                        ),
+                    ],
+                )
+            elif has_error_7000:
+                # Negative LCOE - system is losing energy
+                warning_div3 = html.Div(
+                    style=error_style,
+                    children=[
+                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                        dcc.Markdown(
+                            "**Cannot calculate LCOE - negative net electricity production.**", style={"display": "inline-block"}
+                        ),
+                        html.P(
+                            "The system is consuming more energy than it produces. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to increase Outlet Temperature and improve energy production."
+                        ),
+                    ],
+                )
+            else:
+                # Generic message for other invalid cases
+                warning_div3 = html.Div(
+                    style=error_style,
+                    children=[
+                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                        dcc.Markdown(
+                            "**Cannot calculate LCOE.**", style={"display": "inline-block"}
+                        ),
+                        html.P(
+                            "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
+                        ),
+                    ],
+                )
 
     return warning_div3
 
