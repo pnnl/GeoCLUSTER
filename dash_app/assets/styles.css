@@ -348,15 +348,15 @@ hr {
     line-height: 1.5 !important;
     min-height: auto !important;
     height: auto !important;
-    margin-top: 0 !important;
+    margin-top: -12px !important;
 }
 
 #dropdown-card0 .info-button {
-    margin-top: 3px !important;
+    margin-top: 8px !important;
 }
 
 #model-select {
-    margin-top: 12px !important;
+    margin-top: -1px !important;
     align-self: stretch !important;
     width: 100% !important;
 }
@@ -556,6 +556,29 @@ button:hover{
   color: var(--darkred);
   border-color: var(--grey);
   outline: 0; }
+
+#see-all-params-button {
+  background: none !important;
+  border: none !important;
+  color: #0066cc !important;
+  cursor: pointer;
+  font-size: 14px !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  height: auto !important;
+  line-height: normal !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  font-weight: normal !important;
+  display: inline !important;
+  white-space: normal !important;
+}
+
+#see-all-params-button:hover {
+  color: #0066cc !important;
+  border: none !important;
+  background: none !important;
+}
 
 #btn-nclicks-1:hover {
     background-color: var(--oceanblue) !important;

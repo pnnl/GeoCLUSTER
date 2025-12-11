@@ -609,26 +609,19 @@ def create_info_button(parameter_name, button_id=None):
     
     return html.Div([
         dbc.Button(
-            "ℹ",
+            html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
             id=button_id,
             color="link",
             size="sm",
             className="ms-1 info-button",
             style={
-                "fontSize": "10px",
                 "textDecoration": "none",
                 "padding": "0",
-                "color": "#17a2b8",
-                "borderRadius": "50%",
-                "border": "1px solid #17a2b8",
                 "backgroundColor": "transparent",
-                "width": "16px",
-                "height": "16px",
+                "border": "none",
                 "display": "inline-flex",
                 "alignItems": "center",
                 "justifyContent": "center",
-                "lineHeight": "1",
-                "textAlign": "center",
                 "transform": "translateX(-1px) translateY(-2px)",
                 "position": "relative",
                 "top": "-2px"

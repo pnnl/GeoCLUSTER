@@ -954,60 +954,49 @@ def toggle_collapse(n, is_open):
 
 
 @app.callback(
-    [
-        Output(component_id="collapse-more-params", component_property="is_open"),
-        Output(component_id="collapse-button-more-params", component_property="children"),
-    ],
-    [Input(component_id="collapse-button-more-params", component_property="n_clicks")],
-    [State(component_id="collapse-more-params", component_property="is_open")],
-)
-def toggle_more_params_collapse(n, is_open):
-    if n:
-        new_state = not is_open
-    else:
-        new_state = is_open
-    
-    button_text = "Show less parameters" if new_state else "Show more parameters"
-    return new_state, button_text
-
-
-@app.callback(
-    Output(component_id="hyperparam1-container-collapse", component_property="style"),
+    Output(component_id="see-all-params-button-container", component_property="style"),
     [Input(component_id="model-select", component_property="value")],
+    prevent_initial_call=False,
 )
-def show_hide_mass_flow_mode_collapse(model):
-    div_block_style = {"display": "block"}
-    div_none_style = {"display": "none"}
-    
-    if model == "SBT V1.0":
-        return div_block_style
+def show_hide_see_all_button(model):
+    if model is None or model == "HDF5":
+        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"}
     else:
-        return div_none_style
+        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
 
 
 @app.callback(
     [
-        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
-        Output(component_id="lateral-multiplier-select-collapse", component_property="value", allow_duplicate=True),
+        Output(component_id="mesh-div", component_property="style", allow_duplicate=True),
+        Output(component_id="pipe-roughness-container", component_property="style", allow_duplicate=True),
+        Output(component_id="hyperparam5-container", component_property="style", allow_duplicate=True),
+        Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
+        Output(component_id="see-all-params-text", component_property="children"),
+        Output(component_id="see-all-params-chevron", component_property="children"),
     ],
-    [
-        Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
-    ],
-    prevent_initial_call=True,
+    [Input(component_id="see-all-params-button", component_property="n_clicks")],
+    [State(component_id="mesh-div", component_property="style")],
+    prevent_initial_call='initial_duplicate',
 )
-def sync_lateral_multiplier(tube_val, collapse_val):
-    ctx_info = ctx
-    if not ctx_info.triggered:
-        raise PreventUpdate
-    
-    triggered_id = ctx_info.triggered[0]["prop_id"].split(".")[0]
-    
-    if triggered_id == "lateral-multiplier-select":
-        return dash.no_update, tube_val
-    elif triggered_id == "lateral-multiplier-select-collapse":
-        return collapse_val, dash.no_update
-    raise PreventUpdate
+def toggle_see_all_params(n_clicks, current_mesh_style):
+    if n_clicks and n_clicks > 0:
+        is_visible = current_mesh_style.get("display") == "block" if current_mesh_style else False
+        if is_visible:
+            # Hide all parameters
+            style_none = {"display": "none"}
+            return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:
+            # Show all parameters
+            style_block = {"display": "block"}
+            return style_block, style_block, style_block, style_block, "See less parameters", " ▲"
+    else:
+        # Initial state - all hidden
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+
+
+
+
 
 
 @app.callback(
@@ -1603,12 +1592,13 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         Output(component_id="num-lat-div", component_property="style"),
         Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
-        Output(component_id="lat-flow-mul-div", component_property="style"),
+        Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
+        Output(component_id="pipe-roughness-container", component_property="style"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
     ],
-    prevent_initial_call=True,
+    prevent_initial_call='initial_duplicate',
 )
 def show_model_params(model):
     # print("show_model_params: ", model)
@@ -1617,13 +1607,13 @@ def show_model_params(model):
     n = {"display": "none"}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, b, n, n
+        return b, b, b, b, b, b, n, n, b, n, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, n, b, n, n
+        return b, b, b, b, b, b, n, b, b, n, n, b
 
 
 @app.callback(
@@ -1717,7 +1707,7 @@ def show_hide_detailed_card(tab, fluid, end_use):
         return {"border": "solid 0px white"}, {"display": "none"}, {"display": "none"}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
-        if fluid == "H2O" or end_use == "Heating":
+        if fluid == "H2O" and end_use == "Electricity":
             # print("white 2")
             return (
                 {"border": "solid 0px white"},
@@ -2417,11 +2407,12 @@ def update_sliders_heat_exchanger(model, case):
         Output(component_id="hyperparam1-container", component_property="children"),
         Output(component_id="hyperparam3-container", component_property="children"),
         Output(component_id="hyperparam5-container", component_property="children"),
+        Output(component_id="pipe-roughness-container", component_property="children"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
     ],
-    prevent_initial_call=True,
+    prevent_initial_call=False,
 )
 def update_sliders_hyperparms(model):
     if model == "SBT V1.0":
@@ -2431,7 +2422,7 @@ def update_sliders_hyperparms(model):
             ptitle="Mass Flow Rate Mode",
             options=["Constant", "Variable"],
             disabled=True,
-            div_style=div_none_style,
+            div_style=div_block_style,
         )
         hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
@@ -2449,8 +2440,20 @@ def update_sliders_hyperparms(model):
             disabled=False,
             div_style=div_none_style,
         )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
+            ptitle="Pipe Roughness (m)",
+            min_v=1e-6,
+            max_v=3e-6,
+            mark_dict=pipe_roughness_dict,
+            step_i=0.000001,
+            start_v=start_vals_sbt["piperoughness"],
+            div_style=div_none_style,  # Hidden for SBT V1.0
+            parameter_name="Pipe Roughness (m)",
+        )
 
-        return hyperparam1, hyperparam3, hyperparam5
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
 
     elif model == "SBT V2.0":
         hyperparam1 = slider1(
@@ -2465,9 +2468,17 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
-        hyperparam3 = slider1(
+        hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
             ID="temp-mode-select",
+            ptitle="Injection Temperature Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,  # Hidden for SBT V2.0
+        )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
             ptitle="Pipe Roughness (m)",
             min_v=1e-6,
             max_v=3e-6,
@@ -2486,8 +2497,46 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
         )
 
-        return hyperparam1, hyperparam3, hyperparam5
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
 
+    elif model == "HDF5":
+        hyperparam1 = dropdown_box(
+            DivID="mass-flow-mode-div",
+            ID="mass-mode-select",
+            ptitle="Mass Flow Rate Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,
+        )
+        hyperparam3 = dropdown_box(
+            DivID="temp-flow-mode-div",
+            ID="temp-mode-select",
+            ptitle="Injection Temperature Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,
+        )
+        hyperparam5 = dropdown_box(
+            DivID="fluid-mode-div",
+            ID="fluid-mode-select",
+            ptitle="Fluid Properties Mode",
+            options=["Variable", "Constant"],
+            disabled=False,
+            div_style=div_none_style,
+        )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
+            ptitle="Pipe Roughness (m)",
+            min_v=1e-6,
+            max_v=3e-6,
+            mark_dict=pipe_roughness_dict,
+            step_i=0.000001,
+            start_v=start_vals_sbt["piperoughness"],
+            div_style=div_none_style,  # Hidden for HDF5
+            parameter_name="Pipe Roughness (m)",
+        )
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
     else:
         raise PreventUpdate
 
@@ -2538,13 +2587,11 @@ def update_sliders_hyperparms(model):
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5
-        Input(
-            component_id="lateral-multiplier-select-collapse", component_property="value"
-        ),  # PipeParam5 (collapse version)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2570,12 +2617,12 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
     # mass_mode, temp_mode
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     # -----------------------------------------------------------------------------
@@ -2586,6 +2633,19 @@ def update_subsurface_results_plots(
         # print('subsurface')
         # if HDF5:
         # start = time.time()
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
+        
         (
             subplots,
             forty_yr_TPmeans_dict,
@@ -2614,11 +2674,11 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5 if PipeParam5 is not None else PipeParam5Collapse,
+            PipeParam5,
             mesh,
             accuracy,
-            HyperParam3,
-            HyperParam4,
+            hyperparam1_value,
+            hyperparam3_value,
             HyperParam5,
         )
         # if SBT:
@@ -2726,11 +2786,11 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2765,11 +2825,11 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     try:
@@ -2789,6 +2849,20 @@ def update_econ_plots(
             is_plot_ts = True
         else:
             is_plot_ts = False
+        
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
+        
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
             generate_econ_lineplots(
                 TandP_dict,
@@ -2893,11 +2967,11 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2931,11 +3005,11 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     try:
@@ -2946,6 +3020,19 @@ def update_table(
             thermal_dict = {}
         if tandp_data is None:
             tandp_data = None
+        
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
             
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:

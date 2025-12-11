@@ -321,6 +321,18 @@ def slider_card():
                                                                 slider2(DivID="mdot-select-div", ID="mdot-select", ptitle="Mass Flow Rate (kg/s)", min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1], 
                                                                         mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
                                                             ]),
+                                                    html.Div(
+                                                        id="pipe-roughness-container",
+                                                        children=[
+                                                                slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
+                                                                        mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_none_style, parameter_name="Pipe Roughness (m)")
+                                                    ]),
+                                                    html.Div(
+                                                        id="hyperparam5-container",
+                                                        children=[
+                                                                dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
+                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
+                                                    ]),
                                                 ]
 
                                             ),
@@ -372,42 +384,6 @@ def slider_card():
                                                                 input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
                                                                             min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
                                                             ]),
-                                                    html.Div(
-                                                            id="lat-flow-container",
-                                                            children=[
-                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
-                                                            ]),
-                                                    dbc.Button(
-                                                        "Show more parameters",
-                                                        id="collapse-button-more-params",
-                                                        className="mb-2",
-                                                        outline=True,
-                                                        n_clicks=0,
-                                                        style={"fontSize": "12px", "marginTop": "10px", "color": "black", "borderColor": "black"}
-                                                    ),
-                                                    dbc.Collapse(
-                                                        html.Div(
-                                                            children=[
-                                                                html.Div(
-                                                                    id="lat-flow-mul-container-collapse",
-                                                                    children=[
-                                                                        input_box(DivID="lat-flow-mul-div-collapse", ID="lateral-multiplier-select-collapse", ptitle="Lateral Flow Multiplier", 
-                                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
-                                                                    ]),
-                                                                slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
-                                                                            mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
-                                                                html.Div(
-                                                                    id="hyperparam1-container-collapse",
-                                                                    children=[
-                                                                        dropdown_box(DivID="mass-flow-mode-div-collapse", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=False, div_style=div_block_style)
-                                                                    ]),
-                                                            ]
-                                                        ),
-                                                        id="collapse-more-params",
-                                                        is_open=False,
-                                                    ),
                                                     # html.Div(
                                                     #     id="num-lat-div",
                                                     #     style=div_none_style,
@@ -495,7 +471,15 @@ def slider_card():
                                                 children=[
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
                                                     slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
-                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_block_style, parameter_name="Mesh Fineness"),
+                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_none_style, parameter_name="Mesh Fineness"),
+                                                    slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
+                                                                            mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
+                                                    html.Div(
+                                                            id="hyperparam1-container",
+                                                            children=[
+                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
+                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
+                                                        ]),
                                                     html.Div(
                                                             id="hyperparam3-container",
                                                             children=[
@@ -503,23 +487,40 @@ def slider_card():
                                                                                         options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
                                                         ]),
                                                     html.Div(
-                                                        id="hyperparam5-container",
-                                                        children=[
-                                                                dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
-                                                    ]),
-                                                    html.Div(
-                                                            id="hyperparam1-container",
+                                                            id="lat-flow-container",
                                                             children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_none_style)
-                                                        ]),
+                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
+                                                            ]),
                                                 ]
 
                                             ),
                                     ]),
                                     ]),
                                 ]),
+                                html.Div(
+                                    id="see-all-params-button-container",
+                                    style={"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"},
+                                    children=[
+                                        html.Button(
+                                            [
+                                                html.Span("See all parameters", id="see-all-params-text"),
+                                                html.Span(" ▼", id="see-all-params-chevron", style={"marginLeft": "5px"})
+                                            ],
+                                            id="see-all-params-button",
+                                            n_clicks=0,
+                                            style={
+                                                "background": "none",
+                                                "border": "none",
+                                                "color": "#0066cc",
+                                                "cursor": "pointer",
+                                                "fontSize": "14px",
+                                                "padding": "0",
+                                                "textDecoration": "none"
+                                            }
+                                        )
+                                    ]
+                                ),
 
 
 
