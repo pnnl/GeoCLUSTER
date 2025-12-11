@@ -253,7 +253,8 @@ def graph_guidance_card(btnID, cardID, dropdown_children):
                 id=cardID,
                 is_open=False,
             ),
-        ]
+        ],
+        style={"display": "block"}
     )
 
 
@@ -2108,6 +2109,11 @@ def update_slider_ranges(model, store_data):
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -2115,7 +2121,7 @@ def update_slider_ranges(model, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, model, store_data):
     """Save slider values to store, keyed by model"""
     if model is None:
         raise PreventUpdate
@@ -2135,9 +2141,68 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         "Tsurf": Tsurf,
         "c": c,
         "rho": rho,
+        "radius-vertical": radius_vertical,
+        "radius-lateral": radius_lateral,
+        "n-laterals": n_laterals,
+        "lateral-flow": lateral_flow,
+        "lateral-multiplier": lateral_multiplier,
     }
     
     return store_data
+
+
+@app.callback(
+    [
+        Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
+        Output(component_id="c-select", component_property="value", allow_duplicate=True),
+        Output(component_id="rho-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="Tsurf-select", component_property="value"),
+        State(component_id="c-select", component_property="value"),
+        State(component_id="rho-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, current_rho):
+    """Restore Tsurf, c, and rho when model changes - these sliders are always present"""
+    if model is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Helper function to get value from current model or fall back to other models
+    def get_value(key, current_value, default):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val
+        
+        # If not found, check other models (prioritize SBT models since Tsurf is visible there)
+        for other_model in ["SBT V2.0", "SBT V1.0", "HDF5"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        
+        # If no saved value found, preserve current value if it exists, otherwise use default
+        if current_value is not None:
+            return current_value
+        return default
+    
+    # Restore these values, checking current model first, then other models
+    # If no saved value found, preserve current slider value
+    Tsurf = get_value("Tsurf", current_tsurf, start_vals_hdf5.get("Tsurf", 25))
+    c = get_value("c", current_c, start_vals_hdf5.get("c", 790.0))
+    rho = get_value("rho", current_rho, start_vals_hdf5.get("rho", 2800))
+    
+    return Tsurf, c, rho
 
 
 @app.callback(
@@ -2149,9 +2214,6 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
         Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
         Output(component_id="k-select", component_property="value", allow_duplicate=True),
-        Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
-        Output(component_id="c-select", component_property="value", allow_duplicate=True),
-        Output(component_id="rho-select", component_property="value", allow_duplicate=True),
     ],
     [
         Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
@@ -2170,28 +2232,49 @@ def restore_slider_values(mdot_container, store_data, model):
     if store_data is None:
         store_data = {}
     
-    # Get saved values for this model
-    saved_values = store_data.get(model, {})
-    
-    # Only restore if we have saved values for this model
-    if saved_values:
-        mdot = saved_values.get("mdot")
-        L2 = saved_values.get("L2")
-        L1 = saved_values.get("L1")
-        grad = saved_values.get("grad")
-        D = saved_values.get("D")
-        Tinj = saved_values.get("Tinj")
-        k = saved_values.get("k")
-        Tsurf = saved_values.get("Tsurf", start_vals_hdf5.get("Tsurf", 25))
-        c = saved_values.get("c", start_vals_hdf5.get("c", 790.0))
-        rho = saved_values.get("rho", start_vals_hdf5.get("rho", 2800))
+    # Helper function to get value from current model or fall back to other models
+    # Returns (value, found) tuple where found indicates if value was found in store
+    def get_value(key):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val, True
         
-        # Return saved values if we have the key ones
-        if mdot is not None and L2 is not None and L1 is not None and grad is not None and D is not None and Tinj is not None and k is not None:
-            return mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho
+        # If not found, check other models
+        for other_model in ["HDF5", "SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val, True
+        
+        # Return None if not found anywhere
+        return None, False
     
-    # If no saved values, don't update (let update_slider_ranges set defaults)
-    raise PreventUpdate
+    # Try to restore values, checking current model first, then other models
+    mdot, mdot_found = get_value("mdot")
+    L2, L2_found = get_value("L2")
+    L1, L1_found = get_value("L1")
+    grad, grad_found = get_value("grad")
+    D, D_found = get_value("D")
+    Tinj, Tinj_found = get_value("Tinj")
+    k, k_found = get_value("k")
+    
+    # Only restore if we found at least one saved value
+    # Otherwise, let update_slider_ranges set defaults via PreventUpdate
+    if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
+        raise PreventUpdate
+    
+    # Use defaults for any None values (shouldn't happen if found=True, but be safe)
+    mdot = mdot if mdot is not None else start_vals_d.get("mdot", 30.0)
+    L2 = L2 if L2 is not None else start_vals_d.get("L2", 10000)
+    L1 = L1 if L1 is not None else start_vals_d.get("L1", 3500)
+    grad = grad if grad is not None else start_vals_d.get("grad", 0.065)
+    D = D if D is not None else start_vals_d.get("D", 0.3500)
+    Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
+    k = k if k is not None else start_vals_d.get("k", 3.0)
+    
+    return mdot, L2, L1, grad, D, Tinj, k
 
 
 @app.callback(
@@ -2216,9 +2299,29 @@ def restore_slider_values(mdot_container, store_data, model):
         Input(component_id="model-select", component_property="value"),
         Input(component_id="case-select", component_property="value"),
     ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
     prevent_initial_call=True,
 )
-def update_sliders_heat_exchanger(model, case):
+def update_sliders_heat_exchanger(model, case, store_data):
+    # Get saved values for this model from store
+    if store_data is None:
+        store_data = {}
+    saved_values = store_data.get(model, {})
+    
+    # Helper function to get saved value or use default
+    def get_saved_value(key, default_dict, default_key):
+        if key in saved_values and saved_values[key] is not None:
+            return saved_values[key]
+        # Check other SBT models
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        return default_dict.get(default_key)
+    
     if model == "SBT V1.0" or model == "SBT V2.0":
         if case == "utube":
             radius_vertical = slider1(
@@ -2229,7 +2332,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=0.4445,
                 mark_dict=diameter_vertical_dict,
                 step_i=0.002,
-                start_v=start_vals_sbt["radius-vertical"],
+                start_v=get_saved_value("radius-vertical", start_vals_sbt, "radius-vertical"),
                 div_style=div_block_style,
             )
             radius_lateral = slider1(
@@ -2240,7 +2343,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=0.4445,
                 mark_dict=diameter_lateral_dict,
                 step_i=0.002,
-                start_v=start_vals_sbt["radius-lateral"],
+                start_v=get_saved_value("radius-lateral", start_vals_sbt, "radius-lateral"),
                 div_style=div_block_style,
             )
             n_laterals = input_box(
@@ -2249,7 +2352,7 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Number of Laterals",
                 min_v=0,
                 max_v=20,
-                start_v=start_vals_hdf5["n-laterals"],
+                start_v=get_saved_value("n-laterals", start_vals_hdf5, "n-laterals"),
                 step_i=1,
                 div_style=div_block_style,
             )
@@ -2259,7 +2362,7 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Lateral Flow Allocation",
                 min_v=0,
                 max_v=1,
-                start_v=start_vals_hdf5["lateral-flow"],
+                start_v=get_saved_value("lateral-flow", start_vals_hdf5, "lateral-flow"),
                 step_i=0.01,
                 div_style=div_block_style,
             )
@@ -2269,7 +2372,7 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Lateral Flow Multiplier",
                 min_v=0,
                 max_v=1,
-                start_v=start_vals_hdf5["lateral-multiplier"],
+                start_v=get_saved_value("lateral-multiplier", start_vals_hdf5, "lateral-multiplier"),
                 step_i=0.05,
                 div_style=div_block_style,
             )
@@ -2417,6 +2520,70 @@ def update_sliders_heat_exchanger(model, case):
 
     else:
         raise PreventUpdate
+
+
+@app.callback(
+    [
+        Output(component_id="radius-vertical-select", component_property="value", allow_duplicate=True),
+        Output(component_id="radius-lateral-select", component_property="value", allow_duplicate=True),
+        Output(component_id="n-laterals-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="Diameter1-container", component_property="children"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="model-select", component_property="value"),
+        State(component_id="radius-vertical-select", component_property="value"),
+        State(component_id="radius-lateral-select", component_property="value"),
+        State(component_id="n-laterals-select", component_property="value"),
+        State(component_id="lateral-flow-select", component_property="value"),
+        State(component_id="lateral-multiplier-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_sbt_sliders(diameter1_container, store_data, model, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+    """Restore SBT-specific slider values after sliders are created"""
+    if model is None:
+        raise PreventUpdate
+    
+    # Only restore for SBT models
+    if model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Helper function to get value from current model or fall back to other models
+    def get_value(key, current_value, default_dict, default_key):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val
+        
+        # If not found, check other SBT models
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        
+        # If no saved value found, preserve current value if it exists, otherwise use default
+        if current_value is not None:
+            return current_value
+        return default_dict.get(default_key)
+    
+    # Restore values, checking current model first, then other models
+    radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
+    radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
+    n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
+    lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
+    lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
 
 
 @app.callback(
@@ -3228,14 +3395,20 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
 
 @app.callback(
     Output(component_id="warning_block_div3", component_property="children"),
-    Input(component_id="econ-memory", component_property="data"),
+    [
+        Input(component_id="econ-memory", component_property="data"),
+        Input(component_id="econ-results", component_property="data"),
+    ],
 )
-def update_warning_divs(levelized_cost_dict):
+def update_warning_divs(levelized_cost_dict, econ_results_dict):
     warning_div3 = html.Div(style={"display": "none"})
 
     # Handle None or missing data
     if levelized_cost_dict is None:
         return warning_div3
+    
+    if econ_results_dict is None:
+        econ_results_dict = {}
         
     error_style = {
         "display": "block",
@@ -3252,21 +3425,21 @@ def update_warning_divs(levelized_cost_dict):
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
     
-    # Disabled warning: LCOE too high / outlet temperature too low
-    # This warning was showing even when parameters were valid, so it's been disabled
-    # if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
-    #     warning_div3 = html.Div(  # id="error_block_div3",
-    #         style=error_style,
-    #         children=[
-    #             html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-    #             dcc.Markdown(
-    #                 "**LCOE is too high.**", style={"display": "inline-block"}
-    #             ),
-    #             html.P(
-    #                 "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
-    #             ),
-    #         ],
-    #     )
+    # Show warning if LCOE is invalid (9999.00 or "-")
+    # This indicates outlet temperature is too low or system is losing heat
+    if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
+        warning_div3 = html.Div(
+            style=error_style,
+            children=[
+                html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                dcc.Markdown(
+                    "**LCOE is too high.**", style={"display": "inline-block"}
+                ),
+                html.P(
+                    "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
+                ),
+            ],
+        )
 
     return warning_div3
 
