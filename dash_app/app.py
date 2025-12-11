@@ -3459,23 +3459,121 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict):
                 break
         calculation_attempted = has_non_default
     
-    # Only show warning if we DON'T have any valid LCOE values AND a calculation was attempted
-    # This prevents showing warning when at least one LCOE is valid
-    lcoe_is_insufficient = (
-        lcoe_sco2 == "Insufficient Inputs" or lcoe_h2o == "Insufficient Inputs"
+    # Check which LCOE values are invalid
+    lcoe_sco2_is_insufficient = lcoe_sco2 == "Insufficient Inputs"
+    lcoe_h2o_is_insufficient = lcoe_h2o == "Insufficient Inputs"
+    lcoe_sco2_is_other_invalid = (
+        lcoe_sco2 == "9999.00" or lcoe_sco2 == "-"
     )
-    lcoe_is_other_invalid = (
-        lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or 
-        lcoe_sco2 == "-" or lcoe_h2o == "-"
+    lcoe_h2o_is_other_invalid = (
+        lcoe_h2o == "9999.00" or lcoe_h2o == "-"
     )
     
-    # Show warning only if: 
-    # - No valid LCOE values exist, AND
-    # - (LCOE is "Insufficient Inputs" OR (other invalid AND calculation attempted))
-    if not has_valid_lcoe and (lcoe_is_insufficient or (lcoe_is_other_invalid and calculation_attempted)):
+    lcoe_sco2_is_invalid = lcoe_sco2_is_insufficient or (lcoe_sco2_is_other_invalid and calculation_attempted)
+    lcoe_h2o_is_invalid = lcoe_h2o_is_insufficient or (lcoe_h2o_is_other_invalid and calculation_attempted)
+    
+    # Show warning if at least one LCOE is invalid and a calculation was attempted
+    # This helps users understand why a specific fluid's LCOE isn't calculating
+    if (lcoe_sco2_is_invalid or lcoe_h2o_is_invalid) and calculation_attempted:
         # Different messages for different error types - provide actionable guidance
-        if lcoe_is_insufficient:
-            # "Insufficient Inputs" means we can't calculate LCOE (likely 0 or negative electricity production)
+        # Check error codes to provide specific guidance, otherwise use generic "Insufficient Inputs" message
+        error_codes = econ_results_dict.get("error_codes", [])
+        
+        # Check for specific error codes first
+        has_error_6000 = 6000 in error_codes  # Zero electricity production
+        has_error_7000 = 7000 in error_codes  # Negative LCOE
+        has_error_1000 = 1000 in error_codes  # Production temp below injection temp
+        has_error_2000 = 2000 in error_codes  # H2O temp outside ORC range
+        has_error_3000 = 3000 in error_codes  # CO2 injection temp too low
+        has_error_4000 = 4000 in error_codes  # CO2 turbine outlet temp too low
+        
+        if has_error_6000:
+            # Zero electricity production - can't calculate LCOE
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - zero electricity production.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
+                    ),
+                ],
+            )
+        elif has_error_7000:
+            # Negative LCOE - system is losing energy
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - negative net electricity production.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "The system is consuming more energy than it produces. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to increase Outlet Temperature and improve energy production. Alternatively, try reducing Mass Flow Rate to decrease pumping power requirements."
+                    ),
+                ],
+            )
+        elif has_error_1000:
+                    # Production temperature dropped below injection temperature
+                    warning_div3 = html.Div(
+                        style=error_style,
+                        children=[
+                            html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                            dcc.Markdown(
+                                "**Cannot calculate LCOE - production temperature too low.**", style={"display": "inline-block"}
+                            ),
+                            html.P(
+                                "Production temperature dropped below injection temperature. Try increasing: Geothermal Gradient, Depth (L1), or reducing Mass Flow Rate to improve heat extraction."
+                            ),
+                        ],
+                    )
+        elif has_error_2000:
+            # H2O temperature outside ORC range
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - temperature outside ORC range.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "For H2O, injection temperature must be above 50°C and production temperature must be between 100-200°C. Try adjusting: Injection Temperature, Geothermal Gradient, or Depth (L1)."
+                    ),
+                ],
+            )
+        elif has_error_3000:
+            # CO2 injection temperature too low
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - CO2 injection temperature too low.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "CO2 injection temperature must be at least 32°C to remain supercritical. Increase Injection Temperature to at least 32°C."
+                    ),
+                ],
+            )
+        elif has_error_4000:
+            # CO2 turbine outlet temperature too low
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - CO2 turbine outlet temperature too low.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "CO2 turbine outlet temperature dropped below 37°C. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the production temperature."
+                    ),
+                ],
+            )
+        else:
+            # Generic message for cases without specific error codes
+            # Use "Insufficient Inputs" message for consistency
             warning_div3 = html.Div(
                 style=error_style,
                 children=[
@@ -3488,55 +3586,6 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict):
                     ),
                 ],
             )
-        else:
-            # LCOE is invalid (9999.00 or "-")
-            # Check error codes to provide more specific guidance
-            error_codes = econ_results_dict.get("error_codes", [])
-            has_error_6000 = 6000 in error_codes  # Zero electricity production
-            has_error_7000 = 7000 in error_codes  # Negative LCOE
-            
-            if has_error_6000:
-                # Zero electricity production - can't calculate LCOE
-                warning_div3 = html.Div(
-                    style=error_style,
-                    children=[
-                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                        dcc.Markdown(
-                            "**Cannot calculate LCOE - zero electricity production.**", style={"display": "inline-block"}
-                        ),
-                        html.P(
-                            "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
-                        ),
-                    ],
-                )
-            elif has_error_7000:
-                # Negative LCOE - system is losing energy
-                warning_div3 = html.Div(
-                    style=error_style,
-                    children=[
-                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                        dcc.Markdown(
-                            "**Cannot calculate LCOE - negative net electricity production.**", style={"display": "inline-block"}
-                        ),
-                        html.P(
-                            "The system is consuming more energy than it produces. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to increase Outlet Temperature and improve energy production."
-                        ),
-                    ],
-                )
-            else:
-                # Generic message for other invalid cases
-                warning_div3 = html.Div(
-                    style=error_style,
-                    children=[
-                        html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-                        dcc.Markdown(
-                            "**Cannot calculate LCOE.**", style={"display": "inline-block"}
-                        ),
-                        html.P(
-                            "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
-                        ),
-                    ],
-                )
 
     return warning_div3
 
