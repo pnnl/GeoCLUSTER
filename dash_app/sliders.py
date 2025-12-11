@@ -470,10 +470,10 @@ def slider_card():
                                                 style=div_none_style,
                                                 children=[
                                                     html.P("MODEL FINE-TUNING", className="param-class-name"),
-                                                    slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
-                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_none_style, parameter_name="Mesh Fineness"),
                                                     slider1(DivID="accuracy-div", ID="accuracy-select", ptitle="Accuracy", min_v=1, max_v=5, 
                                                                             mark_dict=accuracy_dict, step_i=1,start_v=start_vals_sbt["accuracy"], div_style=div_block_style, parameter_name="Accuracy"),
+                                                    slider1(DivID="mesh-div", ID="mesh-select", ptitle="Mesh Fineness", min_v=0, max_v=2, 
+                                                                mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_none_style, parameter_name="Mesh Fineness"),
                                                     html.Div(
                                                             id="hyperparam1-container",
                                                             children=[
@@ -488,6 +488,7 @@ def slider_card():
                                                         ]),
                                                     html.Div(
                                                             id="lat-flow-container",
+                                                            style=div_none_style,
                                                             children=[
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)

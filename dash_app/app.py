@@ -974,13 +974,31 @@ def show_hide_see_all_button(model):
         Output(component_id="see-all-params-text", component_property="children"),
         Output(component_id="see-all-params-chevron", component_property="children"),
     ],
-    [Input(component_id="see-all-params-button", component_property="n_clicks")],
-    [State(component_id="mesh-div", component_property="style")],
+    [
+        Input(component_id="see-all-params-button", component_property="n_clicks"),
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [State(component_id="see-all-params-text", component_property="children")],
     prevent_initial_call='initial_duplicate',
 )
-def toggle_see_all_params(n_clicks, current_mesh_style):
+def toggle_see_all_params(n_clicks, model, current_button_text):
+    callback_ctx = ctx
+    if not callback_ctx.triggered:
+        # Initial state - all hidden
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    
+    trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
+    
+    if trigger_id == "model-select":
+        # Model changed - set initial state: all hidden for SBT models (they'll be shown when button is clicked)
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    
+    # Button was clicked
     if n_clicks and n_clicks > 0:
-        is_visible = current_mesh_style.get("display") == "block" if current_mesh_style else False
+        # Check if currently showing "See less" (meaning params are visible)
+        is_visible = current_button_text == "See less parameters" if current_button_text else False
         if is_visible:
             # Hide all parameters
             style_none = {"display": "none"}
@@ -1592,7 +1610,6 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         Output(component_id="num-lat-div", component_property="style"),
         Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
-        Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
         Output(component_id="pipe-roughness-container", component_property="style"),
     ],
     [
@@ -1607,13 +1624,13 @@ def show_model_params(model):
     n = {"display": "none"}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, b, n, n, n
+        return b, b, b, b, b, b, n, n, b, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, n, b
+        return b, b, b, b, b, b, n, b, b, n, b
 
 
 @app.callback(
@@ -1628,13 +1645,13 @@ def show_model_params(model):
     ],
     [
         Input(component_id="tabs", component_property="value"),
-        # Input(component_id="model-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="end-use-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def econ_sliders_visibility(tab, fluid, end_use):
+def econ_sliders_visibility(tab, model, fluid, end_use):
     b = {"display": "block"}
     n = {"display": "none"}
 
@@ -2254,7 +2271,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=1,
                 start_v=start_vals_hdf5["lateral-multiplier"],
                 step_i=0.05,
-                div_style=div_none_style,
+                div_style=div_block_style,
             )
 
             return (
