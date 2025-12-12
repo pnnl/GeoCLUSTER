@@ -294,8 +294,8 @@ def create_resource_card(card_id, title, description, link=None, pdf_path=None, 
         html.Div(
             style={"paddingRight": "35px"},
             children=[
-                html.H6(title, style={"margin": "0", "fontWeight": "bold", "fontSize": "16px"}),
-                html.Div(description, style={"margin": "5px 0 0 0", "fontSize": "14px", "color": "#666"}),
+                html.H6(title, style={"margin": "0", "fontWeight": "bold", "fontSize": "16px", "color": "rgb(50, 50, 50)"}),
+                html.Div(description, style={"margin": "5px 0 0 0", "fontSize": "14px", "color": "rgb(50, 50, 50)", "lineHeight": "1.4"}),
             ]
         ),
         html.Img(
@@ -342,9 +342,8 @@ def create_resource_card(card_id, title, description, link=None, pdf_path=None, 
             header_element = html.A(
                 className="resource-card-header",
                 href=click_url,
-                target="_blank" if link else None,
-                rel="noopener noreferrer" if link else None,
-                download=pdf_path if pdf_path else None,
+                target="_blank",
+                rel="noopener noreferrer",
                 style=header_style,
                 children=header_children,
             )
@@ -406,118 +405,143 @@ about_tab = dcc.Tab(
                             id="resource-cards-container",
                             children=[
                                 create_resource_card(
+                                    "resource-card-2",
+                                    "GeoCLUSTER APIs",
+                                    "Access the closed-loop geothermal techno-economic model programmatically for scenario runs, individually or in batch. Last updated 12/2025.",
+                                    link="https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing",
+                                ),
+                                create_resource_card(
+                                    "resource-card-3",
+                                    "Stanford Geothermal Workshop, 2025",
+                                    [
+                                        "Bernat, Anastasia, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. ",
+                                        html.Span("GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.",
+                                    ],
+                                    pdf_path="pdfs/GeoCLUSTER v2.0 A Closed-Loop.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-4",
+                                    "Geothermics, 2024",
+                                    [
+                                        "White, Mark, Yaroslav Vasyliv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, Chad Augustine, Gabriela Bran-Anleu, Roland Horne, Laura Pauley, Giorgia Bettini, Theron Marshall, and Anastasia Bernat. ",
+                                        html.Span("Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Geothermics 116 (2024): 102852.",
+                                    ],
+                                    pdf_path="pdfs/Numerical investigation of .pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-5",
+                                    "Stanford Geothermal Workshop, 2025",
+                                    [
+                                        "Anleu, Gabriela Bran, Raquel S.P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. ",
+                                        html.Span("A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12-14, 2025.",
+                                    ],
+                                    pdf_path="pdfs/A parametric study of Lshape.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-6",
+                                    "Geothermal Rising Conference, 2025",
+                                    [
+                                        "Hakes, Raquel S.P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. ",
+                                        html.Span("Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems.", style={"fontWeight": "bold"}),
+                                        " Geothermal Rising Conference, 2025.",
+                                    ],
+                                ),
+                                create_resource_card(
+                                    "resource-card-7",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "Parisi, Carlo, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. ",
+                                        html.Span("Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
+                                    ],
+                                ),
+                                create_resource_card(
+                                    "resource-card-8",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "Beckers, Koenraad, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, Mark White, and the Closed-Loop Geothermal Working Group. ",
+                                        html.Span("Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
+                                    ],
+                                    pdf_path="pdfs/Tabulated Database of Closed-Loop.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-9",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Giorgia Bettin, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        html.Span("Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.",
+                                    ],
+                                    pdf_path="pdfs/Closed-loop Geothermal Working Group Study - Understanding Thermal Performance.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-10",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. ",
+                                        html.Span("Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                    pdf_path="pdfs/Geothermal analysis modeling and simulation _ Geothermal rising 2021.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-11",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "Vasilvi, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. ",
+                                        html.Span("Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                ),
+                                create_resource_card(
+                                    "resource-card-12",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Giorgia Bettini, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        html.Span("Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                    pdf_path="pdfs/Thermal and Mechanical Energy Performance Analysis of.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-13",
+                                    "DOE Report, 2024",
+                                    [
+                                        "U.S. Department of Energy. ",
+                                        html.Span("Pathways to Commercial Liftoff: Next-Generation Geothermal Power.", style={"fontWeight": "bold"}),
+                                        " March 2024.",
+                                    ],
+                                    pdf_path="pdfs/DOE Report 2024_Pathways to Commercial liftoff.pdf",
+                                ),
+                                create_resource_card(
                                     "resource-card-1",
                                     "GeoCLUSTER Code Repository",
                                     "Access the code behind the Python-based closed-loop geothermal techno-economic simulator with customizable reservoir and wellbore models. Last updated 12/2025.",
                                     link="https://github.com/pnnl/GeoCLUSTER",
                                 ),
-                                html.Div(
-                                    id="resource-card-2",
-                                    className="resource-card",
-                                    children=[
-                                        html.A(
-                                            className="resource-card-header",
-                                            href="https://apps.openei.org/services/",
-                                            target="_blank",
-                                            rel="noopener noreferrer",
-                                            style={
-                                                "position": "relative",
-                                                "cursor": "pointer",
-                                                "padding": "15px",
-                                                "border": "1px solid #C9C9C9",
-                                                "borderBottom": "none",
-                                                "borderRadius": "16px 16px 0 0",
-                                                "marginBottom": "0",
-                                                "backgroundColor": "#fff",
-                                                "textDecoration": "none",
-                                                "color": "inherit",
-                                                "display": "block"
-                                            },
-                                            children=[
-                                                html.Div(
-                                                    style={"paddingRight": "35px"},
-                                                    children=[
-                                                        html.H6("GeoCLUSTER APIs", style={"margin": "0", "fontWeight": "bold", "fontSize": "16px"}),
-                                                        html.Div([
-                                                            html.P("Access the closed-loop geothermal techno-economic model programmatically for scenario runs, individually or in batch. Last updated 12/2025.", style={"margin": "0"}),
-                                                            html.P("An API key is required - sign up at OpenEI to get your key.", style={"margin": "5px 0 0 0"}),
-                                                        ], style={"margin": "5px 0 -2px 0", "fontSize": "14px", "color": "#666"}),
-                                                    ]
-                                                ),
-                                                html.Img(
-                                                    src=app.get_asset_url("expand_closed.svg"),
-                                                    className="resource-expand-icon",
-                                                    style={
-                                                        "width": "21px",
-                                                        "height": "21px",
-                                                        "position": "absolute",
-                                                        "top": "15px",
-                                                        "right": "15px",
-                                                    },
-                                                ),
-                                            ]
-                                        ),
-                                        html.Div(
-                                            style={
-                                                "padding": "0 15px 15px 15px",
-                                                "border": "1px solid #C9C9C9",
-                                                "borderTop": "none",
-                                                "borderRadius": "0 0 16px 16px",
-                                                "backgroundColor": "#fff",
-                                                "marginBottom": "10px",
-                                                "marginTop": "-5px",
-                                            },
-                                            children=[
-                                                html.P("Add it to the URL:", style={"margin": "2px 0 0 0", "fontSize": "14px", "color": "#666"}),
-                                                html.Div(
-                                                    [
-                                                        html.Div(
-                                                            "https://api.openei.org/geocluster_api/?api_key=YOUR_KEY_HERE",
-                                                            id="api-url-text",
-                                                            style={
-                                                                "fontSize": "12px", 
-                                                                "wordBreak": "break-all", 
-                                                                "color": "#0066cc",
-                                                                "userSelect": "all",
-                                                                "display": "inline-block",
-                                                                "padding": "4px",
-                                                                "backgroundColor": "#f5f5f5",
-                                                                "borderRadius": "4px",
-                                                                "fontFamily": "monospace",
-                                                                "margin": "0",
-                                                                "flex": "1",
-                                                                "paddingRight": "35px"
-                                                            }
-                                                        ),
-                                                        html.Div(
-                                                            dcc.Clipboard(
-                                                                id="api-clipboard",
-                                                                target_id="api-url-text",
-                                                                style={
-                                                                    "display": "inline-block",
-                                                                    "cursor": "pointer"
-                                                                }
-                                                            ),
-                                                            id="clipboard-wrapper",
-                                                            style={
-                                                                "position": "absolute",
-                                                                "right": "15px",
-                                                                "top": "45%",
-                                                                "transform": "translateY(-50%)",
-                                                                "zIndex": "1000"
-                                                            },
-                                                        ),
-                                                    ],
-                                                    style={"display": "flex", "alignItems": "center", "gap": "8px", "position": "relative"}
-                                                ),
-                                            ]
-                                        ),
-                                    ]
+                                create_resource_card(
+                                    "resource-card-14",
+                                    "SBT Code",
+                                    [
+                                        "Access the slender-body theory (SBT) simulator - a Python-based tool for simulating the production temperatures, production pressures and heat extraction with closed-loop geothermal systems. Last updated 01/2025. ",
+                                        html.Br(),
+                                        "National Renewable Energy Laboratory.",
+                                    ],
+                                    link="https://github.com/NREL/SBT",
                                 ),
                                 create_resource_card(
-                                    "resource-card-3",
-                                    "Geothermal Rising Conference, 2025",
-                                    "Hakes, Raquel S.P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems. Geothermal Rising Conference, 2025.",
+                                    "resource-card-15",
+                                    "Geothermal Data Repository, 2023",
+                                    [
+                                        "Beckers, Koenraad, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, Doug Blankenship, Zach Frone, Sean Porse, Seunghwan Baek, Paolo Balestra, Anastasia Bernat, Giorgia Bettin, Gabriela Bran-Anleu, Alec Kucala, Brian Kyanjo, Theron Marshall, Mario Martinez, Travis McLing, Carlo Parisi, Sam Subia, Yaroslav Vasyliv, and Mark White. ",
+                                        html.Span("Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications.", style={"fontWeight": "bold"}),
+                                        " Pacific Northwest National Laboratory, February, 3, 2023. Distributed by Geothermal Data Repository.",
+                                    ],
+                                    link="https://doi.org/10.15121/1972213",
                                 ),
                             ],
                         ),
