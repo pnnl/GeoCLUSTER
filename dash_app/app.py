@@ -3422,9 +3422,10 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
     [
         Input(component_id="econ-memory", component_property="data"),
         Input(component_id="econ-results", component_property="data"),
+        Input(component_id="fluid-select", component_property="value"),
     ],
 )
-def update_warning_divs(levelized_cost_dict, econ_results_dict):
+def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
     warning_div3 = html.Div(style={"display": "none"})
 
     # Handle None or missing data
@@ -3496,9 +3497,17 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict):
     lcoe_sco2_is_invalid = lcoe_sco2_is_insufficient or (lcoe_sco2_is_other_invalid and calculation_attempted)
     lcoe_h2o_is_invalid = lcoe_h2o_is_insufficient or (lcoe_h2o_is_other_invalid and calculation_attempted)
     
-    # Show warning if at least one LCOE is invalid and a calculation was attempted
+    # Determine which LCOE to check based on selected fluid
+    if fluid == "H2O":
+        should_check_lcoe = lcoe_h2o_is_invalid
+    elif fluid == "sCO2":
+        should_check_lcoe = lcoe_sco2_is_invalid
+    else:  # fluid == "All"
+        should_check_lcoe = lcoe_sco2_is_invalid or lcoe_h2o_is_invalid
+    
+    # Show warning if the relevant LCOE is invalid and a calculation was attempted
     # This helps users understand why a specific fluid's LCOE isn't calculating
-    if (lcoe_sco2_is_invalid or lcoe_h2o_is_invalid) and calculation_attempted:
+    if should_check_lcoe and calculation_attempted:
         # Different messages for different error types - provide actionable guidance
         # Check error codes to provide specific guidance, otherwise use generic "Insufficient Inputs" message
         error_codes = econ_results_dict.get("error_codes", [])
