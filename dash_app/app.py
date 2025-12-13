@@ -431,9 +431,8 @@ about_tab = dcc.Tab(
                         html.P("Acknowledgments", id="ab-title6", style={"marginTop": "30px"}),
                         html.P([
                             "This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of CLGSs involving four national laboratories and two universities: ",
-                            "U.S. Department of Energy Geothermal Technologies Office, ",
                             "Idaho National Laboratory, ",
-                            "National Renewable Energy Laboratory, ",
+                            "National Laboratory of the Rockies, ",
                             "Pacific Northwest National Laboratory, ",
                             "Sandia National Laboratories, ",
                             "Stanford University, ",
