@@ -3,12 +3,18 @@
 
 # web app and interactive graphics libraries 
 from dash import dcc, html
+from info_popups import create_info_button
 
 # ---------------------------
 # Define dropdown options.
 # ---------------------------
 
 model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
+model_labels = {
+    "HDF5": "Database (H2O & CO2)",
+    "SBT V1.0": "Simulator (H2O only)",
+    "SBT V2.0": "Simulator (H2O & CO2)"
+}
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
@@ -35,10 +41,13 @@ def dropdown_card():
                         html.Div(id="dropdown-card0",
                             # style={'display': 'none'},
                             children=[
-                                html.P("Model Version", className="dropdown-text"),
+                                html.Div([
+                                    html.P("Model Version", className="dropdown-text", style={"display": "inline-block", "margin": "0", "verticalAlign": "middle"}),
+                                    create_info_button("Model Version")
+                                ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                     id="model-select",
-                                    options=[{"label": i, "value": i} for i in model_list],
+                                    options=[{"label": model_labels[i], "value": i} for i in model_list],
                                     value=model_list[0],
                                     clearable=False,
                                     searchable=False

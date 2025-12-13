@@ -283,6 +283,11 @@ class TEA:
         if self.Fluid == 1:
             # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
             # self.Tout = np.array(TandP_dict["H2O_Tout"])
+            if "H2O_Pout" not in TandP_dict or "H2O_Tout" not in TandP_dict or "time" not in TandP_dict:
+                # Return empty/default values if TandP_dict is missing required keys
+                self.Pout = np.array([])
+                self.Tout = np.array([])
+                return
             self.Pout = np.array(TandP_dict["H2O_Pout"])
             f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
             try:

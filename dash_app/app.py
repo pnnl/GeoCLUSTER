@@ -28,7 +28,7 @@ import dash
 import dash_bootstrap_components as dbc  # Adds bootstrap components for more web themes and templates
 import dash_daq as daq  # Adds more data acquisition (DAQ) and controls to dash callbacks
 from dash import Dash, ctx, dcc, html
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 from dropdowns import *
 from flask import send_from_directory
@@ -253,7 +253,125 @@ def graph_guidance_card(btnID, cardID, dropdown_children):
                 id=cardID,
                 is_open=False,
             ),
-        ]
+        ],
+        style={"display": "block"}
+    )
+
+
+def create_resource_card(card_id, title, description, link=None, pdf_path=None, expanded_content=None):
+    """Create an expandable resource card with title, description, and expand icon."""
+    expand_icon_id = {"type": "resource-expand-icon", "index": card_id}
+    collapse_id = {"type": "resource-collapse", "index": card_id}
+    button_id = {"type": "resource-button", "index": card_id}
+    
+    # Determine if card should be clickable (has link or pdf) or expandable (has expanded_content)
+    is_clickable = link is not None or pdf_path is not None
+    has_expandable_content = expanded_content is not None
+    
+    # Build expanded content if provided
+    if expanded_content is None and not is_clickable:
+        expanded_content = html.Div()
+    
+    # Create click handler URL
+    click_url = None
+    if link:
+        click_url = link
+    elif pdf_path:
+        click_url = app.get_asset_url(pdf_path)
+    
+    header_style = {
+        "position": "relative",
+        "cursor": "pointer",
+        "padding": "15px",
+        "border": "1px solid #C9C9C9",
+        "borderRadius": "16px",
+        "backgroundColor": "#fff",
+    }
+    
+    # Wrap header in link if clickable
+    header_children = [
+        html.Div(
+            style={"paddingRight": "35px"},
+            children=[
+                html.H6(title, style={"margin": "0", "fontWeight": "bold", "fontSize": "16px", "color": "rgb(50, 50, 50)"}),
+                html.Div(description, style={"margin": "5px 0 0 0", "fontSize": "14px", "color": "rgb(50, 50, 50)", "lineHeight": "1.4"}),
+            ]
+        ),
+        html.Img(
+            id=expand_icon_id if has_expandable_content else f"{card_id}-icon",
+            src=app.get_asset_url("expand_closed.svg"),
+            className="resource-expand-icon",
+            style={
+                "width": "21px",
+                "height": "21px",
+                "position": "absolute",
+                "top": "15px",
+                "right": "15px",
+            },
+        ),
+    ]
+    
+    # Check if description contains clipboard-wrapper (special case for API card)
+    has_clipboard = False
+    if isinstance(description, html.Div):
+        # Check if any child has clipboard-wrapper id
+        def check_for_clipboard(children):
+            if isinstance(children, list):
+                for child in children:
+                    if check_for_clipboard(child):
+                        return True
+            elif hasattr(children, 'id') and children.id == 'clipboard-wrapper':
+                return True
+            elif hasattr(children, 'children'):
+                return check_for_clipboard(children.children)
+            return False
+        has_clipboard = check_for_clipboard(description)
+    
+    if is_clickable and not has_expandable_content:
+        if has_clipboard:
+            # For cards with clipboard, use div with onClick to open link, but exclude clipboard clicks
+            header_element = html.Div(
+                className="resource-card-header",
+                style=header_style,
+                children=header_children,
+                **{"data-href": click_url, "data-target": "_blank" if link else None}
+            )
+        else:
+            # Card opens link directly - wrap in anchor tag
+            header_element = html.A(
+                className="resource-card-header",
+                href=click_url,
+                target="_blank",
+                rel="noopener noreferrer",
+                style=header_style,
+                children=header_children,
+            )
+    else:
+        # Card expands - use div with click handler
+        div_props = {
+            "className": "resource-card-header",
+            "style": header_style,
+            "children": header_children,
+        }
+        if has_expandable_content:
+            div_props["id"] = button_id
+            div_props["n_clicks"] = 0
+        header_element = html.Div(**div_props)
+    
+    card_children = [header_element]
+    if has_expandable_content:
+        card_children.append(
+            dbc.Collapse(
+                id=collapse_id,
+                is_open=False,
+                children=expanded_content,
+            )
+        )
+    
+    return html.Div(
+        id=card_id,
+        className="resource-card",
+        children=card_children,
     )
 
 
@@ -280,36 +398,16 @@ about_tab = dcc.Tab(
                         html.P("About Our Research", id="ab-title1"),
                         html.P(note, id="ab-note"),
                         html.P(note2, id="ab-note2"),
+                        html.P("Closed-Loop Geothermal Working Group", id="ab-title4"),
+                        html.P("This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of CLGSs involving four national laboratories and two universities.", id="ab-note5"),
                         html.P("Navigating the Results", id="ab-title2"),
                         html.P(note3, id="ab-note3"),
-                        html.P("Resources", id="ab-title3"),
-                        html.Label(
-                            [
-                                html.P("Download the contributing", id="shorttext1"),
-                                html.A(
-                                    "papers",
-                                    href="https://gdr.openei.org/submissions/1473",
-                                    id="hyperlink1",
-                                ),
-                                html.P("and", id="shorttext2"),
-                                html.A(
-                                    "code",
-                                    href="https://github.com/pnnl/GeoCLUSTER",
-                                    id="hyperlink2",
-                                ),
-                                html.P(".", id="shorttext3"),
-                            ],
-                            id="ab-note4",
-                        ),
                     ],
                 ),
                 html.Div(
                     id="image-container",
                     children=[
-                        html.Img(
-                            id="cluster-img",
-                            src=app.get_asset_url("CLGWG3.png"),
-                        ),
+                        html.P("Closed-Loop Geothermal System", id="ab-title5"),
                         dbc.Carousel(
                             id="carousel-ride",
                             items=[
@@ -329,6 +427,183 @@ about_tab = dcc.Tab(
                             interval=3000,
                             controls=True,
                             indicators=False,
+                        ),
+                        html.P("Acknowledgments", id="ab-title6", style={"marginTop": "30px"}),
+                        html.P([
+                            "This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of CLGSs involving four national laboratories and two universities: ",
+                            "U.S. Department of Energy Geothermal Technologies Office, ",
+                            "Idaho National Laboratory, ",
+                            "National Renewable Energy Laboratory, ",
+                            "Pacific Northwest National Laboratory, ",
+                            "Sandia National Laboratories, ",
+                            "Stanford University, ",
+                            "and PennState. ",
+                            "Last updated December 2025.",
+                        ], id="ab-note6"),
+                    ],
+                ),
+            ],
+        ),
+        html.Div(
+            id="resources-section",
+            style={"width": "100%", "clear": "both", "padding": "0"},
+            children=[
+                html.P("Resources", id="ab-title3"),
+                html.P("Explore our APIs, research papers, and open-source code.", id="ab-note4"),
+                html.Div(
+                    id="resource-cards-container",
+                    children=[
+                        html.Div(
+                            id="resource-column-1",
+                            children=[
+                                create_resource_card(
+                                    "resource-card-1",
+                                    "GeoCLUSTER Code Repository",
+                                    "Access the code behind the Python-based closed-loop geothermal techno-economic simulator with customizable reservoir and wellbore models. Last updated 12/2025.",
+                                    link="https://github.com/pnnl/GeoCLUSTER",
+                                ),
+                                create_resource_card(
+                                    "resource-card-2",
+                                    "GeoCLUSTER APIs",
+                                    "Access the closed-loop geothermal techno-economic model programmatically for scenario runs, individually or in batch. Last updated 12/2025.",
+                                    link="https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing",
+                                ),
+                                create_resource_card(
+                                    "resource-card-6",
+                                    "Geothermal Rising Conference, 2025",
+                                    [
+                                        "Hakes, Raquel S.P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. ",
+                                        html.Span("Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems.", style={"fontWeight": "bold"}),
+                                        " Geothermal Rising Conference, 2025.",
+                                    ],
+                                    pdf_path="pdfs/Hakes et al - 2025 GRC - FINAL (1).pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-3",
+                                    "Stanford Geothermal Workshop, 2025",
+                                    [
+                                        "Bernat, Anastasia, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. ",
+                                        html.Span("GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.",
+                                    ],
+                                    pdf_path="pdfs/GeoCLUSTER v2.0 A Closed-Loop.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-5",
+                                    "Stanford Geothermal Workshop, 2025",
+                                    [
+                                        "Anleu, Gabriela Bran, Raquel S.P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. ",
+                                        html.Span("A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12-14, 2025.",
+                                    ],
+                                    pdf_path="pdfs/A parametric study of Lshape.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-14",
+                                    "SBT Code",
+                                    [
+                                        "Access the slender-body theory (SBT) simulator - a Python-based tool for simulating the production temperatures, production pressures and heat extraction with closed-loop geothermal systems. Last updated 01/2025. ",
+                                        html.Br(),
+                                        "National Renewable Energy Laboratory.",
+                                    ],
+                                    link="https://github.com/NREL/SBT",
+                                ),
+                                create_resource_card(
+                                    "resource-card-13",
+                                    "DOE Report, 2024",
+                                    [
+                                        "U.S. Department of Energy. ",
+                                        html.Span("Pathways to Commercial Liftoff: Next-Generation Geothermal Power.", style={"fontWeight": "bold"}),
+                                        " March 2024.",
+                                    ],
+                                    pdf_path="pdfs/DOE Report 2024_Pathways to Commercial liftoff.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-4",
+                                    "Geothermics, 2024",
+                                    [
+                                        "White, Mark, Yaroslav Vasyliv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, Chad Augustine, Gabriela Bran-Anleu, Roland Horne, Laura Pauley, Giorgia Bettini, Theron Marshall, and Anastasia Bernat. ",
+                                        html.Span("Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Geothermics 116 (2024): 102852.",
+                                    ],
+                                    pdf_path="pdfs/Numerical investigation of .pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-15",
+                                    "Geothermal Data Repository, 2023",
+                                    [
+                                        "Beckers, Koenraad, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, Doug Blankenship, Zach Frone, Sean Porse, Seunghwan Baek, Paolo Balestra, Anastasia Bernat, Giorgia Bettin, Gabriela Bran-Anleu, Alec Kucala, Brian Kyanjo, Theron Marshall, Mario Martinez, Travis McLing, Carlo Parisi, Sam Subia, Yaroslav Vasyliv, and Mark White. ",
+                                        html.Span("Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications.", style={"fontWeight": "bold"}),
+                                        " Pacific Northwest National Laboratory, February, 3, 2023. Distributed by Geothermal Data Repository.",
+                                    ],
+                                    link="https://doi.org/10.15121/1972213",
+                                ),
+                            ],
+                        ),
+                        html.Div(
+                            id="resource-column-2",
+                            children=[
+                                create_resource_card(
+                                    "resource-card-7",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "Parisi, Carlo, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. ",
+                                        html.Span("Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
+                                    ],
+                                    pdf_path="pdfs/RELAP5-3D-Falcon.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-8",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "Beckers, Koenraad, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, Mark White, and the Closed-Loop Geothermal Working Group. ",
+                                        html.Span("Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
+                                    ],
+                                    pdf_path="pdfs/Tabulated Database of Closed-Loop.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-9",
+                                    "Stanford Geothermal Workshop, 2023",
+                                    [
+                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Giorgia Bettin, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        html.Span("Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.",
+                                    ],
+                                    pdf_path="pdfs/Closed-loop Geothermal Working Group Study - Understanding Thermal Performance.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-12",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Giorgia Bettini, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        html.Span("Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                    pdf_path="pdfs/Thermal and Mechanical Energy Performance Analysis of.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-11",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "Vasilvi, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. ",
+                                        html.Span("Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                    pdf_path="pdfs/Analysis and Optimization.pdf",
+                                ),
+                                create_resource_card(
+                                    "resource-card-10",
+                                    "Geothermal Rising Conference, 2021",
+                                    [
+                                        "Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. ",
+                                        html.Span("Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes.", style={"fontWeight": "bold"}),
+                                        " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
+                                    ],
+                                    pdf_path="pdfs/Geothermal analysis modeling and simulation _ Geothermal rising 2021.pdf",
+                                ),
+                            ],
                         ),
                     ],
                 ),
@@ -492,6 +767,7 @@ app.layout = html.Div(
         dcc.Store(id="summary-memory"),
         dcc.Store(id="TandP-data"),
         dcc.Store(id="slider-values-store", data={}),  # Store slider values per model
+        dcc.Store(id="clipboard-init", data=0),  # Store to trigger clipboard event listener setup
         # Left column
         html.Div(
             id="left-column",
@@ -524,6 +800,18 @@ app.layout = html.Div(
         ),
         # Information Modal
         create_info_modal(),
+        # Clipboard toast notification
+        dbc.Toast(
+            id="clipboard-toast",
+            header="Copied!",
+            children="URL copied to clipboard",
+            is_open=False,
+            dismissable=True,
+            duration=2000,
+            style={"position": "fixed", "top": 66, "right": 10, "width": 350, "zIndex": 9999},
+        ),
+        # Hidden button to trigger toast
+        html.Button(id="clipboard-toast-trigger-btn", style={"display": "none"}, n_clicks=0),
     ],
 )
 
@@ -534,6 +822,105 @@ register_info_modal_callbacks(app)
 # -----------------------------------------------------------------------------
 # Define dash app callbacks begin here.
 # -----------------------------------------------------------------------------
+
+# Resource cards expand/collapse callbacks
+@app.callback(
+    Output({"type": "resource-collapse", "index": MATCH}, "is_open"),
+    [Input({"type": "resource-button", "index": MATCH}, "n_clicks")],
+    [State({"type": "resource-collapse", "index": MATCH}, "is_open")],
+    prevent_initial_call=True,
+)
+def toggle_resource_card(n_clicks, is_open):
+    """Toggle resource card expand/collapse."""
+    if n_clicks:
+        return not is_open
+    return is_open
+
+
+# Combined client-side callback for clipboard and card click handling
+app.clientside_callback(
+    """
+    function(data) {
+        setTimeout(function() {
+            try {
+                // Show toast when clipboard is clicked
+                var clipboardBtn = document.querySelector('#clipboard-wrapper button');
+                if (clipboardBtn && !clipboardBtn.dataset.toastListenerAdded) {
+                    clipboardBtn.dataset.toastListenerAdded = 'true';
+                    clipboardBtn.addEventListener('click', function() {
+                        setTimeout(function() {
+                            var triggerBtn = document.getElementById('clipboard-toast-trigger-btn');
+                            if (triggerBtn) {
+                                triggerBtn.click();
+                            }
+                        }, 100);
+                    });
+                }
+                
+                // Handle div-based card headers (for cards with clipboard)
+                var divHeaders = document.querySelectorAll('.resource-card-header[data-href]');
+                divHeaders.forEach(function(header) {
+                    if (!header.dataset.listenerAdded) {
+                        header.dataset.listenerAdded = 'true';
+                        header.addEventListener('click', function(e) {
+                            var clickedElement = e.target;
+                            var clipboardWrapper = document.getElementById('clipboard-wrapper');
+                            if (clipboardWrapper && (clickedElement === clipboardWrapper || clipboardWrapper.contains(clickedElement))) {
+                                return;
+                            }
+                            var href = header.getAttribute('data-href');
+                            var target = header.getAttribute('data-target');
+                            if (href) {
+                                if (target === '_blank') {
+                                    window.open(href, '_blank', 'noopener,noreferrer');
+                                } else {
+                                    window.location.href = href;
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                // Prevent clipboard clicks from triggering card links
+                var wrapper = document.getElementById('clipboard-wrapper');
+                if (wrapper && !wrapper.dataset.propagationListenerAdded) {
+                    wrapper.dataset.propagationListenerAdded = 'true';
+                    wrapper.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }, true);
+                    
+                    var clipboardBtn2 = wrapper.querySelector('button');
+                    if (clipboardBtn2) {
+                        clipboardBtn2.addEventListener('click', function(e) {
+                            e.stopPropagation();
+                            e.stopImmediatePropagation();
+                        }, true);
+                    }
+                }
+            } catch(e) {
+                console.log('Client-side callback error:', e);
+            }
+        }, 1000);
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output('clipboard-init', 'data'),
+    Input('clipboard-init', 'data'),
+)
+
+
+@app.callback(
+    Output("clipboard-toast", "is_open"),
+    Input("clipboard-toast-trigger-btn", "n_clicks"),
+    State("clipboard-toast", "is_open"),
+    prevent_initial_call=True,
+)
+def show_clipboard_toast(n_clicks, is_open):
+    """Show toast notification when clipboard is clicked."""
+    if n_clicks:
+        return True
+    return False
 
 
 @app.callback(
@@ -622,60 +1009,67 @@ def toggle_collapse(n, is_open):
 
 
 @app.callback(
-    [
-        Output(component_id="collapse-more-params", component_property="is_open"),
-        Output(component_id="collapse-button-more-params", component_property="children"),
-    ],
-    [Input(component_id="collapse-button-more-params", component_property="n_clicks")],
-    [State(component_id="collapse-more-params", component_property="is_open")],
-)
-def toggle_more_params_collapse(n, is_open):
-    if n:
-        new_state = not is_open
-    else:
-        new_state = is_open
-    
-    button_text = "Show less parameters" if new_state else "Show more parameters"
-    return new_state, button_text
-
-
-@app.callback(
-    Output(component_id="hyperparam1-container-collapse", component_property="style"),
+    Output(component_id="see-all-params-button-container", component_property="style"),
     [Input(component_id="model-select", component_property="value")],
+    prevent_initial_call=False,
 )
-def show_hide_mass_flow_mode_collapse(model):
-    div_block_style = {"display": "block"}
-    div_none_style = {"display": "none"}
-    
-    if model == "SBT V1.0":
-        return div_block_style
+def show_hide_see_all_button(model):
+    if model is None or model == "HDF5":
+        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"}
     else:
-        return div_none_style
+        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
 
 
 @app.callback(
     [
-        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
-        Output(component_id="lateral-multiplier-select-collapse", component_property="value", allow_duplicate=True),
+        Output(component_id="mesh-div", component_property="style", allow_duplicate=True),
+        Output(component_id="pipe-roughness-container", component_property="style", allow_duplicate=True),
+        Output(component_id="hyperparam5-container", component_property="style", allow_duplicate=True),
+        Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
+        Output(component_id="see-all-params-text", component_property="children"),
+        Output(component_id="see-all-params-chevron", component_property="children"),
     ],
     [
-        Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
+        Input(component_id="see-all-params-button", component_property="n_clicks"),
+        Input(component_id="model-select", component_property="value"),
     ],
-    prevent_initial_call=True,
+    [State(component_id="see-all-params-text", component_property="children")],
+    prevent_initial_call='initial_duplicate',
 )
-def sync_lateral_multiplier(tube_val, collapse_val):
-    ctx_info = ctx
-    if not ctx_info.triggered:
-        raise PreventUpdate
+def toggle_see_all_params(n_clicks, model, current_button_text):
+    callback_ctx = ctx
+    if not callback_ctx.triggered:
+        # Initial state - all hidden
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     
-    triggered_id = ctx_info.triggered[0]["prop_id"].split(".")[0]
+    trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
-    if triggered_id == "lateral-multiplier-select":
-        return dash.no_update, tube_val
-    elif triggered_id == "lateral-multiplier-select-collapse":
-        return collapse_val, dash.no_update
-    raise PreventUpdate
+    if trigger_id == "model-select":
+        # Model changed - set initial state: all hidden for SBT models (they'll be shown when button is clicked)
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    
+    # Button was clicked
+    if n_clicks and n_clicks > 0:
+        # Check if currently showing "See less" (meaning params are visible)
+        is_visible = current_button_text == "See less parameters" if current_button_text else False
+        if is_visible:
+            # Hide all parameters
+            style_none = {"display": "none"}
+            return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:
+            # Show all parameters
+            style_block = {"display": "block"}
+            return style_block, style_block, style_block, style_block, "See less parameters", " ▲"
+    else:
+        # Initial state - all hidden
+        style_none = {"display": "none"}
+        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+
+
+
+
 
 
 @app.callback(
@@ -1271,12 +1665,12 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         Output(component_id="num-lat-div", component_property="style"),
         Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
-        Output(component_id="lat-flow-mul-div", component_property="style"),
+        Output(component_id="pipe-roughness-container", component_property="style"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
     ],
-    prevent_initial_call=True,
+    prevent_initial_call='initial_duplicate',
 )
 def show_model_params(model):
     # print("show_model_params: ", model)
@@ -1291,7 +1685,7 @@ def show_model_params(model):
         return b, b, b, b, b, b, n, n, b, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, n, b, n, n
+        return b, b, b, b, b, b, n, b, b, n, b
 
 
 @app.callback(
@@ -1306,13 +1700,13 @@ def show_model_params(model):
     ],
     [
         Input(component_id="tabs", component_property="value"),
-        # Input(component_id="model-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="end-use-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def econ_sliders_visibility(tab, fluid, end_use):
+def econ_sliders_visibility(tab, model, fluid, end_use):
     b = {"display": "block"}
     n = {"display": "none"}
 
@@ -1385,7 +1779,7 @@ def show_hide_detailed_card(tab, fluid, end_use):
         return {"border": "solid 0px white"}, {"display": "none"}, {"display": "none"}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
-        if fluid == "H2O" or end_use == "Heating":
+        if fluid == "H2O" and end_use == "Electricity":
             # print("white 2")
             return (
                 {"border": "solid 0px white"},
@@ -1667,7 +2061,7 @@ def update_slider_ranges(model, store_data):
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
-            start_v=saved_values.get("grad", start_vals_d["grad"]),
+            start_v=saved_values.get("grad", 0.080),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -1769,6 +2163,11 @@ def update_slider_ranges(model, store_data):
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -1776,7 +2175,7 @@ def update_slider_ranges(model, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, model, store_data):
     """Save slider values to store, keyed by model"""
     if model is None:
         raise PreventUpdate
@@ -1796,9 +2195,68 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         "Tsurf": Tsurf,
         "c": c,
         "rho": rho,
+        "radius-vertical": radius_vertical,
+        "radius-lateral": radius_lateral,
+        "n-laterals": n_laterals,
+        "lateral-flow": lateral_flow,
+        "lateral-multiplier": lateral_multiplier,
     }
     
     return store_data
+
+
+@app.callback(
+    [
+        Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
+        Output(component_id="c-select", component_property="value", allow_duplicate=True),
+        Output(component_id="rho-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="Tsurf-select", component_property="value"),
+        State(component_id="c-select", component_property="value"),
+        State(component_id="rho-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, current_rho):
+    """Restore Tsurf, c, and rho when model changes - these sliders are always present"""
+    if model is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Helper function to get value from current model or fall back to other models
+    def get_value(key, current_value, default):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val
+        
+        # If not found, check other models (prioritize SBT models since Tsurf is visible there)
+        for other_model in ["SBT V2.0", "SBT V1.0", "HDF5"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        
+        # If no saved value found, preserve current value if it exists, otherwise use default
+        if current_value is not None:
+            return current_value
+        return default
+    
+    # Restore these values, checking current model first, then other models
+    # If no saved value found, preserve current slider value
+    Tsurf = get_value("Tsurf", current_tsurf, start_vals_hdf5.get("Tsurf", 25))
+    c = get_value("c", current_c, start_vals_hdf5.get("c", 790.0))
+    rho = get_value("rho", current_rho, start_vals_hdf5.get("rho", 2800))
+    
+    return Tsurf, c, rho
 
 
 @app.callback(
@@ -1810,9 +2268,6 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, model, sto
         Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
         Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
         Output(component_id="k-select", component_property="value", allow_duplicate=True),
-        Output(component_id="Tsurf-select", component_property="value", allow_duplicate=True),
-        Output(component_id="c-select", component_property="value", allow_duplicate=True),
-        Output(component_id="rho-select", component_property="value", allow_duplicate=True),
     ],
     [
         Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
@@ -1831,28 +2286,49 @@ def restore_slider_values(mdot_container, store_data, model):
     if store_data is None:
         store_data = {}
     
-    # Get saved values for this model
-    saved_values = store_data.get(model, {})
-    
-    # Only restore if we have saved values for this model
-    if saved_values:
-        mdot = saved_values.get("mdot")
-        L2 = saved_values.get("L2")
-        L1 = saved_values.get("L1")
-        grad = saved_values.get("grad")
-        D = saved_values.get("D")
-        Tinj = saved_values.get("Tinj")
-        k = saved_values.get("k")
-        Tsurf = saved_values.get("Tsurf", start_vals_hdf5.get("Tsurf", 25))
-        c = saved_values.get("c", start_vals_hdf5.get("c", 790.0))
-        rho = saved_values.get("rho", start_vals_hdf5.get("rho", 2800))
+    # Helper function to get value from current model or fall back to other models
+    # Returns (value, found) tuple where found indicates if value was found in store
+    def get_value(key):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val, True
         
-        # Return saved values if we have the key ones
-        if mdot is not None and L2 is not None and L1 is not None and grad is not None and D is not None and Tinj is not None and k is not None:
-            return mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho
+        # If not found, check other models
+        for other_model in ["HDF5", "SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val, True
+        
+        # Return None if not found anywhere
+        return None, False
     
-    # If no saved values, don't update (let update_slider_ranges set defaults)
-    raise PreventUpdate
+    # Try to restore values, checking current model first, then other models
+    mdot, mdot_found = get_value("mdot")
+    L2, L2_found = get_value("L2")
+    L1, L1_found = get_value("L1")
+    grad, grad_found = get_value("grad")
+    D, D_found = get_value("D")
+    Tinj, Tinj_found = get_value("Tinj")
+    k, k_found = get_value("k")
+    
+    # Only restore if we found at least one saved value
+    # Otherwise, let update_slider_ranges set defaults via PreventUpdate
+    if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
+        raise PreventUpdate
+    
+    # Use defaults for any None values (shouldn't happen if found=True, but be safe)
+    mdot = mdot if mdot is not None else start_vals_d.get("mdot", 30.0)
+    L2 = L2 if L2 is not None else start_vals_d.get("L2", 10000)
+    L1 = L1 if L1 is not None else start_vals_d.get("L1", 3500)
+    grad = grad if grad is not None else start_vals_d.get("grad", 0.065)
+    D = D if D is not None else start_vals_d.get("D", 0.3500)
+    Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
+    k = k if k is not None else start_vals_d.get("k", 3.0)
+    
+    return mdot, L2, L1, grad, D, Tinj, k
 
 
 @app.callback(
@@ -1877,9 +2353,29 @@ def restore_slider_values(mdot_container, store_data, model):
         Input(component_id="model-select", component_property="value"),
         Input(component_id="case-select", component_property="value"),
     ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
     prevent_initial_call=True,
 )
-def update_sliders_heat_exchanger(model, case):
+def update_sliders_heat_exchanger(model, case, store_data):
+    # Get saved values for this model from store
+    if store_data is None:
+        store_data = {}
+    saved_values = store_data.get(model, {})
+    
+    # Helper function to get saved value or use default
+    def get_saved_value(key, default_dict, default_key):
+        if key in saved_values and saved_values[key] is not None:
+            return saved_values[key]
+        # Check other SBT models
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        return default_dict.get(default_key)
+    
     if model == "SBT V1.0" or model == "SBT V2.0":
         if case == "utube":
             radius_vertical = slider1(
@@ -1890,7 +2386,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=0.4445,
                 mark_dict=diameter_vertical_dict,
                 step_i=0.002,
-                start_v=start_vals_sbt["radius-vertical"],
+                start_v=get_saved_value("radius-vertical", start_vals_sbt, "radius-vertical"),
                 div_style=div_block_style,
             )
             radius_lateral = slider1(
@@ -1901,7 +2397,7 @@ def update_sliders_heat_exchanger(model, case):
                 max_v=0.4445,
                 mark_dict=diameter_lateral_dict,
                 step_i=0.002,
-                start_v=start_vals_sbt["radius-lateral"],
+                start_v=get_saved_value("radius-lateral", start_vals_sbt, "radius-lateral"),
                 div_style=div_block_style,
             )
             n_laterals = input_box(
@@ -1910,7 +2406,7 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Number of Laterals",
                 min_v=0,
                 max_v=20,
-                start_v=start_vals_hdf5["n-laterals"],
+                start_v=get_saved_value("n-laterals", start_vals_hdf5, "n-laterals"),
                 step_i=1,
                 div_style=div_block_style,
             )
@@ -1920,7 +2416,7 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Lateral Flow Allocation",
                 min_v=0,
                 max_v=1,
-                start_v=start_vals_hdf5["lateral-flow"],
+                start_v=get_saved_value("lateral-flow", start_vals_hdf5, "lateral-flow"),
                 step_i=0.01,
                 div_style=div_block_style,
             )
@@ -1930,9 +2426,9 @@ def update_sliders_heat_exchanger(model, case):
                 ptitle="Lateral Flow Multiplier",
                 min_v=0,
                 max_v=1,
-                start_v=start_vals_hdf5["lateral-multiplier"],
+                start_v=get_saved_value("lateral-multiplier", start_vals_hdf5, "lateral-multiplier"),
                 step_i=0.05,
-                div_style=div_none_style,
+                div_style=div_block_style,
             )
 
             return (
@@ -2082,14 +2578,79 @@ def update_sliders_heat_exchanger(model, case):
 
 @app.callback(
     [
+        Output(component_id="radius-vertical-select", component_property="value", allow_duplicate=True),
+        Output(component_id="radius-lateral-select", component_property="value", allow_duplicate=True),
+        Output(component_id="n-laterals-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
+        Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="Diameter1-container", component_property="children"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="model-select", component_property="value"),
+        State(component_id="radius-vertical-select", component_property="value"),
+        State(component_id="radius-lateral-select", component_property="value"),
+        State(component_id="n-laterals-select", component_property="value"),
+        State(component_id="lateral-flow-select", component_property="value"),
+        State(component_id="lateral-multiplier-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_sbt_sliders(diameter1_container, store_data, model, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+    """Restore SBT-specific slider values after sliders are created"""
+    if model is None:
+        raise PreventUpdate
+    
+    # Only restore for SBT models
+    if model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    # Helper function to get value from current model or fall back to other models
+    def get_value(key, current_value, default_dict, default_key):
+        # First check current model
+        if model in store_data and key in store_data[model]:
+            val = store_data[model][key]
+            if val is not None:
+                return val
+        
+        # If not found, check other SBT models
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and key in store_data[other_model]:
+                val = store_data[other_model][key]
+                if val is not None:
+                    return val
+        
+        # If no saved value found, preserve current value if it exists, otherwise use default
+        if current_value is not None:
+            return current_value
+        return default_dict.get(default_key)
+    
+    # Restore values, checking current model first, then other models
+    radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
+    radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
+    n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
+    lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
+    lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+
+
+@app.callback(
+    [
         Output(component_id="hyperparam1-container", component_property="children"),
         Output(component_id="hyperparam3-container", component_property="children"),
         Output(component_id="hyperparam5-container", component_property="children"),
+        Output(component_id="pipe-roughness-container", component_property="children"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
     ],
-    prevent_initial_call=True,
+    prevent_initial_call=False,
 )
 def update_sliders_hyperparms(model):
     if model == "SBT V1.0":
@@ -2099,7 +2660,7 @@ def update_sliders_hyperparms(model):
             ptitle="Mass Flow Rate Mode",
             options=["Constant", "Variable"],
             disabled=True,
-            div_style=div_none_style,
+            div_style=div_block_style,
         )
         hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
@@ -2117,8 +2678,20 @@ def update_sliders_hyperparms(model):
             disabled=False,
             div_style=div_none_style,
         )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
+            ptitle="Pipe Roughness (m)",
+            min_v=1e-6,
+            max_v=3e-6,
+            mark_dict=pipe_roughness_dict,
+            step_i=0.000001,
+            start_v=start_vals_sbt["piperoughness"],
+            div_style=div_none_style,  # Hidden for SBT V1.0
+            parameter_name="Pipe Roughness (m)",
+        )
 
-        return hyperparam1, hyperparam3, hyperparam5
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
 
     elif model == "SBT V2.0":
         hyperparam1 = slider1(
@@ -2133,9 +2706,17 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
-        hyperparam3 = slider1(
+        hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
             ID="temp-mode-select",
+            ptitle="Injection Temperature Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,  # Hidden for SBT V2.0
+        )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
             ptitle="Pipe Roughness (m)",
             min_v=1e-6,
             max_v=3e-6,
@@ -2154,8 +2735,46 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
         )
 
-        return hyperparam1, hyperparam3, hyperparam5
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
 
+    elif model == "HDF5":
+        hyperparam1 = dropdown_box(
+            DivID="mass-flow-mode-div",
+            ID="mass-mode-select",
+            ptitle="Mass Flow Rate Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,
+        )
+        hyperparam3 = dropdown_box(
+            DivID="temp-flow-mode-div",
+            ID="temp-mode-select",
+            ptitle="Injection Temperature Mode",
+            options=["Constant", "Variable"],
+            disabled=True,
+            div_style=div_none_style,
+        )
+        hyperparam5 = dropdown_box(
+            DivID="fluid-mode-div",
+            ID="fluid-mode-select",
+            ptitle="Fluid Properties Mode",
+            options=["Variable", "Constant"],
+            disabled=False,
+            div_style=div_none_style,
+        )
+        pipe_roughness = slider1(
+            DivID="pipe-roughness-div",
+            ID="pipe-roughness-select",
+            ptitle="Pipe Roughness (m)",
+            min_v=1e-6,
+            max_v=3e-6,
+            mark_dict=pipe_roughness_dict,
+            step_i=0.000001,
+            start_v=start_vals_sbt["piperoughness"],
+            div_style=div_none_style,  # Hidden for HDF5
+            parameter_name="Pipe Roughness (m)",
+        )
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
     else:
         raise PreventUpdate
 
@@ -2206,13 +2825,11 @@ def update_sliders_hyperparms(model):
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5
-        Input(
-            component_id="lateral-multiplier-select-collapse", component_property="value"
-        ),  # PipeParam5 (collapse version)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2238,12 +2855,12 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
     # mass_mode, temp_mode
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     # -----------------------------------------------------------------------------
@@ -2254,6 +2871,19 @@ def update_subsurface_results_plots(
         # print('subsurface')
         # if HDF5:
         # start = time.time()
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
+        
         (
             subplots,
             forty_yr_TPmeans_dict,
@@ -2282,11 +2912,11 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5 if PipeParam5 is not None else PipeParam5Collapse,
+            PipeParam5,
             mesh,
             accuracy,
-            HyperParam3,
-            HyperParam4,
+            hyperparam1_value,
+            hyperparam3_value,
             HyperParam5,
         )
         # if SBT:
@@ -2394,11 +3024,11 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2433,11 +3063,11 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     try:
@@ -2457,6 +3087,20 @@ def update_econ_plots(
             is_plot_ts = True
         else:
             is_plot_ts = False
+        
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
+        
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
             generate_econ_lineplots(
                 TandP_dict,
@@ -2561,11 +3205,11 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select-collapse", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
         Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
 )
@@ -2599,11 +3243,11 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
-    PipeParam5Collapse,
     mesh,
     accuracy,
+    HyperParam1,
     HyperParam3,
-    HyperParam4,
+    pipe_roughness,
     HyperParam5,
 ):
     try:
@@ -2614,6 +3258,19 @@ def update_table(
             thermal_dict = {}
         if tandp_data is None:
             tandp_data = None
+        
+        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+        if model == "SBT V2.0":
+            # Ensure HyperParam1 (Inlet Pressure) is a float
+            try:
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+            except (TypeError, ValueError):
+                hyperparam1_value = 10.0
+            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+        else:
+            hyperparam1_value = HyperParam1
+            hyperparam3_value = HyperParam3
             
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:
@@ -2792,14 +3449,21 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
 
 @app.callback(
     Output(component_id="warning_block_div3", component_property="children"),
-    Input(component_id="econ-memory", component_property="data"),
+    [
+        Input(component_id="econ-memory", component_property="data"),
+        Input(component_id="econ-results", component_property="data"),
+        Input(component_id="fluid-select", component_property="value"),
+    ],
 )
-def update_warning_divs(levelized_cost_dict):
+def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
     warning_div3 = html.Div(style={"display": "none"})
 
     # Handle None or missing data
     if levelized_cost_dict is None:
         return warning_div3
+    
+    if econ_results_dict is None:
+        econ_results_dict = {}
         
     error_style = {
         "display": "block",
@@ -2816,21 +3480,175 @@ def update_warning_divs(levelized_cost_dict):
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
     
-    # Disabled warning: LCOE too high / outlet temperature too low
-    # This warning was showing even when parameters were valid, so it's been disabled
-    # if lcoe_sco2 == "9999.00" or lcoe_h2o == "9999.00" or lcoe_sco2 == "-" or lcoe_h2o == "-":
-    #     warning_div3 = html.Div(  # id="error_block_div3",
-    #         style=error_style,
-    #         children=[
-    #             html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
-    #             dcc.Markdown(
-    #                 "**LCOE is too high.**", style={"display": "inline-block"}
-    #             ),
-    #             html.P(
-    #                 "Outlet Temperature (°C) may be too low or the system is losing heat (negative kWe)."
-    #             ),
-    #         ],
-    #     )
+    # Helper function to check if LCOE value is valid (numeric and reasonable)
+    def is_valid_lcoe(value):
+        if value is None or value == "-" or value == "Insufficient Inputs":
+            return False
+        if value == "9999.00" or value == "9999":
+            return False
+        try:
+            # Check if it's a valid number
+            num_val = float(value)
+            # Valid if it's a positive number less than 9999
+            return 0 < num_val < 9999
+        except (ValueError, TypeError):
+            return False
+    
+    # Check if we have any valid LCOE values
+    has_valid_lcoe = is_valid_lcoe(lcoe_sco2) or is_valid_lcoe(lcoe_h2o)
+    
+    # Check if a calculation has been attempted (to avoid showing warning on initial load)
+    # A calculation has been attempted if:
+    # 1. econ_results_dict exists and has data, OR
+    # 2. levelized_cost_dict has values that aren't just the default "-" (including "Insufficient Inputs")
+    calculation_attempted = False
+    if econ_results_dict and isinstance(econ_results_dict, dict) and len(econ_results_dict) > 0:
+        calculation_attempted = True
+    elif levelized_cost_dict and isinstance(levelized_cost_dict, dict):
+        # Check if we have any non-default values (not just "-")
+        # "Insufficient Inputs" means a calculation was attempted, so count it
+        has_non_default = False
+        for key, value in levelized_cost_dict.items():
+            if value != "-" and value is not None:
+                has_non_default = True
+                break
+        calculation_attempted = has_non_default
+    
+    # Check which LCOE values are invalid
+    lcoe_sco2_is_insufficient = lcoe_sco2 == "Insufficient Inputs"
+    lcoe_h2o_is_insufficient = lcoe_h2o == "Insufficient Inputs"
+    lcoe_sco2_is_other_invalid = (
+        lcoe_sco2 == "9999.00" or lcoe_sco2 == "-"
+    )
+    lcoe_h2o_is_other_invalid = (
+        lcoe_h2o == "9999.00" or lcoe_h2o == "-"
+    )
+    
+    lcoe_sco2_is_invalid = lcoe_sco2_is_insufficient or (lcoe_sco2_is_other_invalid and calculation_attempted)
+    lcoe_h2o_is_invalid = lcoe_h2o_is_insufficient or (lcoe_h2o_is_other_invalid and calculation_attempted)
+    
+    # Determine which LCOE to check based on selected fluid
+    if fluid == "H2O":
+        should_check_lcoe = lcoe_h2o_is_invalid
+    elif fluid == "sCO2":
+        should_check_lcoe = lcoe_sco2_is_invalid
+    else:  # fluid == "All"
+        should_check_lcoe = lcoe_sco2_is_invalid or lcoe_h2o_is_invalid
+    
+    # Show warning if the relevant LCOE is invalid and a calculation was attempted
+    # This helps users understand why a specific fluid's LCOE isn't calculating
+    if should_check_lcoe and calculation_attempted:
+        # Different messages for different error types - provide actionable guidance
+        # Check error codes to provide specific guidance, otherwise use generic "Insufficient Inputs" message
+        error_codes = econ_results_dict.get("error_codes", [])
+        
+        # Check for specific error codes first
+        has_error_6000 = 6000 in error_codes  # Zero electricity production
+        has_error_7000 = 7000 in error_codes  # Negative LCOE
+        has_error_1000 = 1000 in error_codes  # Production temp below injection temp
+        has_error_2000 = 2000 in error_codes  # H2O temp outside ORC range
+        has_error_3000 = 3000 in error_codes  # CO2 injection temp too low
+        has_error_4000 = 4000 in error_codes  # CO2 turbine outlet temp too low
+        
+        if has_error_6000:
+            # Zero electricity production - can't calculate LCOE
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - zero electricity production.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "To get valid LCOE values, try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the Outlet Temperature."
+                    ),
+                ],
+            )
+        elif has_error_7000:
+            # Negative LCOE - system is losing energy
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - negative net electricity production.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "The system is consuming more energy than it produces. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to increase Outlet Temperature and improve energy production. Alternatively, try reducing Mass Flow Rate to decrease pumping power requirements."
+                    ),
+                ],
+            )
+        elif has_error_1000:
+                    # Production temperature dropped below injection temperature
+                    warning_div3 = html.Div(
+                        style=error_style,
+                        children=[
+                            html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                            dcc.Markdown(
+                                "**Cannot calculate LCOE - production temperature too low.**", style={"display": "inline-block"}
+                            ),
+                            html.P(
+                                "Production temperature dropped below injection temperature. Try increasing: Geothermal Gradient, Depth (L1), or reducing Mass Flow Rate to improve heat extraction."
+                            ),
+                        ],
+                    )
+        elif has_error_2000:
+            # H2O temperature outside ORC range
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - temperature outside ORC range.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "For H2O, injection temperature must be above 50°C and production temperature must be between 100-200°C. Try adjusting: Injection Temperature, Geothermal Gradient, or Depth (L1)."
+                    ),
+                ],
+            )
+        elif has_error_3000:
+            # CO2 injection temperature too low
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - CO2 injection temperature too low.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "CO2 injection temperature must be at least 32°C to remain supercritical. Increase Injection Temperature to at least 32°C."
+                    ),
+                ],
+            )
+        elif has_error_4000:
+            # CO2 turbine outlet temperature too low
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Cannot calculate LCOE - CO2 turbine outlet temperature too low.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "CO2 turbine outlet temperature dropped below 37°C. Try increasing: Geothermal Gradient, Depth (L1), or Injection Temperature to raise the production temperature."
+                    ),
+                ],
+            )
+        else:
+            # Generic message for cases without specific error codes
+            # Use "Insufficient Inputs" message for consistency
+            warning_div3 = html.Div(
+                style=error_style,
+                children=[
+                    html.Img(id="warning-img", src=app.get_asset_url("warning.png")),
+                    dcc.Markdown(
+                        "**Insufficient inputs to calculate LCOE.**", style={"display": "inline-block"}
+                    ),
+                    html.P(
+                        "To get valid LCOE values, try increasing: Outlet Temperature (increase Geothermal Gradient, Depth, or Injection Temperature), or reducing Mass Flow Rate."
+                    ),
+                ],
+            )
 
     return warning_div3
 
@@ -2869,7 +3687,7 @@ def aasa():
 if __name__ == "__main__":
     # test change.
     # app.run_server(port=8060, debug=True)
-    app.run_server(
+    app.run(
         # host="127.0.0.1",
         port=8060,
         debug=False,  # needs to be False in production

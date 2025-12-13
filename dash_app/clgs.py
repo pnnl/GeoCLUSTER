@@ -219,11 +219,15 @@ class data:
                     mass_mode_b = 0
                 elif mass_mode == "Variable":
                     mass_mode_b = 1
+                else:
+                    mass_mode_b = 0  # Default to Constant
 
                 if temp_mode == "Constant":
                     temp_mode_b = 0
                 elif temp_mode == "Variable":
                     temp_mode_b = 1
+                else:
+                    temp_mode_b = 0  # Default to Constant
                 
                 hyperparam1 = mass_mode_b
                 hyperparam2 = "MassFlowRate.xlsx"
@@ -243,7 +247,11 @@ class data:
                 elif fluid_mode == "Variable":
                     fluid_mode_b = 1
                 
-                hyperparam1 = HyperParam1*10 # Pin (convert MPa to bar)
+                # Ensure HyperParam1 is a float (Inlet Pressure in MPa)
+                try:
+                    hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar)
+                except (TypeError, ValueError):
+                    hyperparam1 = 10.0*10  # Default to 10 MPa if conversion fails
                 hyperparam2 = HyperParam3 # pipe roughness
                 hyperparam3 = fluid_mode_b # fluid mode
                 hyperparam4 = reltolerance

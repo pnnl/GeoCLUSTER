@@ -200,17 +200,53 @@ hr {
 /* Description Text Styling
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
-#ab-title1, #ab-title2, #ab-title3 {
+#ab-title1, #ab-title2, #ab-title3, #ab-title4, #ab-title5, #ab-title6 {
     font-weight: bold;
-    padding: 15px;
+    font-size: var(--main-fontsize);
+    padding: 10px 15px;
 }
-#ab-note, #ab-note3, #ab-note4 {
-    margin-top: -26px;
-    padding: 15px;
+#ab-note, #ab-note3, #ab-note4, #ab-note5, #ab-note6 {
+    margin-top: -20px;
+    padding: 10px 15px;
 }
 
 #ab-note2 {
     padding: 15px !important;
+}
+
+#resources-section {
+    width: 100% !important;
+    clear: both;
+    padding: 0;
+    margin-top: -45px;
+}
+
+#resource-cards-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    align-items: start;
+}
+
+#resource-column-1,
+#resource-column-2 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#resource-cards-container .resource-card {
+    margin: 0 !important;
+    align-self: start;
+}
+
+#resource-cards-container .resource-card > * {
+    margin-bottom: 0 !important;
+}
+
+#resource-cards-container .resource-card-header {
+    margin-bottom: 0 !important;
 }
 
 #hyperlink1, #hyperlink2{
@@ -335,6 +371,32 @@ hr {
     font-weight: bold !important;
 }
 
+#dropdown-card0 {
+    width: 18% !important;
+    min-width: 200px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+}
+
+#dropdown-card0 > div:first-child {
+    margin-bottom: 0 !important;
+    line-height: 1.5 !important;
+    min-height: auto !important;
+    height: auto !important;
+    margin-top: -12px !important;
+}
+
+#dropdown-card0 .info-button {
+    margin-top: 8px !important;
+}
+
+#model-select {
+    margin-top: -1px !important;
+    align-self: stretch !important;
+    width: 100% !important;
+}
+
 #dropdown-card4 {
     width: 20%;
 }
@@ -353,7 +415,14 @@ hr {
 
 #slider-container {
     display: flex;
+    flex-direction: column;
     position: relative;
+}
+
+#slider-columns-wrapper {
+    display: flex;
+    width: 100%;
+    justify-content: center;
 }
 
 #therm-sliders, #econ-sliders {
@@ -523,6 +592,29 @@ button:hover{
   color: var(--darkred);
   border-color: var(--grey);
   outline: 0; }
+
+#see-all-params-button {
+  background: none !important;
+  border: none !important;
+  color: #0066cc !important;
+  cursor: pointer;
+  font-size: 14px !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+  height: auto !important;
+  line-height: normal !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  font-weight: normal !important;
+  display: inline !important;
+  white-space: normal !important;
+}
+
+#see-all-params-button:hover {
+  color: #0066cc !important;
+  border: none !important;
+  background: none !important;
+}
 
 #btn-nclicks-1:hover {
     background-color: var(--oceanblue) !important;
@@ -719,6 +811,14 @@ button:hover{
 
 #carousel-ride {
     margin-top: -8px;
+    height: 500px;
+    min-height: 500px;
+}
+
+#carousel-ride .carousel-item,
+#carousel-ride .carousel-item img {
+    height: 500px;
+    object-fit: contain;
 }
 
 #radio-graphic-control3, #radio-graphic-control4 {
@@ -948,4 +1048,42 @@ button:hover{
         margin-top: 40px;
     }
 
+}
+
+/* Resource Cards Styles */
+.resource-card-header {
+    transition: background-color 0.2s ease;
+    box-sizing: border-box;
+    text-decoration: none !important;
+    color: inherit !important;
+    display: block;
+}
+
+.resource-card-header:hover {
+    background-color: #F5F5F5 !important;
+    border: 1px solid #C9C9C9 !important;
+    text-decoration: none !important;
+    color: inherit !important;
+}
+
+.resource-card-header:hover .resource-expand-icon {
+    filter: brightness(0) saturate(100%) invert(38%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(95%);
+}
+
+#clipboard-wrapper {
+    position: absolute;
+    right: 15px;
+    top: 45%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    pointer-events: auto;
+}
+
+#clipboard-wrapper * {
+    pointer-events: auto;
+}
+
+.resource-card-header a #clipboard-wrapper,
+.resource-card-header a #clipboard-wrapper * {
+    pointer-events: auto !important;
 }
