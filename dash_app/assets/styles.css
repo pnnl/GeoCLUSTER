@@ -200,17 +200,53 @@ hr {
 /* Description Text Styling
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 
-#ab-title1, #ab-title2, #ab-title3, #ab-title4, #ab-title5 {
+#ab-title1, #ab-title2, #ab-title3, #ab-title4, #ab-title5, #ab-title6 {
     font-weight: bold;
-    padding: 15px;
+    font-size: var(--main-fontsize);
+    padding: 10px 15px;
 }
-#ab-note, #ab-note3, #ab-note4 {
-    margin-top: -26px;
-    padding: 15px;
+#ab-note, #ab-note3, #ab-note4, #ab-note5, #ab-note6 {
+    margin-top: -20px;
+    padding: 10px 15px;
 }
 
 #ab-note2 {
     padding: 15px !important;
+}
+
+#resources-section {
+    width: 100% !important;
+    clear: both;
+    padding: 0;
+    margin-top: -45px;
+}
+
+#resource-cards-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    align-items: start;
+}
+
+#resource-column-1,
+#resource-column-2 {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+#resource-cards-container .resource-card {
+    margin: 0 !important;
+    align-self: start;
+}
+
+#resource-cards-container .resource-card > * {
+    margin-bottom: 0 !important;
+}
+
+#resource-cards-container .resource-card-header {
+    margin-bottom: 0 !important;
 }
 
 #hyperlink1, #hyperlink2{
@@ -775,6 +811,14 @@ button:hover{
 
 #carousel-ride {
     margin-top: -8px;
+    height: 500px;
+    min-height: 500px;
+}
+
+#carousel-ride .carousel-item,
+#carousel-ride .carousel-item img {
+    height: 500px;
+    object-fit: contain;
 }
 
 #radio-graphic-control3, #radio-graphic-control4 {
