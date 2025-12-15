@@ -16,7 +16,7 @@ is_v27 = True
 is_config = "coaxial" # good to go for sbt v1, and v2!!!
 sbt_version = 2
 # is_config = "uloop"  # good to go for sbt v1
-fluid = 1 # h2o is 1 sco2 is 2
+fluid = 2 # h2o is 1 sco2 is 2
 
 start = time.time()
 if is_v27:

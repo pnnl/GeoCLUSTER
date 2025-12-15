@@ -1779,12 +1779,15 @@ def run_sbt(
     elif sbt_version == 2:
         if clg_configuration == 1: #co-axial geometry:
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
+                # Match basic Python model exactly (sbt.py line 1867)
+                # Property table Pvector is in Pascal, so pass pressure directly without conversion
                 HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodesstore[0,:], Tfluidupnodesstore[0,:] + 273.15)])) - 
                                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodesstore[0,:], Tfluiddownnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
         elif clg_configuration == 2: #u-loop geometry:           
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
+                # Match basic Python model exactly - property table Pvector is in Pascal, so pass pressure directly
                 HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[interconnections_new[1],:], Tfluidnodesstore[interconnections_new[1],:] + 273.15)])) - 
                                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[0,:], Tfluidnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]

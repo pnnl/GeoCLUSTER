@@ -766,6 +766,10 @@ app.layout = html.Div(
         dcc.Store(id="summary-memory"),
         dcc.Store(id="TandP-data"),
         dcc.Store(id="slider-values-store", data={}),  # Store slider values per model
+        dcc.Store(
+            id="fluid-selection-store",
+            data={"preferred": "All", "last_specific": "H2O"},
+        ),  # Remember user fluid preferences across tabs
         dcc.Store(id="clipboard-init", data=0),  # Store to trigger clipboard event listener setup
         # Left column
         html.Div(
@@ -1246,135 +1250,63 @@ def update_working_fluid(model):
         Output(component_id="fluid-select", component_property="value"),
         Output(component_id="interpolation-select", component_property="options"),
         Output(component_id="interpolation-select", component_property="value"),
+        Output(component_id="fluid-selection-store", component_property="data"),
     ],
     [
         Input(component_id="tabs", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
     ],
+    [State(component_id="fluid-selection-store", component_property="data")],
 )
-def change_dropdown(at, fluid, model):
-    if model == "HDF5":
-        if at == "energy-time-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "about-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "energy-tab":
-            fluid_list = ["H2O", "sCO2"]
-            interpol_list = ["True"]
-            if fluid != "All":
-                return (
-                    [{"label": i, "value": i} for i in fluid_list],
-                    fluid,
-                    [{"label": i, "value": i} for i in interpol_list],
-                    interpol_list[0],
-                )
-            else:
-                return (
-                    [{"label": i, "value": i} for i in fluid_list],
-                    fluid_list[0],
-                    [{"label": i, "value": i} for i in interpol_list],
-                    interpol_list[0],
-                )
-
-        elif at == "economics-time-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "summary-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-            # raise PreventUpdate
-
-    if model == "SBT V2.0":
-        if at == "energy-time-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "about-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "energy-tab":
-            fluid_list = ["H2O", "sCO2"]
-            interpol_list = ["True"]
-            if fluid != "All":
-                return (
-                    [{"label": i, "value": i} for i in fluid_list],
-                    fluid,
-                    [{"label": i, "value": i} for i in interpol_list],
-                    interpol_list[0],
-                )
-            else:
-                return (
-                    [{"label": i, "value": i} for i in fluid_list],
-                    fluid_list[0],
-                    [{"label": i, "value": i} for i in interpol_list],
-                    interpol_list[0],
-                )
-
-        elif at == "economics-time-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-        elif at == "summary-tab":
-            fluid_list = ["All", "H2O", "sCO2"]
-            interpol_list = ["True"]
-            return (
-                [{"label": i, "value": i} for i in fluid_list],
-                fluid,
-                [{"label": i, "value": i} for i in interpol_list],
-                interpol_list[0],
-            )
-
-    if model == "SBT V1.0":
+def change_dropdown(at, fluid, model, fluid_store):
+    if model not in ("HDF5", "SBT V2.0"):
         raise PreventUpdate
+
+    if fluid_store is None:
+        fluid_store = {"preferred": "All", "last_specific": "H2O"}
+
+    preferred = fluid_store.get("preferred", "All")
+    last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
+    new_store = {"preferred": preferred, "last_specific": last_specific}
+    trigger_id = ctx.triggered_id
+
+    if trigger_id == "fluid-select" and fluid is not None:
+        new_store["preferred"] = fluid
+        if fluid != "All":
+            new_store["last_specific"] = fluid
+        preferred = new_store["preferred"]
+        last_specific = new_store["last_specific"]
+
+    if at == "energy-tab":
+        fluid_list = ["H2O", "sCO2"]
+    else:
+        fluid_list = ["All", "H2O", "sCO2"]
+
+    interpol_list = ["True"]
+
+    selected_fluid = fluid if fluid is not None else preferred
+
+    if at == "energy-tab":
+        if selected_fluid not in fluid_list:
+            fallback = (
+                last_specific if last_specific in fluid_list else fluid_list[0]
+            )
+            selected_fluid = fallback
+    else:
+        if preferred in fluid_list:
+            selected_fluid = preferred
+
+    fluid_options = [{"label": i, "value": i} for i in fluid_list]
+    interpol_options = [{"label": i, "value": i} for i in interpol_list]
+
+    return (
+        fluid_options,
+        selected_fluid,
+        interpol_options,
+        interpol_list[0],
+        new_store,
+    )
 
 
 @app.callback(

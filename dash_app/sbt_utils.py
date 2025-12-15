@@ -511,8 +511,8 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     phase = mat['phase']
                     thermalconductivity = mat['thermalconductivity']
                     thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']                
-                    # print('Fluid properties for CO2 loaded successfully')
+                    viscosity = mat['viscosity']
+                    
                 except Exception as e:
                     print(f"Error loading properties for CO2: {e}")
                     raise
