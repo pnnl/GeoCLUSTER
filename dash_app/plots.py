@@ -226,6 +226,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
                 error_messages_dict['Err SubRes3'] = error_message
                 is_blank_data = True
+                print(f"[ERROR] ValueError in generate_subsurface_lineplots (utube): {e}")
+                import traceback
+                traceback.print_exc()
                 
         if case == "coaxial":
 
@@ -250,6 +253,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
                 error_messages_dict['Err SubRes4'] = error_message
                 is_blank_data = True
+                print(f"[ERROR] ValueError in generate_subsurface_lineplots (coaxial): {e}")
+                import traceback
+                traceback.print_exc()
                 
 
 
@@ -396,6 +402,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             "time": convert_to_list(time),
                             "mdot": convert_to_list(m_dot),
                             }
+    
+    if is_blank_data:
+        print(f"[WARNING] TandP_dict created with blank data. Keys present: {list(TandP_dict.keys())}")
+        print(f"[WARNING] sCO2_Tout length: {len(TandP_dict.get('sCO2_Tout', []))}, time length: {len(TandP_dict.get('time', []))}")
 
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict

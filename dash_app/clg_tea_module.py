@@ -298,12 +298,14 @@ class TEA:
 
         elif self.Fluid == 2:
             # self.Tout = np.array(TandP_dict["sCO2_Tout"])
-            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+            f_T = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+            f_P = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Pout"]), fill_value="extrapolate") # sbt
             try:
-                self.Tout = f(np.array(hdf5_times))
+                self.Tout = f_T(np.array(hdf5_times))
+                self.Pout = f_P(np.array(hdf5_times))
             except Exception as e:
-                print(e)
-            self.Pout = np.array(TandP_dict["sCO2_Pout"])
+                self.Tout = np.array(TandP_dict["sCO2_Tout"])
+                self.Pout = np.array(TandP_dict["sCO2_Pout"])
             # times = TandP_dict["time"]
             # self.timearray = TandP_dict["time"]
             # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
