@@ -325,6 +325,11 @@ class data:
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
+            
+            # Note: run_sbt_final already returns times in years (converted from seconds)
+            # Debug: Check time range for SBT2
+            if sbt_version == 2 and len(times) > 0:
+                pass
 
         return Tout, Pout, times
 

@@ -1225,18 +1225,37 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     [
         Input(component_id="model-select", component_property="value"),
     ],
+    [
+        State(component_id="fluid-selection-store", component_property="data"),
+        State(component_id="fluid-select", component_property="value"),
+    ],
     prevent_initial_call=True,
 )
-def update_working_fluid(model):
+def update_working_fluid(model, fluid_store, current_fluid):
     if model == "SBT V2.0":
         fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
-            return "H2O", [{"label": i, "value": i} for i in fluid_list]
+            # Preserve previously selected fluid if it's valid for this model
+            if fluid_store is None:
+                fluid_store = {"preferred": "All", "last_specific": "H2O"}
+            preferred = fluid_store.get("preferred", "All")
+            last_specific = fluid_store.get("last_specific", "H2O")
+            
+            # Use preferred if it's in the list, otherwise use last_specific, otherwise default to "All"
+            if preferred in fluid_list:
+                selected_fluid = preferred
+            elif last_specific in fluid_list:
+                selected_fluid = last_specific
+            else:
+                selected_fluid = "All"
+            
+            return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     elif model == "SBT V1.0":
         fluid_list = ["H2O"]
         if ctx.triggered_id == "model-select":
+            # SBT V1.0 only supports H2O
             return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
@@ -2799,7 +2818,6 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
-        # print('subsurface')
         # if HDF5:
         # start = time.time()
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness

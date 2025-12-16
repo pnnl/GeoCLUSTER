@@ -73,6 +73,20 @@ def create_teaobject(TandP_dict,
         Pre_Cooling_Delta_T = 13.0
     if Turbine_outlet_pressure is None:
         Turbine_outlet_pressure = 80.0
+    
+    # Clamp Pre_Cooling_Delta_T to valid range for CO2 (0-15 °C)
+    # This prevents validation errors in TEA module
+    if Pre_Cooling_Delta_T < 0:
+        Pre_Cooling_Delta_T = 0.0
+    elif Pre_Cooling_Delta_T > 15:
+        Pre_Cooling_Delta_T = 15.0
+    
+    # Clamp Turbine_outlet_pressure to valid range for CO2 (75-200 bar)
+    # This prevents validation errors in TEA module
+    if Turbine_outlet_pressure < 75:
+        Turbine_outlet_pressure = 75.0
+    elif Turbine_outlet_pressure > 200:
+        Turbine_outlet_pressure = 200.0
 
     # Gradient_user = Gradient_user / 1000
     Tin_user = Tin_user + to_kelvin_factor # to kelvin
@@ -136,8 +150,14 @@ def create_teaobject(TandP_dict,
                                           additional_properties_CO2v2_pathname)
 
     # get interpolated temperature and pressure array
-    teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
-    teaobject.calculateLC() # ERROR STARTS HERE
+    try:
+        teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
+        teaobject.calculateLC() # ERROR STARTS HERE
+    except Exception as e:
+        print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
     # teaobject.printresults() # uncomment to debug
     
     return teaobject

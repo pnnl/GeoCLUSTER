@@ -260,7 +260,11 @@ class TEA:
 
 
 
-    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
+    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict):
+        
+        # For SBT2 CO2, set inlet pressure to 100 bar (1e7 Pa) to match simulation default
+        if (model == "SBT V2.0" or model == 2) and self.Fluid == 2:
+            self.P_in = 1e7  # 100 bar = 10 MPa (matches SBT2 default)
         
         hdf5_times = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 
                         2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75,
@@ -468,18 +472,15 @@ class TEA:
                 Pre_cooling = self.Flow_rate*(h_turbine_out_actual - Pre_compressor_h)/1e3 #Pre-compressor cooling [kWth]
                 Pre_compressor_s = interpn((self.Pvector,self.Tvector),self.entropy,np.array([self.Turbine_outlet_pressure*1e5,self.Pre_cooling_temperature+273.15])) 
                     
-                    
                 Post_compressor_h_ideal = interpn((self.Pvector_ap,self.svector_ap),self.hPs,np.array([self.P_in,Pre_compressor_s[0]])) 
                 Post_compressor_h_actual = Pre_compressor_h + (Post_compressor_h_ideal-Pre_compressor_h)/self.Compressor_isentropic_efficiency #Actual fluid enthalpy at compressor outlet [J/kg]
                 self.Post_compressor_T_actual = interpn((self.Pvector_ap,self.hvector_ap),self.TPh,np.array([self.P_in,Post_compressor_h_actual[0]])) - 273.15
                 Compressor_Work = self.Flow_rate*(Post_compressor_h_actual - Pre_compressor_h)/1e3 #[kWe]
                 Post_cooling = self.Flow_rate*(Post_compressor_h_actual - self.h_inj)/1e3 #Fluid cooling after compression [kWth]
                     
-                if Post_cooling<0:
-                    ResistiveHeating = -Post_cooling
-                    Post_cooling = 0
-                else:
-                    ResistiveHeating = 0
+                # Handle array conditionals element-wise
+                ResistiveHeating = np.where(Post_cooling < 0, -Post_cooling, 0)
+                Post_cooling = np.where(Post_cooling < 0, 0, Post_cooling)
                    
                 Total_cooling = Pre_cooling + Post_cooling #Total CO2 cooling requirements [kWth]
                 
