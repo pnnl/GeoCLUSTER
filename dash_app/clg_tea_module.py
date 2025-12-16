@@ -292,12 +292,14 @@ class TEA:
                 self.Pout = np.array([])
                 self.Tout = np.array([])
                 return
-            self.Pout = np.array(TandP_dict["H2O_Pout"])
-            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+            f_T = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+            f_P = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Pout"]), fill_value="extrapolate") # sbt
             try:
-                self.Tout = f(np.array(hdf5_times))
+                self.Tout = f_T(np.array(hdf5_times))
+                self.Pout = f_P(np.array(hdf5_times))
             except Exception as e:
-                print(e)
+                self.Tout = np.array(TandP_dict["H2O_Tout"])
+                self.Pout = np.array(TandP_dict["H2O_Pout"])
             # times = TandP_dict["time"]
 
         elif self.Fluid == 2:
