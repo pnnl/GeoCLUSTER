@@ -404,8 +404,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             }
     
     if is_blank_data:
-        print(f"[WARNING] TandP_dict created with blank data. Keys present: {list(TandP_dict.keys())}")
-        print(f"[WARNING] sCO2_Tout length: {len(TandP_dict.get('sCO2_Tout', []))}, time length: {len(TandP_dict.get('time', []))}")
+        pass
 
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
