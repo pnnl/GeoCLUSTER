@@ -151,10 +151,16 @@ def create_teaobject(TandP_dict,
 
     # get interpolated temperature and pressure array
     try:
+        print(f"[DEBUG] create_teaobject: Calling getTandP for {fluid}, {end_use}, case={case}, is_heating={is_heating}", flush=True)
         teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
+        print(f"[DEBUG] create_teaobject: After getTandP - has InterpolatedTemperatureArray: {hasattr(teaobject, 'InterpolatedTemperatureArray')}, "
+              f"length={len(teaobject.InterpolatedTemperatureArray) if hasattr(teaobject, 'InterpolatedTemperatureArray') and teaobject.InterpolatedTemperatureArray is not None else 0}, "
+              f"End_use={teaobject.End_use if hasattr(teaobject, 'End_use') else 'N/A'}", flush=True)
         teaobject.calculateLC() # ERROR STARTS HERE
+        print(f"[DEBUG] create_teaobject: After calculateLC - has LCOH: {hasattr(teaobject, 'LCOH')}, "
+              f"has LCOE: {hasattr(teaobject, 'LCOE')}", flush=True)
     except Exception as e:
-        print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}")
+        print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return None

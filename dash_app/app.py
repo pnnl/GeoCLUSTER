@@ -1869,13 +1869,14 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
     ],
     [
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
     ],
     prevent_initial_call='initial_duplicate',
 )
-def update_slider_ranges(model, store_data):
+def update_slider_ranges(model, case, store_data):
     grad_dict = create_steps(
         arg_arr=u_sCO2.grad, str_round_place="{:.2f}", val_round_place=2
     )
@@ -2004,6 +2005,23 @@ def update_slider_ranges(model, store_data):
         diameter_vertical_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
         diameter_lateral_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
 
+        # Set defaults for coaxial SBT models to ensure valid results
+        if case == "coaxial":
+            # Use parameters that improve numerical stability for coaxial solver:
+            # - Higher mass flow rate: reduces condition number, improves stability
+            # - Moderate injection temperature: avoids extreme fluid properties
+            # - Standard gradient and thermal conductivity: keep defaults
+            coaxial_default_mdot = 30.0  # kg/s - moderate flow rate to avoid velocity limits while maintaining stability
+            coaxial_default_tinj = 50.0  # °C - moderate temperature for better stability
+            coaxial_default_grad = start_vals_d["grad"]  # Keep default gradient
+            coaxial_default_k = start_vals_d["k"]  # Keep default thermal conductivity
+        else:
+            # Use normal defaults for U-tube
+            coaxial_default_mdot = None
+            coaxial_default_tinj = None
+            coaxial_default_grad = None
+            coaxial_default_k = None
+        
         grad_container = slider2(
             DivID="grad-select-div",
             ID="grad-select",
@@ -2011,7 +2029,7 @@ def update_slider_ranges(model, store_data):
             min_v=0.015,
             max_v=0.200,
             mark_dict=grad_dict,
-            start_v=saved_values.get("grad", 0.080),
+            start_v=coaxial_default_grad if (case == "coaxial" and coaxial_default_grad is not None) else (saved_values.get("grad", coaxial_default_grad if coaxial_default_grad is not None else start_vals_d["grad"])),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
         )
@@ -2022,7 +2040,7 @@ def update_slider_ranges(model, store_data):
             min_v=0.4,
             max_v=5.0,
             mark_dict=k_dict,
-            start_v=saved_values.get("k", start_vals_d["k"]),
+            start_v=coaxial_default_k if (case == "coaxial" and coaxial_default_k is not None) else (saved_values.get("k", coaxial_default_k if coaxial_default_k is not None else start_vals_d["k"])),
             div_style=div_block_style,
             parameter_name="Rock Thermal Conductivity (W/m-K)",
             custom_title=True,
@@ -2035,7 +2053,7 @@ def update_slider_ranges(model, store_data):
             max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=saved_values.get("Tinj", 60.0),
+            start_v=coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else (saved_values.get("Tinj", coaxial_default_tinj if coaxial_default_tinj is not None else start_vals_d["Tinj"])),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -2047,7 +2065,7 @@ def update_slider_ranges(model, store_data):
             max_v=300,
             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=saved_values.get("mdot", start_vals_d["mdot"]),
+            start_v=coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else (saved_values.get("mdot", coaxial_default_mdot if coaxial_default_mdot is not None else start_vals_d["mdot"])),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
         )
@@ -2132,6 +2150,10 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
     
     if store_data is None:
         store_data = {}
+    
+    # Debug output for coaxial SBT models
+    if model in ["SBT V1.0", "SBT V2.0"]:
+        print(f"[DEBUG] save_slider_values: model={model}, mdot={mdot}, radius_vertical={radius_vertical}, radius_lateral={radius_lateral}", flush=True)
     
     # Save current slider values for this model
     store_data[model] = {
@@ -2225,12 +2247,18 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     [
         State(component_id="slider-values-store", component_property="data"),
         State(component_id="model-select", component_property="value"),
+        State(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def restore_slider_values(mdot_container, store_data, model):
+def restore_slider_values(mdot_container, store_data, model, case):
     """Restore slider values from store after sliders are created"""
     if model is None:
+        raise PreventUpdate
+    
+    # Don't restore values for coaxial - let users set their own values
+    # This prevents the callback from overriding user-set slider values
+    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
         raise PreventUpdate
     
     if store_data is None:
@@ -2255,7 +2283,8 @@ def restore_slider_values(mdot_container, store_data, model):
         # Return None if not found anywhere
         return None, False
     
-    # Try to restore values, checking current model first, then other models
+    # Try to restore values from store for all cases
+    # Don't force defaults - let users set their own values
     mdot, mdot_found = get_value("mdot")
     L2, L2_found = get_value("L2")
     L1, L1_found = get_value("L1")
@@ -2264,12 +2293,16 @@ def restore_slider_values(mdot_container, store_data, model):
     Tinj, Tinj_found = get_value("Tinj")
     k, k_found = get_value("k")
     
+    # Debug output for coaxial
+    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+        print(f"[DEBUG] restore_slider_values: mdot={mdot}, mdot_found={mdot_found}, store_data keys={list(store_data.keys()) if store_data else 'None'}", flush=True)
+    
     # Only restore if we found at least one saved value
     # Otherwise, let update_slider_ranges set defaults via PreventUpdate
     if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
         raise PreventUpdate
     
-    # Use defaults for any None values (shouldn't happen if found=True, but be safe)
+    # Use defaults for any None values
     mdot = mdot if mdot is not None else start_vals_d.get("mdot", 30.0)
     L2 = L2 if L2 is not None else start_vals_d.get("L2", 10000)
     L1 = L1 if L1 is not None else start_vals_d.get("L1", 3500)
@@ -2392,6 +2425,12 @@ def update_sliders_heat_exchanger(model, case, store_data):
         elif case == "coaxial":
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
 
+            # For coaxial, use stable defaults to ensure valid results on initial load
+            # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
+            # Default center pipe radius (0.127 m) is standard
+            coaxial_default_radius = 0.4445  # Maximum wellbore radius for better flow area and stability
+            coaxial_default_radiuscenterpipe = 0.127  # Default center pipe radius
+
             radius = slider1(
                 DivID="radius-vertical-select-div",
                 ID="radius-vertical-select",
@@ -2400,7 +2439,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.4445,
                 mark_dict=diameter_vertical_dict,
                 step_i=0.002,
-                start_v=start_vals_sbt["radius"],
+                start_v=coaxial_default_radius,  # Always use maximum for stability, ignore saved values
                 div_style=div_block_style,
             )
 
@@ -2412,7 +2451,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.174,  #  # Center Pipe Radius (coaxial)	0.0635	0.174
                 mark_dict=radius_centerpipe_dict,
                 step_i=0.001,
-                start_v=start_vals_sbt["radiuscenterpipe"],
+                start_v=coaxial_default_radiuscenterpipe,  # Always use default, ignore saved values
                 div_style=div_block_style,
             )
 
@@ -2540,6 +2579,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
     [
         State(component_id="slider-values-store", component_property="data"),
         State(component_id="model-select", component_property="value"),
+        State(component_id="case-select", component_property="value"),
         State(component_id="radius-vertical-select", component_property="value"),
         State(component_id="radius-lateral-select", component_property="value"),
         State(component_id="n-laterals-select", component_property="value"),
@@ -2548,7 +2588,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def restore_sbt_sliders(diameter1_container, store_data, model, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+def restore_sbt_sliders(diameter1_container, store_data, model, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
     """Restore SBT-specific slider values after sliders are created"""
     if model is None:
         raise PreventUpdate
@@ -2581,8 +2621,17 @@ def restore_sbt_sliders(diameter1_container, store_data, model, current_radius_v
         return default_dict.get(default_key)
     
     # Restore values, checking current model first, then other models
-    radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
-    radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
+    # For coaxial, use stable defaults with larger wellbore
+    if case == "coaxial":
+        # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
+        radius_vertical = 0.4445  # Maximum wellbore radius for better flow area and stability
+        # For coaxial, radius-lateral is actually center pipe radius - use default
+        radius_lateral = 0.127  # Default center pipe radius
+    else:
+        # For U-tube, use normal defaults
+        radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
+        radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
+    
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
     lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
     lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
@@ -2818,6 +2867,10 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
+        # Debug: Print received values for coaxial SBT models
+        if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+            print(f"[DEBUG] update_subsurface_results_plots received: mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, case={case}", flush=True)
+        
         # if HDF5:
         # start = time.time()
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
@@ -2881,7 +2934,7 @@ def update_subsurface_results_plots(
             TandP_dict,
         )
     except Exception as e:
-        print(f"Error in update_subsurface_results_plots: {e}")
+        print(f"[ERROR] Error in update_subsurface_results_plots: {e}")
         import traceback
         traceback.print_exc()
         # Return empty/default values on error

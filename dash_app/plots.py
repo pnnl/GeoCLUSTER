@@ -138,8 +138,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     error_messages_dict = {}
 
-    time = u_sCO2.time
-    m_dot = u_sCO2.mdot
+    # Initialize time and m_dot based on case - use appropriate data source
+    if case == "coaxial":
+        time = c_sCO2.time if hasattr(c_sCO2, 'time') else u_sCO2.time
+        m_dot = c_sCO2.mdot if hasattr(c_sCO2, 'mdot') else u_sCO2.mdot
+    else:  # utube
+        time = u_sCO2.time
+        m_dot = u_sCO2.mdot
 
     mass_flow_rates_dict = {"Mass Flow Rate (kg/s)": m_dot}
     time_dict = {"Time (year)": time}
@@ -204,8 +209,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
         if case == "utube":
 
-            try:
-                if fluid == "sCO2" or fluid == "All":
+            # Track success/failure for each fluid separately
+            sCO2_success = False
+            H2O_success = False
+            
+            # Handle each fluid separately so one failure doesn't prevent the other from running
+            if fluid == "sCO2" or fluid == "All":
+                try:
                     sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
@@ -213,53 +223,133 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5
                                                         )
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
-                if fluid == "H2O" or fluid == "All":
+                    sCO2_success = True
+                except Exception as e:
+                    sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
+                    error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
+                    error_messages_dict['Err SubRes3'] = error_message
+                    print(f"[ERROR] Exception in generate_subsurface_lineplots (utube, SBT{sbt_version}, sCO2): {e}")
+                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}")
+                    import traceback
+                    traceback.print_exc()
+            
+            if fluid == "H2O" or fluid == "All":
+                try:
                     H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
-
-            except ValueError as e:
-                sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
-                error_messages_dict['Err SubRes3'] = error_message
+                    H2O_success = True
+                except Exception as e:
+                    _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
+                    error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
+                    error_messages_dict['Err SubRes3'] = error_message
+                    print(f"[ERROR] Exception in generate_subsurface_lineplots (utube, SBT{sbt_version}, H2O): {e}")
+                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Set is_blank_data only if all selected fluids failed
+            if (fluid == "sCO2" and not sCO2_success) or \
+               (fluid == "H2O" and not H2O_success) or \
+               (fluid == "All" and not sCO2_success and not H2O_success):
                 is_blank_data = True
-                print(f"[ERROR] ValueError in generate_subsurface_lineplots (utube): {e}")
-                import traceback
-                traceback.print_exc()
+                # Only set time to empty if no fluid succeeded
+                if not sCO2_success and not H2O_success:
+                    time = pd.Series(dtype=object)
                 
         if case == "coaxial":
 
-            try:
-                if fluid == "sCO2" or fluid == "All":
-                    sCO2_Tout, sCO2_Pout, time = c_sCO2.interp_outlet_states(point, sbt_version,
-                                                        Tsurf, c_m, rho_m, 
-                                                        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-                                                        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
+            # Track success/failure for each fluid separately
+            sCO2_success = False
+            H2O_success = False
+            
+            # Initialize variables to ensure they exist even if both fluids fail
+            sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe, H2O_kWt = blank_data()
+            
+            # Initialize time variables for each fluid separately
+            sCO2_time = None
+            H2O_time = None
+            
+            # Handle each fluid separately so one failure doesn't prevent the other from running
+            if fluid == "sCO2" or fluid == "All":
+                print(f"[DEBUG] Attempting sCO2 coaxial simulation: Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}, PipeParam5={PipeParam5}", flush=True)
+                try:
+                    sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                                                            mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
+                    
+                    # Validate sCO2_Tout contains reasonable values (should be in Kelvin, roughly 200-1000K)
+                    if sCO2_Tout is not None and hasattr(sCO2_Tout, '__len__') and len(sCO2_Tout) > 0:
+                        sCO2_Tout_arr = np.array(sCO2_Tout)
+                        if (np.any(np.isnan(sCO2_Tout_arr)) or np.any(np.isinf(sCO2_Tout_arr)) or 
+                            np.any(sCO2_Tout_arr < 200) or np.any(sCO2_Tout_arr > 1000)):
+                            print(f"[ERROR] Coaxial sCO2_Tout contains invalid values. Min={np.min(sCO2_Tout_arr):.2f}K, Max={np.max(sCO2_Tout_arr):.2f}K. Setting to blank.", flush=True)
+                            raise ValueError(f"Invalid temperature values in sCO2_Tout: min={np.min(sCO2_Tout_arr):.2f}K, max={np.max(sCO2_Tout_arr):.2f}K")
+                    
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
-                if fluid == "H2O" or fluid == "All":
-                    H2O_Tout, H2O_Pout, time = c_H2O.interp_outlet_states(point, sbt_version,
-                                                        Tsurf, c_m, rho_m, 
-                                                        # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-                                                        Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                                        mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
+                    sCO2_success = True
+                    # Store sCO2 time for later use
+                    if sCO2_time is not None:
+                        time = sCO2_time
+                    print(f"[DEBUG] Coaxial sCO2 succeeded: time length={len(sCO2_time) if sCO2_time is not None else 0}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}, Tout range=[{np.min(sCO2_Tout_arr):.2f}K, {np.max(sCO2_Tout_arr):.2f}K]", flush=True)
+                except Exception as e:
+                    sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
+                    sCO2_success = False
+                    error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
+                    error_messages_dict['Err SubRes4'] = error_message
+                    print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, sCO2): {type(e).__name__}: {e}", flush=True)
+                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
+                    import traceback
+                    traceback.print_exc()
+                    print(f"[DEBUG] Coaxial sCO2 failed: sCO2_success={sCO2_success}, will continue with H2O", flush=True)
+            
+            if fluid == "H2O" or fluid == "All":
+                try:
+                    H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version,
+                                                            Tsurf, c_m, rho_m, 
+                                                            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+                                                            Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                                                            mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
-
-            except ValueError as e:
-                sCO2_Tout, sCO2_Pout, H2O_Tout, H2O_Pout, sCO2_kWe, sCO2_kWt, H2O_kWe,H2O_kWt = blank_data()
-                error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
-                error_messages_dict['Err SubRes4'] = error_message
+                    H2O_success = True
+                    # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
+                    if not sCO2_success and H2O_time is not None:
+                        time = H2O_time
+                    print(f"[DEBUG] Coaxial H2O succeeded: time length={len(H2O_time) if H2O_time is not None else 0}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}")
+                except Exception as e:
+                    _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
+                    error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
+                    error_messages_dict['Err SubRes4'] = error_message
+                    print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, H2O): {e}", flush=True)
+                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
+                    import traceback
+                    traceback.print_exc()
+            
+            # Set is_blank_data only if all selected fluids failed
+            if (fluid == "sCO2" and not sCO2_success) or \
+               (fluid == "H2O" and not H2O_success) or \
+               (fluid == "All" and not sCO2_success and not H2O_success):
                 is_blank_data = True
-                print(f"[ERROR] ValueError in generate_subsurface_lineplots (coaxial): {e}")
-                import traceback
-                traceback.print_exc()
+                # Only set time to empty if no fluid succeeded
+                if not sCO2_success and not H2O_success:
+                    time = pd.Series(dtype=object)
+                print(f"[DEBUG] Coaxial final state (ALL FAILED): sCO2_success={sCO2_success}, H2O_success={H2O_success}, is_blank_data={is_blank_data}, time length={len(time) if hasattr(time, '__len__') else 'N/A'}", flush=True)
+            else:
+                # At least one fluid succeeded, ensure time is set
+                if time is None or (hasattr(time, '__len__') and len(time) == 0):
+                    # Fallback to HDF5 time if SBT simulation didn't return time
+                    time = c_sCO2.time if hasattr(c_sCO2, 'time') else u_sCO2.time
+                print(f"[DEBUG] Coaxial final state (SUCCESS): sCO2_success={sCO2_success}, H2O_success={H2O_success}, is_blank_data={is_blank_data}, time length={len(time) if hasattr(time, '__len__') else 'N/A'}", flush=True)
                 
 
 
     # Figure generation 
+    print(f"[DEBUG] Starting figure generation: case={case}, fluid={fluid}, is_blank_data={is_blank_data}") 
 
     fig = make_subplots(rows=2, cols=3,
                         specs=[[{}, {}, None],
@@ -270,112 +360,170 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     if fluid == "sCO2" or fluid == "All":
 
-        # kWe_avg and kWt_avg
-        fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                      line = dict(color='#c26219', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      # margin=dict(pad=20),
-                      row=1, col=1)
-        fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                      line = dict(color='orange', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=1, col=2)
+        # Debug: Check data validity for coaxial
+        if case == "coaxial":
+            sCO2_success_val = locals().get('sCO2_success', 'N/A')
+            print(f"[DEBUG] Plotting sCO2: is_blank_data={is_blank_data}, sCO2_success={sCO2_success_val}, "
+                  f"sCO2_Tout length={len(sCO2_Tout) if hasattr(sCO2_Tout, '__len__') else 'N/A'}, "
+                  f"time length={len(time) if hasattr(time, '__len__') else 'N/A'}")
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw), # #379dbf
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=True),
-                      row=2, col=1)
-        # temperature
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
-                      line = dict(color='royalblue', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=2)
-        # pressure
-        fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
-                      line = dict(color='#16b8a2', width=lw),
-                      legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                      row=2, col=3)
+        if not is_blank_data:
+            # kWe_avg and kWt_avg
+            fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
+                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                          line = dict(color='#c26219', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          # margin=dict(pad=20),
+                          row=1, col=1)
+            fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
+                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                          line = dict(color='orange', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=1, col=2)
+
+            # kWe vs. time
+            fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw), # #379dbf
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=True),
+                          row=2, col=1)
+            # temperature
+            try:
+                fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
+                          line = dict(color='royalblue', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=2)
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
+            # pressure
+            try:
+                fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
+                          line = dict(color='#16b8a2', width=lw),
+                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                          row=2, col=3)
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
 
         if is_blank_data:
+            blank_canvas(fig=fig, row_n=1, col_n=1)
+            blank_canvas(fig=fig, row_n=1, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=1)
             blank_canvas(fig=fig, row_n=2, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=3)
-
-        mean_sCO2_Tout = round(np.mean(sCO2_Tout - to_kelvin_factor),2) # to celsius
-        mean_sCO2_Pout = round(np.mean(sCO2_Pout / 1000000),2)
+            mean_sCO2_Tout = "-"
+            mean_sCO2_Pout = "-"
+        else:
+            try:
+                mean_sCO2_Tout = round(np.mean(sCO2_Tout - to_kelvin_factor),2) # to celsius
+                mean_sCO2_Pout = round(np.mean(sCO2_Pout / 1000000),2)
+            except (ValueError, TypeError):
+                mean_sCO2_Tout = "-"
+                mean_sCO2_Pout = "-"
 
         if str(mean_sCO2_Tout) == "nan":
             mean_sCO2_Tout = "-"
         if str(mean_sCO2_Pout) == "nan":
             mean_sCO2_Pout = "-"
 
-        mass_flow_rates_dict["sCO2 40-Year Average of Exergy (kWe)"] = sCO2_kWe_avg
-        mass_flow_rates_dict["sCO2 40-Year Average of Available Thermal Output (kWt)"] = sCO2_kWt_avg
+        # Only add to dicts if data is not blank
+        if not is_blank_data:
+            if sCO2_kWe_avg is not None:
+                mass_flow_rates_dict["sCO2 40-Year Average of Exergy (kWe)"] = sCO2_kWe_avg
+            if sCO2_kWt_avg is not None:
+                mass_flow_rates_dict["sCO2 40-Year Average of Available Thermal Output (kWt)"] = sCO2_kWt_avg
 
-        time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
-        time_dict["sCO2 Outlet Temperature (˚C)"] = sCO2_Tout - to_kelvin_factor # to celsius
-        time_dict["sCO2 Outlet Pressure (MPa)"] = sCO2_Pout / 1000000
+            try:
+                time_dict["sCO2 Exergy (kWe)"] = sCO2_kWe
+                time_dict["sCO2 Outlet Temperature (˚C)"] = sCO2_Tout - to_kelvin_factor # to celsius
+                time_dict["sCO2 Outlet Pressure (MPa)"] = sCO2_Pout / 1000000
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
 
     if fluid == "H2O" or fluid == "All":
 
-        # kWe_avg and kWt_avg
-        fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWe_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWe</b>: %{y:.3f} ',
-                      line = dict(color='#c26219', width=lw, dash='dash'),
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                      # margin=dict(pad=20),
-                      row=1, col=1)
+        # Debug: Check data validity for coaxial
+        if case == "coaxial":
+            H2O_success_val = locals().get('H2O_success', 'N/A')
+            print(f"[DEBUG] Plotting H2O: is_blank_data={is_blank_data}, H2O_success={H2O_success_val}, "
+                  f"H2O_Tout length={len(H2O_Tout) if hasattr(H2O_Tout, '__len__') else 'N/A'}, "
+                  f"time length={len(time) if hasattr(time, '__len__') else 'N/A'}")
 
-        fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWt_avg,
-                      hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                      line = dict(color='orange', width=lw, dash='dash'),
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                      row=1, col=2)
+        if not is_blank_data:
+            # kWe_avg and kWt_avg
+            fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWe_avg,
+                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWe</b>: %{y:.3f} ',
+                          line = dict(color='#c26219', width=lw, dash='dash'),
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                          # margin=dict(pad=20),
+                          row=1, col=1)
 
-        # kWe vs. time
-        fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                      line = dict(color='black', width=lw, dash='dash'), # #379dbf
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=True),
-                      row=2, col=1)
-        # temperature
-        fig.add_trace(go.Scatter(x=time, y=H2O_Tout - to_kelvin_factor, # to celsius
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
-                      line = dict(color='royalblue', width=lw, dash='dash'),
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                      row=2, col=2)
-        # pressure
-        fig.add_trace(go.Scatter(x=time, y=H2O_Pout / 1000000,
-                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
-                      line = dict(color='#16b8a2', width=lw, dash='dash'),
-                      legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                      row=2, col=3)
+            fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWt_avg,
+                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                          line = dict(color='orange', width=lw, dash='dash'),
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                          row=1, col=2)
+
+            # kWe vs. time
+            fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                          line = dict(color='black', width=lw, dash='dash'), # #379dbf
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=True),
+                          row=2, col=1)
+            # temperature
+            try:
+                fig.add_trace(go.Scatter(x=time, y=H2O_Tout - to_kelvin_factor, # to celsius
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
+                          line = dict(color='royalblue', width=lw, dash='dash'),
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                          row=2, col=2)
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
+            # pressure
+            try:
+                fig.add_trace(go.Scatter(x=time, y=H2O_Pout / 1000000,
+                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
+                          line = dict(color='#16b8a2', width=lw, dash='dash'),
+                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                          row=2, col=3)
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
 
         if is_blank_data:
+            blank_canvas(fig=fig, row_n=1, col_n=1)
+            blank_canvas(fig=fig, row_n=1, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=1)
             blank_canvas(fig=fig, row_n=2, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=3)
-
-        mean_H2O_Tout = round(np.mean(H2O_Tout - to_kelvin_factor),2) # to celsius
-        mean_H2O_Pout = round(np.mean(H2O_Pout / 1000000),2)
+            mean_H2O_Tout = "-"
+            mean_H2O_Pout = "-"
+        else:
+            try:
+                mean_H2O_Tout = round(np.mean(H2O_Tout - to_kelvin_factor),2) # to celsius
+                mean_H2O_Pout = round(np.mean(H2O_Pout / 1000000),2)
+            except (ValueError, TypeError):
+                mean_H2O_Tout = "-"
+                mean_H2O_Pout = "-"
 
         if str(mean_H2O_Tout) == "nan":
             mean_H2O_Tout = "-"
         if str(mean_H2O_Pout) == "nan":
             mean_H2O_Pout = "-"
 
-        mass_flow_rates_dict["H2O 40-Year Average of Exergy (kWe)"] = H2O_kWe_avg
-        mass_flow_rates_dict["H2O 40-Year Average of Available Thermal Output (kWt)"] = H2O_kWt_avg
+        # Only add to dicts if data is not blank
+        if not is_blank_data:
+            if H2O_kWe_avg is not None:
+                mass_flow_rates_dict["H2O 40-Year Average of Exergy (kWe)"] = H2O_kWe_avg
+            if H2O_kWt_avg is not None:
+                mass_flow_rates_dict["H2O 40-Year Average of Available Thermal Output (kWt)"] = H2O_kWt_avg
 
-        time_dict["H2O Exergy (kWe)"] = H2O_kWe
-        time_dict["H2O Outlet Temperature (˚C)"] = H2O_Tout - to_kelvin_factor # to celsius
-        time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
+            try:
+                time_dict["H2O Exergy (kWe)"] = H2O_kWe
+                time_dict["H2O Outlet Temperature (˚C)"] = H2O_Tout - to_kelvin_factor # to celsius
+                time_dict["H2O Outlet Pressure (MPa)"] = H2O_Pout / 1000000
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
 
     
     fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale)
@@ -391,6 +539,18 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             return value.tolist()
         return value
     
+    # Convert time to list - handle pandas Series and numpy arrays
+    def convert_time_to_list(time_value):
+        if time_value is None:
+            return []
+        if hasattr(time_value, 'tolist'):
+            return time_value.tolist()
+        if hasattr(time_value, 'values'):  # pandas Series
+            return time_value.values.tolist()
+        if isinstance(time_value, (list, tuple)):
+            return list(time_value)
+        return []
+    
     TandP_dict = {"sCO2_Tout": convert_to_list(sCO2_Tout),
                             "sCO2_Pout": convert_to_list(sCO2_Pout),
                             "H2O_Tout": convert_to_list(H2O_Tout),
@@ -399,9 +559,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             "sCO2_kWt": convert_to_list(sCO2_kWt),
                             "H2O_kWe": convert_to_list(H2O_kWe),
                             "H2O_kWt": convert_to_list(H2O_kWt),
-                            "time": convert_to_list(time),
+                            "time": convert_time_to_list(time),
                             "mdot": convert_to_list(m_dot),
                             }
+    
+    # Debug: Print TandP_dict info for coaxial
+    if case == "coaxial":
+        print(f"[DEBUG] TandP_dict created: time length={len(TandP_dict['time'])}, "
+              f"sCO2_Tout length={len(TandP_dict['sCO2_Tout']) if TandP_dict['sCO2_Tout'] else 0}, "
+              f"H2O_Tout length={len(TandP_dict['H2O_Tout']) if TandP_dict['H2O_Tout'] else 0}, "
+              f"is_blank_data={is_blank_data}", flush=True)
     
     if is_blank_data:
         pass
@@ -710,56 +877,107 @@ def generate_econ_lineplots(TandP_dict,
         if fluid == "sCO2" or fluid == "All":
 
             try:
-                required_keys = ["time"]
+                required_keys = ["time", "sCO2_Tout", "sCO2_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
+                    print(f"[DEBUG] Economic plots (sCO2): Missing required keys. TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else 'None'}", flush=True)
                     teaobj_sCO2 = None
                 else:
-                    teaobj_sCO2 = create_teaobject(TandP_dict,
-                                                    u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                    case, end_use, fluid, sbt_version,
-                                                    mdot, L2, L1, grad, D, Tinj, k,
-                                                    Drilling_cost_per_m, Discount_rate, Lifetime, 
-                                                    Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                                                    properties_H2O_pathname, 
-                                                    properties_CO2v2_pathname, 
-                                                    additional_properties_CO2v2_pathname,
-                                                    is_heating=True)
+                    # Check if arrays are empty or have mismatched lengths
+                    time_arr = TandP_dict.get("time", [])
+                    tout_arr = TandP_dict.get("sCO2_Tout", [])
+                    pout_arr = TandP_dict.get("sCO2_Pout", [])
+                    
+                    print(f"[DEBUG] Economic plots (sCO2): time_arr length={len(time_arr) if time_arr else 0}, "
+                          f"tout_arr length={len(tout_arr) if tout_arr else 0}, "
+                          f"pout_arr length={len(pout_arr) if pout_arr else 0}, "
+                          f"case={case}", flush=True)
+                    
+                    if (not time_arr or not tout_arr or not pout_arr or 
+                        len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
+                        len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
+                        print(f"[DEBUG] Economic plots (sCO2): Arrays failed validation - empty or mismatched lengths", flush=True)
+                        teaobj_sCO2 = None
+                    else:
+                        print(f"[DEBUG] Economic plots (sCO2): Creating TEA object", flush=True)
+                        teaobj_sCO2 = create_teaobject(TandP_dict,
+                                                        u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                        case, end_use, fluid, sbt_version,
+                                                        mdot, L2, L1, grad, D, Tinj, k,
+                                                        Drilling_cost_per_m, Discount_rate, Lifetime, 
+                                                        Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
+                                                        properties_H2O_pathname, 
+                                                        properties_CO2v2_pathname, 
+                                                        additional_properties_CO2v2_pathname,
+                                                        is_heating=True)
+                        print(f"[DEBUG] Economic plots (sCO2): TEA object created: {teaobj_sCO2 is not None}, "
+                              f"has LCOH: {hasattr(teaobj_sCO2, 'LCOH') if teaobj_sCO2 else False}, "
+                              f"has Linear_time_distribution: {hasattr(teaobj_sCO2, 'Linear_time_distribution') if teaobj_sCO2 else False}", flush=True)
                 
                 if teaobj_sCO2 is None:
+                    print(f"[DEBUG] Economic plots (sCO2): TEA object is None, creating blank plots", flush=True)
                     lcoh_sCO2 = "Insufficient Inputs"
                     mean_sCO2_Net_HProd = '-'
+                    # Add blank plots when TEA object is None
+                    fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
                 else:
-                    lcoh_sCO2 = "Insufficient Inputs" if (teaobj_sCO2.LCOH is None or teaobj_sCO2.LCOH >= 9999) else format(teaobj_sCO2.LCOH, '.2f')
-
-                    # Heat Production 
-                    fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Instantaneous_heat_production/1e3,
+                    try:
+                        print(f"[DEBUG] Economic plots (sCO2): TEA object exists, checking attributes...", flush=True)
+                        # Check if LCOH attribute exists before accessing it
+                        if not hasattr(teaobj_sCO2, 'LCOH') or teaobj_sCO2.LCOH is None or teaobj_sCO2.LCOH >= 9999:
+                            lcoh_sCO2 = "Insufficient Inputs"
+                        else:
+                            lcoh_sCO2 = format(teaobj_sCO2.LCOH, '.2f')
+                        # Check if required attributes exist before accessing them
+                        has_linear_time = hasattr(teaobj_sCO2, 'Linear_time_distribution') and teaobj_sCO2.Linear_time_distribution is not None
+                        has_inst_heat = hasattr(teaobj_sCO2, 'Instantaneous_heat_production') and teaobj_sCO2.Instantaneous_heat_production is not None
+                        has_annual_heat = hasattr(teaobj_sCO2, 'Annual_heat_production') and teaobj_sCO2.Annual_heat_production is not None
+                        has_lifetime = hasattr(teaobj_sCO2, 'Lifetime') and teaobj_sCO2.Lifetime is not None
+                        
+                        print(f"[DEBUG] Economic plots (sCO2): LCOH={lcoh_sCO2}, "
+                              f"has_linear_time={has_linear_time}, has_inst_heat={has_inst_heat}, "
+                              f"has_annual_heat={has_annual_heat}, has_lifetime={has_lifetime}", flush=True)
+                        
+                        if not (has_linear_time and has_inst_heat and has_annual_heat and has_lifetime):
+                            print(f"[DEBUG] Economic plots (sCO2): Missing required attributes, creating blank plots", flush=True)
+                            raise AttributeError("TEA object missing required attributes for plotting")
+                        
+                        # Heat Production 
+                        fig.add_trace(go.Scatter(x=teaobj_sCO2.Linear_time_distribution, y=teaobj_sCO2.Instantaneous_heat_production/1e3,
                               hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Heat Production (MWt)</b>: %{y:.3f} ',
                               line = dict(color='black', width=lw),
                               legendgroup=labels_cat[1], name=labels[1], showlegend=is_display_legend
                               ),
                               row=1, col=1)
 
-                    # Anuual Heat Production
-                    fig.add_trace(go.Bar(x=np.arange(1,teaobj_sCO2.Lifetime+1), y=teaobj_sCO2.Annual_heat_production/1e6,
-                                        # hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Annual Heat Production (GWh)</b>: %{y:.3f} ',
-                                        name=labels[1],
-                                        showlegend=False, hovertemplate='<b>Annual Heat Production (GWh)</b>: %{y:.3f}'), 
-                                    row=1, col=3)
+                        # Anuual Heat Production
+                        fig.add_trace(go.Bar(x=np.arange(1,teaobj_sCO2.Lifetime+1), y=teaobj_sCO2.Annual_heat_production/1e6,
+                                            # hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Annual Heat Production (GWh)</b>: %{y:.3f} ',
+                                            name=labels[1],
+                                            showlegend=False, hovertemplate='<b>Annual Heat Production (GWh)</b>: %{y:.3f}'), 
+                                        row=1, col=3)
 
-                    fig.add_trace(go.Scatter(x=np.arange(1,teaobj_sCO2.Lifetime+1), y=teaobj_sCO2.Annual_heat_production/1e6,
+                        fig.add_trace(go.Scatter(x=np.arange(1,teaobj_sCO2.Lifetime+1), y=teaobj_sCO2.Annual_heat_production/1e6,
                                   hovertemplate='<b>Time (year)</b>: %{x:.1f}<br>',
                                   line = dict(color='black', width=lw),
                                   legendgroup=labels_cat[1], name=labels[1], showlegend=False
                                   ),
                                   row=1, col=3)
 
-                    # Table Data
-                    mean_sCO2_Net_HProd = round(np.mean(teaobj_sCO2.Instantaneous_heat_production/1e3),2)
+                        # Table Data
+                        mean_sCO2_Net_HProd = round(np.mean(teaobj_sCO2.Instantaneous_heat_production/1e3),2)
 
-                    time_dict = {"Time (year)": teaobj_sCO2.Linear_time_distribution,
-                                 "sCO2 Heat Production (MWt)": teaobj_sCO2.Instantaneous_heat_production/1e3,
-                                 "sCO2 Annual Heat Production (GWh)": teaobj_sCO2.Annual_heat_production/1e6}
-                    econ_values_dict.update(time_dict)
+                        time_dict = {"Time (year)": teaobj_sCO2.Linear_time_distribution,
+                                     "sCO2 Heat Production (MWt)": teaobj_sCO2.Instantaneous_heat_production/1e3,
+                                     "sCO2 Annual Heat Production (GWh)": teaobj_sCO2.Annual_heat_production/1e6}
+                        econ_values_dict.update(time_dict)
+                        print(f"[DEBUG] Economic plots (sCO2): Successfully added plots", flush=True)
+                    except Exception as e:
+                        print(f"[ERROR] Economic plots (sCO2): Exception when creating plots: {type(e).__name__}: {e}", flush=True)
+                        import traceback
+                        traceback.print_exc()
+                        lcoh_sCO2 = "Insufficient Inputs"
+                        mean_sCO2_Net_HProd = '-'
+                        fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
 
             except ValueError as e:
                 fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
@@ -776,12 +994,22 @@ def generate_econ_lineplots(TandP_dict,
             # print(" ...... H20 HEATING LCOH .... ")
 
             try:
-                required_keys = ["time"]
+                required_keys = ["time", "H2O_Tout", "H2O_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
                     teaobj_H2O = None
                 else:
-                    # TODO: update D ... based on radial
-                    teaobj_H2O = create_teaobject(TandP_dict,
+                    # Check if arrays are empty or have mismatched lengths
+                    time_arr = TandP_dict.get("time", [])
+                    tout_arr = TandP_dict.get("H2O_Tout", [])
+                    pout_arr = TandP_dict.get("H2O_Pout", [])
+                    
+                    if (not time_arr or not tout_arr or not pout_arr or 
+                        len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
+                        len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
+                        teaobj_H2O = None
+                    else:
+                        # TODO: update D ... based on radial
+                        teaobj_H2O = create_teaobject(TandP_dict,
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, fluid, sbt_version,
                                                     mdot, L2, L1, grad, D, Tinj, k,
@@ -795,6 +1023,8 @@ def generate_econ_lineplots(TandP_dict,
                 
                 if teaobj_H2O is None:
                     lcoh_H2O = "Insufficient Inputs"
+                    # Add blank plots when TEA object is None
+                    fig, lcoh_H2O = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
                 else:
                     lcoh_H2O = "Insufficient Inputs" if (teaobj_H2O.LCOH is None or teaobj_H2O.LCOH >= 9999) else format(teaobj_H2O.LCOH, '.2f')
                     # print(lcoh_H2O)
@@ -859,11 +1089,21 @@ def generate_econ_lineplots(TandP_dict,
         if fluid == "sCO2" or fluid == "All":
 
             try:
-                required_keys = ["time"]
+                required_keys = ["time", "sCO2_Tout", "sCO2_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
                     teaobj_sCO2_electricity = None
                 else:
-                    teaobj_sCO2_electricity = create_teaobject(TandP_dict, 
+                    # Check if arrays are empty or have mismatched lengths
+                    time_arr = TandP_dict.get("time", [])
+                    tout_arr = TandP_dict.get("sCO2_Tout", [])
+                    pout_arr = TandP_dict.get("sCO2_Pout", [])
+                    
+                    if (not time_arr or not tout_arr or not pout_arr or 
+                        len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
+                        len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
+                        teaobj_sCO2_electricity = None
+                    else:
+                        teaobj_sCO2_electricity = create_teaobject(TandP_dict, 
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, fluid, sbt_version,
                                                     mdot, L2, L1, grad, D, Tinj, k,
@@ -875,6 +1115,8 @@ def generate_econ_lineplots(TandP_dict,
                 
                 if teaobj_sCO2_electricity is None:
                     lcoe_sCO2 = "Insufficient Inputs"
+                    # Add blank plots when TEA object is None
+                    fig, lcoe_sCO2 = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
                 else:
                     # convert any negative value to 0
                     if teaobj_sCO2_electricity.Inst_Net_Electricity_production is not None:
@@ -945,67 +1187,86 @@ def generate_econ_lineplots(TandP_dict,
                         traceback.print_exc()
 
                 # mean_sCO2_Net_HProd = round(np.mean(teaobj_sCO2.Instantaneous_heat_production/1e3),2)
-                mean_sCO2_Net_EProd = round(np.mean(teaobj_sCO2_electricity.Inst_Net_Electricity_production/1e3),2) if teaobj_sCO2_electricity is not None and teaobj_sCO2_electricity.Inst_Net_Electricity_production is not None else 0
+                mean_sCO2_Net_EProd = round(np.mean(teaobj_sCO2_electricity.Inst_Net_Electricity_production/1e3),2) if teaobj_sCO2_electricity is not None and hasattr(teaobj_sCO2_electricity, 'Inst_Net_Electricity_production') and teaobj_sCO2_electricity.Inst_Net_Electricity_production is not None else 0
 
         if fluid == "H2O" or fluid == "All":
 
             try:
-                teaobj_H2O = create_teaobject(TandP_dict,
-                                                u_sCO2, u_H2O, c_sCO2, c_H2O,
-                                                case, end_use, fluid, sbt_version,
-                                                mdot, L2, L1, grad, D, Tinj, k,
-                                                Drilling_cost_per_m, Discount_rate, Lifetime, 
-                                                Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
-                                                properties_H2O_pathname, 
-                                                properties_CO2v2_pathname, 
-                                                additional_properties_CO2v2_pathname,
-                                                is_H20=True
-                                                )
+                required_keys = ["time", "H2O_Tout", "H2O_Pout"]
+                if not TandP_dict or not all(key in TandP_dict for key in required_keys):
+                    teaobj_H2O = None
+                else:
+                    # Check if arrays are empty or have mismatched lengths
+                    time_arr = TandP_dict.get("time", [])
+                    tout_arr = TandP_dict.get("H2O_Tout", [])
+                    pout_arr = TandP_dict.get("H2O_Pout", [])
+                    
+                    if (not time_arr or not tout_arr or not pout_arr or 
+                        len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
+                        len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
+                        teaobj_H2O = None
+                    else:
+                        teaobj_H2O = create_teaobject(TandP_dict,
+                                                        u_sCO2, u_H2O, c_sCO2, c_H2O,
+                                                        case, end_use, fluid, sbt_version,
+                                                        mdot, L2, L1, grad, D, Tinj, k,
+                                                        Drilling_cost_per_m, Discount_rate, Lifetime, 
+                                                        Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
+                                                        properties_H2O_pathname, 
+                                                        properties_CO2v2_pathname, 
+                                                        additional_properties_CO2v2_pathname,
+                                                        is_H20=True
+                                                        )
                 
-                # convert any negative value to 0
-                if teaobj_H2O.Inst_Net_Electricity_production is not None:
-                    teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
+                if teaobj_H2O is None:
+                    lcoe_H2O = "Insufficient Inputs"
+                    # Add blank plots when TEA object is None
+                    fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
+                else:
+                    # convert any negative value to 0
+                    if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                        teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
-                lcoe_H2O = "Insufficient Inputs" if (teaobj_H2O.LCOE is None or teaobj_H2O.LCOE >= 9999) else format(teaobj_H2O.LCOE, '.2f')
+                    lcoe_H2O = "Insufficient Inputs" if (teaobj_H2O.LCOE is None or teaobj_H2O.LCOE >= 9999) else format(teaobj_H2O.LCOE, '.2f')
 
-                # print(" ********* ")
-                # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
-                # print(teaobj_H2O.Linear_time_distribution)
-                # print("\n")
+                    # print(" ********* ")
+                    # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
+                    # print(teaobj_H2O.Linear_time_distribution)
+                    # print("\n")
 
-                # Electricity 
-                if teaobj_H2O.Inst_Net_Electricity_production is not None:
-                    fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
-                                  hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
+                    # Electricity 
+                    if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                        fig.add_trace(go.Scatter(x=teaobj_H2O.Linear_time_distribution, y=teaobj_H2O.Inst_Net_Electricity_production/1e3,
+                                      hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Electricity Production (MWe)</b>: %{y:.3f} ',
+                                      line = dict(color='black', width=lw, dash='dash'),
+                                      legendgroup=labels_cat[0], name=labels[0], showlegend=is_display_legend
+                                      ),
+                                  row=row_num, col=1)
+                    
+                    # Annual Electricity
+                    fig.add_trace(go.Bar(x=np.arange(1,teaobj_H2O.Lifetime+1), y=teaobj_H2O.Annual_electricity_production/1e6,
+                                    # hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Annual Electricity Production (GWe)</b>: %{y:.3f} ',
+                                    name=labels[0],
+                                    showlegend=False, hovertemplate='<b>Annual Electricity Production (GWe)</b>: %{y:.3f}'), 
+                                    row=row_num, col=3)
+
+                    fig.add_trace(go.Scatter(x=np.arange(1,teaobj_H2O.Lifetime+1), y=teaobj_H2O.Annual_electricity_production/1e6,
+                                  hovertemplate='<b>Time (year)</b>: %{x:.1f}<br>',
                                   line = dict(color='black', width=lw, dash='dash'),
-                                  legendgroup=labels_cat[0], name=labels[0], showlegend=is_display_legend
+                                  legendgroup=labels_cat[0], name=labels[0], showlegend=False
                                   ),
-                              row=row_num, col=1)
-                
-                # Annual Electricity
-                fig.add_trace(go.Bar(x=np.arange(1,teaobj_H2O.Lifetime+1), y=teaobj_H2O.Annual_electricity_production/1e6,
-                                # hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Annual Electricity Production (GWe)</b>: %{y:.3f} ',
-                                name=labels[0],
-                                showlegend=False, hovertemplate='<b>Annual Electricity Production (GWe)</b>: %{y:.3f}'), 
-                                row=row_num, col=3)
+                                  row=row_num, col=3)
 
-                fig.add_trace(go.Scatter(x=np.arange(1,teaobj_H2O.Lifetime+1), y=teaobj_H2O.Annual_electricity_production/1e6,
-                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br>',
-                              line = dict(color='black', width=lw, dash='dash'),
-                              legendgroup=labels_cat[0], name=labels[0], showlegend=False
-                              ),
-                              row=row_num, col=3)
-
-                # Table Data
-                if teaobj_H2O.Inst_Net_Electricity_production is not None:
-                    time_dict = {"Time (year)": teaobj_H2O.Linear_time_distribution,
-                                 "H2O Electricity Production (MWe)": teaobj_H2O.Inst_Net_Electricity_production/1e3,
-                                 "H2O Annual Electricity Production (GWe)": teaobj_H2O.Annual_electricity_production/1e6}
-                    econ_values_dict.update(time_dict)
+                    # Table Data
+                    if teaobj_H2O.Inst_Net_Electricity_production is not None:
+                        time_dict = {"Time (year)": teaobj_H2O.Linear_time_distribution,
+                                     "H2O Electricity Production (MWe)": teaobj_H2O.Inst_Net_Electricity_production/1e3,
+                                     "H2O Annual Electricity Production (GWe)": teaobj_H2O.Annual_electricity_production/1e6}
+                        econ_values_dict.update(time_dict)
 
 
-                # mean_H2O_Net_HProd = round(np.mean(teaobj_H2O.Instantaneous_heat_production/1e3),2)
-                mean_H2O_Net_EProd = round(np.mean(teaobj_H2O.Inst_Net_Electricity_production/1e3),2) if teaobj_H2O.Inst_Net_Electricity_production is not None else 0
+                    # mean_H2O_Net_HProd = round(np.mean(teaobj_H2O.Instantaneous_heat_production/1e3),2)
+                    mean_H2O_Net_EProd = round(np.mean(teaobj_H2O.Inst_Net_Electricity_production/1e3),2) if teaobj_H2O.Inst_Net_Electricity_production is not None else 0
 
             except ValueError as e:
                 fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)

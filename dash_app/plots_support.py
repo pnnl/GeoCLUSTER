@@ -164,16 +164,34 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale):
 	fig.update_layout(hovermode="x unified", hoverlabel=dict(font_size=12), margin_pad=0)
 
 	# Update xaxis properties
-	fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", showgrid=True, range=[0,m_dot[-1]], 
+	# Check if arrays are empty before accessing [-1]
+	# Handle both pandas Series and numpy arrays
+	if hasattr(m_dot, '__len__') and len(m_dot) > 0:
+		if hasattr(m_dot, 'iloc'):  # pandas Series
+			m_dot_max = m_dot.iloc[-1]
+		else:  # numpy array or list
+			m_dot_max = m_dot[-1]
+	else:
+		m_dot_max = 100.0
+	
+	if hasattr(time, '__len__') and len(time) > 0:
+		if hasattr(time, 'iloc'):  # pandas Series
+			time_max = time.iloc[-1]
+		else:  # numpy array or list
+			time_max = time[-1]
+	else:
+		time_max = 40.0
+	
+	fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", showgrid=True, range=[0,m_dot_max], 
 	                    row=1, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-	fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", showgrid=True, range=[0,m_dot[-1]], 
+	fig.update_xaxes(title_text="Mass Flow Rate (kg/s)", showgrid=True, range=[0,m_dot_max], 
 	                    row=1, col=2, tickfont = dict(size=12), title_font=dict(size=14))
 
-	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time[-1]], 
+	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time_max], 
 	                    row=2, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time[-1]], 
+	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time_max], 
 	                    row=2, col=2, tickfont = dict(size=12), title_font=dict(size=14))
-	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time[-1]], 
+	fig.update_xaxes(title_text="Time (years)", showgrid=True, range=[0,time_max], 
 	                    row=2, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
 	# Update yaxis properties
