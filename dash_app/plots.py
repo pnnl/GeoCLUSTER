@@ -274,8 +274,15 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             H2O_time = None
             
             # Handle each fluid separately so one failure doesn't prevent the other from running
+            # Store geometry values for comparison
+            geometry_before_sCO2 = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
+            
             if fluid == "sCO2" or fluid == "All":
-                print(f"[DEBUG] Attempting sCO2 coaxial simulation: Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}, PipeParam5={PipeParam5}", flush=True)
+                print(f"[DEBUG] ===== STARTING sCO2 COAXIAL ATTEMPT ===== fluid={fluid}, case={case}, model={model}", flush=True)
+                print(f"[DEBUG] Attempting sCO2 coaxial simulation:", flush=True)
+                print(f"[DEBUG]   Diameter1={Diameter1} m (wellbore diameter)", flush=True)
+                print(f"[DEBUG]   Diameter2={Diameter2} m (center pipe diameter, converted from radius)", flush=True)
+                print(f"[DEBUG]   mdot={arg_mdot} kg/s, PipeParam5={PipeParam5}, fluid={fluid}", flush=True)
                 try:
                     sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
@@ -308,7 +315,25 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     traceback.print_exc()
                     print(f"[DEBUG] Coaxial sCO2 failed: sCO2_success={sCO2_success}, will continue with H2O", flush=True)
             
+            # Store geometry values for comparison
+            geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
+            
             if fluid == "H2O" or fluid == "All":
+                print(f"[DEBUG] ===== STARTING H2O COAXIAL ATTEMPT ===== fluid={fluid}, case={case}, model={model}", flush=True)
+                print(f"[DEBUG] Attempting H2O coaxial simulation:", flush=True)
+                print(f"[DEBUG]   Diameter1={Diameter1} m (wellbore diameter)", flush=True)
+                print(f"[DEBUG]   Diameter2={Diameter2} m (center pipe diameter, converted from radius)", flush=True)
+                print(f"[DEBUG]   mdot={arg_mdot} kg/s, PipeParam5={PipeParam5}, fluid={fluid}", flush=True)
+                
+                # Compare geometry values if both fluids are being run
+                if fluid == "All" and 'geometry_before_sCO2' in locals():
+                    print(f"[DEBUG] ===== GEOMETRY COMPARISON (H2O vs sCO2) =====", flush=True)
+                    print(f"[DEBUG]   Diameter1: sCO2={geometry_before_sCO2['Diameter1']} m, H2O={geometry_before_H2O['Diameter1']} m", flush=True)
+                    print(f"[DEBUG]   Diameter2: sCO2={geometry_before_sCO2['Diameter2']} m, H2O={geometry_before_H2O['Diameter2']} m", flush=True)
+                    print(f"[DEBUG]   PipeParam3: sCO2={geometry_before_sCO2['PipeParam3']} m, H2O={geometry_before_H2O['PipeParam3']} m", flush=True)
+                    print(f"[DEBUG]   PipeParam5: sCO2={geometry_before_sCO2['PipeParam5']}, H2O={geometry_before_H2O['PipeParam5']}", flush=True)
+                    if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
+                        print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
                 try:
                     H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
@@ -1192,8 +1217,10 @@ def generate_econ_lineplots(TandP_dict,
         if fluid == "H2O" or fluid == "All":
 
             try:
+                print(f"[DEBUG] Economic plots (H2O electricity): Starting, end_use={end_use}, fluid={fluid}, case={case}", flush=True)
                 required_keys = ["time", "H2O_Tout", "H2O_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
+                    print(f"[DEBUG] Economic plots (H2O electricity): Missing required keys. TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else 'None'}", flush=True)
                     teaobj_H2O = None
                 else:
                     # Check if arrays are empty or have mismatched lengths
@@ -1201,11 +1228,17 @@ def generate_econ_lineplots(TandP_dict,
                     tout_arr = TandP_dict.get("H2O_Tout", [])
                     pout_arr = TandP_dict.get("H2O_Pout", [])
                     
+                    print(f"[DEBUG] Economic plots (H2O electricity): time_arr length={len(time_arr) if time_arr else 0}, "
+                          f"tout_arr length={len(tout_arr) if tout_arr else 0}, "
+                          f"pout_arr length={len(pout_arr) if pout_arr else 0}", flush=True)
+                    
                     if (not time_arr or not tout_arr or not pout_arr or 
                         len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
+                        print(f"[DEBUG] Economic plots (H2O electricity): Arrays failed validation - empty or mismatched lengths", flush=True)
                         teaobj_H2O = None
                     else:
+                        print(f"[DEBUG] Economic plots (H2O electricity): Creating TEA object", flush=True)
                         teaobj_H2O = create_teaobject(TandP_dict,
                                                         u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                         case, end_use, fluid, sbt_version,
@@ -1217,17 +1250,24 @@ def generate_econ_lineplots(TandP_dict,
                                                         additional_properties_CO2v2_pathname,
                                                         is_H20=True
                                                         )
+                        print(f"[DEBUG] Economic plots (H2O electricity): TEA object created: {teaobj_H2O is not None}, "
+                              f"has LCOE: {hasattr(teaobj_H2O, 'LCOE') if teaobj_H2O else False}, "
+                              f"LCOE value: {teaobj_H2O.LCOE if (teaobj_H2O and hasattr(teaobj_H2O, 'LCOE')) else 'N/A'}", flush=True)
                 
                 if teaobj_H2O is None:
+                    print(f"[DEBUG] Economic plots (H2O electricity): TEA object is None, creating blank plots", flush=True)
                     lcoe_H2O = "Insufficient Inputs"
                     # Add blank plots when TEA object is None
                     fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
                 else:
+                    print(f"[DEBUG] Economic plots (H2O electricity): TEA object exists, checking LCOE...", flush=True)
                     # convert any negative value to 0
                     if teaobj_H2O.Inst_Net_Electricity_production is not None:
                         teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
                     lcoe_H2O = "Insufficient Inputs" if (teaobj_H2O.LCOE is None or teaobj_H2O.LCOE >= 9999) else format(teaobj_H2O.LCOE, '.2f')
+                    print(f"[DEBUG] Economic plots (H2O electricity): LCOE={lcoe_H2O}, "
+                          f"has Inst_Net_Electricity_production: {teaobj_H2O.Inst_Net_Electricity_production is not None if hasattr(teaobj_H2O, 'Inst_Net_Electricity_production') else False}", flush=True)
 
                     # print(" ********* ")
                     # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)

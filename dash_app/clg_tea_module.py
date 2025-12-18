@@ -588,8 +588,12 @@ class TEA:
             else: #Water injection temperature and/or production tempeature fall outside the range used in the correlations
                 if self.T_in < 50: 
                     self.error_codes = np.append(self.error_codes,2000)
+                    print(f"[DEBUG] H2O electricity: T_in ({self.T_in:.2f}°C) < 50°C. Setting electricity production to zero.", flush=True)
                 if max(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
                     self.error_codes = np.append(self.error_codes,2001)
+                    print(f"[DEBUG] H2O electricity: Production temperature range [{min(self.Linear_production_temperature):.2f}°C, {max(self.Linear_production_temperature):.2f}°C] outside valid range [100-385°C]. Setting electricity production to zero.", flush=True)
+                elif min(self.Linear_production_temperature) < 100:
+                    print(f"[DEBUG] H2O electricity: Min production temperature ({min(self.Linear_production_temperature):.2f}°C) < 100°C (max={max(self.Linear_production_temperature):.2f}°C). Setting electricity production to zero.", flush=True)
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_themal_efficiency = np.zeros(len(self.Time_array))

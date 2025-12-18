@@ -2007,11 +2007,11 @@ def update_slider_ranges(model, case, store_data):
 
         # Set defaults for coaxial SBT models to ensure valid results
         if case == "coaxial":
-            # Use parameters that improve numerical stability for coaxial solver:
-            # - Higher mass flow rate: reduces condition number, improves stability
+            # Use parameters that work for both H2O and CO2:
+            # - Lower mass flow rate (20 kg/s): works for CO2 (avoids high velocities) and H2O
             # - Moderate injection temperature: avoids extreme fluid properties
             # - Standard gradient and thermal conductivity: keep defaults
-            coaxial_default_mdot = 30.0  # kg/s - moderate flow rate to avoid velocity limits while maintaining stability
+            coaxial_default_mdot = 20.0  # kg/s - lower flow rate works for CO2 (avoids high velocities) and H2O
             coaxial_default_tinj = 50.0  # °C - moderate temperature for better stability
             coaxial_default_grad = start_vals_d["grad"]  # Keep default gradient
             coaxial_default_k = start_vals_d["k"]  # Keep default thermal conductivity
@@ -2427,9 +2427,9 @@ def update_sliders_heat_exchanger(model, case, store_data):
 
             # For coaxial, use stable defaults to ensure valid results on initial load
             # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
-            # Default center pipe radius (0.127 m) is standard
+            # Smaller center pipe radius (0.1 m) works for both H2O and CO2 (larger annulus = lower velocities)
             coaxial_default_radius = 0.4445  # Maximum wellbore radius for better flow area and stability
-            coaxial_default_radiuscenterpipe = 0.127  # Default center pipe radius
+            coaxial_default_radiuscenterpipe = 0.1  # Smaller center pipe radius works for CO2 (larger annulus = lower velocities)
 
             radius = slider1(
                 DivID="radius-vertical-select-div",
@@ -2625,8 +2625,8 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
     if case == "coaxial":
         # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
         radius_vertical = 0.4445  # Maximum wellbore radius for better flow area and stability
-        # For coaxial, radius-lateral is actually center pipe radius - use default
-        radius_lateral = 0.127  # Default center pipe radius
+        # For coaxial, radius-lateral is actually center pipe radius - use smaller value for CO2 compatibility
+        radius_lateral = 0.1  # Smaller center pipe radius works for CO2 (larger annulus = lower velocities)
     else:
         # For U-tube, use normal defaults
         radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
