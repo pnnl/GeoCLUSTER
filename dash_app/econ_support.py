@@ -154,7 +154,7 @@ def create_teaobject(TandP_dict,
         teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
         teaobject.calculateLC() # ERROR STARTS HERE
     except Exception as e:
-        print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}")
+        print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}", flush=True)
         import traceback
         traceback.print_exc()
         return None

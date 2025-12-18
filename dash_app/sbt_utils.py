@@ -209,7 +209,7 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
         y = np.concatenate((yinj, yprod))
         z = np.concatenate((zinj, zprod))
 
-        for i in range(numberoflaterals):
+        for i in range(int(numberoflaterals)):
             x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
             y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
             z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
@@ -245,9 +245,18 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
         radiusvertical = Diameter1/2 # 0.15                         # Radius of "vertical" injection and production well (open hole assumed for heat transfer) [m] (it is labeled here as vertical but it is allowed to be deviated)
         radiuslateral = Diameter2/2 # 0.30                          # Radius of laterals (open hole assumed for heat transfer) [m]
         
-        numberoflaterals = PipeParam3 # 3                                            # Number of laterals (must be integer) [-]
+        numberoflaterals = int(PipeParam3) if PipeParam3 is not None else 1  # Number of laterals (must be integer) [-]
+        numberoflaterals = max(1, numberoflaterals)  # Ensure at least 1 lateral
         lateralflowallocation = PipeParam4 # [1/3, 1/3, 1/3]                         # Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
-        lateralflowmultiplier = PipeParam5 # 1                                       # Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
+        # PipeParam5 is only for coaxial geometry (flow direction). For U-tube, lateralflowmultiplier should come from HyperParam5 or default to 1.
+        # If PipeParam5 is a string (like "Inject in Annulus"), it's from coaxial UI and should be ignored for U-tube.
+        if PipeParam5 is not None and isinstance(PipeParam5, (int, float)):
+            try:
+                lateralflowmultiplier = float(PipeParam5)
+            except (ValueError, TypeError):
+                lateralflowmultiplier = 1
+        else:
+            lateralflowmultiplier = 1  # Default for U-tube when PipeParam5 is None or a string 
 
         # TODO: ADD NEW PARAMETER (required if clg_configuration is 2)
         # USER EDITABLE? (v27)
@@ -292,11 +301,39 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
     Deltaz = Deltaz.reshape(-1)
 
     if clg_configuration == 1: # COAXIAL
-
+        # Ensure radiuscenterpipe and thicknesscenterpipe are not None for coaxial
+        if radiuscenterpipe is None:
+            raise ValueError(f"radiuscenterpipe is None for coaxial configuration. This should be set from Diameter2.")
+        if thicknesscenterpipe is None:
+            raise ValueError(f"thicknesscenterpipe is None for coaxial configuration. This should be set from PipeParam3.")
+        
         outerradiuscenterpipe = radiuscenterpipe+thicknesscenterpipe    # Outer radius of inner pipe [m]
         A_flow_annulus = math.pi*(radius**2-outerradiuscenterpipe**2)   # Flow area of annulus pipe [m^2]
         A_flow_centerpipe = math.pi*radiuscenterpipe**2                 # Flow area of center pipe [m^2]
-        Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]    
+        Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]
+        
+        # Validate geometry to prevent numerical instability
+        if A_flow_annulus <= 0:
+            raise ValueError(f"Invalid annulus flow area: {A_flow_annulus:.6f} m². "
+                           f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m. "
+                           f"This indicates invalid coaxial geometry (center pipe outer radius >= wellbore radius).")
+        if Dh_annulus <= 0:
+            raise ValueError(f"Invalid annulus hydraulic diameter: {Dh_annulus:.6f} m. "
+                           f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m. "
+                           f"This indicates invalid coaxial geometry (center pipe outer radius >= wellbore radius).")
+        if A_flow_centerpipe <= 0:
+            raise ValueError(f"Invalid center pipe flow area: {A_flow_centerpipe:.6f} m². "
+                           f"radiuscenterpipe={radiuscenterpipe:.6f} m. "
+                           f"This indicates invalid center pipe geometry.")
+        
+        # Warn if annulus is very thin (may cause numerical instability)
+        min_annulus_area_ratio = 0.01  # 1% of wellbore area
+        min_annulus_area = min_annulus_area_ratio * math.pi * radius**2
+        if A_flow_annulus < min_annulus_area:
+            print(f"[WARNING] Annulus flow area is very small ({A_flow_annulus:.6f} m² < {min_annulus_area:.6f} m²). "
+                  f"This may cause numerical instability in the solver. "
+                  f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m", flush=True)
+        
         if sbt_version == 2:
             eps_annulus = Dh_annulus*piperoughness                      # Relative roughness annulus [-]
             eps_centerpipe = 2*radiuscenterpipe*piperoughness           # Relative roughness inner pipe [-]
@@ -305,8 +342,16 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         
     elif clg_configuration == 2: # U-LOOP
 
-        interconnections = np.concatenate((np.array([len(xinj)],dtype=int), np.array([len(xprod)],dtype=int), (np.ones(numberoflaterals - 1, dtype=int) * len(xlat))))
+        # Ensure numberoflaterals is valid for interconnections calculation
+        num_lat_int = int(numberoflaterals) if numberoflaterals is not None else 1
+        num_lat_int = max(1, num_lat_int)  # Ensure at least 1
+        if num_lat_int > 1:
+            interconnections = np.concatenate((np.array([len(xinj)],dtype=int), np.array([len(xprod)],dtype=int), (np.ones(num_lat_int - 1, dtype=int) * len(xlat))))
+        else:
+            interconnections = np.concatenate((np.array([len(xinj)],dtype=int), np.array([len(xprod)],dtype=int)))
         interconnections = np.cumsum(interconnections)  # lists the indices of interconnections between inj, prod, and laterals (this will used to take care of the duplicate coordinates of the start and end points of the laterals)
+        # Use original calculation that matches Deltaz structure after deletion
+        # Use len(xlat) to match interconnections calculation (for 2D array, len() returns first dimension)
         radiusvector = np.concatenate([np.ones(len(xinj) + len(xprod) - 2) * radiusvertical, np.ones(numberoflaterals * len(xlat) - numberoflaterals) * radiuslateral])  # Stores radius of each element in a vector [m]
         Dvector = radiusvector * 2  # Diameter of each element [m]
         lateralflowallocation_norm = lateralflowallocation / np.sum(lateralflowallocation)  # Ensure the sum equals 1   
@@ -317,8 +362,15 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
             FlowDistributionMidPoints = np.ones(len(xinj) + len(xprod) - 2)
             FlowDistributionNodes = np.ones(len(xinj)+len(xprod))
             for dd in range(numberoflaterals):
-                FlowDistributionMidPoints = np.concatenate([FlowDistributionMidPoints,lateralflowmultiplier * lateralflowallocation_norm[dd] * np.ones(xlat.shape[0] - 1)])
-                FlowDistributionNodes = np.concatenate([FlowDistributionNodes,lateralflowmultiplier * lateralflowallocation_norm[dd] * np.ones(xlat.shape[0] - 2)])
+                # Ensure lateralflowallocation_norm[dd] is a scalar, not an array
+                allocation_val = lateralflowallocation_norm[dd]
+                if hasattr(allocation_val, '__len__') and not isinstance(allocation_val, str):
+                    allocation_scalar = float(np.asarray(allocation_val).item())
+                else:
+                    allocation_scalar = float(allocation_val)
+                multiplier_val = float(lateralflowmultiplier) if lateralflowmultiplier is not None else 1.0
+                FlowDistributionMidPoints = np.concatenate([FlowDistributionMidPoints, multiplier_val * allocation_scalar * np.ones(xlat.shape[0] - 1)])
+                FlowDistributionNodes = np.concatenate([FlowDistributionNodes, multiplier_val * allocation_scalar * np.ones(xlat.shape[0] - 2)])
             Area = math.pi*Dvector**2/4              #Vector with cross sectional flow area of each element at the element midpoints (all elements are assumed open hole) [m2]
             AreaNodes = math.pi*Dvectornodes**2/4  #Vector with cross sectional flow area of each element at the nodes (all elements are assumed open hole) [m2]
             eps = Dvector*piperoughness       #Vector with relative roughness at midpoint of each element [-]
@@ -330,6 +382,18 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
             mlateralold = mlateral.copy()
 
         Deltaz = np.delete(Deltaz, interconnections - 1)  # Removes the phantom elements due to duplicate coordinates
+        # radiusvector is already created with the correct length (matching Deltaz after deletion), so no deletion needed
+        Dvector = radiusvector * 2  # Diameter of each element [m]
+        
+        # Verify Dvector and Deltaz have matching lengths
+        if len(Dvector) != len(Deltaz):
+            raise ValueError(f"Dvector length ({len(Dvector)}) does not match Deltaz length ({len(Deltaz)}) after deletion. radiusvector length: {len(radiusvector)}")
+        
+        # Update Area and eps for SBT v2 after Dvector is modified
+        if sbt_version == 2:
+            Area = math.pi*Dvector**2/4              #Vector with cross sectional flow area of each element at the element midpoints (all elements are assumed open hole) [m2]
+            eps = Dvector*piperoughness       #Vector with relative roughness at midpoint of each element [-]
+        
         LoverR = Deltaz / radiusvector  # Ratio of pipe segment length to radius along the wellbore [-]
         if numberoflaterals > 1:
             DeltazOrdered = np.concatenate((Deltaz[0:(interconnections[0]-1)], Deltaz[(interconnections[1]-2):(interconnections[2]-3)], Deltaz[(interconnections[0]-1):(interconnections[1]-2)]))

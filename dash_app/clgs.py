@@ -257,22 +257,222 @@ class data:
                 hyperparam4 = reltolerance
                 hyperparam5 = maxnumberofiterations
 
-
-            # TODO: !!! ***
+            case = None
             if self.case == "coaxial":
                 case = 1
-                if PipeParam5 == "Inject in Annulus":
+                # Ensure PipeParam5 is set for coaxial configuration
+                if PipeParam5 is None:
+                    PipeParam5 = 1  # Default to "Inject in Annulus"
+                elif PipeParam5 == "Inject in Annulus":
                     PipeParam5 = 1
-                if PipeParam5 == "Inject in Center Pipe":
+                elif PipeParam5 == "Inject in Center Pipe":
                     PipeParam5 = 2
-                # print(PipeParam5)
-            #     Diameter1 = radius_vertical #radius # Diameter1/2
-            #     Diameter2 = radius_lateral #radiuscenterpipe # Diameter2/2
-            #     PipeParam3 = n_laterals #thicknesscenterpipe
-            #     PipeParam4 = lateral_flow # k_center_pipe
-            #     PipeParam5 = lateral_multiplier # coaxialflowtype
-            if self.case == "utube":
+                # If PipeParam5 is already an integer (1 or 2), keep it as is
+                elif PipeParam5 not in [1, 2]:
+                    PipeParam5 = 1  # Default to "Inject in Annulus" if invalid value
+                
+                # Ensure Diameter1 and Diameter2 have default values if None
+                # Note: radius-vertical-select returns diameters (despite name), radius-lateral-select returns radii
+                # Defaults: wellbore diameter 0.4572 m, center pipe radius 0.127 m
+                if Diameter1 is None:
+                    Diameter1 = 0.4572  # Default wellbore diameter
+                    print(f"[WARNING] Diameter1 was None for coaxial, using default: {Diameter1} m (diameter)", flush=True)
+                if Diameter2 is None:
+                    Diameter2 = 0.127  # Default center pipe radius
+                    print(f"[WARNING] Diameter2 was None for coaxial, using default: {Diameter2} m (radius)", flush=True)
+                
+                # Convert radius to diameter for Diameter2 only (center pipe)
+                # Diameter1 (wellbore) is already a diameter from radius-vertical-select
+                # Diameter2 (center pipe) is a radius from radius-lateral-select, needs conversion
+                # set_tube_geometry expects diameters and divides by 2 to get radii
+                Diameter2_radius = Diameter2  # Store original radius value for logging
+                Diameter2 = Diameter2 * 2  # Convert radius to diameter
+                # Ensure PipeParam3 (thicknesscenterpipe) has a default value if None
+                if PipeParam3 is None:
+                    PipeParam3 = 0.0127  # Default center pipe thickness (12.7 mm)
+                    print(f"[WARNING] PipeParam3 (thicknesscenterpipe) was None for coaxial, using default: {PipeParam3} m", flush=True)
+                
+                # Validate and clamp PipeParam3 to reasonable range (0.005-0.025 m)
+                try:
+                    thickness = float(PipeParam3)
+                    if thickness < 0.005 or thickness > 0.025:
+                        clamped_thickness = max(0.005, min(0.025, thickness))
+                        print(
+                            f"[WARNING] PipeParam3 (thicknesscenterpipe) out of range ({thickness:.6f} m). "
+                            f"Clamping to {clamped_thickness:.6f} m (valid range: 0.005-0.025 m)",
+                            flush=True,
+                        )
+                        PipeParam3 = clamped_thickness
+                except (TypeError, ValueError):
+                    print(f"[WARNING] Could not parse PipeParam3 ({PipeParam3}), using default 0.0127 m", flush=True)
+                    PipeParam3 = 0.0127
+                
+                # Guardrail: coaxial geometry requires inner (center pipe) diameter < outer (wellbore/annulus) diameter.
+                # Also ensure that outerradiuscenterpipe (radiuscenterpipe + thicknesscenterpipe) < radius
+                # If UI / stored values violate this, SBT2 can end up with negative/invalid annulus hydraulic diameter,
+                # which shows up as negative Reynolds numbers and "laminar flow" termination.
+                if Diameter1 is not None and Diameter2 is not None:
+                    try:
+                        d1 = float(Diameter1)
+                        d2 = float(Diameter2)
+                        thickness_val = float(PipeParam3)
+                        
+                        # Calculate radii (after set_tube_geometry divides by 2)
+                        radius_wellbore = d1 / 2
+                        radiuscenterpipe = d2 / 2
+                        outerradiuscenterpipe = radiuscenterpipe + thickness_val
+                        
+                        # Check if outerradiuscenterpipe exceeds wellbore radius
+                        if outerradiuscenterpipe >= radius_wellbore:
+                            # Need to reduce either Diameter2 or thicknesscenterpipe
+                            # Strategy: Ensure minimum flow area for annulus (not just clearance)
+                            # Minimum annulus flow area: 1e-4 m² = 100 cm²
+                            # For annulus: A = π*(r_wellbore² - r_outer²)
+                            # Solving: r_outer_max = sqrt(r_wellbore² - A_min/π)
+                            A_flow_min = 1e-4  # Minimum annulus flow area [m²]
+                            r_outer_max_sq = radius_wellbore**2 - A_flow_min / np.pi
+                            if r_outer_max_sq <= 0:
+                                # Wellbore is too small to accommodate minimum flow area
+                                error_msg = (f"Error: Wellbore diameter ({d1:.6f} m) is too small to accommodate "
+                                           f"minimum annulus flow area ({A_flow_min:.6e} m²). "
+                                           f"Minimum wellbore diameter required: {2*np.sqrt(A_flow_min/np.pi):.6f} m. "
+                                           f"Simulation terminated.")
+                                print(f"[ERROR] {error_msg}", flush=True)
+                                raise ValueError(error_msg)
+                            max_outerradius = np.sqrt(r_outer_max_sq)
+                            # Also ensure at least 5mm clearance as a safety margin
+                            min_annulus_clearance = 0.005  # 5mm minimum clearance
+                            max_outerradius = min(max_outerradius, radius_wellbore - min_annulus_clearance)
+                            
+                            if thickness_val > max_outerradius:
+                                # Thickness is too large, clamp it
+                                new_thickness = max(0.005, max_outerradius - radiuscenterpipe)
+                                if new_thickness < 0.005:
+                                    # Even with minimum thickness, we need to reduce center pipe radius
+                                    new_radiuscenterpipe = max_outerradius - 0.005
+                                    new_d2 = new_radiuscenterpipe * 2
+                                    print(
+                                        f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
+                                        f"wellbore radius ({radius_wellbore:.6f} m). Clamping Diameter2 from {d2:.6f} to {new_d2:.6f} m "
+                                        f"to ensure minimum annulus clearance. fluid={self.fluid}",
+                                        flush=True,
+                                    )
+                                    Diameter2 = new_d2
+                                else:
+                                    print(
+                                        f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
+                                        f"wellbore radius ({radius_wellbore:.6f} m). Clamping PipeParam3 from {thickness_val:.6f} to {new_thickness:.6f} m.",
+                                        flush=True,
+                                    )
+                                    PipeParam3 = new_thickness
+                            else:
+                                # Thickness is OK, but center pipe radius is too large
+                                new_radiuscenterpipe = max_outerradius - thickness_val
+                                new_d2 = new_radiuscenterpipe * 2
+                                print(
+                                    f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
+                                    f"wellbore radius ({radius_wellbore:.6f} m). Clamping Diameter2 from {d2:.6f} to {new_d2:.6f} m. fluid={self.fluid}",
+                                    flush=True,
+                                )
+                                Diameter2 = new_d2
+                        
+                        # Also check if Diameter2 >= Diameter1 (before accounting for thickness)
+                        elif d2 >= d1:
+                            # Use a more reasonable clamp: 40% of wellbore diameter, but at least 0.15m
+                            new_d2 = max(0.15, min(0.4 * d1, d1 * 0.4))
+                            print(
+                                f"[WARNING] Coaxial geometry invalid (Diameter2 >= Diameter1). "
+                                f"Clamping Diameter2 from {d2:.3f} to {new_d2:.3f}. "
+                                f"Original values: Diameter1={d1:.3f}, Diameter2={d2:.3f} "
+                                f"(radii: {d1/2:.3f}, {d2/2:.3f})",
+                                flush=True,
+                            )
+                            Diameter2 = new_d2
+                        
+                        # After any clamping, validate that flow areas are reasonable
+                        # Recalculate to get final values
+                        final_radius_wellbore = float(Diameter1) / 2
+                        final_radiuscenterpipe = float(Diameter2) / 2
+                        final_thickness = float(PipeParam3)
+                        final_outerradius = final_radiuscenterpipe + final_thickness
+                        
+                        # Calculate flow areas
+                        A_flow_annulus = np.pi * (final_radius_wellbore**2 - final_outerradius**2)
+                        A_flow_centerpipe = np.pi * final_radiuscenterpipe**2
+                        
+                        # Ensure minimum flow area to prevent extremely high velocities
+                        # CO2 requires larger flow areas due to lower density (~200-800 kg/m³ vs ~1000 kg/m³ for H2O)
+                        # For CO2, we need ~5x larger flow area to keep velocities reasonable
+                        if self.fluid == "sCO2":
+                            A_flow_min = 5e-3  # Minimum flow area for CO2 [m²] = 5000 cm² (5x larger than H2O)
+                            A_flow_min_reason = "CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), requiring larger flow areas to prevent excessive velocities"
+                        else:
+                            A_flow_min = 1e-4  # Minimum flow area for H2O [m²] = 100 cm²
+                            A_flow_min_reason = "standard minimum for H2O"
+                        
+                        if A_flow_annulus < A_flow_min or A_flow_centerpipe < A_flow_min:
+                            error_msg = (f"Error: After geometry clamping, flow areas are too small for numerical stability ({self.fluid}). "
+                                       f"A_flow_annulus={A_flow_annulus:.6e} m², A_flow_centerpipe={A_flow_centerpipe:.6e} m². "
+                                       f"Minimum required: {A_flow_min:.6e} m² ({A_flow_min_reason}). "
+                                       f"Diameter1={Diameter1:.6f} m, Diameter2={Diameter2:.6f} m, "
+                                       f"thickness={final_thickness:.6f} m. "
+                                       f"This geometry combination is not suitable for {self.fluid} simulation. "
+                                       f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
+                                       f"Simulation terminated.")
+                            print(f"[ERROR] {error_msg}", flush=True)
+                            raise ValueError(error_msg)
+                        
+                        # Pre-check: Estimate velocity for CO2 to warn about potential issues
+                        # CO2 has much lower density than H2O, so velocities will be higher
+                        if self.fluid == "sCO2" and mdot is not None:
+                            # Estimate minimum CO2 density (gas phase can be ~1-10 kg/m³, supercritical ~200-800 kg/m³)
+                            # Use conservative estimate of 200 kg/m³ for supercritical CO2, but also check gas phase (1 kg/m³)
+                            min_co2_density_supercritical = 200.0  # kg/m³ (conservative estimate for supercritical CO2)
+                            min_co2_density_gas = 1.0  # kg/m³ (worst case: gas phase CO2)
+                            
+                            # Check both annulus and center pipe velocities
+                            estimated_vel_annulus_supercritical = mdot / (A_flow_annulus * min_co2_density_supercritical)
+                            estimated_vel_annulus_gas = mdot / (A_flow_annulus * min_co2_density_gas)
+                            estimated_vel_centerpipe_supercritical = mdot / (A_flow_centerpipe * min_co2_density_supercritical)
+                            estimated_vel_centerpipe_gas = mdot / (A_flow_centerpipe * min_co2_density_gas)
+                            
+                            max_estimated_velocity = max(estimated_vel_annulus_gas, estimated_vel_centerpipe_gas)
+                            velocity_error_threshold = 600.0  # m/s - error if estimated velocity exceeds this
+                            velocity_warning_threshold = 400.0  # m/s - warn if estimated velocity exceeds this
+                            
+                            # If gas phase velocity exceeds limit, this geometry won't work
+                            if max_estimated_velocity > velocity_error_threshold:
+                                error_msg = (f"Error: Estimated CO2 velocity too high for this geometry. "
+                                           f"Estimated max velocity (gas phase): {max_estimated_velocity:.2f} m/s > {velocity_error_threshold:.2f} m/s limit. "
+                                           f"A_flow_annulus={A_flow_annulus:.6e} m², A_flow_centerpipe={A_flow_centerpipe:.6e} m², mdot={mdot} kg/s. "
+                                           f"CO2 density can be very low (~1-10 kg/m³ in gas phase), causing extremely high velocities. "
+                                           f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
+                                           f"Simulation terminated.")
+                                print(f"[ERROR] {error_msg}", flush=True)
+                                raise ValueError(error_msg)
+                            
+                            if max_estimated_velocity > velocity_warning_threshold:
+                                warning_msg = (f"[WARNING] Pre-check: Estimated CO2 velocity may be high (max={max_estimated_velocity:.1f} m/s) "
+                                             f"for geometry with A_flow_annulus={A_flow_annulus:.6e} m², A_flow_centerpipe={A_flow_centerpipe:.6e} m², mdot={mdot} kg/s. "
+                                             f"CO2 density (~200-800 kg/m³ supercritical, ~1-10 kg/m³ gas phase) is much lower than H2O (~1000 kg/m³), causing higher velocities. "
+                                             f"Annulus (gas phase): {estimated_vel_annulus_gas:.1f} m/s, Center pipe (gas phase): {estimated_vel_centerpipe_gas:.1f} m/s. "
+                                             f"Consider increasing flow area or reducing mass flow rate to avoid numerical instability.")
+                                print(warning_msg, flush=True)
+                    except (TypeError, ValueError) as e:
+                        # If parsing fails, let SBT handle validation downstream.
+                        print(f"[WARNING] Could not validate coaxial geometry: {e}", flush=True)
+                        pass
+            elif self.case == "utube":
                 case = 2
+                # Ensure Diameter1 and Diameter2 have default values if None
+                # Defaults: radius_vertical 0.35 m, radius_lateral 0.35 m
+                if Diameter1 is None:
+                    Diameter1 = 0.35  # Default vertical radius
+                    print(f"[WARNING] Diameter1 was None for utube, using default: {Diameter1} m (radius)", flush=True)
+                if Diameter2 is None:
+                    Diameter2 = 0.35  # Default lateral radius
+                    print(f"[WARNING] Diameter2 was None for utube, using default: {Diameter2} m (radius)", flush=True)
+                
                 # Diameter1 = radius_vertical
                 # Diameter2 = radius_lateral
                 # PipeParam3 = n_laterals
@@ -284,6 +484,8 @@ class data:
                 allocation_per_lateral = 1.0 / num_laterals
                 PipeParam4 = [allocation_per_lateral] * num_laterals
                 # PipeParam5 = lateral_multiplier
+            else:
+                raise ValueError(f"Unsupported case '{self.case}' for SBT run")
 
             start = time.time()
             
@@ -309,7 +511,33 @@ class data:
                     # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                 )
                 
+                # Validate Tout immediately after simulation
+                if Tout is not None and len(Tout) > 0:
+                    Tout_arr = np.array(Tout)
+                    if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
+                        np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
+                        print(f"[ERROR] interp_outlet_states: Simulation returned invalid Tout values. "
+                              f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, "
+                              f"case={self.case}, fluid={self.fluid}, Diameter1={Diameter1}, Diameter2={Diameter2}, "
+                              f"mdot={mdot}, sbt_version={sbt_version}", flush=True)
+                        # Return empty arrays to signal failure
+                        return np.array([]), np.array([]), np.array([])
+                elif Tout is None or len(Tout) == 0:
+                    print(f"[ERROR] interp_outlet_states: Simulation returned empty Tout. "
+                          f"case={self.case}, fluid={self.fluid}, sbt_version={sbt_version}", flush=True)
+                    return np.array([]), np.array([]), np.array([])
+                
             except Exception as e:
+                # Log the exception before re-raising
+                if self.case == "coaxial":
+                    print(f"[ERROR] clgs.interp_outlet_states: Exception in {self.fluid} coaxial simulation: {type(e).__name__}: {e}", flush=True)
+                    print(f"[ERROR]   Exception occurred with parameters:", flush=True)
+                    print(f"[ERROR]     Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam5={PipeParam5}", flush=True)
+                    print(f"[ERROR]     mdot={mdot} kg/s, Tinj={Tinj} K, fluid={fluid}, sbt_version={sbt_version}", flush=True)
+                    print(f"[ERROR]     L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
+                    import traceback
+                    print(f"[ERROR]   Full traceback:", flush=True)
+                    traceback.print_exc()
                 # Re-raise the exception so the calling code knows it failed
                 raise
             
@@ -317,6 +545,12 @@ class data:
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
                 # constant_pressure = 22228604.37405011
                 Pout = constant_pressure * np.ones_like(Tout)
+            
+            # Check if arrays are empty before slicing
+            if len(times) < 15:
+                print(f"[ERROR] interp_outlet_states: times array too short ({len(times)}), cannot slice [14:]. "
+                      f"case={self.case}, sbt_version={sbt_version}", flush=True)
+                return np.array([]), np.array([]), np.array([])
                 
             end = time.time()
             # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
@@ -325,6 +559,15 @@ class data:
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
+            
+            # Final validation after slicing
+            if Tout is not None and len(Tout) > 0:
+                Tout_arr = np.array(Tout)
+                if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
+                    np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
+                    print(f"[ERROR] interp_outlet_states: Tout contains invalid values after slicing. "
+                          f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, length={len(Tout_arr)}", flush=True)
+                    return np.array([]), np.array([]), np.array([])
             
             # Note: run_sbt_final already returns times in years (converted from seconds)
             # Debug: Check time range for SBT2
@@ -520,12 +763,15 @@ class data:
 
         else:
 
-            calc = (
-                enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in)
-            ) / 1000.0
+            # Suppress warnings for NaN values in calculations (will be handled by contour NaN filling)
+            with np.errstate(invalid='ignore'):
+                calc = (
+                    enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in)
+                ) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
             kWe = mdot * calc
-            calc = (enthalpy_out - enthalpy_in) / 1000.0
+            with np.errstate(invalid='ignore'):
+                calc = (enthalpy_out - enthalpy_in) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
             kWt = mdot * calc
 
