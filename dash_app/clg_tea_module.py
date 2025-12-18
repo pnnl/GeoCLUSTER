@@ -260,11 +260,40 @@ class TEA:
 
 
 
-    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict):
+    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict, HyperParam1=None):
         
-        # For SBT2 CO2, set inlet pressure to 100 bar (1e7 Pa) to match simulation default
-        if (model == "SBT V2.0" or model == 2) and self.Fluid == 2:
-            self.P_in = 1e7  # 100 bar = 10 MPa (matches SBT2 default)
+        # Set inlet pressure based on model type:
+        # - HDF5: Use Pinj from database (stored in data objects)
+        # - SBT V2.0: Use HyperParam1 (inlet pressure in MPa) from simulation
+        # - SBT V1.0: Keep default 200 bar (2e7 Pa) - SBT V1.0 doesn't use HyperParam1 as inlet pressure
+        if model == "HDF5":
+            # For HDF5, use the actual Pinj from the database
+            if self.Fluid == 1:  # H2O
+                if self.Configuration == 1:  # U-tube
+                    self.P_in = u_H2O.Pinj if u_H2O is not None and hasattr(u_H2O, 'Pinj') else 2e7
+                else:  # Coaxial
+                    self.P_in = c_H2O.Pinj if c_H2O is not None and hasattr(c_H2O, 'Pinj') else 2e7
+            elif self.Fluid == 2:  # sCO2
+                if self.Configuration == 1:  # U-tube
+                    self.P_in = u_sCO2.Pinj if u_sCO2 is not None and hasattr(u_sCO2, 'Pinj') else 2e7
+                else:  # Coaxial
+                    self.P_in = c_sCO2.Pinj if c_sCO2 is not None and hasattr(c_sCO2, 'Pinj') else 2e7
+        elif model == "SBT V2.0" or model == 2:
+            # For SBT V2.0, use the actual HyperParam1 value (inlet pressure in MPa) from the simulation
+            # Convert from MPa to Pa: HyperParam1 is in MPa, so multiply by 1e6 to get Pa
+            # Default to 10 MPa (100 bar = 1e7 Pa) if not provided
+            if HyperParam1 is not None:
+                try:
+                    # HyperParam1 is in MPa, convert to Pa (1 MPa = 1e6 Pa)
+                    inlet_pressure_mpa = float(HyperParam1)
+                    self.P_in = inlet_pressure_mpa * 1e6  # Convert MPa to Pa
+                except (TypeError, ValueError):
+                    # Default to 10 MPa = 100 bar = 1e7 Pa if conversion fails
+                    self.P_in = 1e7
+            else:
+                # Default to 10 MPa = 100 bar = 1e7 Pa if not provided
+                self.P_in = 1e7
+        # For SBT V1.0, keep the default 200 bar (2e7 Pa) - no change needed
         
         hdf5_times = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 
                         2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75,

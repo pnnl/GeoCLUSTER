@@ -379,6 +379,13 @@ def slider_card():
                                                                             min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
                                                             ]),
                                                     html.Div(
+                                                            id="lat-flow-container",
+                                                            style=div_none_style,
+                                                            children=[
+                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+                                                            ]),
+                                                    html.Div(
                                                             id="lat-allo-container",
                                                             children=[ 
                                                                 input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
@@ -486,13 +493,6 @@ def slider_card():
                                                                 dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
                                                                                         options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
                                                         ]),
-                                                    html.Div(
-                                                            id="lat-flow-container",
-                                                            style=div_none_style,
-                                                            children=[
-                                                                input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_block_style)
-                                                            ]),
                                                 ]
 
                                             ),

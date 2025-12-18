@@ -1012,6 +1012,66 @@ def toggle_collapse(n, is_open):
 
 
 @app.callback(
+    [
+        Output(component_id="model-select", component_property="options"),
+        Output(component_id="model-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="fluid-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="fluid-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_state):
+    """
+    Update model-select options and value based on fluid selection and model selection.
+    When Simulator is selected, automatically choose SBT V1.0 for H2O, SBT V2.0 for All/sCO2.
+    """
+    from dropdowns import get_model_options
+    
+    # Determine which input triggered the callback
+    trigger_id = ctx.triggered_id if ctx.triggered_id else None
+    
+    # Get current fluid value (use the one from the input, not state)
+    current_fluid = fluid if fluid is not None else fluid_state
+    
+    # Get updated options based on current fluid
+    new_options = get_model_options(current_fluid)
+    
+    # If model-select was triggered (user changed model dropdown)
+    if trigger_id == "model-select":
+        # User selected a model - if they selected a Simulator, set to correct version
+        if model_selection in ("SBT V1.0", "SBT V2.0"):
+            # User selected Simulator, determine correct version based on fluid
+            if current_fluid == "H2O":
+                new_value = "SBT V1.0"
+            else:  # "All" or "sCO2"
+                new_value = "SBT V2.0"
+        else:
+            # User selected Database
+            new_value = "HDF5"
+    # If fluid-select was triggered (user changed fluid)
+    elif trigger_id == "fluid-select":
+        # If current model is a Simulator, update to correct version based on new fluid
+        if model_selection in ("SBT V1.0", "SBT V2.0"):
+            if current_fluid == "H2O":
+                new_value = "SBT V1.0"
+            else:  # "All" or "sCO2"
+                new_value = "SBT V2.0"
+        else:
+            # Keep Database selection
+            new_value = model_selection
+    else:
+        # Unknown trigger, keep current selection
+        new_value = model_selection
+    
+    return new_options, new_value
+
+
+@app.callback(
     Output(component_id="see-all-params-button-container", component_property="style"),
     [Input(component_id="model-select", component_property="value")],
     prevent_initial_call=False,
@@ -1161,6 +1221,28 @@ def update_tabs(selected_model):
 
 
 @app.callback(
+    Output(component_id="tabs", component_property="value", allow_duplicate=True),
+    [
+        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="tabs", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def switch_tab_on_model_change(model, current_tab):
+    """
+    Automatically switch to first tab (about-tab) when switching from Database to Simulator
+    if user is currently on the subsurface contours tab (energy-tab).
+    """
+    # Only trigger if switching from Database to Simulator
+    if model in ("SBT V1.0", "SBT V2.0") and current_tab == "energy-tab":
+        return "about-tab"
+    else:
+        raise PreventUpdate
+
+
+@app.callback(
     [
         Output(
             component_id="fluid-select", component_property="value", allow_duplicate=True
@@ -1240,10 +1322,12 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True,
 )
 def update_working_fluid(model, fluid_store, current_fluid):
-    if model == "SBT V2.0":
+    # When Simulator is selected (SBT V1.0 or SBT V2.0), allow all fluid options
+    # The model will automatically switch based on fluid selection
+    if model in ("SBT V2.0", "SBT V1.0"):
         fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
-            # Preserve previously selected fluid if it's valid for this model
+            # Preserve previously selected fluid if it's valid
             if fluid_store is None:
                 fluid_store = {"preferred": "All", "last_specific": "H2O"}
             preferred = fluid_store.get("preferred", "All")
@@ -1258,13 +1342,6 @@ def update_working_fluid(model, fluid_store, current_fluid):
                 selected_fluid = "All"
             
             return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
-        else:
-            raise PreventUpdate
-    elif model == "SBT V1.0":
-        fluid_list = ["H2O"]
-        if ctx.triggered_id == "model-select":
-            # SBT V1.0 only supports H2O
-            return "H2O", [{"label": i, "value": i} for i in fluid_list]
         else:
             raise PreventUpdate
     else:
@@ -1290,17 +1367,8 @@ def change_dropdown(at, fluid, model, fluid_store):
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
-    # Handle SBT V1.0 - only supports H2O
-    if model == "SBT V1.0":
-        fluid_list = ["H2O"]
-        interpol_list = ["True"]
-        return (
-            [{"label": "H2O", "value": "H2O"}],
-            "H2O",
-            [{"label": i, "value": i} for i in interpol_list],
-            interpol_list[0],
-            {"preferred": "H2O", "last_specific": "H2O"},
-        )
+    # When Simulator is selected (SBT V1.0 or SBT V2.0), allow all fluid options
+    # The model will automatically switch based on fluid selection via the update_model_based_on_fluid_and_selection callback
 
     if fluid_store is None:
         fluid_store = {"preferred": "All", "last_specific": "H2O"}
@@ -1317,9 +1385,13 @@ def change_dropdown(at, fluid, model, fluid_store):
         preferred = new_store["preferred"]
         last_specific = new_store["last_specific"]
 
+    # Determine fluid list based on tab and model
+    # For Simulator (SBT V1.0 or SBT V2.0), always allow all options
+    # The model will automatically switch when fluid changes
     if at == "energy-tab":
         fluid_list = ["H2O", "sCO2"]
     else:
+        # Allow all options for Simulator models, they will auto-switch
         fluid_list = ["All", "H2O", "sCO2"]
 
     interpol_list = ["True"]
@@ -3102,17 +3174,17 @@ def update_econ_plots(
         else:
             is_plot_ts = False
         
-        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+        # For SBT V2.0: HyperParam1 = Inlet Pressure (in MPa), HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
-            # Ensure HyperParam1 (Inlet Pressure) is a float
+            # Ensure HyperParam1 (Inlet Pressure) is a float (in MPa)
             try:
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
             hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
         else:
-            hyperparam1_value = HyperParam1
+            hyperparam1_value = None  # Not used for HDF5 or SBT V1.0
             hyperparam3_value = HyperParam3
         
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
@@ -3143,6 +3215,7 @@ def update_econ_plots(
                 tmatrix_pathname,
                 model,
                 is_plot_ts_check=is_plot_ts,
+                HyperParam1=hyperparam1_value,
             )
         )
 
@@ -3467,9 +3540,10 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
         Input(component_id="econ-memory", component_property="data"),
         Input(component_id="econ-results", component_property="data"),
         Input(component_id="fluid-select", component_property="value"),
+        Input(component_id="end-use-select", component_property="value"),
     ],
 )
-def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
+def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid, end_use):
     warning_div3 = html.Div(style={"display": "none"})
 
     # Handle None or missing data
@@ -3490,9 +3564,11 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
         "color": darkergrey,
     }
 
-    # Safely check for LCOE values
+    # Safely check for LCOE and LCOH values
     lcoe_sco2 = levelized_cost_dict.get("LCOE sCO2", "-")
     lcoe_h2o = levelized_cost_dict.get("LCOE H2O", "-")
+    lcoh_sco2 = levelized_cost_dict.get("LCOH sCO2", "-")
+    lcoh_h2o = levelized_cost_dict.get("LCOH H2O", "-")
     
     # Helper function to check if LCOE value is valid (numeric and reasonable)
     def is_valid_lcoe(value):
@@ -3508,8 +3584,25 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
         except (ValueError, TypeError):
             return False
     
+    # Helper function to check if LCOH value is valid (numeric and reasonable)
+    def is_valid_lcoh(value):
+        if value is None or value == "-" or value == "Insufficient Inputs":
+            return False
+        if value == "9999.00" or value == "9999":
+            return False
+        try:
+            # Check if it's a valid number
+            num_val = float(value)
+            # Valid if it's a positive number less than 9999
+            return 0 < num_val < 9999
+        except (ValueError, TypeError):
+            return False
+    
     # Check if we have any valid LCOE values
     has_valid_lcoe = is_valid_lcoe(lcoe_sco2) or is_valid_lcoe(lcoe_h2o)
+    
+    # Check if we have any valid LCOH values
+    has_valid_lcoh = is_valid_lcoh(lcoh_sco2) or is_valid_lcoh(lcoh_h2o)
     
     # Check if a calculation has been attempted (to avoid showing warning on initial load)
     # A calculation has been attempted if:
@@ -3548,6 +3641,20 @@ def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid):
         should_check_lcoe = lcoe_sco2_is_invalid
     else:  # fluid == "All"
         should_check_lcoe = lcoe_sco2_is_invalid or lcoe_h2o_is_invalid
+    
+    # Only show LCOE warning if end-use is "Electricity" or "All"
+    # If end-use is "Heating", LCOE is not relevant, so don't show the warning
+    if end_use == "Heating":
+        return warning_div3  # Return empty warning div for heating end-use
+    
+    # Only show LCOH warning if end-use is "Heating" or "All"
+    # If end-use is "Electricity", LCOH is not relevant, so don't show the warning
+    # (Note: Currently this callback only shows LCOE warnings, but adding this check
+    # for consistency and future-proofing in case LCOH warnings are added)
+    if end_use == "Electricity":
+        # Check if there are LCOH-related issues that should be ignored
+        # For now, this callback only handles LCOE, but we return early to be consistent
+        pass  # Continue to check LCOE warnings below
     
     # Show warning if the relevant LCOE is invalid and a calculation was attempted
     # This helps users understand why a specific fluid's LCOE isn't calculating

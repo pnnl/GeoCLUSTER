@@ -36,7 +36,8 @@ def create_teaobject(TandP_dict,
                      properties_H2O_pathname, 
                      properties_CO2v2_pathname, 
                      additional_properties_CO2v2_pathname,
-                     is_heating=False, is_H20=False
+                     is_heating=False, is_H20=False,
+                     HyperParam1=None
                      ):
     
     # ------------------------------------------
@@ -151,7 +152,7 @@ def create_teaobject(TandP_dict,
 
     # get interpolated temperature and pressure array
     try:
-        teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict)
+        teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict, HyperParam1=HyperParam1)
         teaobject.calculateLC() # ERROR STARTS HERE
     except Exception as e:
         print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}", flush=True)
