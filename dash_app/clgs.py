@@ -9,6 +9,45 @@ import CoolProp.CoolProp as CP
 import itertools as iter
 from sbt_v27 import run_sbt as run_sbt_final
 import time
+from functools import lru_cache
+import hashlib
+import pickle
+
+# Global cache for SBT calculations
+_sbt_cache = {}
+_cache_max_size = 50  # Limit cache size to prevent memory issues
+
+def _make_cache_key(*args, **kwargs):
+    """Create a hash key from function arguments for caching"""
+    # Convert all arguments to a tuple of hashable values
+    key_data = []
+    for arg in args:
+        if isinstance(arg, (int, float, str, bool, type(None))):
+            key_data.append(arg)
+        elif isinstance(arg, np.ndarray):
+            key_data.append(tuple(arg.flatten()[:10]))  # Use first 10 elements for arrays
+        else:
+            key_data.append(str(arg))
+    for k, v in sorted(kwargs.items()):
+        if isinstance(v, (int, float, str, bool, type(None))):
+            key_data.append((k, v))
+        elif isinstance(v, np.ndarray):
+            key_data.append((k, tuple(v.flatten()[:10])))
+        else:
+            key_data.append((k, str(v)))
+    return hashlib.md5(pickle.dumps(tuple(key_data))).hexdigest()
+
+def _get_cached_result(cache_key):
+    """Get cached result if available"""
+    return _sbt_cache.get(cache_key)
+
+def _set_cached_result(cache_key, result):
+    """Store result in cache, with size limit"""
+    if len(_sbt_cache) >= _cache_max_size:
+        # Remove oldest entry (simple FIFO)
+        oldest_key = next(iter(_sbt_cache))
+        del _sbt_cache[oldest_key]
+    _sbt_cache[cache_key] = result
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -487,59 +526,83 @@ class data:
             else:
                 raise ValueError(f"Unsupported case '{self.case}' for SBT run")
 
-            start = time.time()
+            # Create cache key from all parameters
+            cache_key = _make_cache_key(
+                sbt_version=sbt_version, mesh=mesh, hyperparam1=hyperparam1, hyperparam2=hyperparam2,
+                hyperparam3=hyperparam3, hyperparam4=hyperparam4, hyperparam5=hyperparam5,
+                accuracy=accuracy, case=case, mdot=mdot, Tinj=Tinj, fluid=fluid,
+                L1=L1, L2=L2, Diameter1=Diameter1, Diameter2=Diameter2,
+                PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
+                Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
+            )
             
-            # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
-
-            try:
-                times, Tout, Pout = run_sbt_final(
-                    ## Model Specifications 
-                    sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
-                    HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
-                    accuracy=accuracy,
-
-                    ## Operations
-                    clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
-                    DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
-                    Diameter1=Diameter1, Diameter2=Diameter2, 
-                    PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
-                    # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
-                    PipeParam5=PipeParam5, ## Tube Geometry
-
-                    ## Geologic Properties
-                    Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
-                    # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
-                )
+            # Check cache first
+            cached_result = _get_cached_result(cache_key)
+            if cached_result is not None:
+                print(f"[CACHE HIT] Reusing cached SBT result for parameters", flush=True)
+                times, Tout, Pout = cached_result
+            else:
+                start = time.time()
                 
-                # Validate Tout immediately after simulation
-                if Tout is not None and len(Tout) > 0:
-                    Tout_arr = np.array(Tout)
-                    if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
-                        np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                        print(f"[ERROR] interp_outlet_states: Simulation returned invalid Tout values. "
-                              f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, "
-                              f"case={self.case}, fluid={self.fluid}, Diameter1={Diameter1}, Diameter2={Diameter2}, "
-                              f"mdot={mdot}, sbt_version={sbt_version}", flush=True)
-                        # Return empty arrays to signal failure
-                        return np.array([]), np.array([]), np.array([])
-                elif Tout is None or len(Tout) == 0:
-                    print(f"[ERROR] interp_outlet_states: Simulation returned empty Tout. "
-                          f"case={self.case}, fluid={self.fluid}, sbt_version={sbt_version}", flush=True)
+                # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
+
+                try:
+                    times, Tout, Pout = run_sbt_final(
+                        ## Model Specifications 
+                        sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
+                        HYPERPARAM3=hyperparam3, HYPERPARAM4=hyperparam4, HYPERPARAM5=hyperparam5, 
+                        accuracy=accuracy,
+
+                        ## Operations
+                        clg_configuration=case, mdot=mdot, Tinj=Tinj, fluid=fluid, ## Operations
+                        DrillingDepth_L1=L1, HorizontalExtent_L2=L2, #BoreholeDiameter=D, ## Wellbore Geometry
+                        Diameter1=Diameter1, Diameter2=Diameter2, 
+                        PipeParam3=PipeParam3, PipeParam4=PipeParam4, 
+                        # PipeParam3=3, PipeParam4=[1/3,1/3,1/3], 
+                        PipeParam5=PipeParam5, ## Tube Geometry
+
+                        ## Geologic Properties
+                        Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
+                        # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
+                    )
+                    
+                    # Cache the result if valid (before validation)
+                    if Tout is not None and len(Tout) > 0:
+                        _set_cached_result(cache_key, (times, Tout, Pout))
+                        end = time.time()
+                        print(f"[CACHE MISS] SBT calculation took {end-start:.2f}s, cached result", flush=True)
+                except Exception as e:
+                    # Log the exception before re-raising
+                    if self.case == "coaxial":
+                        print(f"[ERROR] clgs.interp_outlet_states: Exception in {self.fluid} coaxial simulation: {type(e).__name__}: {e}", flush=True)
+                        print(f"[ERROR]   Exception occurred with parameters:", flush=True)
+                        print(f"[ERROR]     Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam5={PipeParam5}", flush=True)
+                        print(f"[ERROR]     mdot={mdot} kg/s, Tinj={Tinj} K, fluid={fluid}, sbt_version={sbt_version}", flush=True)
+                        print(f"[ERROR]     L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
+                        import traceback
+                        print(f"[ERROR]   Full traceback:", flush=True)
+                        traceback.print_exc()
+                    # Re-raise the exception so the calling code knows it failed
+                    raise
+            
+            # Validate Tout immediately after simulation (for both cached and new results)
+            if Tout is not None and len(Tout) > 0:
+                Tout_arr = np.array(Tout)
+                if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
+                    np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
+                    print(f"[ERROR] interp_outlet_states: Simulation returned invalid Tout values. "
+                          f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, "
+                          f"case={self.case}, fluid={self.fluid}, Diameter1={Diameter1}, Diameter2={Diameter2}, "
+                          f"mdot={mdot}, sbt_version={sbt_version}", flush=True)
+                    # Remove invalid result from cache
+                    if cache_key in _sbt_cache:
+                        del _sbt_cache[cache_key]
+                    # Return empty arrays to signal failure
                     return np.array([]), np.array([]), np.array([])
-                
-            except Exception as e:
-                # Log the exception before re-raising
-                if self.case == "coaxial":
-                    print(f"[ERROR] clgs.interp_outlet_states: Exception in {self.fluid} coaxial simulation: {type(e).__name__}: {e}", flush=True)
-                    print(f"[ERROR]   Exception occurred with parameters:", flush=True)
-                    print(f"[ERROR]     Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam5={PipeParam5}", flush=True)
-                    print(f"[ERROR]     mdot={mdot} kg/s, Tinj={Tinj} K, fluid={fluid}, sbt_version={sbt_version}", flush=True)
-                    print(f"[ERROR]     L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
-                    import traceback
-                    print(f"[ERROR]   Full traceback:", flush=True)
-                    traceback.print_exc()
-                # Re-raise the exception so the calling code knows it failed
-                raise
+            elif Tout is None or len(Tout) == 0:
+                print(f"[ERROR] interp_outlet_states: Simulation returned empty Tout. "
+                      f"case={self.case}, fluid={self.fluid}, sbt_version={sbt_version}", flush=True)
+                return np.array([]), np.array([]), np.array([])
             
             if Pout is None:
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
@@ -706,15 +769,19 @@ class data:
         Tout,
         Pout,
         Tamb=300.0, # AB: is this surface temperature? What is Tamb?
+        Pinj=None,  # Optional inlet pressure override (for SBT models)
     ):
 
         mdot = point[0]
         Tinj = point[5]
+        
+        # Use provided Pinj if given (for SBT models), otherwise use database value
+        inlet_pressure = Pinj if Pinj is not None else self.Pinj
 
         enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
-        enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+        enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
-        entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+        entropy_in = CP.PropsSI("S", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
 
         kWe = (
             mdot
@@ -725,19 +792,22 @@ class data:
 
         return kWe, kWt
 
-    def interp_kW_contour(self, param, point, Tout, Pout, Tamb=300.0):
+    def interp_kW_contour(self, param, point, Tout, Pout, Tamb=300.0, Pinj=None):
 
         mdot = self.mdot
         Tinj = point[4]
+        
+        # Use provided Pinj if given (for SBT models), otherwise use database value
+        inlet_pressure = Pinj if Pinj is not None else self.Pinj
 
         accept_one_dim_only = False
 
         try:  # PropsSI accepts multidim for Python 3.10 only
 
             enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
-            enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+            enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
             entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
-            entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+            entropy_in = CP.PropsSI("S", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
 
         except Exception:  # PropsSI accepts only one dim for Python 3.8, 3.9. 3.11
 
@@ -748,9 +818,9 @@ class data:
             Tout = Tout.flatten(order="C")
             Pout = Pout.flatten(order="C")
             enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
-            enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+            enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
             entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
-            entropy_in = CP.PropsSI("S", "T", Tinj, "P", self.Pinj, self.CP_fluid)
+            entropy_in = CP.PropsSI("S", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
 
         if not accept_one_dim_only:
 

@@ -130,6 +130,18 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sbt_version = 2
     else:
         sbt_version = 0
+    
+    # When "All" fluid is selected with Simulator, we need SBT V2.0 for sCO2 calculations
+    # Override sbt_version for each fluid based on what's needed
+    # (This handles cases where the model hasn't updated yet due to callback timing)
+    sbt_version_sco2 = sbt_version
+    sbt_version_h2o = sbt_version
+    if fluid == "All":
+        # When "All" is selected, sCO2 requires SBT V2.0 (SBT V1.0 doesn't support sCO2)
+        # For H2O, we can use either, but prefer SBT V2.0 when "All" is selected for consistency
+        if model in ("SBT V1.0", "SBT V2.0"):
+            sbt_version_sco2 = 2  # Always use SBT V2.0 for sCO2
+            sbt_version_h2o = 2   # Use SBT V2.0 for H2O when "All" is selected (supports both)
 
     mean_H2O_Tout = "-"
     mean_H2O_Pout = "-"
@@ -216,13 +228,15 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             # Handle each fluid separately so one failure doesn't prevent the other from running
             if fluid == "sCO2" or fluid == "All":
                 try:
-                    sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version,
+                    sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version_sco2,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5
                                                         )
-                    sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
+                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                 except Exception as e:
                     sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
@@ -235,12 +249,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             
             if fluid == "H2O" or fluid == "All":
                 try:
-                    H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version,
+                    H2O_Tout, H2O_Pout, time = u_H2O.interp_outlet_states(point, sbt_version_h2o,
                                                         Tsurf, c_m, rho_m, 
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
-                    H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout)
+                    # For SBT H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    Pinj_h2o = (float(HyperParam1) * 1e6) if (sbt_version_h2o > 0 and HyperParam1 is not None) else None
+                    H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
                 except Exception as e:
                     _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
@@ -279,7 +295,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             
             if fluid == "sCO2" or fluid == "All":
                 try:
-                    sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version,
+                    sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version_sco2,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
@@ -293,7 +309,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             print(f"[ERROR] Coaxial sCO2_Tout contains invalid values. Min={np.min(sCO2_Tout_arr):.2f}K, Max={np.max(sCO2_Tout_arr):.2f}K. Setting to blank.", flush=True)
                             raise ValueError(f"Invalid temperature values in sCO2_Tout: min={np.min(sCO2_Tout_arr):.2f}K, max={np.max(sCO2_Tout_arr):.2f}K")
                     
-                    sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout)
+                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
+                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                     # Store sCO2 time for later use
                     if sCO2_time is not None:
@@ -317,12 +335,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
                         print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
                 try:
-                    H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version,
+                    H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version_h2o,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                             mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
-                    H2O_kWe, H2O_kWt = c_H2O.interp_kW(point,H2O_Tout, H2O_Pout )
+                    # For SBT H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    Pinj_h2o = (float(HyperParam1) * 1e6) if (sbt_version_h2o > 0 and HyperParam1 is not None) else None
+                    H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
                     # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
                     if not sCO2_success and H2O_time is not None:
@@ -933,7 +953,8 @@ def generate_econ_lineplots(TandP_dict,
                             additional_properties_CO2v2_pathname,
                             tmatrix_pathname,
                             model,
-                            is_plot_ts_check
+                            is_plot_ts_check,
+                            HyperParam1=None
                             ):
 
     # -----------------------------------------------------------------------------------------------------------------
@@ -1030,7 +1051,8 @@ def generate_econ_lineplots(TandP_dict,
                                                         properties_H2O_pathname, 
                                                         properties_CO2v2_pathname, 
                                                         additional_properties_CO2v2_pathname,
-                                                        is_heating=True)
+                                                        is_heating=True,
+                                                        HyperParam1=HyperParam1)
                 
                 if teaobj_sCO2 is None:
                     lcoh_sCO2 = "Insufficient Inputs"
@@ -1125,7 +1147,8 @@ def generate_econ_lineplots(TandP_dict,
                                                     properties_H2O_pathname, 
                                                     properties_CO2v2_pathname, 
                                                     additional_properties_CO2v2_pathname,
-                                                    is_H20=True, is_heating=True
+                                                    is_H20=True, is_heating=True,
+                                                    HyperParam1=HyperParam1
                                                     )
                 
                 if teaobj_H2O is None:
@@ -1217,7 +1240,8 @@ def generate_econ_lineplots(TandP_dict,
                                                     Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure,
                                                     properties_H2O_pathname, 
                                                     properties_CO2v2_pathname, 
-                                                    additional_properties_CO2v2_pathname)
+                                                    additional_properties_CO2v2_pathname,
+                                                    HyperParam1=HyperParam1)
                 
                 if teaobj_sCO2_electricity is None:
                     lcoe_sCO2 = "Insufficient Inputs"
@@ -1320,7 +1344,8 @@ def generate_econ_lineplots(TandP_dict,
                                                         properties_H2O_pathname, 
                                                         properties_CO2v2_pathname, 
                                                         additional_properties_CO2v2_pathname,
-                                                        is_H20=True
+                                                        is_H20=True,
+                                                        HyperParam1=HyperParam1
                                                         )
                 
                 if teaobj_H2O is None:

@@ -9,12 +9,41 @@ from info_popups import create_info_button
 # Define dropdown options.
 # ---------------------------
 
-model_list = ["HDF5", "SBT V1.0", "SBT V2.0"]
-model_labels = {
-    "HDF5": "Database (H2O & CO2)",
-    "SBT V1.0": "Simulator (H2O only)",
-    "SBT V2.0": "Simulator (H2O & CO2)"
-}
+# User-facing model options - these are the labels shown to users
+# The values are internal model names, but we'll update them dynamically based on fluid
+def get_model_options(fluid="All"):
+    """
+    Get model dropdown options based on current fluid selection.
+    For Simulator, the value depends on fluid: H2O -> SBT V1.0, All/sCO2 -> SBT V2.0
+    """
+    simulator_value = "SBT V1.0" if fluid == "H2O" else "SBT V2.0"
+    return [
+        {"label": "Database", "value": "HDF5"},
+        {"label": "Simulator", "value": simulator_value}
+    ]
+
+# Helper function to get internal model name based on user selection and fluid
+def get_internal_model(user_model, fluid):
+    """
+    Maps user-facing model selection to internal model name.
+    
+    Args:
+        user_model: "HDF5" (Database) or "Simulator"
+        fluid: "All", "H2O", or "sCO2"
+    
+    Returns:
+        Internal model name: "HDF5", "SBT V1.0", or "SBT V2.0"
+    """
+    if user_model == "HDF5":
+        return "HDF5"
+    elif user_model == "Simulator":
+        # For Simulator, determine version based on fluid
+        if fluid == "H2O":
+            return "SBT V1.0"
+        else:  # "All" or "sCO2"
+            return "SBT V2.0"
+    else:
+        return "HDF5"  # Default fallback
 interp_list = ["True", "False"]
 case_list = ["utube", "coaxial"]
 fluid_list = ["All", "H2O", "sCO2"]
@@ -47,8 +76,8 @@ def dropdown_card():
                                 ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                     id="model-select",
-                                    options=[{"label": model_labels[i], "value": i} for i in model_list],
-                                    value=model_list[0],
+                                    options=get_model_options(),  # Will be updated dynamically
+                                    value="HDF5",  # Start with Database
                                     clearable=False,
                                     searchable=False
                                 ),
