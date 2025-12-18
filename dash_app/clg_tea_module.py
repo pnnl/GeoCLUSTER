@@ -321,18 +321,15 @@ class TEA:
             hdf5_times_array = np.array(hdf5_times)
             if len(time_arr) == len(hdf5_times_array) and np.allclose(time_arr, hdf5_times_array, rtol=1e-5):
                 # Already on the correct time grid, use directly
-                print(f"[DEBUG] getTandP (H2O): time_arr already matches hdf5_times, using arrays directly", flush=True)
                 self.Tout = Tout_arr
                 self.Pout = Pout_arr
             else:
                 # Need to interpolate onto hdf5_times
-                print(f"[DEBUG] getTandP (H2O): Interpolating from time_arr (len={len(time_arr)}, range=[{np.min(time_arr):.2f}, {np.max(time_arr):.2f}]) to hdf5_times (len={len(hdf5_times_array)}, range=[{np.min(hdf5_times_array):.2f}, {np.max(hdf5_times_array):.2f}])", flush=True)
                 f_T = interp1d(time_arr, Tout_arr, fill_value="extrapolate", bounds_error=False) # sbt
                 f_P = interp1d(time_arr, Pout_arr, fill_value="extrapolate", bounds_error=False) # sbt
                 try:
                     self.Tout = f_T(hdf5_times_array)
                     self.Pout = f_P(hdf5_times_array)
-                    print(f"[DEBUG] getTandP (H2O): After interpolation - Tout min={np.min(self.Tout):.2f}K, max={np.max(self.Tout):.2f}K, length={len(self.Tout)}", flush=True)
                 except Exception as e:
                     print(f"[ERROR] Interpolation failed in getTandP (H2O): {e}", flush=True)
                     self.Tout = Tout_arr
@@ -381,15 +378,10 @@ class TEA:
             
             if time_arr_matches:
                 # Already on the correct time grid, use directly
-                print(f"[DEBUG] getTandP (CO2): time_arr matches hdf5_times (len={len(time_arr)}, range=[{np.min(time_arr):.2f}, {np.max(time_arr):.2f}]), using arrays directly", flush=True)
-                print(f"[DEBUG] getTandP (CO2): Tout_arr before use - min={np.min(Tout_arr):.2f}K, max={np.max(Tout_arr):.2f}K, length={len(Tout_arr)}", flush=True)
                 self.Tout = Tout_arr
                 self.Pout = Pout_arr
             else:
                 # Need to interpolate onto hdf5_times
-                print(f"[DEBUG] getTandP (CO2): Interpolating from time_arr (len={len(time_arr)}, range=[{np.min(time_arr):.2f}, {np.max(time_arr):.2f}]) to hdf5_times (len={len(hdf5_times_array)}, range=[{np.min(hdf5_times_array):.2f}, {np.max(hdf5_times_array):.2f}])", flush=True)
-                print(f"[DEBUG] getTandP (CO2): Tout_arr before interpolation - min={np.min(Tout_arr):.2f}K, max={np.max(Tout_arr):.2f}K, length={len(Tout_arr)}", flush=True)
-                
                 # Check if Tout_arr contains valid values before interpolation
                 if np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or np.any(Tout_arr < 200) or np.any(Tout_arr > 1000):
                     print(f"[ERROR] getTandP (CO2): Tout_arr contains invalid values before interpolation. Skipping interpolation.", flush=True)
@@ -404,7 +396,6 @@ class TEA:
                 try:
                     self.Tout = f_T(hdf5_times_array)
                     self.Pout = f_P(hdf5_times_array)
-                    print(f"[DEBUG] getTandP (CO2): After interpolation - Tout min={np.min(self.Tout):.2f}K, max={np.max(self.Tout):.2f}K, length={len(self.Tout)}", flush=True)
                 except Exception as e:
                     print(f"[ERROR] Interpolation failed in getTandP (CO2): {e}", flush=True)
                     self.Tout = Tout_arr
@@ -524,7 +515,6 @@ class TEA:
             
         else:  #Production temperature went below injection temperature # AB HERE *****
             self.error_codes = np.append(self.error_codes,1000)
-            print(f"[DEBUG] calculateLC: Production temp ({min_prod_temp:.2f}°C) <= injection temp ({self.T_in:.2f}°C). Setting LCOH/LCOE to 9999.", flush=True)
             if self.End_use == 1:
                 self.LCOH = 9999
             elif self.End_use == 2:
@@ -588,12 +578,10 @@ class TEA:
             else: #Water injection temperature and/or production tempeature fall outside the range used in the correlations
                 if self.T_in < 50: 
                     self.error_codes = np.append(self.error_codes,2000)
-                    print(f"[DEBUG] H2O electricity: T_in ({self.T_in:.2f}°C) < 50°C. Setting electricity production to zero.", flush=True)
                 if max(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
                     self.error_codes = np.append(self.error_codes,2001)
-                    print(f"[DEBUG] H2O electricity: Production temperature range [{min(self.Linear_production_temperature):.2f}°C, {max(self.Linear_production_temperature):.2f}°C] outside valid range [100-385°C]. Setting electricity production to zero.", flush=True)
                 elif min(self.Linear_production_temperature) < 100:
-                    print(f"[DEBUG] H2O electricity: Min production temperature ({min(self.Linear_production_temperature):.2f}°C) < 100°C (max={max(self.Linear_production_temperature):.2f}°C). Setting electricity production to zero.", flush=True)
+                    pass
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_themal_efficiency = np.zeros(len(self.Time_array))

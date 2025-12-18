@@ -278,11 +278,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             geometry_before_sCO2 = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
             
             if fluid == "sCO2" or fluid == "All":
-                print(f"[DEBUG] ===== STARTING sCO2 COAXIAL ATTEMPT ===== fluid={fluid}, case={case}, model={model}", flush=True)
-                print(f"[DEBUG] Attempting sCO2 coaxial simulation:", flush=True)
-                print(f"[DEBUG]   Diameter1={Diameter1} m (wellbore diameter)", flush=True)
-                print(f"[DEBUG]   Diameter2={Diameter2} m (center pipe diameter, converted from radius)", flush=True)
-                print(f"[DEBUG]   mdot={arg_mdot} kg/s, PipeParam5={PipeParam5}, fluid={fluid}", flush=True)
                 try:
                     sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version,
                                                             Tsurf, c_m, rho_m, 
@@ -303,7 +298,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     # Store sCO2 time for later use
                     if sCO2_time is not None:
                         time = sCO2_time
-                    print(f"[DEBUG] Coaxial sCO2 succeeded: time length={len(sCO2_time) if sCO2_time is not None else 0}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}, Tout range=[{np.min(sCO2_Tout_arr):.2f}K, {np.max(sCO2_Tout_arr):.2f}K]", flush=True)
                 except Exception as e:
                     sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
                     sCO2_success = False
@@ -313,25 +307,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
                     import traceback
                     traceback.print_exc()
-                    print(f"[DEBUG] Coaxial sCO2 failed: sCO2_success={sCO2_success}, will continue with H2O", flush=True)
             
             # Store geometry values for comparison
             geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
             
             if fluid == "H2O" or fluid == "All":
-                print(f"[DEBUG] ===== STARTING H2O COAXIAL ATTEMPT ===== fluid={fluid}, case={case}, model={model}", flush=True)
-                print(f"[DEBUG] Attempting H2O coaxial simulation:", flush=True)
-                print(f"[DEBUG]   Diameter1={Diameter1} m (wellbore diameter)", flush=True)
-                print(f"[DEBUG]   Diameter2={Diameter2} m (center pipe diameter, converted from radius)", flush=True)
-                print(f"[DEBUG]   mdot={arg_mdot} kg/s, PipeParam5={PipeParam5}, fluid={fluid}", flush=True)
-                
                 # Compare geometry values if both fluids are being run
                 if fluid == "All" and 'geometry_before_sCO2' in locals():
-                    print(f"[DEBUG] ===== GEOMETRY COMPARISON (H2O vs sCO2) =====", flush=True)
-                    print(f"[DEBUG]   Diameter1: sCO2={geometry_before_sCO2['Diameter1']} m, H2O={geometry_before_H2O['Diameter1']} m", flush=True)
-                    print(f"[DEBUG]   Diameter2: sCO2={geometry_before_sCO2['Diameter2']} m, H2O={geometry_before_H2O['Diameter2']} m", flush=True)
-                    print(f"[DEBUG]   PipeParam3: sCO2={geometry_before_sCO2['PipeParam3']} m, H2O={geometry_before_H2O['PipeParam3']} m", flush=True)
-                    print(f"[DEBUG]   PipeParam5: sCO2={geometry_before_sCO2['PipeParam5']}, H2O={geometry_before_H2O['PipeParam5']}", flush=True)
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
                         print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
                 try:
@@ -345,7 +327,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
                     if not sCO2_success and H2O_time is not None:
                         time = H2O_time
-                    print(f"[DEBUG] Coaxial H2O succeeded: time length={len(H2O_time) if H2O_time is not None else 0}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}")
                 except Exception as e:
                     _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
                     error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
@@ -363,18 +344,15 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 # Only set time to empty if no fluid succeeded
                 if not sCO2_success and not H2O_success:
                     time = pd.Series(dtype=object)
-                print(f"[DEBUG] Coaxial final state (ALL FAILED): sCO2_success={sCO2_success}, H2O_success={H2O_success}, is_blank_data={is_blank_data}, time length={len(time) if hasattr(time, '__len__') else 'N/A'}", flush=True)
             else:
                 # At least one fluid succeeded, ensure time is set
                 if time is None or (hasattr(time, '__len__') and len(time) == 0):
                     # Fallback to HDF5 time if SBT simulation didn't return time
                     time = c_sCO2.time if hasattr(c_sCO2, 'time') else u_sCO2.time
-                print(f"[DEBUG] Coaxial final state (SUCCESS): sCO2_success={sCO2_success}, H2O_success={H2O_success}, is_blank_data={is_blank_data}, time length={len(time) if hasattr(time, '__len__') else 'N/A'}", flush=True)
                 
 
 
     # Figure generation 
-    print(f"[DEBUG] Starting figure generation: case={case}, fluid={fluid}, is_blank_data={is_blank_data}") 
 
     fig = make_subplots(rows=2, cols=3,
                         specs=[[{}, {}, None],
@@ -384,13 +362,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         )
 
     if fluid == "sCO2" or fluid == "All":
-
-        # Debug: Check data validity for coaxial
-        if case == "coaxial":
-            sCO2_success_val = locals().get('sCO2_success', 'N/A')
-            print(f"[DEBUG] Plotting sCO2: is_blank_data={is_blank_data}, sCO2_success={sCO2_success_val}, "
-                  f"sCO2_Tout length={len(sCO2_Tout) if hasattr(sCO2_Tout, '__len__') else 'N/A'}, "
-                  f"time length={len(time) if hasattr(time, '__len__') else 'N/A'}")
 
         if not is_blank_data:
             # kWe_avg and kWt_avg
@@ -467,13 +438,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 pass  # Skip if data is empty
 
     if fluid == "H2O" or fluid == "All":
-
-        # Debug: Check data validity for coaxial
-        if case == "coaxial":
-            H2O_success_val = locals().get('H2O_success', 'N/A')
-            print(f"[DEBUG] Plotting H2O: is_blank_data={is_blank_data}, H2O_success={H2O_success_val}, "
-                  f"H2O_Tout length={len(H2O_Tout) if hasattr(H2O_Tout, '__len__') else 'N/A'}, "
-                  f"time length={len(time) if hasattr(time, '__len__') else 'N/A'}")
 
         if not is_blank_data:
             # kWe_avg and kWt_avg
@@ -587,13 +551,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             "time": convert_time_to_list(time),
                             "mdot": convert_to_list(m_dot),
                             }
-    
-    # Debug: Print TandP_dict info for coaxial
-    if case == "coaxial":
-        print(f"[DEBUG] TandP_dict created: time length={len(TandP_dict['time'])}, "
-              f"sCO2_Tout length={len(TandP_dict['sCO2_Tout']) if TandP_dict['sCO2_Tout'] else 0}, "
-              f"H2O_Tout length={len(TandP_dict['H2O_Tout']) if TandP_dict['H2O_Tout'] else 0}, "
-              f"is_blank_data={is_blank_data}", flush=True)
     
     if is_blank_data:
         pass
@@ -748,6 +705,154 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
                 error_messages_dict['Err SubContour4'] = error_message
         
 
+    # Fill NaN values in contour data to prevent cut-off corners
+    # Use a combination of forward/backward fill and nearest neighbor interpolation
+    def fill_contour_nans(data):
+        """Fill NaN values in 2D contour data using interpolation and fallback methods"""
+        if not isinstance(data, np.ndarray):
+            data = np.array(data)
+        
+        # Convert to regular numpy array (not masked array or zarr)
+        data = np.asarray(data, dtype=np.float64)
+        
+        # Replace Inf values with NaN so they get filled too
+        data[np.isinf(data)] = np.nan
+        
+        # Check if there are any NaN values
+        if not np.any(np.isnan(data)):
+            return data
+        
+        # Create a copy to avoid modifying original
+        filled_data = data.copy()
+        
+        # Get valid (non-NaN) indices
+        valid_mask = ~np.isnan(filled_data)
+        
+        if not np.any(valid_mask):
+            # All NaN - fill with zeros
+            filled_data[:] = 0
+            return filled_data
+        
+        # Strategy 1: Use forward/backward fill along both axes for edge cases
+        # Forward fill along rows (axis 0)
+        for i in range(1, filled_data.shape[0]):
+            nan_mask = np.isnan(filled_data[i, :])
+            if np.any(nan_mask):
+                filled_data[i, nan_mask] = filled_data[i-1, nan_mask]
+        
+        # Backward fill along rows
+        for i in range(filled_data.shape[0]-2, -1, -1):
+            nan_mask = np.isnan(filled_data[i, :])
+            if np.any(nan_mask):
+                filled_data[i, nan_mask] = filled_data[i+1, nan_mask]
+        
+        # Forward fill along columns (axis 1)
+        for j in range(1, filled_data.shape[1]):
+            nan_mask = np.isnan(filled_data[:, j])
+            if np.any(nan_mask):
+                filled_data[nan_mask, j] = filled_data[nan_mask, j-1]
+        
+        # Backward fill along columns
+        for j in range(filled_data.shape[1]-2, -1, -1):
+            nan_mask = np.isnan(filled_data[:, j])
+            if np.any(nan_mask):
+                filled_data[nan_mask, j] = filled_data[nan_mask, j+1]
+        
+        # Strategy 2: Use scipy interpolation for better handling of large NaN regions
+        if np.any(np.isnan(filled_data)):
+            try:
+                from scipy.interpolate import griddata
+                
+                # Get coordinates of all points
+                rows, cols = np.meshgrid(np.arange(filled_data.shape[0]), 
+                                         np.arange(filled_data.shape[1]), 
+                                         indexing='ij')
+                
+                # Get valid (non-NaN) points
+                valid_mask = ~np.isnan(filled_data)
+                valid_points = np.column_stack((rows[valid_mask], cols[valid_mask]))
+                valid_values = filled_data[valid_mask]
+                
+                # Get invalid (NaN) points
+                invalid_mask = np.isnan(filled_data)
+                invalid_points = np.column_stack((rows[invalid_mask], cols[invalid_mask]))
+                
+                if len(invalid_points) > 0 and len(valid_points) > 0:
+                    # Use griddata to interpolate NaN values
+                    # 'nearest' method is fast and works well for filling gaps
+                    interpolated = griddata(valid_points, valid_values, invalid_points, 
+                                           method='nearest', fill_value=np.nanmin(valid_values))
+                    filled_data[invalid_mask] = interpolated
+            except ImportError:
+                # Fallback to manual nearest neighbor if scipy not available
+                rows, cols = np.meshgrid(np.arange(filled_data.shape[0]), 
+                                         np.arange(filled_data.shape[1]), 
+                                         indexing='ij')
+                
+                valid_mask = ~np.isnan(filled_data)
+                valid_rows = rows[valid_mask]
+                valid_cols = cols[valid_mask]
+                valid_values = filled_data[valid_mask]
+                
+                invalid_rows = rows[~valid_mask]
+                invalid_cols = cols[~valid_mask]
+                
+                if len(invalid_rows) > 0 and len(valid_rows) > 0:
+                    # Use vectorized nearest neighbor for remaining NaN values
+                    for inv_row, inv_col in zip(invalid_rows, invalid_cols):
+                        distances_sq = (valid_rows - inv_row)**2 + (valid_cols - inv_col)**2
+                        nearest_idx = np.argmin(distances_sq)
+                        filled_data[inv_row, inv_col] = valid_values[nearest_idx]
+        
+        # Strategy 3: If still any NaN, fill with minimum valid value or extrapolate from edges
+        if np.any(np.isnan(filled_data)):
+            # Try to extrapolate from valid edge values
+            # Get edge values (first and last row/column)
+            edge_values = []
+            if filled_data.shape[0] > 0 and filled_data.shape[1] > 0:
+                # Top row
+                top_row = filled_data[0, :]
+                edge_values.extend(top_row[~np.isnan(top_row)])
+                # Bottom row
+                bottom_row = filled_data[-1, :]
+                edge_values.extend(bottom_row[~np.isnan(bottom_row)])
+                # Left column
+                left_col = filled_data[:, 0]
+                edge_values.extend(left_col[~np.isnan(left_col)])
+                # Right column
+                right_col = filled_data[:, -1]
+                edge_values.extend(right_col[~np.isnan(right_col)])
+            
+            if len(edge_values) > 0:
+                fill_value = np.mean(edge_values)
+            else:
+                valid_min = np.nanmin(filled_data)
+                fill_value = valid_min if not np.isnan(valid_min) else 0
+            
+            filled_data[np.isnan(filled_data)] = fill_value
+        
+        return filled_data
+    
+    # Fill NaN values in all contour arrays
+    kWe_avg_flipped = fill_contour_nans(kWe_avg_flipped)
+    kWt_avg_flipped = fill_contour_nans(kWt_avg_flipped)
+    Tout_flipped = fill_contour_nans(Tout_flipped)
+    Pout_flipped = fill_contour_nans(Pout_flipped)
+    
+    # Final verification: ensure no NaN or Inf values remain
+    for name, data in [("kWe_avg", kWe_avg_flipped), ("kWt_avg", kWt_avg_flipped), 
+                       ("Tout", Tout_flipped), ("Pout", Pout_flipped)]:
+        if np.any(np.isnan(data)) or np.any(np.isinf(data)):
+            # If still NaN/Inf, fill with nearest valid value or edge value
+            valid_mask = ~(np.isnan(data) | np.isinf(data))
+            if np.any(valid_mask):
+                fill_value = np.nanmean(data[valid_mask])
+                if np.isnan(fill_value) or np.isinf(fill_value):
+                    fill_value = 0
+                data[np.isnan(data) | np.isinf(data)] = fill_value
+            else:
+                data[:] = 0
+
     fig = make_subplots(rows=2, cols=2, start_cell="top-left",
                         horizontal_spacing = 0.12,
                         vertical_spacing = 0.12,
@@ -781,7 +886,8 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             name="",
             hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Y</b>: %{y:.4f}<br><b>Average Thermal Output (kWt)</b>: %{z:.5f} ',
             contours=contour_formatting,
-            z=kWt_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0]
+            z=kWt_avg_flipped, y=param_ij[0,:], x=mdot_ij[:,0],
+            connectgaps=True  # Connect across NaN gaps
         ), row=1, col=2 )
 
 
@@ -904,26 +1010,17 @@ def generate_econ_lineplots(TandP_dict,
             try:
                 required_keys = ["time", "sCO2_Tout", "sCO2_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
-                    print(f"[DEBUG] Economic plots (sCO2): Missing required keys. TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else 'None'}", flush=True)
                     teaobj_sCO2 = None
                 else:
-                    # Check if arrays are empty or have mismatched lengths
                     time_arr = TandP_dict.get("time", [])
                     tout_arr = TandP_dict.get("sCO2_Tout", [])
                     pout_arr = TandP_dict.get("sCO2_Pout", [])
                     
-                    print(f"[DEBUG] Economic plots (sCO2): time_arr length={len(time_arr) if time_arr else 0}, "
-                          f"tout_arr length={len(tout_arr) if tout_arr else 0}, "
-                          f"pout_arr length={len(pout_arr) if pout_arr else 0}, "
-                          f"case={case}", flush=True)
-                    
                     if (not time_arr or not tout_arr or not pout_arr or 
                         len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
-                        print(f"[DEBUG] Economic plots (sCO2): Arrays failed validation - empty or mismatched lengths", flush=True)
                         teaobj_sCO2 = None
                     else:
-                        print(f"[DEBUG] Economic plots (sCO2): Creating TEA object", flush=True)
                         teaobj_sCO2 = create_teaobject(TandP_dict,
                                                         u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                         case, end_use, fluid, sbt_version,
@@ -934,36 +1031,23 @@ def generate_econ_lineplots(TandP_dict,
                                                         properties_CO2v2_pathname, 
                                                         additional_properties_CO2v2_pathname,
                                                         is_heating=True)
-                        print(f"[DEBUG] Economic plots (sCO2): TEA object created: {teaobj_sCO2 is not None}, "
-                              f"has LCOH: {hasattr(teaobj_sCO2, 'LCOH') if teaobj_sCO2 else False}, "
-                              f"has Linear_time_distribution: {hasattr(teaobj_sCO2, 'Linear_time_distribution') if teaobj_sCO2 else False}", flush=True)
                 
                 if teaobj_sCO2 is None:
-                    print(f"[DEBUG] Economic plots (sCO2): TEA object is None, creating blank plots", flush=True)
                     lcoh_sCO2 = "Insufficient Inputs"
                     mean_sCO2_Net_HProd = '-'
-                    # Add blank plots when TEA object is None
                     fig, lcoh_sCO2 = update_blank_econ2(fig=fig, nrow1=1, ncol1=1, nrow2=1, ncol2=3)
                 else:
                     try:
-                        print(f"[DEBUG] Economic plots (sCO2): TEA object exists, checking attributes...", flush=True)
-                        # Check if LCOH attribute exists before accessing it
                         if not hasattr(teaobj_sCO2, 'LCOH') or teaobj_sCO2.LCOH is None or teaobj_sCO2.LCOH >= 9999:
                             lcoh_sCO2 = "Insufficient Inputs"
                         else:
                             lcoh_sCO2 = format(teaobj_sCO2.LCOH, '.2f')
-                        # Check if required attributes exist before accessing them
                         has_linear_time = hasattr(teaobj_sCO2, 'Linear_time_distribution') and teaobj_sCO2.Linear_time_distribution is not None
                         has_inst_heat = hasattr(teaobj_sCO2, 'Instantaneous_heat_production') and teaobj_sCO2.Instantaneous_heat_production is not None
                         has_annual_heat = hasattr(teaobj_sCO2, 'Annual_heat_production') and teaobj_sCO2.Annual_heat_production is not None
                         has_lifetime = hasattr(teaobj_sCO2, 'Lifetime') and teaobj_sCO2.Lifetime is not None
                         
-                        print(f"[DEBUG] Economic plots (sCO2): LCOH={lcoh_sCO2}, "
-                              f"has_linear_time={has_linear_time}, has_inst_heat={has_inst_heat}, "
-                              f"has_annual_heat={has_annual_heat}, has_lifetime={has_lifetime}", flush=True)
-                        
                         if not (has_linear_time and has_inst_heat and has_annual_heat and has_lifetime):
-                            print(f"[DEBUG] Economic plots (sCO2): Missing required attributes, creating blank plots", flush=True)
                             raise AttributeError("TEA object missing required attributes for plotting")
                         
                         # Heat Production 
@@ -995,7 +1079,6 @@ def generate_econ_lineplots(TandP_dict,
                                      "sCO2 Heat Production (MWt)": teaobj_sCO2.Instantaneous_heat_production/1e3,
                                      "sCO2 Annual Heat Production (GWh)": teaobj_sCO2.Annual_heat_production/1e6}
                         econ_values_dict.update(time_dict)
-                        print(f"[DEBUG] Economic plots (sCO2): Successfully added plots", flush=True)
                     except Exception as e:
                         print(f"[ERROR] Economic plots (sCO2): Exception when creating plots: {type(e).__name__}: {e}", flush=True)
                         import traceback
@@ -1023,7 +1106,6 @@ def generate_econ_lineplots(TandP_dict,
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
                     teaobj_H2O = None
                 else:
-                    # Check if arrays are empty or have mismatched lengths
                     time_arr = TandP_dict.get("time", [])
                     tout_arr = TandP_dict.get("H2O_Tout", [])
                     pout_arr = TandP_dict.get("H2O_Pout", [])
@@ -1118,7 +1200,6 @@ def generate_econ_lineplots(TandP_dict,
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
                     teaobj_sCO2_electricity = None
                 else:
-                    # Check if arrays are empty or have mismatched lengths
                     time_arr = TandP_dict.get("time", [])
                     tout_arr = TandP_dict.get("sCO2_Tout", [])
                     pout_arr = TandP_dict.get("sCO2_Pout", [])
@@ -1217,28 +1298,19 @@ def generate_econ_lineplots(TandP_dict,
         if fluid == "H2O" or fluid == "All":
 
             try:
-                print(f"[DEBUG] Economic plots (H2O electricity): Starting, end_use={end_use}, fluid={fluid}, case={case}", flush=True)
                 required_keys = ["time", "H2O_Tout", "H2O_Pout"]
                 if not TandP_dict or not all(key in TandP_dict for key in required_keys):
-                    print(f"[DEBUG] Economic plots (H2O electricity): Missing required keys. TandP_dict keys: {list(TandP_dict.keys()) if TandP_dict else 'None'}", flush=True)
                     teaobj_H2O = None
                 else:
-                    # Check if arrays are empty or have mismatched lengths
                     time_arr = TandP_dict.get("time", [])
                     tout_arr = TandP_dict.get("H2O_Tout", [])
                     pout_arr = TandP_dict.get("H2O_Pout", [])
                     
-                    print(f"[DEBUG] Economic plots (H2O electricity): time_arr length={len(time_arr) if time_arr else 0}, "
-                          f"tout_arr length={len(tout_arr) if tout_arr else 0}, "
-                          f"pout_arr length={len(pout_arr) if pout_arr else 0}", flush=True)
-                    
                     if (not time_arr or not tout_arr or not pout_arr or 
                         len(time_arr) == 0 or len(tout_arr) == 0 or len(pout_arr) == 0 or
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
-                        print(f"[DEBUG] Economic plots (H2O electricity): Arrays failed validation - empty or mismatched lengths", flush=True)
                         teaobj_H2O = None
                     else:
-                        print(f"[DEBUG] Economic plots (H2O electricity): Creating TEA object", flush=True)
                         teaobj_H2O = create_teaobject(TandP_dict,
                                                         u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                         case, end_use, fluid, sbt_version,
@@ -1250,29 +1322,15 @@ def generate_econ_lineplots(TandP_dict,
                                                         additional_properties_CO2v2_pathname,
                                                         is_H20=True
                                                         )
-                        print(f"[DEBUG] Economic plots (H2O electricity): TEA object created: {teaobj_H2O is not None}, "
-                              f"has LCOE: {hasattr(teaobj_H2O, 'LCOE') if teaobj_H2O else False}, "
-                              f"LCOE value: {teaobj_H2O.LCOE if (teaobj_H2O and hasattr(teaobj_H2O, 'LCOE')) else 'N/A'}", flush=True)
                 
                 if teaobj_H2O is None:
-                    print(f"[DEBUG] Economic plots (H2O electricity): TEA object is None, creating blank plots", flush=True)
                     lcoe_H2O = "Insufficient Inputs"
-                    # Add blank plots when TEA object is None
                     fig, lcoe_H2O = update_blank_econ2(fig=fig, nrow1=row_num, ncol1=1, nrow2=row_num, ncol2=3)
                 else:
-                    print(f"[DEBUG] Economic plots (H2O electricity): TEA object exists, checking LCOE...", flush=True)
-                    # convert any negative value to 0
                     if teaobj_H2O.Inst_Net_Electricity_production is not None:
                         teaobj_H2O.Inst_Net_Electricity_production[teaobj_H2O.Inst_Net_Electricity_production<0] = 0
 
                     lcoe_H2O = "Insufficient Inputs" if (teaobj_H2O.LCOE is None or teaobj_H2O.LCOE >= 9999) else format(teaobj_H2O.LCOE, '.2f')
-                    print(f"[DEBUG] Economic plots (H2O electricity): LCOE={lcoe_H2O}, "
-                          f"has Inst_Net_Electricity_production: {teaobj_H2O.Inst_Net_Electricity_production is not None if hasattr(teaobj_H2O, 'Inst_Net_Electricity_production') else False}", flush=True)
-
-                    # print(" ********* ")
-                    # print(teaobj_H2O.Inst_Net_Electricity_production/1e3)
-                    # print(teaobj_H2O.Linear_time_distribution)
-                    # print("\n")
 
                     # Electricity 
                     if teaobj_H2O.Inst_Net_Electricity_production is not None:

@@ -1161,28 +1161,36 @@ def update_tabs(selected_model):
 
 
 @app.callback(
-    Output(
-        component_id="fluid-select", component_property="value", allow_duplicate=True
-    ),
+    [
+        Output(
+            component_id="fluid-select", component_property="value", allow_duplicate=True
+        ),
+        Output(component_id="fluid-selection-store", component_property="data", allow_duplicate=True),
+    ],
     [
         Input(component_id="tabs", component_property="value"),
         Input(component_id="btn-nclicks-1", component_property="n_clicks"),
         Input(component_id="btn-nclicks-3", component_property="n_clicks"),
         Input(component_id="fluid-select", component_property="value"),
     ],
+    [State(component_id="fluid-selection-store", component_property="data")],
     prevent_initial_call=True,
 )
-def retain_entry_between_tabs(tab, btn1, btn3, fluid):
-    if tab != "energy-tab" and fluid == "All":
-        if "btn-nclicks-1" == ctx.triggered_id:
-            return "H2O"
-
-        if "btn-nclicks-3" == ctx.triggered_id:
-            return "H2O"
+def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
+    if tab == "energy-tab" and fluid == "All":
+        # Switching to contours/energy tab with "All" selected - change to H2O but preserve "All" in store
+        if fluid_store is None:
+            fluid_store = {"preferred": "All", "last_specific": "H2O"}
         else:
-            raise PreventUpdate
-    else:
-        raise PreventUpdate
+            # Preserve "All" as preferred even though we're temporarily using "H2O"
+            if fluid_store.get("preferred") != "All":
+                fluid_store["preferred"] = "All"
+        return "H2O", fluid_store
+    elif tab != "energy-tab" and fluid != "All":
+        # Switching away from energy/contours tab - restore "All" if it was preferred
+        if fluid_store is not None and fluid_store.get("preferred") == "All":
+            return "All", fluid_store
+    raise PreventUpdate
 
 
 @app.callback(
@@ -1279,8 +1287,20 @@ def update_working_fluid(model, fluid_store, current_fluid):
     [State(component_id="fluid-selection-store", component_property="data")],
 )
 def change_dropdown(at, fluid, model, fluid_store):
-    if model not in ("HDF5", "SBT V2.0"):
+    if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
+
+    # Handle SBT V1.0 - only supports H2O
+    if model == "SBT V1.0":
+        fluid_list = ["H2O"]
+        interpol_list = ["True"]
+        return (
+            [{"label": "H2O", "value": "H2O"}],
+            "H2O",
+            [{"label": i, "value": i} for i in interpol_list],
+            interpol_list[0],
+            {"preferred": "H2O", "last_specific": "H2O"},
+        )
 
     if fluid_store is None:
         fluid_store = {"preferred": "All", "last_specific": "H2O"}
@@ -1307,7 +1327,8 @@ def change_dropdown(at, fluid, model, fluid_store):
     selected_fluid = fluid if fluid is not None else preferred
 
     if at == "energy-tab":
-        if selected_fluid not in fluid_list:
+        # Contours tab doesn't support "All" - must use H2O or sCO2
+        if selected_fluid == "All" or selected_fluid not in fluid_list:
             fallback = (
                 last_specific if last_specific in fluid_list else fluid_list[0]
             )
@@ -2152,9 +2173,6 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
         store_data = {}
     
     # Debug output for coaxial SBT models
-    if model in ["SBT V1.0", "SBT V2.0"]:
-        print(f"[DEBUG] save_slider_values: model={model}, mdot={mdot}, radius_vertical={radius_vertical}, radius_lateral={radius_lateral}", flush=True)
-    
     # Save current slider values for this model
     store_data[model] = {
         "mdot": mdot,
@@ -2294,9 +2312,6 @@ def restore_slider_values(mdot_container, store_data, model, case):
     k, k_found = get_value("k")
     
     # Debug output for coaxial
-    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
-        print(f"[DEBUG] restore_slider_values: mdot={mdot}, mdot_found={mdot_found}, store_data keys={list(store_data.keys()) if store_data else 'None'}", flush=True)
-    
     # Only restore if we found at least one saved value
     # Otherwise, let update_slider_ranges set defaults via PreventUpdate
     if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
@@ -2868,9 +2883,6 @@ def update_subsurface_results_plots(
 
     try:
         # Debug: Print received values for coaxial SBT models
-        if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
-            print(f"[DEBUG] update_subsurface_results_plots received: mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, case={case}", flush=True)
-        
         # if HDF5:
         # start = time.time()
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness

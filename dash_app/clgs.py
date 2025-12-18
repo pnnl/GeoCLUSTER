@@ -287,12 +287,6 @@ class data:
                 # set_tube_geometry expects diameters and divides by 2 to get radii
                 Diameter2_radius = Diameter2  # Store original radius value for logging
                 Diameter2 = Diameter2 * 2  # Convert radius to diameter
-                
-                # Debug logging for geometry comparison
-                print(f"[DEBUG] clgs: Geometry conversion for {self.fluid} coaxial:", flush=True)
-                print(f"[DEBUG]   Input: Diameter1={Diameter1} m (wellbore diameter), Diameter2={Diameter2_radius} m (center pipe radius)", flush=True)
-                print(f"[DEBUG]   After conversion: Diameter1={Diameter1} m, Diameter2={Diameter2} m (center pipe diameter)", flush=True)
-
                 # Ensure PipeParam3 (thicknesscenterpipe) has a default value if None
                 if PipeParam3 is None:
                     PipeParam3 = 0.0127  # Default center pipe thickness (12.7 mm)
@@ -364,7 +358,6 @@ class data:
                                         flush=True,
                                     )
                                     Diameter2 = new_d2
-                                    print(f"[DEBUG] clgs: After clamping for {self.fluid}: Diameter1={Diameter1} m, Diameter2={Diameter2} m", flush=True)
                                 else:
                                     print(
                                         f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
@@ -382,7 +375,6 @@ class data:
                                     flush=True,
                                 )
                                 Diameter2 = new_d2
-                                print(f"[DEBUG] clgs: After clamping for {self.fluid}: Diameter1={Diameter1} m, Diameter2={Diameter2} m", flush=True)
                         
                         # Also check if Diameter2 >= Diameter1 (before accounting for thickness)
                         elif d2 >= d1:
@@ -497,14 +489,6 @@ class data:
 
             start = time.time()
             
-            # Debug logging for coaxial simulations
-            if self.case == "coaxial":
-                print(f"[DEBUG] clgs.interp_outlet_states: Starting {self.fluid} coaxial simulation.", flush=True)
-                print(f"[DEBUG]   Geometry: Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam5={PipeParam5}", flush=True)
-                print(f"[DEBUG]   Flow: mdot={mdot} kg/s, Tinj={Tinj} K ({Tinj-273.15:.1f}°C), fluid={fluid}", flush=True)
-                print(f"[DEBUG]   Wellbore: L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
-                print(f"[DEBUG]   Hyperparams: HYPERPARAM1={hyperparam1}, HYPERPARAM3={hyperparam3}, HYPERPARAM5={hyperparam5}", flush=True)
-            
             # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
             try:
@@ -526,13 +510,6 @@ class data:
                     Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
                     # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                 )
-                
-                # Debug: Log simulation completion
-                if self.case == "coaxial":
-                    print(f"[DEBUG] clgs.interp_outlet_states: {self.fluid} coaxial simulation completed. times length={len(times) if times is not None else 0}, "
-                          f"Tout length={len(Tout) if Tout is not None else 0}, "
-                          f"Tout range=[{np.min(Tout) if Tout is not None and len(Tout) > 0 else 'N/A'}, "
-                          f"{np.max(Tout) if Tout is not None and len(Tout) > 0 else 'N/A'}]K", flush=True)
                 
                 # Validate Tout immediately after simulation
                 if Tout is not None and len(Tout) > 0:
@@ -786,12 +763,15 @@ class data:
 
         else:
 
-            calc = (
-                enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in)
-            ) / 1000.0
+            # Suppress warnings for NaN values in calculations (will be handled by contour NaN filling)
+            with np.errstate(invalid='ignore'):
+                calc = (
+                    enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in)
+                ) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
             kWe = mdot * calc
-            calc = (enthalpy_out - enthalpy_in) / 1000.0
+            with np.errstate(invalid='ignore'):
+                calc = (enthalpy_out - enthalpy_in) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
             kWt = mdot * calc
 
