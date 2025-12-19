@@ -17,6 +17,7 @@
 5. [Python Requirements](#requirements)
 6. [Run Locally](#local)
 7. [Deployment](#deploying)
+8. API
 
 <br>
 
@@ -181,6 +182,14 @@ Also, in `paths.py`, define the absolute path to the app directory (`dash_app`) 
 
 Finally, for errors regarding file requests, especially due to arguments like `url_base_pathname` or `requests_pathname_prefix` when initiating the Dash application in `app.py`, please refer to the `dash.Dash()` documentation is located online on the [Dash API Reference page](https://dash.plotly.com/reference).
 
+## API
+The models underlying the GeoCLUSTER tool (HDF5 and SBT) are available as APIs in addition to the web interface. 
+The APIs are available both deployed on NLOR's website at https://api.openei.org/geocluster_api/ and the source code is 
+in this repository and can be ran locally. 
+
+To view how to use the API on NLOR, refer to this notebook: https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing
+
+To view how to run this API locally, got to the documentation for it in the repo: 
 
 ## DISCLAIMER
 
