@@ -189,7 +189,7 @@ in this repository and can be ran locally.
 
 To view how to use the API on NLOR, refer to this notebook: https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing
 
-To view how to run this API locally, got to the documentation for it in the repo: 
+To view how to run this API locally, got to the documentation for it in this repo:  https://github.com/pnnl/GeoCLUSTER/blob/adding_api/API/README.md
 
 ## DISCLAIMER
 
