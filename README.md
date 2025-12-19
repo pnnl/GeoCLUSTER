@@ -17,7 +17,7 @@
 5. [Python Requirements](#requirements)
 6. [Run Locally](#local)
 7. [Deployment](#deploying)
-8. API
+8. [API](#API)
 
 <br>
 
