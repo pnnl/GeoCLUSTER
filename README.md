@@ -1,11 +1,13 @@
+> :warning: **GeoCLUSTER has been moved to openei.org.** Please visit https://apps.openei.org/GeoCLUSTER/ for the lastest version of GeoCLUSTER.
+
 # Welcome to *GeoCLUSTER*
 
-*GeoCLUSTER* (https://geocluster.labworks.org/) is a Python3.8-based web application created using Dash, an open-source framework built on top of Flask that streamlines the building of data dashboards. *GeoCLUSTER* provides users with a collection of interactive methods for streamlining the visualization of the technical and economic modeling of closed-loop geothermal systems.
+*GeoCLUSTER* (https://geocluster.labworks.org/) is a techno-economic web simulator that enables start-up developers and venture capitalists to explore the economic viability of closed-loop geothermal systems (CLGSs), such as capital and levelized costs. *GeoCLUSTER* was created using Python (version >=3.13.5) for its computations and Dash (version >=3.2.0) as its web framework, and the application provides users a collection of interactive methods for streamlining the exploration of the techno-economic modeling of CLGSs.
 
 ![](https://img.shields.io/badge/GeoCLUSTER-Dash%20App-blue)
 ![](https://img.shields.io/badge/Geothermal-Energy%20Research-orange)
-![](https://img.shields.io/badge/Python-3.8-yellow)
-![](https://img.shields.io/badge/Dash->=2.9.2-teal)
+![](https://img.shields.io/badge/Python->=3.13.5-yellow)
+![](https://img.shields.io/badge/Dash->=3.2.0-teal)
 
 
 ## Table of Contents
@@ -21,7 +23,7 @@
 
 <br>
 
-![](src/geocluster-example.png)
+![](src/geocluster-example-v2.png)
 
 <br>
 
