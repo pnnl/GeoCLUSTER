@@ -136,6 +136,12 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     # (This handles cases where the model hasn't updated yet due to callback timing)
     sbt_version_sco2 = sbt_version
     sbt_version_h2o = sbt_version
+    
+    # SBT V1.0 doesn't support sCO2 - skip sCO2 calculations if model is SBT V1.0 and only sCO2 is selected
+    sCO2_supported = True
+    if model == "SBT V1.0" and fluid == "sCO2":
+        sCO2_supported = False  # Skip sCO2 calculations entirely for SBT V1.0
+    
     if fluid == "All":
         # When "All" is selected, sCO2 requires SBT V2.0 (SBT V1.0 doesn't support sCO2)
         # For H2O, we can use either, but prefer SBT V2.0 when "All" is selected for consistency
@@ -226,7 +232,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             H2O_success = False
             
             # Handle each fluid separately so one failure doesn't prevent the other from running
-            if fluid == "sCO2" or fluid == "All":
+            if (fluid == "sCO2" or fluid == "All") and sCO2_supported:
                 try:
                     sCO2_Tout, sCO2_Pout, time = u_sCO2.interp_outlet_states(point, sbt_version_sco2,
                                                         Tsurf, c_m, rho_m, 
@@ -246,6 +252,11 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}")
                     import traceback
                     traceback.print_exc()
+            elif (fluid == "sCO2" or fluid == "All") and not sCO2_supported:
+                # SBT V1.0 doesn't support sCO2 - skip calculation and set to blank
+                sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
+                sCO2_success = False
+                print(f"[INFO] Skipping sCO2 calculation: SBT V1.0 doesn't support sCO2. Only H2O calculations will be performed.", flush=True)
             
             if fluid == "H2O" or fluid == "All":
                 try:
@@ -301,7 +312,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             # Store geometry values for comparison
             geometry_before_sCO2 = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
             
-            if fluid == "sCO2" or fluid == "All":
+            if (fluid == "sCO2" or fluid == "All") and sCO2_supported:
                 try:
                     sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version_sco2,
                                                             Tsurf, c_m, rho_m, 
@@ -333,6 +344,11 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
                     import traceback
                     traceback.print_exc()
+            elif (fluid == "sCO2" or fluid == "All") and not sCO2_supported:
+                # SBT V1.0 doesn't support sCO2 - skip calculation and set to blank
+                sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
+                sCO2_success = False
+                print(f"[INFO] Skipping sCO2 calculation: SBT V1.0 doesn't support sCO2. Only H2O calculations will be performed.", flush=True)
             
             # Store geometry values for comparison
             geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
@@ -399,51 +415,64 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     if fluid == "sCO2" or fluid == "All":
 
-        if not is_blank_data:
-            # kWe_avg and kWt_avg
-            fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
-                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                          line = dict(color='#c26219', width=lw),
-                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                          # margin=dict(pad=20),
-                          row=1, col=1)
-            fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
-                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                          line = dict(color='orange', width=lw),
-                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                          row=1, col=2)
+        # Plot HDF5 averages if available - these come from database, not SBT, so show even if SBT calculation failed
+        if sCO2_kWe_avg is not None and sCO2_kWt_avg is not None:
+            try:
+                fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
+                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                              line = dict(color='#c26219', width=lw),
+                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                              # margin=dict(pad=20),
+                              row=1, col=1)
+                fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
+                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                              line = dict(color='orange', width=lw),
+                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                              row=1, col=2)
+            except (ValueError, TypeError) as e:
+                print(f"[WARNING] Could not plot sCO2 averages: {e}", flush=True)
 
+        # Plot time-series data only if calculation succeeded
+        if not is_blank_data:
             # kWe vs. time
-            fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
-                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
-                          line = dict(color='black', width=lw), # #379dbf
-                          legendgroup=labels_cat[1], name=labels[1], showlegend=True),
-                          row=2, col=1)
+            try:
+                fig.add_trace(go.Scatter(x=time, y=sCO2_kWe,
+                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>kWe</b>: %{y:.3f} ',
+                              line = dict(color='black', width=lw), # #379dbf
+                              legendgroup=labels_cat[1], name=labels[1], showlegend=True),
+                              row=2, col=1)
+            except (ValueError, TypeError):
+                pass  # Skip if data is empty
             # temperature
             try:
                 fig.add_trace(go.Scatter(x=time, y=sCO2_Tout - to_kelvin_factor, # to celsius
-                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
-                          line = dict(color='royalblue', width=lw),
-                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                          row=2, col=2)
+                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Temperature (˚C)</b>: %{y:.3f} ',
+                              line = dict(color='royalblue', width=lw),
+                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                              row=2, col=2)
             except (ValueError, TypeError):
                 pass  # Skip if data is empty
             # pressure
             try:
                 fig.add_trace(go.Scatter(x=time, y=sCO2_Pout / 1000000,
-                          hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
-                          line = dict(color='#16b8a2', width=lw),
-                          legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                          row=2, col=3)
+                              hovertemplate='<b>Time (year)</b>: %{x:.1f}<br><b>Outlet Pressure (MPa)</b>: %{y:.3f} ',
+                              line = dict(color='#16b8a2', width=lw),
+                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                              row=2, col=3)
             except (ValueError, TypeError):
                 pass  # Skip if data is empty
-
-        if is_blank_data:
-            blank_canvas(fig=fig, row_n=1, col_n=1)
-            blank_canvas(fig=fig, row_n=1, col_n=2)
+        else:
+            # Time-series calculation failed - show blank canvas for time-series plots only
+            # kWe/kWt vs mass flow rate plots (row 1) may still have HDF5 data, so don't blank them here
             blank_canvas(fig=fig, row_n=2, col_n=1)
             blank_canvas(fig=fig, row_n=2, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=3)
+            # If HDF5 averages are also not available, blank those too
+            if sCO2_kWe_avg is None or sCO2_kWt_avg is None:
+                blank_canvas(fig=fig, row_n=1, col_n=1)
+                blank_canvas(fig=fig, row_n=1, col_n=2)
+        
+        if is_blank_data:
             mean_sCO2_Tout = "-"
             mean_sCO2_Pout = "-"
         else:
