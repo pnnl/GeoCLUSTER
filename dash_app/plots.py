@@ -254,8 +254,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
-                    # For SBT H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
-                    Pinj_h2o = (float(HyperParam1) * 1e6) if (sbt_version_h2o > 0 and HyperParam1 is not None) else None
+                    # For SBT V2.0 H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_h2o == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_h2o = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_h2o = None
+                    else:
+                        Pinj_h2o = None
                     H2O_kWe, H2O_kWt = u_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
                 except Exception as e:
@@ -340,8 +348,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                             mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
-                    # For SBT H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
-                    Pinj_h2o = (float(HyperParam1) * 1e6) if (sbt_version_h2o > 0 and HyperParam1 is not None) else None
+                    # For SBT V2.0 H2O, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_h2o == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_h2o = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_h2o = None
+                    else:
+                        Pinj_h2o = None
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
                     # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
