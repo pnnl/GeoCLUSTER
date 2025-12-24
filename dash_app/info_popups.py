@@ -357,6 +357,24 @@ PARAMETER_INFO = {
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
     },
     
+    "Turbine Isentropic Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of the turbine in converting thermal energy to mechanical work during the expansion process. The value of 90% represents a typical isentropic efficiency for sCO2 turbines, accounting for losses due to friction, heat transfer, and other irreversibilities.",
+        "unit": "%",
+        "description": "Higher efficiency increases net power output from the sCO2 cycle."
+    },
+    
+    "Generator Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of converting mechanical work from the turbine into electrical power. The value of 98% represents a typical generator efficiency, accounting for electrical losses in the conversion process.",
+        "unit": "%",
+        "description": "Higher efficiency increases net electrical power output from the system."
+    },
+    
+    "Compressor Isentropic Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of the compressor in pressurizing the working fluid with minimal entropy increase. The value of 90% represents a typical isentropic efficiency for sCO2 compressors, accounting for losses due to friction, heat transfer, and other irreversibilities.",
+        "unit": "%",
+        "description": "Higher efficiency reduces the work required to compress the fluid, increasing net power output."
+    },
+    
     # Model Fine-tuning Parameters
     "Mesh Fineness": {
         "definition": "Set the spatial resolution of the borehole based on how finely it is broken into discrete segments for simulation. A value of 0 (coarse) compared to 5 (research-grade accuracy), is the fastest option but least precise geometry.",
@@ -835,13 +853,21 @@ def register_info_modal_callbacks(app):
         modal_content = [
             html.H6("Definition:", className="text-primary", style=header_style),
             html.P(info["definition"], className="mb-3"),
-            html.H6("Recommended Range:", className="text-primary", style=header_style),
-            html.P(info["recommended_range"], className="mb-3"),
-            html.H6("Typical Value:", className="text-primary", style=header_style),
-            html.P(f"{info['typical_value']}", className="mb-3"),
+        ]
+        if "recommended_range" in info and info["recommended_range"]:
+            modal_content.extend([
+                html.H6("Recommended Range:", className="text-primary", style=header_style),
+                html.P(info["recommended_range"], className="mb-3"),
+            ])
+        if "typical_value" in info and info["typical_value"]:
+            modal_content.extend([
+                html.H6("Typical Value:", className="text-primary", style=header_style),
+                html.P(f"{info['typical_value']}", className="mb-3"),
+            ])
+        modal_content.extend([
             html.H6("Description:", className="text-primary", style=header_style),
             html.P(info["description"], className="mb-3"),
-        ]
+        ])
         return True, f"Information: {param}", modal_content, current_max
 
     @app.callback(

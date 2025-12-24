@@ -1077,7 +1077,7 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     prevent_initial_call=False,
 )
 def show_hide_see_all_button(model):
-    if model is None or model == "HDF5":
+    if model is None:
         return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"}
     else:
         return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
@@ -1090,6 +1090,7 @@ def show_hide_see_all_button(model):
         Output(component_id="hyperparam5-container", component_property="style", allow_duplicate=True),
         Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
         Output(component_id="lat-allo-container", component_property="style", allow_duplicate=True),
+        Output(component_id="component-performance-div", component_property="style", allow_duplicate=True),
         Output(component_id="see-all-params-text", component_property="children"),
         Output(component_id="see-all-params-chevron", component_property="children"),
     ],
@@ -1102,17 +1103,24 @@ def show_hide_see_all_button(model):
 )
 def toggle_see_all_params(n_clicks, model, current_button_text):
     callback_ctx = ctx
+    style_none = {"display": "none"}
+    style_block = {"display": "block"}
+    
     if not callback_ctx.triggered:
         # Initial state - all hidden
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
     if trigger_id == "model-select":
-        # Model changed - set initial state: all hidden for SBT models (they'll be shown when button is clicked)
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        # Model changed - set initial state: all hidden (they'll be shown when button is clicked)
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     
     # Button was clicked
     if n_clicks and n_clicks > 0:
@@ -1120,16 +1128,23 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
         is_visible = current_button_text == "See less parameters" if current_button_text else False
         if is_visible:
             # Hide all parameters
-            style_none = {"display": "none"}
-            return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
             # Show all parameters
-            style_block = {"display": "block"}
-            return style_block, style_block, style_block, style_block, style_block, "See less parameters", " ▲"
+            if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_block, "See less parameters", " ▲"
+            else:
+                # For SBT, show the 5 SBT-specific parameters
+                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
     else:
         # Initial state - all hidden
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
 
@@ -1724,7 +1739,7 @@ def show_model_params(model):
     n = {"display": "none"}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n, b  # Show component-performance for HDF5
+        return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
         return b, b, b, b, b, b, n, n, b, n, n, n  # Hide component-performance for SBT V1.0

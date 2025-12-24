@@ -489,7 +489,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Turbine Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Turbine Isentropic Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "turbine-isentropic-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="turbine-efficiency-select", 
                                                                               disabled=True,
                                                                               value="90%", 
@@ -508,7 +531,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Generator Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Generator Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "generator-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="generator-efficiency-select", 
                                                                               disabled=True,
                                                                               value="98%", 
@@ -527,7 +573,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Compressor Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Compressor Isentropic Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "compressor-isentropic-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="compressor-efficiency-select", 
                                                                               disabled=True,
                                                                               value="90%", 
