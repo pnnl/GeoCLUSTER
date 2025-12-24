@@ -17,6 +17,10 @@ def write_excelsheet(df_summary, df_subsurf_res_mass, df_subsurf_res_time, df_ec
     df_subsurf_res_time = pd.DataFrame(df_subsurf_res_time)
     df_econ = pd.DataFrame.from_dict(df_econ, orient='index').transpose()
 
+    # Remove "Select Interpolation" row from download (but keep it in on-screen table)
+    if 'Variable Parameter' in df_summary.columns:
+        df_summary = df_summary[df_summary['Variable Parameter'] != 'Select Interpolation'].reset_index(drop=True)
+
     df_summary.to_excel(writer, sheet_name='Summary', index=False, index_label=False, header=True)
     df_subsurf_res_mass.to_excel(writer, sheet_name='Subsurface Results - Mass Flow',index=False, index_label=False, header=True)
     df_subsurf_res_time.to_excel(writer, sheet_name='Subsurface Results - Time',index=False, index_label=False, header=True)
