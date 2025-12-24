@@ -156,6 +156,32 @@ dropdown_guidance_style = {
 carousel_image_style = {"objectFit": "contain"}
 
 
+HIDDEN_LATERAL_FLOW_STYLE = {"position": "absolute", "left": "-9999px", "visibility": "hidden"}
+
+
+def hidden_lateral_flow_input(value=1.0):
+    """Create the hidden lateral flow input so callbacks always have a target component."""
+
+    return dcc.Input(
+        id="lateral-flow-select",
+        value=value,
+        type="number",
+        min=0,
+        max=1,
+        step=0.01,
+        style=HIDDEN_LATERAL_FLOW_STYLE,
+    )
+
+
+def lateral_flow_placeholder(value=1.0, style=None):
+    container_style = style if style is not None else div_none_style
+    return html.Div(
+        id="lat-allocation-div",
+        style=container_style,
+        children=[hidden_lateral_flow_input(value)],
+    )
+
+
 # -----------------------------------------------
 # HTML components.
 # -----------------------------------------------
@@ -2512,22 +2538,17 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 DivID="num-lat-div",
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
-                min_v=0,
-                max_v=20,
-                start_v=n_laterals_val,
+                min_v=1,
+                max_v=10,
+                start_v=n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1,
                 step_i=1,
                 div_style=div_block_style,
+                parameter_name="Number of Laterals",
+                horizontal=True,
+                input_width="60px",
             )
-            lateral_flow = input_box(
-                DivID="lat-allo-container",
-                ID="lateral-flow-select",
-                ptitle="Lateral Flow Allocation",
-                min_v=0,
-                max_v=1,
-                start_v=get_saved_value("lateral-flow", start_vals_hdf5, "lateral-flow"),
-                step_i=0.01,
-                div_style=div_block_style,
-            )
+            lateral_flow_value = get_saved_value("lateral-flow", start_vals_hdf5, "lateral-flow")
+            lateral_flow = lateral_flow_placeholder(value=lateral_flow_value, style=div_block_style)
             # Calculate multiplier based on number of laterals: 1/n_laterals
             multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
             lateral_multiplier = input_box(
@@ -2539,6 +2560,9 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 start_v=multiplier_val,
                 step_i=0.05,
                 div_style=div_block_style,
+                parameter_name="Lateral Flow Multiplier",
+                horizontal=True,
+                input_width="60px",
             )
 
             return (
@@ -2628,15 +2652,17 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_none_style,
             )
 
+            # For coaxial, lat-allo-container should be empty (lateral flow allocation not used)
             return (
                 radius,
                 radiuscenterpipe,
                 thicknesscenterpipe,
-                k_center_pipe,
+                lateral_flow_placeholder(style=div_none_style),  # Keep hidden input in layout
                 lateral_multiplier,
             )
 
     elif model == "HDF5":
+        # HDF5 doesn't support laterals - but components must exist for callbacks
         radius_vertical = slider1(
             DivID="radius-vertical-select-div",
             ID="radius-vertical-select",
@@ -2661,38 +2687,41 @@ def update_sliders_heat_exchanger(model, case, store_data):
             div_style=div_none_style,
             parameter_name="Wellbore Diameter Lateral (m)",
         )
-        n_laterals_val = start_vals_hdf5["n-laterals"]
+        # HDF5 doesn't use laterals - but create hidden components for callbacks
         n_laterals = input_box(
             DivID="num-lat-div",
             ID="n-laterals-select",
             ptitle="Number of Laterals",
             min_v=0,
             max_v=20,
-            start_v=n_laterals_val,
+            start_v=1,
             step_i=1,
-            div_style=div_none_style,
+            div_style={"position": "absolute", "left": "-9999px", "visibility": "hidden"},
+            parameter_name="Number of Laterals",
         )
         lateral_flow = input_box(
-            DivID="lat-allo-container",
+            DivID="lat-allocation-div",
             ID="lateral-flow-select",
             ptitle="Lateral Flow Allocation",
             min_v=0,
             max_v=1,
-            start_v=start_vals_hdf5["lateral-flow"],
+            start_v=1.0,
             step_i=0.01,
-            div_style=div_none_style,
+            div_style={"position": "absolute", "left": "-9999px", "visibility": "hidden"},
+            parameter_name="Lateral Flow Allocation",
         )
-        # Calculate multiplier based on number of laterals: 1/n_laterals
-        multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
         lateral_multiplier = input_box(
             DivID="lat-flow-mul-div",
             ID="lateral-multiplier-select",
             ptitle="Lateral Flow Multiplier",
             min_v=0,
             max_v=1,
-            start_v=multiplier_val,
+            start_v=1.0,
             step_i=0.05,
-            div_style=div_none_style,
+            div_style={"position": "absolute", "left": "-9999px", "visibility": "hidden"},
+            parameter_name="Lateral Flow Multiplier",
+            horizontal=True,
+            input_width="60px",
         )
 
         return (
@@ -2810,6 +2839,152 @@ def update_lateral_multiplier(n_laterals, model):
     multiplier = 1.0 / n_laterals
     
     return multiplier
+
+
+@app.callback(
+    Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
+    Input({"type": "lateral-flow-input", "index": ALL}, component_property="value"),
+    State(component_id="model-select", component_property="value"),
+    State(component_id="case-select", component_property="value"),
+    prevent_initial_call=True,
+)
+def aggregate_lateral_flow_inputs(input_values, model, case):
+    """Aggregate multiple lateral flow allocation inputs into a single value for callbacks.
+    
+    For SBT models with utube case, we show multiple inputs (one per lateral).
+    This callback aggregates them into a single value that other callbacks can use.
+    The value is the average allocation per lateral (for backward compatibility).
+    Handles both fraction strings (e.g., "1/3") and decimal values.
+    """
+    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    if case != "utube":
+        raise PreventUpdate
+    
+    if not input_values or len(input_values) == 0:
+        raise PreventUpdate
+    
+    from fractions import Fraction
+    
+    # Convert fraction strings to decimals
+    valid_decimal_values = []
+    for v in input_values:
+        if v is None:
+            continue
+        # Try to parse as fraction (e.g., "1/3") or decimal
+        try:
+            if isinstance(v, str) and '/' in v:
+                # Parse fraction
+                frac = Fraction(v)
+                valid_decimal_values.append(float(frac))
+            else:
+                # Parse as decimal (handles both string and numeric)
+                valid_decimal_values.append(float(v))
+        except (ValueError, ZeroDivisionError):
+            continue
+    
+    if len(valid_decimal_values) == 0:
+        raise PreventUpdate
+    
+    # Return average allocation per lateral (for backward compatibility with single input)
+    avg_allocation = sum(valid_decimal_values) / len(valid_decimal_values)
+    return avg_allocation
+
+
+@app.callback(
+    Output(component_id="lat-allo-container", component_property="children", allow_duplicate=True),
+    Input(component_id="n-laterals-select", component_property="value"),
+    Input(component_id="model-select", component_property="value"),
+    Input(component_id="case-select", component_property="value"),
+    State(component_id="slider-values-store", component_property="data"),
+    prevent_initial_call="initial_duplicate",
+)
+def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
+    """Update the lateral flow allocation inputs when number of laterals changes.
+    
+    Creates multiple input fields (one per lateral) with equal distribution.
+    Displays fractions (e.g., "1/3") in the inputs.
+    """
+    # Only show for SBT models with utube case
+    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        from sliders import div_none_style
+        return lateral_flow_placeholder(style=div_none_style)
+    if case != "utube":
+        from sliders import div_none_style
+        return lateral_flow_placeholder(style=div_none_style)
+    if n_laterals is None or n_laterals <= 0:
+        from sliders import div_none_style
+        return lateral_flow_placeholder(style=div_none_style)
+    
+    from info_popups import create_info_button
+    from sliders import div_block_style
+    from fractions import Fraction
+    
+    info_button = create_info_button("Lateral Flow Allocation")
+    num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
+    num_laterals = min(max(1, num_laterals), 10)  # Clamp between 1 and 10
+    allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
+    
+    # Get saved values if available
+    saved_values = None
+    if store_data and model in store_data and "lateral-flow" in store_data[model]:
+        saved_values = store_data[model]["lateral-flow"]
+    
+    lateral_flow_inputs = []
+    for i in range(num_laterals):
+        # Use saved value if it's a list and has enough elements, otherwise use equal distribution
+        if isinstance(saved_values, list) and i < len(saved_values):
+            input_value_decimal = saved_values[i]
+        else:
+            input_value_decimal = allocation_per_lateral
+        
+        # Convert to fraction string for display (e.g., 0.333 -> "1/3")
+        try:
+            frac = Fraction(input_value_decimal).limit_denominator(10)
+            if frac.denominator == 1:
+                fraction_str = str(frac.numerator)
+            else:
+                fraction_str = f"{frac.numerator}/{frac.denominator}"
+        except:
+            fraction_str = str(round(input_value_decimal, 3))
+        
+        lateral_flow_inputs.append(
+            dcc.Input(
+                id={"type": "lateral-flow-input", "index": i},
+                value=fraction_str,
+                type='text',
+                placeholder=fraction_str,
+                className="input-box",
+                disabled=True,
+                style={"width": "60px", "marginRight": "5px"}
+            )
+        )
+    
+    # Hidden input to store aggregated value for callbacks (decimal format)
+    hidden_lateral_flow = dcc.Input(
+        id="lateral-flow-select",
+        value=allocation_per_lateral,
+        type='number',
+        style={"position": "absolute", "left": "-9999px", "visibility": "hidden"}
+    )
+    
+    lateral_flow = html.Div(
+        id="lat-allocation-div",
+        style=div_block_style,
+        className="name-input-container",
+        children=[
+            html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                html.P("Lateral Flow Allocation", className="input-title", style={"margin": 0}),
+                info_button
+            ]),
+            html.Div(
+                style={"display": "flex", "flexWrap": "wrap", "gap": "5px", "alignItems": "center", "marginTop": "8px"},
+                children=[hidden_lateral_flow] + lateral_flow_inputs
+            )
+        ]
+    )
+    
+    return lateral_flow
 
 
 @app.callback(
