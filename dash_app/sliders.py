@@ -220,6 +220,11 @@ def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
 
 
 def dropdown_box(DivID, ID, ptitle, options, disabled, div_style):
+        # Handle both list of dicts and list of strings for options
+        if options and isinstance(options[0], dict):
+            default_value = options[0]["value"]
+        else:
+            default_value = options[0] if options else None
 
         return html.Div(
                 id=DivID,
@@ -230,7 +235,7 @@ def dropdown_box(DivID, ID, ptitle, options, disabled, div_style):
                         dcc.Dropdown(
                                 id=ID,
                                 options=options,
-                                value=options[0],
+                                value=default_value,
                                 clearable=False,
                                 searchable=False,
                                 disabled=disabled,
@@ -388,7 +393,25 @@ def slider_card():
                                                             children=[
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
-                                                            ]),
+                                                            ]
+                                                    ),
+                                                    # Hidden coaxial flow type dropdown (always exists for callbacks)
+                                                    html.Div(
+                                                        id="coaxial-flow-type-wrapper",
+                                                        style={"display": "none"},
+                                                        className="name-input-container-dd",
+                                                        children=[
+                                                            html.P("Coaxial Flow Type", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                id="coaxial-flow-type-select",
+                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
+                                                                value="Inject in Annulus",
+                                                                clearable=False,
+                                                                searchable=False,
+                                                                className="select-dropdown"
+                                                            )
+                                                        ]
+                                                    ),
                                                     html.Div(
                                                         id="lat-allo-container",
                                                         children=[ 

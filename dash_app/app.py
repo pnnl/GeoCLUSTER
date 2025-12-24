@@ -1106,6 +1106,7 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     style_none = {"display": "none"}
     style_block = {"display": "block"}
     
+    # Get the trigger ID
     if not callback_ctx.triggered:
         # Initial state - all hidden except those that are always visible
         if model == "HDF5":
@@ -1118,6 +1119,7 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
+    # Handle model change
     if trigger_id == "model-select":
         # Model changed - set initial state: all hidden except those that are always visible
         if model == "HDF5":
@@ -1128,8 +1130,8 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
             # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
             return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
-    # Button was clicked
-    if n_clicks and n_clicks > 0:
+    # Handle button click
+    if trigger_id == "see-all-params-button" and n_clicks is not None and n_clicks > 0:
         # Check if currently showing "See less" (meaning params are visible)
         is_visible = current_button_text == "See less parameters" if current_button_text else False
         if is_visible:
@@ -1153,15 +1155,15 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
                 # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
                 # Only toggle: mesh, lat-flow, lat-allo, component-performance
                 return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
-    else:
-        # Initial state - all hidden except those that are always visible
-        if model == "HDF5":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        elif model == "SBT V1.0":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:  # SBT V2.0
-            # Keep pipe-roughness and hyperparam5 visible 
-            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+    
+    # Fallback - initial state
+    if model == "HDF5":
+        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    elif model == "SBT V1.0":
+        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    else:  # SBT V2.0
+        # Keep pipe-roughness and hyperparam5 visible 
+        return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
 
@@ -2278,7 +2280,6 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
     if store_data is None:
         store_data = {}
     
-    # Debug output for coaxial SBT models
     # Save current slider values for this model
     store_data[model] = {
         "mdot": mdot,
@@ -2607,25 +2608,33 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_block_style,
             )
             coaxialflowtype = dropdown_box(
-                DivID="lat-flow-mul-div",
-                ID="lateral-multiplier-select",
+                DivID="coaxial-flow-type-wrapper",
+                ID="coaxial-flow-type-select",
                 ptitle="Coaxial Flow Type",
-                options=["Inject in Annulus", "Inject in Center Pipe"],
+                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
                 disabled=False,
                 div_style=div_block_style,
             )
-            # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
-            # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
+            # Keep lateral-multiplier-select in the layout even for coaxial (hidden)
+            # This ensures callbacks can always access it
+            lateral_multiplier = input_box(
+                DivID="lat-flow-mul-div",
+                ID="lateral-multiplier-select",
+                ptitle="Lateral Flow Multiplier",
+                min_v=0,
+                max_v=1,
+                start_v=1.0,
+                step_i=0.05,
+                div_style=div_none_style,
+            )
 
             return (
                 radius,
                 radiuscenterpipe,
                 thicknesscenterpipe,
                 k_center_pipe,
-                coaxialflowtype,
+                lateral_multiplier,
             )
-
-            # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
 
     elif model == "HDF5":
         radius_vertical = slider1(
@@ -2989,7 +2998,10 @@ def update_sliders_hyperparms(model):
         ),  # PipeParam4
         Input(
             component_id="lateral-multiplier-select", component_property="value"
-        ),  # PipeParam5
+        ),  # PipeParam5 (for U-tube)
+        Input(
+            component_id="coaxial-flow-type-select", component_property="value"
+        ),  # PipeParam5 (for coaxial)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -3020,6 +3032,7 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     # mass_mode, temp_mode
@@ -3039,9 +3052,6 @@ def update_subsurface_results_plots(
             pipe_roughness = 1  # Default to 1 µm
         pipe_roughness_m = pipe_roughness * 1e-6
         
-        # Debug: Print received values for coaxial SBT models
-        # if HDF5:
-        # start = time.time()
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
@@ -3055,6 +3065,18 @@ def update_subsurface_results_plots(
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
         
         (
             subplots,
@@ -3084,7 +3106,7 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5,
+            actual_PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3196,6 +3218,7 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -3235,6 +3258,7 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     HyperParam1,
@@ -3254,6 +3278,18 @@ def update_econ_plots(
         if pipe_roughness is None:
             pipe_roughness = 1  # Default to 1 µm
         pipe_roughness_m = pipe_roughness * 1e-6
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
             
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
@@ -3385,6 +3421,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -3423,6 +3460,7 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     HyperParam1,
@@ -3458,6 +3496,18 @@ def update_table(
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
             
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:
