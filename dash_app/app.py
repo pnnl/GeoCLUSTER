@@ -2506,13 +2506,14 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_block_style,
                 parameter_name="Wellbore Diameter Lateral (m)",
             )
+            n_laterals_val = get_saved_value("n-laterals", start_vals_hdf5, "n-laterals")
             n_laterals = input_box(
                 DivID="num-lat-div",
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
                 min_v=0,
                 max_v=20,
-                start_v=get_saved_value("n-laterals", start_vals_hdf5, "n-laterals"),
+                start_v=n_laterals_val,
                 step_i=1,
                 div_style=div_block_style,
             )
@@ -2526,13 +2527,15 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.01,
                 div_style=div_block_style,
             )
+            # Calculate multiplier based on number of laterals: 1/n_laterals
+            multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
             lateral_multiplier = input_box(
                 DivID="lat-flow-mul-div",
                 ID="lateral-multiplier-select",
                 ptitle="Lateral Flow Multiplier",
                 min_v=0,
                 max_v=1,
-                start_v=get_saved_value("lateral-multiplier", start_vals_hdf5, "lateral-multiplier"),
+                start_v=multiplier_val,
                 step_i=0.05,
                 div_style=div_block_style,
             )
@@ -2649,13 +2652,14 @@ def update_sliders_heat_exchanger(model, case, store_data):
             div_style=div_none_style,
             parameter_name="Wellbore Diameter Lateral (m)",
         )
+        n_laterals_val = start_vals_hdf5["n-laterals"]
         n_laterals = input_box(
             DivID="num-lat-div",
             ID="n-laterals-select",
             ptitle="Number of Laterals",
             min_v=0,
             max_v=20,
-            start_v=start_vals_hdf5["n-laterals"],
+            start_v=n_laterals_val,
             step_i=1,
             div_style=div_none_style,
         )
@@ -2669,13 +2673,15 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.01,
             div_style=div_none_style,
         )
+        # Calculate multiplier based on number of laterals: 1/n_laterals
+        multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
         lateral_multiplier = input_box(
             DivID="lat-flow-mul-div",
             ID="lateral-multiplier-select",
             ptitle="Lateral Flow Multiplier",
             min_v=0,
             max_v=1,
-            start_v=start_vals_hdf5["lateral-multiplier"],
+            start_v=multiplier_val,
             step_i=0.05,
             div_style=div_none_style,
         )
@@ -2761,9 +2767,40 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
     
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
     lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
-    lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    # Calculate lateral multiplier based on number of laterals: 1/n_laterals
+    # This ensures consistency: 1 lateral = 1, 2 laterals = 0.5, 3 laterals = 1/3, etc.
+    if n_laterals is not None and n_laterals > 0:
+        lateral_multiplier = 1.0 / n_laterals
+    else:
+        lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
     
     return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+
+
+@app.callback(
+    Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+    Input(component_id="n-laterals-select", component_property="value"),
+    State(component_id="model-select", component_property="value"),
+    prevent_initial_call=True,
+)
+def update_lateral_multiplier(n_laterals, model):
+    """Automatically update lateral flow multiplier based on number of laterals.
+    
+    The multiplier should be 1/n_laterals:
+    - 1 lateral: multiplier = 1
+    - 2 laterals: multiplier = 1/2 = 0.5
+    - 3 laterals: multiplier = 1/3 ≈ 0.333
+    """
+    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    if n_laterals is None or n_laterals <= 0:
+        raise PreventUpdate
+    
+    multiplier = 1.0 / n_laterals
+    
+    return multiplier
 
 
 @app.callback(
