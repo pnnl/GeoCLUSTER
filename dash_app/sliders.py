@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = {30: "30", 60: "60"}
+Tinj_dict = {30: "30", 59: "59"}
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
@@ -317,7 +317,7 @@ def slider_card():
                                                     html.Div(
                                                             id="Tinj-container",
                                                             children=[
-                                                                slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                                slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=59.0, 
                                                                         mark_dict=Tinj_dict, start_v=60.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(

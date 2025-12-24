@@ -2018,7 +2018,7 @@ def update_slider_ranges(model, case, store_data):
     saved_values = store_data.get(model, {})
 
     if model == "HDF5":  # hide the other params (happens in the next callback)
-        Tinj_dict = {30: "30", 60: "60"}
+        Tinj_dict = {30: "30", 59: "59"}
         mdot_dict = create_steps(
             arg_arr=u_sCO2.mdot, str_round_place="{:.1f}", val_round_place=1
         )
@@ -2057,7 +2057,7 @@ def update_slider_ranges(model, case, store_data):
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=u_sCO2.Tinj[0] - 273.15,
-            max_v=u_sCO2.Tinj[-1] - 273.15,
+            max_v=59.0,
             mark_dict=Tinj_dict,
             start_v=saved_values.get("Tinj", 55.0),
             div_style=div_block_style,
