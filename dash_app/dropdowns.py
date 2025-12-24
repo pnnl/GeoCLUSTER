@@ -50,7 +50,7 @@ fluid_list = ["All", "H2O", "sCO2"]
 end_use_list = ["All", "Heating", "Electricity"] 
 
 param_list = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (°C/m)", "Borehole Diameter (m)", 
-                "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)"]
+                "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-°C)"]
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 
@@ -100,7 +100,10 @@ def dropdown_card():
                         
                         html.Div(id="dropdown-card2",
                             children=[
-                                html.P("Heat-Exchanger", className="dropdown-text"),
+                                html.Div([
+                                    html.P("Heat-Exchanger", className="dropdown-text", style={"display": "inline-block", "margin": "0", "verticalAlign": "middle"}),
+                                    create_info_button("Heat Exchanger")
+                                ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                         id="case-select",
                                         options=[{"label": i, "value": i} for i in case_list],
@@ -112,7 +115,10 @@ def dropdown_card():
                             ),
                         html.Div(id="dropdown-card3",
                             children=[
-                                html.P("Working Fluid", className="dropdown-text"),
+                                html.Div([
+                                    html.P("Working Fluid", className="dropdown-text", style={"display": "inline-block", "margin": "0", "verticalAlign": "middle"}),
+                                    create_info_button("Working Fluid")
+                                ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                     id="fluid-select",
                                     options=[{"label": i, "value": i} for i in fluid_list],
@@ -124,7 +130,10 @@ def dropdown_card():
                             ),
                         html.Div(id="dropdown-card4",
                             children=[
-                                html.P("End-Use", className="dropdown-text"),
+                                html.Div([
+                                    html.P("End-Use", className="dropdown-text", style={"display": "inline-block", "margin": "0", "verticalAlign": "middle"}),
+                                    create_info_button("End-Use")
+                                ], style={"display": "flex", "alignItems": "center", "gap": "5px", "marginBottom": "0"}),
                                 dcc.Dropdown(
                                     id="end-use-select",
                                     options=[{"label": i, "value": i} for i in end_use_list],

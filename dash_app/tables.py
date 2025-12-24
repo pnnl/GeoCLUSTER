@@ -36,9 +36,15 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     # Creates Plotly a plotly table. Then, returns the figure and data as a dictionary of lits for data downloading.
     # -----------------------------------------------------------------------------------------------------------------
 
+    # Format fluid value: if "All", show specific fluids
+    if fluid == "All":
+        fluid_display = "H2O, sCO2"
+    else:
+        fluid_display = fluid
+    
     variable_input_values = [mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
-                             interp_time, case, fluid]
+                             interp_time, case, fluid_display]
 
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5" or model == "CovHDF5":

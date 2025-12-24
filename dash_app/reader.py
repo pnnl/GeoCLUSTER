@@ -34,7 +34,7 @@ def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 	              ("utube", "sCO2", "Geothermal Gradient (°C/m)"): u_sCO2.grad,
 	              ("utube", "sCO2", "Borehole Diameter (m)"): u_sCO2.D,
 	              ("utube", "sCO2", "Injection Temperature (˚C)"): u_sCO2.Tinj,
-	              ("utube", "sCO2", "Rock Thermal Conductivity (W/m-K)"): u_sCO2.k,
+	              ("utube", "sCO2", "Rock Thermal Conductivity (W/m-°C)"): u_sCO2.k,
 
 	              ("utube", "H2O", "mdot"): u_H2O.mdot,
 	              ("utube", "H2O", "Horizontal Extent (m)"): u_H2O.L2,
@@ -42,7 +42,7 @@ def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 	              ("utube", "H2O", "Geothermal Gradient (°C/m)"): u_H2O.grad,
 	              ("utube", "H2O", "Borehole Diameter (m)"): u_H2O.D,
 	              ("utube", "H2O", "Injection Temperature (˚C)"): u_H2O.Tinj,
-	              ("utube", "H2O", "Rock Thermal Conductivity (W/m-K)"): u_H2O.k,
+	              ("utube", "H2O", "Rock Thermal Conductivity (W/m-°C)"): u_H2O.k,
 
 	              ("coaxial", "sCO2", "mdot"): c_sCO2.mdot,
 	              ("coaxial", "sCO2", "Horizontal Extent (m)"): c_sCO2.L2,
@@ -50,7 +50,7 @@ def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 	              ("coaxial", "sCO2", "Geothermal Gradient (°C/m)"): c_sCO2.grad,
 	              ("coaxial", "sCO2", "Borehole Diameter (m)"): c_sCO2.D,
 	              ("coaxial", "sCO2", "Injection Temperature (˚C)"): c_sCO2.Tinj,
-	              ("coaxial", "sCO2", "Rock Thermal Conductivity (W/m-K)"): c_sCO2.k,
+	              ("coaxial", "sCO2", "Rock Thermal Conductivity (W/m-°C)"): c_sCO2.k,
 
 	              ("coaxial", "H2O", "mdot"): c_H2O.mdot,
 	              ("coaxial", "H2O", "Horizontal Extent (m)"): c_H2O.L2,
@@ -58,7 +58,7 @@ def data_dict(u_sCO2, u_H2O, c_sCO2, c_H2O):
 	              ("coaxial", "H2O", "Geothermal Gradient (°C/m)"): c_H2O.grad,
 	              ("coaxial", "H2O", "Borehole Diameter (m)"): c_H2O.D,
 	              ("coaxial", "H2O", "Injection Temperature (˚C)"): c_H2O.Tinj,
-	              ("coaxial", "H2O", "Rock Thermal Conductivity (W/m-K)"): c_H2O.k,          
+	              ("coaxial", "H2O", "Rock Thermal Conductivity (W/m-°C)"): c_H2O.k,          
 	            }
 	
 	return param_dict

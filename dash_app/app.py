@@ -1077,7 +1077,7 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     prevent_initial_call=False,
 )
 def show_hide_see_all_button(model):
-    if model is None or model == "HDF5":
+    if model is None:
         return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"}
     else:
         return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
@@ -1090,6 +1090,7 @@ def show_hide_see_all_button(model):
         Output(component_id="hyperparam5-container", component_property="style", allow_duplicate=True),
         Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
         Output(component_id="lat-allo-container", component_property="style", allow_duplicate=True),
+        Output(component_id="component-performance-div", component_property="style", allow_duplicate=True),
         Output(component_id="see-all-params-text", component_property="children"),
         Output(component_id="see-all-params-chevron", component_property="children"),
     ],
@@ -1102,34 +1103,67 @@ def show_hide_see_all_button(model):
 )
 def toggle_see_all_params(n_clicks, model, current_button_text):
     callback_ctx = ctx
+    style_none = {"display": "none"}
+    style_block = {"display": "block"}
+    
+    # Get the trigger ID
     if not callback_ctx.triggered:
-        # Initial state - all hidden
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        # Initial state - all hidden except those that are always visible
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        elif model == "SBT V1.0":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
+    # Handle model change
     if trigger_id == "model-select":
-        # Model changed - set initial state: all hidden for SBT models (they'll be shown when button is clicked)
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        # Model changed - set initial state: all hidden except those that are always visible
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        elif model == "SBT V1.0":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
-    # Button was clicked
-    if n_clicks and n_clicks > 0:
+    # Handle button click
+    if trigger_id == "see-all-params-button" and n_clicks is not None and n_clicks > 0:
         # Check if currently showing "See less" (meaning params are visible)
         is_visible = current_button_text == "See less parameters" if current_button_text else False
         if is_visible:
             # Hide all parameters
-            style_none = {"display": "none"}
-            return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            elif model == "SBT V1.0":
+                # Hide all parameters for SBT V1.0
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:  # SBT V2.0
+                # Hide only: mesh, lat-flow, lat-allo, component-performance
+                return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
             # Show all parameters
-            style_block = {"display": "block"}
-            return style_block, style_block, style_block, style_block, style_block, "See less parameters", " ▲"
-    else:
-        # Initial state - all hidden
-        style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_block, "See less parameters", " ▲"
+            elif model == "SBT V1.0":
+                # For SBT V1.0, show the 5 SBT-specific parameters (all are hidden by default)
+                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
+            else:  # SBT V2.0
+                # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
+                # Only toggle: mesh, lat-flow, lat-allo, component-performance
+                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
+    
+    # Fallback - initial state
+    if model == "HDF5":
+        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    elif model == "SBT V1.0":
+        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+    else:  # SBT V2.0
+        # Keep pipe-roughness and hyperparam5 visible 
+        return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
 
@@ -1724,7 +1758,7 @@ def show_model_params(model):
     n = {"display": "none"}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n, b  # Show component-performance for HDF5
+        return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
         return b, b, b, b, b, b, n, n, b, n, n, n  # Hide component-performance for SBT V1.0
@@ -1984,7 +2018,7 @@ def update_slider_ranges(model, case, store_data):
     saved_values = store_data.get(model, {})
 
     if model == "HDF5":  # hide the other params (happens in the next callback)
-        Tinj_dict = {30: "30", 60: "60"}
+        Tinj_dict = {30: "30", 59: "59"}
         mdot_dict = create_steps(
             arg_arr=u_sCO2.mdot, str_round_place="{:.1f}", val_round_place=1
         )
@@ -2009,13 +2043,13 @@ def update_slider_ranges(model, case, store_data):
         k_container = slider2(
             DivID="k-select-div",
             ID="k-select",
-            ptitle="Rock Thermal Conductivity (W/m-K)",
+            ptitle="Rock Thermal Conductivity (W/m-°C)",
             min_v=u_sCO2.k[0],
             max_v=u_sCO2.k[-1],
             mark_dict=k_dict,
             start_v=saved_values.get("k", start_vals_d["k"]),
             div_style=div_block_style,
-            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            parameter_name="Rock Thermal Conductivity (W/m-°C)",
             custom_title=True,
         )
         Tinj_container = slider2(
@@ -2023,7 +2057,7 @@ def update_slider_ranges(model, case, store_data):
             ID="Tinj-select",
             ptitle="Injection Temperature (˚C)",
             min_v=u_sCO2.Tinj[0] - 273.15,
-            max_v=u_sCO2.Tinj[-1] - 273.15,
+            max_v=59.0,
             mark_dict=Tinj_dict,
             start_v=saved_values.get("Tinj", 55.0),
             div_style=div_block_style,
@@ -2131,13 +2165,13 @@ def update_slider_ranges(model, case, store_data):
         k_container = slider2(
             DivID="k-select-div",
             ID="k-select",
-            ptitle="Rock Thermal Conductivity (W/m-K)",  # min_v=0.1, max_v=7.0,
+            ptitle="Rock Thermal Conductivity (W/m-°C)",  # min_v=0.1, max_v=7.0,
             min_v=0.4,
             max_v=5.0,
             mark_dict=k_dict,
             start_v=coaxial_default_k if (case == "coaxial" and coaxial_default_k is not None) else (saved_values.get("k", coaxial_default_k if coaxial_default_k is not None else start_vals_d["k"])),
             div_style=div_block_style,
-            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            parameter_name="Rock Thermal Conductivity (W/m-°C)",
             custom_title=True,
         )
         Tinj_container = slider2(
@@ -2246,7 +2280,6 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
     if store_data is None:
         store_data = {}
     
-    # Debug output for coaxial SBT models
     # Save current slider values for this model
     store_data[model] = {
         "mdot": mdot,
@@ -2460,6 +2493,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=get_saved_value("radius-vertical", start_vals_sbt, "radius-vertical"),
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter Vertical (m)",
             )
             radius_lateral = slider1(
                 DivID="radius-lateral-select-div",
@@ -2471,14 +2505,16 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=get_saved_value("radius-lateral", start_vals_sbt, "radius-lateral"),
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter Lateral (m)",
             )
+            n_laterals_val = get_saved_value("n-laterals", start_vals_hdf5, "n-laterals")
             n_laterals = input_box(
                 DivID="num-lat-div",
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
                 min_v=0,
                 max_v=20,
-                start_v=get_saved_value("n-laterals", start_vals_hdf5, "n-laterals"),
+                start_v=n_laterals_val,
                 step_i=1,
                 div_style=div_block_style,
             )
@@ -2492,13 +2528,15 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.01,
                 div_style=div_block_style,
             )
+            # Calculate multiplier based on number of laterals: 1/n_laterals
+            multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
             lateral_multiplier = input_box(
                 DivID="lat-flow-mul-div",
                 ID="lateral-multiplier-select",
                 ptitle="Lateral Flow Multiplier",
                 min_v=0,
                 max_v=1,
-                start_v=get_saved_value("lateral-multiplier", start_vals_hdf5, "lateral-multiplier"),
+                start_v=multiplier_val,
                 step_i=0.05,
                 div_style=div_block_style,
             )
@@ -2530,6 +2568,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=coaxial_default_radius,  # Always use maximum for stability, ignore saved values
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter (m)",
             )
 
             radiuscenterpipe = slider1(
@@ -2542,6 +2581,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.001,
                 start_v=coaxial_default_radiuscenterpipe,  # Always use default, ignore saved values
                 div_style=div_block_style,
+                parameter_name="Center Pipe Radius (m)",
             )
 
             thicknesscenterpipe = slider1(
@@ -2559,7 +2599,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
             k_center_pipe = slider1(
                 DivID="lateral-flow-select-div",
                 ID="lateral-flow-select",
-                ptitle="Insulation Thermal Conductivity (W/m-K)",
+                ptitle="Insulation Thermal Conductivity (W/m-°C)",
                 min_v=0.025,
                 max_v=0.5,
                 mark_dict=insulation_thermal_k_dict,
@@ -2568,25 +2608,33 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_block_style,
             )
             coaxialflowtype = dropdown_box(
-                DivID="lat-flow-mul-div",
-                ID="lateral-multiplier-select",
+                DivID="coaxial-flow-type-wrapper",
+                ID="coaxial-flow-type-select",
                 ptitle="Coaxial Flow Type",
-                options=["Inject in Annulus", "Inject in Center Pipe"],
+                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
                 disabled=False,
                 div_style=div_block_style,
             )
-            # slider1(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Coaxial Flow Type", min_v=1, max_v=2,
-            # mark_dict=radius_vertical_dict, step_i=1, start_v=start_vals_sbt["coaxialflowtype"], div_style=div_block_style)
+            # Keep lateral-multiplier-select in the layout even for coaxial (hidden)
+            # This ensures callbacks can always access it
+            lateral_multiplier = input_box(
+                DivID="lat-flow-mul-div",
+                ID="lateral-multiplier-select",
+                ptitle="Lateral Flow Multiplier",
+                min_v=0,
+                max_v=1,
+                start_v=1.0,
+                step_i=0.05,
+                div_style=div_none_style,
+            )
 
             return (
                 radius,
                 radiuscenterpipe,
                 thicknesscenterpipe,
                 k_center_pipe,
-                coaxialflowtype,
+                lateral_multiplier,
             )
-
-            # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
 
     elif model == "HDF5":
         radius_vertical = slider1(
@@ -2599,6 +2647,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.002,
             start_v=start_vals_sbt["radius-vertical"],
             div_style=div_none_style,
+            parameter_name="Wellbore Diameter Vertical (m)",
         )
         radius_lateral = slider1(
             DivID="radius-lateral-select-div",
@@ -2610,14 +2659,16 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.002,
             start_v=start_vals_sbt["radius-lateral"],
             div_style=div_none_style,
+            parameter_name="Wellbore Diameter Lateral (m)",
         )
+        n_laterals_val = start_vals_hdf5["n-laterals"]
         n_laterals = input_box(
             DivID="num-lat-div",
             ID="n-laterals-select",
             ptitle="Number of Laterals",
             min_v=0,
             max_v=20,
-            start_v=start_vals_hdf5["n-laterals"],
+            start_v=n_laterals_val,
             step_i=1,
             div_style=div_none_style,
         )
@@ -2631,13 +2682,15 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.01,
             div_style=div_none_style,
         )
+        # Calculate multiplier based on number of laterals: 1/n_laterals
+        multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
         lateral_multiplier = input_box(
             DivID="lat-flow-mul-div",
             ID="lateral-multiplier-select",
             ptitle="Lateral Flow Multiplier",
             min_v=0,
             max_v=1,
-            start_v=start_vals_hdf5["lateral-multiplier"],
+            start_v=multiplier_val,
             step_i=0.05,
             div_style=div_none_style,
         )
@@ -2723,9 +2776,40 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
     
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
     lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
-    lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    # Calculate lateral multiplier based on number of laterals: 1/n_laterals
+    # This ensures consistency: 1 lateral = 1, 2 laterals = 0.5, 3 laterals = 1/3, etc.
+    if n_laterals is not None and n_laterals > 0:
+        lateral_multiplier = 1.0 / n_laterals
+    else:
+        lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
     
     return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+
+
+@app.callback(
+    Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+    Input(component_id="n-laterals-select", component_property="value"),
+    State(component_id="model-select", component_property="value"),
+    prevent_initial_call=True,
+)
+def update_lateral_multiplier(n_laterals, model):
+    """Automatically update lateral flow multiplier based on number of laterals.
+    
+    The multiplier should be 1/n_laterals:
+    - 1 lateral: multiplier = 1
+    - 2 laterals: multiplier = 1/2 = 0.5
+    - 3 laterals: multiplier = 1/3 ≈ 0.333
+    """
+    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    if n_laterals is None or n_laterals <= 0:
+        raise PreventUpdate
+    
+    multiplier = 1.0 / n_laterals
+    
+    return multiplier
 
 
 @app.callback(
@@ -2770,14 +2854,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_none_style,  # Hidden for SBT V1.0
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
 
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
@@ -2807,14 +2891,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_block_style,
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",
@@ -2855,14 +2939,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_none_style,  # Hidden for HDF5
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
     else:
@@ -2914,7 +2998,10 @@ def update_sliders_hyperparms(model):
         ),  # PipeParam4
         Input(
             component_id="lateral-multiplier-select", component_property="value"
-        ),  # PipeParam5
+        ),  # PipeParam5 (for U-tube)
+        Input(
+            component_id="coaxial-flow-type-select", component_property="value"
+        ),  # PipeParam5 (for coaxial)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -2945,6 +3032,7 @@ def update_subsurface_results_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     # mass_mode, temp_mode
@@ -2958,9 +3046,12 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
-        # Debug: Print received values for coaxial SBT models
-        # if HDF5:
-        # start = time.time()
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
+        
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
@@ -2969,10 +3060,23 @@ def update_subsurface_results_plots(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
         
         (
             subplots,
@@ -3002,7 +3106,7 @@ def update_subsurface_results_plots(
             Diameter2,
             PipeParam3,
             PipeParam4,
-            PipeParam5,
+            actual_PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3114,6 +3218,7 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -3153,6 +3258,7 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     HyperParam1,
@@ -3166,6 +3272,24 @@ def update_econ_plots(
             TandP_dict = {}
         if checklist is None:
             checklist = []
+        
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
             
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
@@ -3186,7 +3310,8 @@ def update_econ_plots(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = None  # Not used for HDF5 or SBT V1.0
             hyperparam3_value = HyperParam3
@@ -3296,6 +3421,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="value"),
@@ -3334,6 +3460,7 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,
+    coaxial_flow_type,
     mesh,
     accuracy,
     HyperParam1,
@@ -3350,6 +3477,12 @@ def update_table(
         if tandp_data is None:
             tandp_data = None
         
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
+        
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
@@ -3358,10 +3491,23 @@ def update_table(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
+        
+        # Use the correct PipeParam5 based on case
+        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        if case == "coaxial":
+            if coaxial_flow_type == "Inject in Annulus":
+                actual_PipeParam5 = 1
+            elif coaxial_flow_type == "Inject in Center Pipe":
+                actual_PipeParam5 = 2
+            else:
+                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+        else:
+            actual_PipeParam5 = PipeParam5
             
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:

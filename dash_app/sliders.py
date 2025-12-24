@@ -62,8 +62,8 @@ tube_geometry_l = ["Wellbore Diameter Vertical (m)", "Wellbore Diameter Lateral 
 economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
                     "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
 
-geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (°C/m)", "Rock Thermal Conductivity (W/m-K)", 
-                            "Rock Specific Heat Capacity (J/kg-K)", "Rock Density (kg/m3)"]
+geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (°C/m)", "Rock Thermal Conductivity (W/m-°C)", 
+                            "Rock Specific Heat Capacity (J/kg-°C)", "Rock Density (kg/m3)"]
                             
 model_finetuning_l = ["Mesh Fineness", "Accuracy", "Mass Flow Rate Mode", "Mass Flow Rate Profile", 
                                             "Injection Temperature Mode", "Injection Temperature Profile"]
@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = {30: "30", 60: "60"}
+Tinj_dict = {30: "30", 59: "59"}
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
@@ -112,7 +112,7 @@ radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
-pipe_roughness_dict =  {0.000001: '1e-6', 0.000002: '', 0.000003: '3e-6'}
+pipe_roughness_um_dict = {1: '1', 3: '3'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
@@ -126,7 +126,7 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
                     "inletpressure": 10,
-                    "piperoughness": 0.000001 # 1e-6
+                    "piperoughness": 1  # 1 µm (display value), actual value in meters is 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
                     "kwe": 3000, "precool": 13, "turb-pout": 80
@@ -158,7 +158,7 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                            html.Div([
                                html.Div([
                                    html.Div("Rock Specific Heat Capacity", style={"textAlign": "center", "fontWeight": "bold"}),
-                                   html.Div("(J/kg-K)", style={"textAlign": "center", "fontWeight": "bold"})
+                                   html.Div("(J/kg-°C)", style={"textAlign": "center", "fontWeight": "bold"})
                                ]) if custom_title and "Rock Specific Heat Capacity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
@@ -191,7 +191,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                            html.Div([
                                html.Div([
                                    html.Div("Rock Thermal Conductivity", style={"textAlign": "center", "fontWeight": "bold"}),
-                                   html.Div("(W/m-K)", style={"textAlign": "center", "fontWeight": "bold"})
+                                   html.Div("(W/m-°C)", style={"textAlign": "center", "fontWeight": "bold"})
                                ]) if custom_title and "Rock Thermal Conductivity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
@@ -220,6 +220,11 @@ def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
 
 
 def dropdown_box(DivID, ID, ptitle, options, disabled, div_style):
+        # Handle both list of dicts and list of strings for options
+        if options and isinstance(options[0], dict):
+            default_value = options[0]["value"]
+        else:
+            default_value = options[0] if options else None
 
         return html.Div(
                 id=DivID,
@@ -230,7 +235,7 @@ def dropdown_box(DivID, ID, ptitle, options, disabled, div_style):
                         dcc.Dropdown(
                                 id=ID,
                                 options=options,
-                                value=options[0],
+                                value=default_value,
                                 clearable=False,
                                 searchable=False,
                                 disabled=disabled,
@@ -292,12 +297,12 @@ def slider_card():
                                                     html.Div(
                                                             id="k-container",
                                                             children=[
-                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)", custom_title=True)
+                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-°C)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-°C)", custom_title=True)
                                                                     
                                                             ]),
-                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)", custom_title=True),
+                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-°C)", min_v=500, max_v=2000, 
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-°C)", custom_title=True),
                                                     slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
                                                             mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]
@@ -312,7 +317,7 @@ def slider_card():
                                                     html.Div(
                                                             id="Tinj-container",
                                                             children=[
-                                                                slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=60.0, 
+                                                                slider2(DivID="Tinj-select-div", ID="Tinj-select", ptitle="Injection Temperature (˚C)", min_v=30.0, max_v=59.0, 
                                                                         mark_dict=Tinj_dict, start_v=60.0, div_style=div_block_style, parameter_name="Injection Temperature (˚C)")
                                                             ]),
                                                     html.Div(
@@ -325,12 +330,6 @@ def slider_card():
                                                         id="inlet-pressure-container",
                                                         children=[]
                                                     ),
-                                                    html.Div(
-                                                        id="pipe-roughness-container",
-                                                        children=[
-                                                                slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
-                                                                        mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_none_style, parameter_name="Pipe Roughness (m)")
-                                                    ]),
                                                     html.Div(
                                                         id="hyperparam5-container",
                                                         children=[
@@ -377,6 +376,12 @@ def slider_card():
                                                                         mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
                                                             ]),
                                                     html.Div(
+                                                        id="pipe-roughness-container",
+                                                        children=[
+                                                                slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (µm)", min_v=1, max_v=3,
+                                                                        mark_dict=pipe_roughness_um_dict, step_i=0.1, start_v=start_vals_sbt["piperoughness"], div_style=div_none_style, parameter_name="Pipe Roughness (µm)")
+                                                    ]),
+                                                    html.Div(
                                                             id="num-lat-container",
                                                             children=[ 
                                                                 input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
@@ -388,10 +393,28 @@ def slider_card():
                                                             children=[
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
-                                                            ]),
+                                                            ]
+                                                    ),
+                                                    # Hidden coaxial flow type dropdown (always exists for callbacks)
                                                     html.Div(
-                                                            id="lat-allo-container",
-                                                            children=[ 
+                                                        id="coaxial-flow-type-wrapper",
+                                                        style={"display": "none"},
+                                                        className="name-input-container-dd",
+                                                        children=[
+                                                            html.P("Coaxial Flow Type", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                id="coaxial-flow-type-select",
+                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
+                                                                value="Inject in Annulus",
+                                                                clearable=False,
+                                                                searchable=False,
+                                                                className="select-dropdown"
+                                                            )
+                                                        ]
+                                                    ),
+                                                    html.Div(
+                                                        id="lat-allo-container",
+                                                        children=[ 
                                                                 input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
                                                                             min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
                                                             ]),
@@ -489,7 +512,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Turbine Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Turbine Isentropic Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "turbine-isentropic-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="turbine-efficiency-select", 
                                                                               disabled=True,
                                                                               value="90%", 
@@ -508,7 +554,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Generator Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Generator Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "generator-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="generator-efficiency-select", 
                                                                               disabled=True,
                                                                               value="98%", 
@@ -527,7 +596,30 @@ def slider_card():
                                                                 className="name-input-container",
                                                                 style=div_block_style,
                                                                 children=[
-                                                                    html.P("Compressor Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                                                                        html.P("Compressor Isentropic Efficiency (sCO2 electricity)", className="input-title", style={"margin": 0}),
+                                                                        html.Div([
+                                                                            dbc.Button(
+                                                                                html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
+                                                                                id={"type": "info-btn", "param": "compressor-isentropic-efficiency-sco2-electricity"},
+                                                                                color="link",
+                                                                                size="sm",
+                                                                                className="ms-1 info-button",
+                                                                                style={
+                                                                                    "textDecoration": "none",
+                                                                                    "padding": "0",
+                                                                                    "backgroundColor": "transparent",
+                                                                                    "border": "none",
+                                                                                    "display": "inline-flex",
+                                                                                    "alignItems": "center",
+                                                                                    "justifyContent": "center",
+                                                                                    "transform": "translateX(-6px) translateY(-5px)",
+                                                                                    "position": "relative",
+                                                                                    "top": "-5px"
+                                                                                }
+                                                                            )
+                                                                        ])
+                                                                    ]),
                                                                     dcc.Input(id="compressor-efficiency-select", 
                                                                               disabled=True,
                                                                               value="90%", 

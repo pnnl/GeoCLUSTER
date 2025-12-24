@@ -31,6 +31,14 @@ PARAMETER_INFO = {
         "description": "Water is the most common working fluid due to availability and favorable thermal properties."
     },
     
+    "End-Use": {
+        "definition": "Specify the intended application of the geothermal system output. Options include Heating (direct thermal use), Electricity (power generation), or All (both applications).",
+        "recommended_range": "Heating, Electricity, All",
+        "typical_value": "All",
+        "unit": "mode",
+        "description": "The end-use selection determines the economic calculations and system design parameters."
+    },
+    
     "Model Version": {
         "definition": "Select the computational model for simulating closed-loop geothermal systems.",
         "recommended_range": "Database, Simulator",
@@ -72,7 +80,7 @@ PARAMETER_INFO = {
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
-    "Rock Thermal Conductivity (W/m-K)": {
+    "Rock Thermal Conductivity (W/m-°C)": {
         "definition": "Set how quickly heat moves through rock. A value of 3 W/m-K represents moderately conductive rock, such as granite.",
         "recommended_range": "0.4-5.0 W/m-K",
         "typical_value": "3 W/m-K",
@@ -88,7 +96,7 @@ PARAMETER_INFO = {
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
     
-    "Rock Specific Heat Capacity (J/kg-K)": {
+    "Rock Specific Heat Capacity (J/kg-°C)": {
         "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.051 J/kg-K represents an average for various dry rocks.",
         "recommended_range": "500-2000 J/kg-K",
         "typical_value": "0.051 J/kg-K",
@@ -357,6 +365,24 @@ PARAMETER_INFO = {
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
     },
     
+    "Turbine Isentropic Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of the turbine in converting thermal energy to mechanical work during the expansion process. The value of 90% represents a typical isentropic efficiency for sCO2 turbines, accounting for losses due to friction, heat transfer, and other irreversibilities.",
+        "unit": "%",
+        "description": "Higher efficiency increases net power output from the sCO2 cycle."
+    },
+    
+    "Generator Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of converting mechanical work from the turbine into electrical power. The value of 98% represents a typical generator efficiency, accounting for electrical losses in the conversion process.",
+        "unit": "%",
+        "description": "Higher efficiency increases net electrical power output from the system."
+    },
+    
+    "Compressor Isentropic Efficiency (sCO2 electricity)": {
+        "definition": "Efficiency of the compressor in pressurizing the working fluid with minimal entropy increase. The value of 90% represents a typical isentropic efficiency for sCO2 compressors, accounting for losses due to friction, heat transfer, and other irreversibilities.",
+        "unit": "%",
+        "description": "Higher efficiency reduces the work required to compress the fluid, increasing net power output."
+    },
+    
     # Model Fine-tuning Parameters
     "Mesh Fineness": {
         "definition": "Set the spatial resolution of the borehole based on how finely it is broken into discrete segments for simulation. A value of 0 (coarse) compared to 5 (research-grade accuracy), is the fastest option but least precise geometry.",
@@ -407,6 +433,13 @@ PARAMETER_INFO = {
         "unit": "m",
         "description": "Lower roughness values reduce friction losses and improve flow efficiency."
     },
+    "Pipe Roughness (µm)": {
+        "definition": "Set a measure of how smooth the inside surface of the pipe or borehole is, which affects how much friction the fluid encounters as it flows. A value of 1 µm (1e-6 m) is very smooth – like new steel casting.",
+        "recommended_range": "1 to 3 µm (1e-6 to 3e-6 m)",
+        "typical_value": "1 µm (0.000001 m)",
+        "unit": "µm",
+        "description": "Lower roughness values reduce friction losses and improve flow efficiency."
+    },
     
     "Inlet Pressure (MPa)": {
         "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells.",
@@ -440,7 +473,7 @@ PARAMETER_INFO = {
         "description": "Thicker walls provide more structural strength but reduce flow area."
     },
     
-    "Insulation Thermal Conductivity (W/m-K)": {
+    "Insulation Thermal Conductivity (W/m-°C)": {
         "definition": "Set the insulation performance of the inner pipe. A value of 0.025 W/m-K is a good approximation of a well-insulated pipe layer.",
         "recommended_range": "0.025-0.5 W/m-K",
         "typical_value": "0.025 W/m-K",
@@ -800,8 +833,8 @@ def register_info_modal_callbacks(app):
                 hdf5_style = {"fontWeight": "normal"}
                 sbt1_style = {"fontWeight": "normal"}
                 sbt2_style = {"fontWeight": "normal"}
-                
-                modal_content = [
+            
+            modal_content = [
                 html.H6(hdf5_info.get("title", "Database"), className="text-primary", style=header_style),
                 html.P(hdf5_info.get("description", ""), className="mb-3", style=hdf5_style),
                 
@@ -812,7 +845,7 @@ def register_info_modal_callbacks(app):
                 html.P(sbt2_info.get("description", ""), className="mb-3", style=sbt2_style),
                 
                 html.H6("Simulator Model Selection", className="text-primary", style=header_style),
-                    html.P([
+                html.P([
                     "When \"Simulator\" is selected, the Slender-Body Theory version is automatically determined based on the working fluid selection:",
                     html.Br(),
                     html.Br(),
@@ -823,8 +856,8 @@ def register_info_modal_callbacks(app):
                     "• ",
                     html.Strong("sCO2 selected or both H2O and sCO2 selected:"),
                     " Slender-Body Theory V2.0 is used",
-                    ], className="mb-3"),
-                ]
+                ], className="mb-3"),
+            ]
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)
@@ -832,16 +865,11 @@ def register_info_modal_callbacks(app):
 
         # Standard handling for other parameters
         header_style = {"fontSize": "16px", "fontWeight": "bold"}
-        modal_content = [
-            html.H6("Definition:", className="text-primary", style=header_style),
-            html.P(info["definition"], className="mb-3"),
-            html.H6("Recommended Range:", className="text-primary", style=header_style),
-            html.P(info["recommended_range"], className="mb-3"),
-            html.H6("Typical Value:", className="text-primary", style=header_style),
-            html.P(f"{info['typical_value']}", className="mb-3"),
-            html.H6("Description:", className="text-primary", style=header_style),
-            html.P(info["description"], className="mb-3"),
-        ]
+        modal_content = []
+        if "description" in info and info["description"]:
+            modal_content.append(
+                html.P(info["description"], className="mb-3"),
+            )
         return True, f"Information: {param}", modal_content, current_max
 
     @app.callback(
