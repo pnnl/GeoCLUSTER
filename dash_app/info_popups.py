@@ -31,6 +31,14 @@ PARAMETER_INFO = {
         "description": "Water is the most common working fluid due to availability and favorable thermal properties."
     },
     
+    "End-Use": {
+        "definition": "Specify the intended application of the geothermal system output. Options include Heating (direct thermal use), Electricity (power generation), or All (both applications).",
+        "recommended_range": "Heating, Electricity, All",
+        "typical_value": "All",
+        "unit": "mode",
+        "description": "The end-use selection determines the economic calculations and system design parameters."
+    },
+    
     "Model Version": {
         "definition": "Select the computational model for simulating closed-loop geothermal systems.",
         "recommended_range": "Database, Simulator",
@@ -825,8 +833,8 @@ def register_info_modal_callbacks(app):
                 hdf5_style = {"fontWeight": "normal"}
                 sbt1_style = {"fontWeight": "normal"}
                 sbt2_style = {"fontWeight": "normal"}
-                
-                modal_content = [
+            
+            modal_content = [
                 html.H6(hdf5_info.get("title", "Database"), className="text-primary", style=header_style),
                 html.P(hdf5_info.get("description", ""), className="mb-3", style=hdf5_style),
                 
@@ -837,7 +845,7 @@ def register_info_modal_callbacks(app):
                 html.P(sbt2_info.get("description", ""), className="mb-3", style=sbt2_style),
                 
                 html.H6("Simulator Model Selection", className="text-primary", style=header_style),
-                    html.P([
+                html.P([
                     "When \"Simulator\" is selected, the Slender-Body Theory version is automatically determined based on the working fluid selection:",
                     html.Br(),
                     html.Br(),
@@ -848,8 +856,8 @@ def register_info_modal_callbacks(app):
                     "• ",
                     html.Strong("sCO2 selected or both H2O and sCO2 selected:"),
                     " Slender-Body Theory V2.0 is used",
-                    ], className="mb-3"),
-                ]
+                ], className="mb-3"),
+            ]
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)
@@ -857,24 +865,11 @@ def register_info_modal_callbacks(app):
 
         # Standard handling for other parameters
         header_style = {"fontSize": "16px", "fontWeight": "bold"}
-        modal_content = [
-            html.H6("Definition:", className="text-primary", style=header_style),
-            html.P(info["definition"], className="mb-3"),
-        ]
-        if "recommended_range" in info and info["recommended_range"]:
-            modal_content.extend([
-                html.H6("Recommended Range:", className="text-primary", style=header_style),
-                html.P(info["recommended_range"], className="mb-3"),
-            ])
-        if "typical_value" in info and info["typical_value"]:
-            modal_content.extend([
-                html.H6("Typical Value:", className="text-primary", style=header_style),
-                html.P(f"{info['typical_value']}", className="mb-3"),
-            ])
-        modal_content.extend([
-            html.H6("Description:", className="text-primary", style=header_style),
-            html.P(info["description"], className="mb-3"),
-        ])
+        modal_content = []
+        if "description" in info and info["description"]:
+            modal_content.append(
+                html.P(info["description"], className="mb-3"),
+            )
         return True, f"Information: {param}", modal_content, current_max
 
     @app.callback(
