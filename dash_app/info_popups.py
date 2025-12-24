@@ -12,7 +12,7 @@ PARAMETER_INFO = {
         "recommended_range": "Conduction, Convection",
         "typical_value": "Conduction",
         "unit": "mode",
-        "description": "Conduction is the primary mode for geothermal heat transfer through rock formations."
+        "description": "Specify the way thermal energy moves due to a temperature difference. The main modes are conduction (through solids or contact) or convection (through moving fluids)."
     },
     
     "Heat Exchanger": {
@@ -20,7 +20,7 @@ PARAMETER_INFO = {
         "recommended_range": "U-Tube, Coaxial",
         "typical_value": "U-Tube",
         "unit": "mode",
-        "description": "U-Tube systems provide better long-term heat extraction in closed-loop geothermal systems."
+        "description": "Specify the geometry of the system. \"U-Tube\" uses two separate wells or laterals; \"Coaxial\" uses concentric pipes for flow-in and flow-out. Coaxial is often the default in simple single-well simulations, but U-Tube systems often have better long-term heat extraction in closed-loop systems."
     },
     
     "Working Fluid": {
@@ -28,7 +28,7 @@ PARAMETER_INFO = {
         "recommended_range": "H2O, sCO2",
         "typical_value": "H2O",
         "unit": "fluid",
-        "description": "Water is the most common working fluid due to availability and favorable thermal properties."
+        "description": "Specify a liquid or gas that carries heat through the system. H₂O (water) is typical for geothermal due to availability; sCO₂ (supercritical carbon dioxide) is included for advanced systems with enhanced heat extraction potential."
     },
     
     "End-Use": {
@@ -264,7 +264,7 @@ PARAMETER_INFO = {
         "recommended_range": "1-20",
         "typical_value": "1",
         "unit": "count",
-        "description": "More laterals increase heat extraction area but add complexity and cost."
+        "description": "Set the number of horizontal branches from the main well, with more laterals increasing reservoir contact. A value of 1 is the minimum number of laterals for a U-tube design."
     },
     
     "Lateral Flow Multiplier": {
@@ -272,7 +272,7 @@ PARAMETER_INFO = {
         "recommended_range": "0-1",
         "typical_value": "1",
         "unit": "multiplier",
-        "description": "Used to optimize flow distribution for maximum heat extraction."
+        "description": "Scales the flow rate allocated to each lateral. A value of 1 means full flow allocation. The multiplier is automatically calculated as 1 divided by the number of laterals "
     },
     
     # Economic Parameters
@@ -489,13 +489,12 @@ PARAMETER_INFO = {
         "description": "Determines whether fluid is injected through the annular space or the center pipe."
     },
     
-    # Legacy parameters (keeping for backward compatibility)
     "Lateral Flow Allocation": {
-        "definition": "The fraction of total flow allocated to lateral sections.",
-        "recommended_range": "0-1",
-        "typical_value": "0.33",
+        "definition": "Set the flow allocation for each lateral branch of the well system.",
+        "recommended_range": "0-1 per lateral",
+        "typical_value": "Equal distribution (1/n for n laterals)",
         "unit": "fraction",
-        "description": "Controls how flow is distributed between vertical and lateral sections."
+        "description": "Controls how flow is distributed across multiple lateral branches. For n laterals, the allocation values should sum to 1.0 (e.g., for 3 laterals: 1/3, 1/3, 1/3)."
     },
     
     "Mass Flow Rate Profile": {
@@ -664,9 +663,9 @@ def create_info_button(parameter_name, button_id=None):
                 "display": "inline-flex",
                 "alignItems": "center",
                 "justifyContent": "center",
-                "transform": "translateX(-1px) translateY(-2px)",
+                "transform": "translateX(-3px) translateY(1px)",
                 "position": "relative",
-                "top": "-2px"
+                "top": "1px"
             }
         )
     ])
@@ -774,29 +773,23 @@ def register_info_modal_callbacks(app):
          Output("info-modal-body", "children"),
          Output("info-btn-last-ts", "data")],
         [
-            Input({"type": "info-btn", "param": ALL}, "n_clicks_timestamp"),
+            Input({"type": "info-btn", "param": ALL}, "n_clicks"),
         ],
         [
             State("info-btn-last-ts", "data"),
             State("info-modal", "is_open"),
             State("model-select", "value"),
+            State({"type": "info-btn", "param": ALL}, "n_clicks_timestamp"),
         ],
         prevent_initial_call=True,
     )
-    def toggle_info_modal(ts_list, last_ts, is_open, selected_model):
-        """Handle info popup clicks for all parameters dynamically using pattern matching with timestamps."""
+    def toggle_info_modal(clicks_list, last_ts, is_open, selected_model, ts_list):
+        """Handle info popup clicks for all parameters dynamically using pattern matching."""
         # No buttons mounted or nothing ever clicked
-        if not ts_list:
+        if not clicks_list or not ts_list:
             raise PreventUpdate
 
-        # Current max click time among mounted buttons
-        current_max = max((t or 0) for t in ts_list)
-
-        # If no new click since last time, do nothing
-        if current_max <= (last_ts or 0):
-            raise PreventUpdate
-
-        # A *new* click happened; figure out which button
+        # Find which button was clicked
         triggered = ctx.triggered_id
         if not triggered or not isinstance(triggered, dict) or triggered.get("type") != "info-btn":
             raise PreventUpdate
@@ -805,6 +798,29 @@ def register_info_modal_callbacks(app):
         param = suffix_to_param.get(suffix)
         if not param:
             raise PreventUpdate
+
+        # Get the timestamp for the triggered button to verify it's a new click
+        try:
+            trigger_index = list(suffix_to_param.keys()).index(suffix)
+            if trigger_index < len(ts_list) and ts_list[trigger_index]:
+                current_ts = ts_list[trigger_index]
+                # If no new click since last time, do nothing
+                if current_ts <= (last_ts or 0):
+                    raise PreventUpdate
+                # Update last_ts to current_ts for return
+                last_ts = current_ts
+            else:
+                # Fallback: use max timestamp if we can't find the specific one
+                current_max = max((t or 0) for t in ts_list)
+                if current_max <= (last_ts or 0):
+                    raise PreventUpdate
+                last_ts = current_max
+        except (ValueError, IndexError):
+            # Fallback: use max timestamp
+            current_max = max((t or 0) for t in ts_list)
+            if current_max <= (last_ts or 0):
+                raise PreventUpdate
+            last_ts = current_max
 
         info = PARAMETER_INFO.get(param)
         if not info:
@@ -861,7 +877,7 @@ def register_info_modal_callbacks(app):
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)
-            return True, bold_title, modal_content, current_max
+            return True, bold_title, modal_content, last_ts
 
         # Standard handling for other parameters
         header_style = {"fontSize": "16px", "fontWeight": "bold"}
@@ -870,7 +886,7 @@ def register_info_modal_callbacks(app):
             modal_content.append(
                 html.P(info["description"], className="mb-3"),
             )
-        return True, f"Information: {param}", modal_content, current_max
+        return True, f"Information: {param}", modal_content, last_ts
 
     @app.callback(
         Output("info-modal", "is_open", allow_duplicate=True),

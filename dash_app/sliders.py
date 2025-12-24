@@ -206,17 +206,41 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                     )
 
 
-def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style):
+def input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, div_style, parameter_name=None, horizontal=False, input_width="80px"):
 
-    return html.Div(
-            id=DivID,
-            style=div_style,
-            className="name-input-container",
-            children=[
-                html.P(ptitle, className="input-title"),
-                dcc.Input(id=ID, disabled=False,
-                            value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
-        ])
+    from info_popups import create_info_button
+    
+    info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+    
+    if horizontal:
+        # Horizontal layout: title, info button, and input all on same line
+        return html.Div(
+                id=DivID,
+                style=div_style,
+                className="name-input-container",
+                children=[
+                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center", "gap": "5px"}, children=[
+                        html.P(ptitle, className="input-title", style={"margin": 0}),
+                        info_button,
+                        dcc.Input(id=ID, disabled=False,
+                                    value=start_v, type='number', min=min_v, max=max_v, step=step_i, 
+                                    className="input-box", style={"width": input_width, "margin": 0})
+                    ])
+            ])
+    else:
+        # Vertical layout: title and info button on top, input below
+        return html.Div(
+                id=DivID,
+                style=div_style,
+                className="name-input-container",
+                children=[
+                    html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
+                        html.P(ptitle, className="input-title", style={"margin": 0}),
+                        info_button
+                    ]),
+                    dcc.Input(id=ID, disabled=False,
+                                value=start_v, type='number', min=min_v, max=max_v, step=step_i, className="input-box"),
+            ])
 
 
 def dropdown_box(DivID, ID, ptitle, options, disabled, div_style):
@@ -385,14 +409,21 @@ def slider_card():
                                                             id="num-lat-container",
                                                             children=[ 
                                                                 input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                                                            min_v=0, max_v=20, start_v=start_vals_hdf5["n-laterals"], step_i=1, div_style=div_none_style)
+                                                                            min_v=1, max_v=10, start_v=start_vals_hdf5["n-laterals"] if start_vals_hdf5["n-laterals"] > 0 else 1, step_i=1, div_style=div_none_style, parameter_name="Number of Laterals", horizontal=True, input_width="60px")
+                                                            ]),
+                                                    html.Div(
+                                                        id="lat-allo-container",
+                                                        style=div_none_style,
+                                                        children=[ 
+                                                                input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
+                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_block_style, parameter_name="Lateral Flow Allocation")
                                                             ]),
                                                     html.Div(
                                                             id="lat-flow-container",
                                                             style=div_none_style,
                                                             children=[
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
-                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
+                                                                                        min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier", horizontal=True, input_width="60px")
                                                             ]
                                                     ),
                                                     # Hidden coaxial flow type dropdown (always exists for callbacks)
@@ -412,12 +443,6 @@ def slider_card():
                                                             )
                                                         ]
                                                     ),
-                                                    html.Div(
-                                                        id="lat-allo-container",
-                                                        children=[ 
-                                                                input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
-                                                                            min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
-                                                            ]),
                                                     # html.Div(
                                                     #     id="num-lat-div",
                                                     #     style=div_none_style,
