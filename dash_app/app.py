@@ -1107,20 +1107,26 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     style_block = {"display": "block"}
     
     if not callback_ctx.triggered:
-        # Initial state - all hidden
+        # Initial state - all hidden except those that are always visible
         if model == "HDF5":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:
+        elif model == "SBT V1.0":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
     if trigger_id == "model-select":
-        # Model changed - set initial state: all hidden (they'll be shown when button is clicked)
+        # Model changed - set initial state: all hidden except those that are always visible
         if model == "HDF5":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:
+        elif model == "SBT V1.0":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     # Button was clicked
     if n_clicks and n_clicks > 0:
@@ -1130,21 +1136,32 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
             # Hide all parameters
             if model == "HDF5":
                 return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-            else:
+            elif model == "SBT V1.0":
+                # Hide all parameters for SBT V1.0
                 return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:  # SBT V2.0
+                # Hide only: mesh, lat-flow, lat-allo, component-performance
+                return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
             # Show all parameters
             if model == "HDF5":
-            return style_none, style_none, style_none, style_none, style_none, style_block, "See less parameters", " ▲"
-            else:
-                # For SBT, show the 5 SBT-specific parameters
+                return style_none, style_none, style_none, style_none, style_none, style_block, "See less parameters", " ▲"
+            elif model == "SBT V1.0":
+                # For SBT V1.0, show the 5 SBT-specific parameters (all are hidden by default)
+                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
+            else:  # SBT V2.0
+                # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
+                # Only toggle: mesh, lat-flow, lat-allo, component-performance
                 return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
     else:
-        # Initial state - all hidden
+        # Initial state - all hidden except those that are always visible
         if model == "HDF5":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:
+        elif model == "SBT V1.0":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            # Keep pipe-roughness and hyperparam5 visible 
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
 
@@ -2475,6 +2492,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=get_saved_value("radius-vertical", start_vals_sbt, "radius-vertical"),
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter Vertical (m)",
             )
             radius_lateral = slider1(
                 DivID="radius-lateral-select-div",
@@ -2486,6 +2504,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=get_saved_value("radius-lateral", start_vals_sbt, "radius-lateral"),
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter Lateral (m)",
             )
             n_laterals = input_box(
                 DivID="num-lat-div",
@@ -2545,6 +2564,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.002,
                 start_v=coaxial_default_radius,  # Always use maximum for stability, ignore saved values
                 div_style=div_block_style,
+                parameter_name="Wellbore Diameter (m)",
             )
 
             radiuscenterpipe = slider1(
@@ -2557,6 +2577,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 step_i=0.001,
                 start_v=coaxial_default_radiuscenterpipe,  # Always use default, ignore saved values
                 div_style=div_block_style,
+                parameter_name="Center Pipe Radius (m)",
             )
 
             thicknesscenterpipe = slider1(
@@ -2614,6 +2635,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.002,
             start_v=start_vals_sbt["radius-vertical"],
             div_style=div_none_style,
+            parameter_name="Wellbore Diameter Vertical (m)",
         )
         radius_lateral = slider1(
             DivID="radius-lateral-select-div",
@@ -2625,6 +2647,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
             step_i=0.002,
             start_v=start_vals_sbt["radius-lateral"],
             div_style=div_none_style,
+            parameter_name="Wellbore Diameter Lateral (m)",
         )
         n_laterals = input_box(
             DivID="num-lat-div",
@@ -2785,14 +2808,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_none_style,  # Hidden for SBT V1.0
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
 
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
@@ -2822,14 +2845,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_block_style,
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",
@@ -2870,14 +2893,14 @@ def update_sliders_hyperparms(model):
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
-            ptitle="Pipe Roughness (m)",
-            min_v=1e-6,
-            max_v=3e-6,
-            mark_dict=pipe_roughness_dict,
-            step_i=0.000001,
+            ptitle="Pipe Roughness (µm)",
+            min_v=1,
+            max_v=3,
+            mark_dict=pipe_roughness_um_dict,
+            step_i=0.1,
             start_v=start_vals_sbt["piperoughness"],
             div_style=div_none_style,  # Hidden for HDF5
-            parameter_name="Pipe Roughness (m)",
+            parameter_name="Pipe Roughness (µm)",
         )
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
     else:
@@ -2973,6 +2996,12 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
+        
         # Debug: Print received values for coaxial SBT models
         # if HDF5:
         # start = time.time()
@@ -2984,7 +3013,8 @@ def update_subsurface_results_plots(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
@@ -3181,6 +3211,12 @@ def update_econ_plots(
             TandP_dict = {}
         if checklist is None:
             checklist = []
+        
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
             
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
@@ -3201,7 +3237,8 @@ def update_econ_plots(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = None  # Not used for HDF5 or SBT V1.0
             hyperparam3_value = HyperParam3
@@ -3365,6 +3402,12 @@ def update_table(
         if tandp_data is None:
             tandp_data = None
         
+        # Convert pipe roughness from µm (UI) to meters (model)
+        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+        if pipe_roughness is None:
+            pipe_roughness = 1  # Default to 1 µm
+        pipe_roughness_m = pipe_roughness * 1e-6
+        
         # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
@@ -3373,7 +3416,8 @@ def update_table(
                 hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
-            hyperparam3_value = pipe_roughness if pipe_roughness is not None else 1e-6
+            # Use converted pipe roughness value in meters
+            hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3

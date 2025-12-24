@@ -425,6 +425,13 @@ PARAMETER_INFO = {
         "unit": "m",
         "description": "Lower roughness values reduce friction losses and improve flow efficiency."
     },
+    "Pipe Roughness (µm)": {
+        "definition": "Set a measure of how smooth the inside surface of the pipe or borehole is, which affects how much friction the fluid encounters as it flows. A value of 1 µm (1e-6 m) is very smooth – like new steel casting.",
+        "recommended_range": "1 to 3 µm (1e-6 to 3e-6 m)",
+        "typical_value": "1 µm (0.000001 m)",
+        "unit": "µm",
+        "description": "Lower roughness values reduce friction losses and improve flow efficiency."
+    },
     
     "Inlet Pressure (MPa)": {
         "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells.",

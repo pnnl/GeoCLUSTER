@@ -112,7 +112,7 @@ radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
-pipe_roughness_dict =  {0.000001: '1e-6', 0.000002: '', 0.000003: '3e-6'}
+pipe_roughness_um_dict = {1: '1', 3: '3'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
@@ -126,7 +126,7 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
                     "inletpressure": 10,
-                    "piperoughness": 0.000001 # 1e-6
+                    "piperoughness": 1  # 1 µm (display value), actual value in meters is 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
                     "kwe": 3000, "precool": 13, "turb-pout": 80
@@ -326,12 +326,6 @@ def slider_card():
                                                         children=[]
                                                     ),
                                                     html.Div(
-                                                        id="pipe-roughness-container",
-                                                        children=[
-                                                                slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
-                                                                        mark_dict=pipe_roughness_dict, step_i=0.000001, start_v=start_vals_sbt["piperoughness"], div_style=div_none_style, parameter_name="Pipe Roughness (m)")
-                                                    ]),
-                                                    html.Div(
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
@@ -377,6 +371,12 @@ def slider_card():
                                                                         mark_dict=L1_dict, start_v=start_vals_d["L1"], div_style=div_block_style, parameter_name="Drilling Depth (m)")
                                                             ]),
                                                     html.Div(
+                                                        id="pipe-roughness-container",
+                                                        children=[
+                                                                slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (µm)", min_v=1, max_v=3,
+                                                                        mark_dict=pipe_roughness_um_dict, step_i=0.1, start_v=start_vals_sbt["piperoughness"], div_style=div_none_style, parameter_name="Pipe Roughness (µm)")
+                                                    ]),
+                                                    html.Div(
                                                             id="num-lat-container",
                                                             children=[ 
                                                                 input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
@@ -390,8 +390,8 @@ def slider_card():
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style)
                                                             ]),
                                                     html.Div(
-                                                            id="lat-allo-container",
-                                                            children=[ 
+                                                        id="lat-allo-container",
+                                                        children=[ 
                                                                 input_box(DivID="lat-allocation-div", ID="lateral-flow-select", ptitle="Lateral Flow Allocation", 
                                                                             min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-flow"], step_i=0.01, div_style=div_none_style)
                                                             ]),
