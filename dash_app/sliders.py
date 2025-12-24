@@ -322,6 +322,10 @@ def slider_card():
                                                                         mark_dict=mdot_dict, start_v=start_vals_d["mdot"], div_style=div_block_style, parameter_name="Mass Flow Rate (kg/s)")
                                                             ]),
                                                     html.Div(
+                                                        id="inlet-pressure-container",
+                                                        children=[]
+                                                    ),
+                                                    html.Div(
                                                         id="pipe-roughness-container",
                                                         children=[
                                                                 slider1(DivID="pipe-roughness-div", ID="pipe-roughness-select", ptitle="Pipe Roughness (m)", min_v=1e-6, max_v=3e-6,
@@ -470,6 +474,72 @@ def slider_card():
                                                                             Use the cycle to tune for LCOE minima and maximize net electric power by minimizing excess heating.", id="TS-diagram-text"),
                                                             ])
                                                     ]),
+
+                                            html.Div(
+                                                id="component-performance-div",
+                                                className="params-div",
+                                                style=div_none_style,
+                                                children=[
+                                                    html.P("COMPONENT PERFORMANCE", className="param-class-name"),
+                                                    html.Div(
+                                                        id="turbine-efficiency-container",
+                                                        children=[
+                                                            html.Div(
+                                                                id="turbine-efficiency-div",
+                                                                className="name-input-container",
+                                                                style=div_block_style,
+                                                                children=[
+                                                                    html.P("Turbine Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    dcc.Input(id="turbine-efficiency-select", 
+                                                                              disabled=True,
+                                                                              value="90%", 
+                                                                              type="text", 
+                                                                              className="input-box",
+                                                                              style={"width": "80px", "textAlign": "center"})
+                                                                ]
+                                                            )
+                                                        ]
+                                                    ),
+                                                    html.Div(
+                                                        id="generator-efficiency-container",
+                                                        children=[
+                                                            html.Div(
+                                                                id="generator-efficiency-div",
+                                                                className="name-input-container",
+                                                                style=div_block_style,
+                                                                children=[
+                                                                    html.P("Generator Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    dcc.Input(id="generator-efficiency-select", 
+                                                                              disabled=True,
+                                                                              value="98%", 
+                                                                              type="text", 
+                                                                              className="input-box",
+                                                                              style={"width": "80px", "textAlign": "center"})
+                                                                ]
+                                                            )
+                                                        ]
+                                                    ),
+                                                    html.Div(
+                                                        id="compressor-efficiency-container",
+                                                        children=[
+                                                            html.Div(
+                                                                id="compressor-efficiency-div",
+                                                                className="name-input-container",
+                                                                style=div_block_style,
+                                                                children=[
+                                                                    html.P("Compressor Isentropic Efficiency (sCO2 electricity)", className="input-title"),
+                                                                    dcc.Input(id="compressor-efficiency-select", 
+                                                                              disabled=True,
+                                                                              value="90%", 
+                                                                              type="text", 
+                                                                              className="input-box",
+                                                                              style={"width": "80px", "textAlign": "center"})
+                                                                ]
+                                                            )
+                                                        ]
+                                                    ),
+                                                ]
+                                            ),
 
                                             html.Div(
                                                 id="model-params-div",

@@ -800,8 +800,8 @@ def register_info_modal_callbacks(app):
                 hdf5_style = {"fontWeight": "normal"}
                 sbt1_style = {"fontWeight": "normal"}
                 sbt2_style = {"fontWeight": "normal"}
-            
-            modal_content = [
+                
+                modal_content = [
                 html.H6(hdf5_info.get("title", "Database"), className="text-primary", style=header_style),
                 html.P(hdf5_info.get("description", ""), className="mb-3", style=hdf5_style),
                 
@@ -812,7 +812,7 @@ def register_info_modal_callbacks(app):
                 html.P(sbt2_info.get("description", ""), className="mb-3", style=sbt2_style),
                 
                 html.H6("Simulator Model Selection", className="text-primary", style=header_style),
-                html.P([
+                    html.P([
                     "When \"Simulator\" is selected, the Slender-Body Theory version is automatically determined based on the working fluid selection:",
                     html.Br(),
                     html.Br(),
@@ -823,8 +823,8 @@ def register_info_modal_callbacks(app):
                     "• ",
                     html.Strong("sCO2 selected or both H2O and sCO2 selected:"),
                     " Slender-Body Theory V2.0 is used",
-                ], className="mb-3"),
-            ]
+                    ], className="mb-3"),
+                ]
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)

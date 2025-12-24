@@ -1089,6 +1089,7 @@ def show_hide_see_all_button(model):
         Output(component_id="pipe-roughness-container", component_property="style", allow_duplicate=True),
         Output(component_id="hyperparam5-container", component_property="style", allow_duplicate=True),
         Output(component_id="lat-flow-container", component_property="style", allow_duplicate=True),
+        Output(component_id="lat-allo-container", component_property="style", allow_duplicate=True),
         Output(component_id="see-all-params-text", component_property="children"),
         Output(component_id="see-all-params-chevron", component_property="children"),
     ],
@@ -1104,14 +1105,14 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     if not callback_ctx.triggered:
         # Initial state - all hidden
         style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
     if trigger_id == "model-select":
         # Model changed - set initial state: all hidden for SBT models (they'll be shown when button is clicked)
         style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     
     # Button was clicked
     if n_clicks and n_clicks > 0:
@@ -1120,15 +1121,15 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
         if is_visible:
             # Hide all parameters
             style_none = {"display": "none"}
-            return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
             # Show all parameters
             style_block = {"display": "block"}
-            return style_block, style_block, style_block, style_block, "See less parameters", " ▲"
+            return style_block, style_block, style_block, style_block, style_block, "See less parameters", " ▲"
     else:
         # Initial state - all hidden
         style_none = {"display": "none"}
-        return style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        return style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
 
@@ -1709,6 +1710,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         Output(component_id="lat-allo-container", component_property="style"),
         # Output(component_id='lateral-flow-select-div', component_property='style'),
         Output(component_id="pipe-roughness-container", component_property="style"),
+        Output(component_id="component-performance-div", component_property="style"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
@@ -1722,13 +1724,13 @@ def show_model_params(model):
     n = {"display": "none"}
 
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n, b  # Show component-performance for HDF5
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, b, n, n
+        return b, b, b, b, b, b, n, n, b, n, n, n  # Hide component-performance for SBT V1.0
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, b
+        return b, b, b, b, b, b, n, b, b, n, b, n  # Hide component-performance for SBT V2.0
 
 
 @app.callback(
@@ -2732,6 +2734,7 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
         Output(component_id="hyperparam3-container", component_property="children"),
         Output(component_id="hyperparam5-container", component_property="children"),
         Output(component_id="pipe-roughness-container", component_property="children"),
+        Output(component_id="inlet-pressure-container", component_property="children"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
@@ -2777,10 +2780,10 @@ def update_sliders_hyperparms(model):
             parameter_name="Pipe Roughness (m)",
         )
 
-        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
 
     elif model == "SBT V2.0":
-        hyperparam1 = slider1(
+        inlet_pressure = slider1(
             DivID="mass-flow-mode-div",
             ID="mass-mode-select",
             ptitle="Inlet Pressure (MPa)",
@@ -2792,6 +2795,7 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
+        hyperparam1 = html.Div()  # Empty for SBT V2.0 since Inlet Pressure moved to Wellbore Operations
         hyperparam3 = dropdown_box(
             DivID="temp-flow-mode-div",
             ID="temp-mode-select",
@@ -2821,7 +2825,7 @@ def update_sliders_hyperparms(model):
             div_style=div_block_style,
         )
 
-        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
 
     elif model == "HDF5":
         hyperparam1 = dropdown_box(
@@ -2860,7 +2864,7 @@ def update_sliders_hyperparms(model):
             div_style=div_none_style,  # Hidden for HDF5
             parameter_name="Pipe Roughness (m)",
         )
-        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
     else:
         raise PreventUpdate
 
