@@ -2043,13 +2043,13 @@ def update_slider_ranges(model, case, store_data):
         k_container = slider2(
             DivID="k-select-div",
             ID="k-select",
-            ptitle="Rock Thermal Conductivity (W/m-K)",
+            ptitle="Rock Thermal Conductivity (W/m-°C)",
             min_v=u_sCO2.k[0],
             max_v=u_sCO2.k[-1],
             mark_dict=k_dict,
             start_v=saved_values.get("k", start_vals_d["k"]),
             div_style=div_block_style,
-            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            parameter_name="Rock Thermal Conductivity (W/m-°C)",
             custom_title=True,
         )
         Tinj_container = slider2(
@@ -2165,13 +2165,13 @@ def update_slider_ranges(model, case, store_data):
         k_container = slider2(
             DivID="k-select-div",
             ID="k-select",
-            ptitle="Rock Thermal Conductivity (W/m-K)",  # min_v=0.1, max_v=7.0,
+            ptitle="Rock Thermal Conductivity (W/m-°C)",  # min_v=0.1, max_v=7.0,
             min_v=0.4,
             max_v=5.0,
             mark_dict=k_dict,
             start_v=coaxial_default_k if (case == "coaxial" and coaxial_default_k is not None) else (saved_values.get("k", coaxial_default_k if coaxial_default_k is not None else start_vals_d["k"])),
             div_style=div_block_style,
-            parameter_name="Rock Thermal Conductivity (W/m-K)",
+            parameter_name="Rock Thermal Conductivity (W/m-°C)",
             custom_title=True,
         )
         Tinj_container = slider2(
@@ -2599,7 +2599,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
             k_center_pipe = slider1(
                 DivID="lateral-flow-select-div",
                 ID="lateral-flow-select",
-                ptitle="Insulation Thermal Conductivity (W/m-K)",
+                ptitle="Insulation Thermal Conductivity (W/m-°C)",
                 min_v=0.025,
                 max_v=0.5,
                 mark_dict=insulation_thermal_k_dict,

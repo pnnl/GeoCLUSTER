@@ -676,7 +676,7 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
             arg_D_i = slice(None)
         if param == "Injection Temperature (˚C)":
             arg_Tinj_i = slice(None)
-        if param == "Rock Thermal Conductivity (W/m-K)":
+        if param == "Rock Thermal Conductivity (W/m-°C)":
             arg_k_i = slice(None)
 
         if fluid == "sCO2" and case == "utube":

@@ -62,8 +62,8 @@ tube_geometry_l = ["Wellbore Diameter Vertical (m)", "Wellbore Diameter Lateral 
 economic_params_l = ["Drilling Cost ($/m)", "Discount Rate (%)", "Lifetime (years)", "Plant CAPEX ($/kWt)", 
                     "Plant CAPEX ($/kWe)", "Pre-cooling (˚C)", "Turbine Outlet Pressure (bar)"]
 
-geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (°C/m)", "Rock Thermal Conductivity (W/m-K)", 
-                            "Rock Specific Heat Capacity (J/kg-K)", "Rock Density (kg/m3)"]
+geologic_properties_l = ["Surface Temperature (˚C)", "Geothermal Gradient (°C/m)", "Rock Thermal Conductivity (W/m-°C)", 
+                            "Rock Specific Heat Capacity (J/kg-°C)", "Rock Density (kg/m3)"]
                             
 model_finetuning_l = ["Mesh Fineness", "Accuracy", "Mass Flow Rate Mode", "Mass Flow Rate Profile", 
                                             "Injection Temperature Mode", "Injection Temperature Profile"]
@@ -158,7 +158,7 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                            html.Div([
                                html.Div([
                                    html.Div("Rock Specific Heat Capacity", style={"textAlign": "center", "fontWeight": "bold"}),
-                                   html.Div("(J/kg-K)", style={"textAlign": "center", "fontWeight": "bold"})
+                                   html.Div("(J/kg-°C)", style={"textAlign": "center", "fontWeight": "bold"})
                                ]) if custom_title and "Rock Specific Heat Capacity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
@@ -191,7 +191,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                            html.Div([
                                html.Div([
                                    html.Div("Rock Thermal Conductivity", style={"textAlign": "center", "fontWeight": "bold"}),
-                                   html.Div("(W/m-K)", style={"textAlign": "center", "fontWeight": "bold"})
+                                   html.Div("(W/m-°C)", style={"textAlign": "center", "fontWeight": "bold"})
                                ]) if custom_title and "Rock Thermal Conductivity" in ptitle else html.P(ptitle, style=p_bold_style),
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
@@ -297,12 +297,12 @@ def slider_card():
                                                     html.Div(
                                                             id="k-container",
                                                             children=[
-                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-K)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
-                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-K)", custom_title=True)
+                                                    slider2(DivID="k-select-div", ID="k-select", ptitle="Rock Thermal Conductivity (W/m-°C)", min_v=u_sCO2.k[0], max_v=u_sCO2.k[-1], 
+                                                            mark_dict=k_dict, start_v=start_vals_d["k"], div_style=div_block_style, parameter_name="Rock Thermal Conductivity (W/m-°C)", custom_title=True)
                                                                     
                                                             ]),
-                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-K)", min_v=500, max_v=2000, 
-                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-K)", custom_title=True),
+                                                    slider1(DivID="c-select-div", ID="c-select", ptitle="Rock Specific Heat Capacity (J/kg-°C)", min_v=500, max_v=2000, 
+                                                            mark_dict=c_dict, step_i=1, start_v=start_vals_hdf5["c"], div_style=div_none_style, parameter_name="Rock Specific Heat Capacity (J/kg-°C)", custom_title=True),
                                                     slider1(DivID="rho-select-div", ID="rho-select", ptitle="Rock Density (kg/m3)", min_v=1000, max_v=3500, 
                                                             mark_dict=rho_dict, step_i=1, start_v=start_vals_hdf5["rho"], div_style=div_none_style, parameter_name="Rock Density (kg/m3)"),
                                                 ]

@@ -50,7 +50,7 @@ fluid_list = ["All", "H2O", "sCO2"]
 end_use_list = ["All", "Heating", "Electricity"] 
 
 param_list = ["Horizontal Extent (m)", "Vertical Extent (m)", "Geothermal Gradient (°C/m)", "Borehole Diameter (m)", 
-                "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-K)"]
+                "Injection Temperature (˚C)", "Rock Thermal Conductivity (W/m-°C)"]
 
 dropdown_list = ["Run Interpolation", "Model Version", "Heat-Exchanger", "Working Fluid", "End-Use"]
 

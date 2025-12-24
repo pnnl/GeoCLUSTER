@@ -713,7 +713,7 @@ class data:
                     )
                 )
                 var_index = 5
-            if param == "Rock Thermal Conductivity (W/m-K)":
+            if param == "Rock Thermal Conductivity (W/m-°C)":
                 points = list(
                     iter.product(
                         self.mdot,

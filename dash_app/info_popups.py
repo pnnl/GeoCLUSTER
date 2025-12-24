@@ -80,7 +80,7 @@ PARAMETER_INFO = {
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
-    "Rock Thermal Conductivity (W/m-K)": {
+    "Rock Thermal Conductivity (W/m-°C)": {
         "definition": "Set how quickly heat moves through rock. A value of 3 W/m-K represents moderately conductive rock, such as granite.",
         "recommended_range": "0.4-5.0 W/m-K",
         "typical_value": "3 W/m-K",
@@ -96,7 +96,7 @@ PARAMETER_INFO = {
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
     
-    "Rock Specific Heat Capacity (J/kg-K)": {
+    "Rock Specific Heat Capacity (J/kg-°C)": {
         "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.051 J/kg-K represents an average for various dry rocks.",
         "recommended_range": "500-2000 J/kg-K",
         "typical_value": "0.051 J/kg-K",
@@ -473,7 +473,7 @@ PARAMETER_INFO = {
         "description": "Thicker walls provide more structural strength but reduce flow area."
     },
     
-    "Insulation Thermal Conductivity (W/m-K)": {
+    "Insulation Thermal Conductivity (W/m-°C)": {
         "definition": "Set the insulation performance of the inner pipe. A value of 0.025 W/m-K is a good approximation of a well-insulated pipe layer.",
         "recommended_range": "0.025-0.5 W/m-K",
         "typical_value": "0.025 W/m-K",
