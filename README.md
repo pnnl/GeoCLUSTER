@@ -2,7 +2,7 @@
 
 # Welcome to *GeoCLUSTER*
 
-*GeoCLUSTER* (https://geocluster.labworks.org/) is a techno-economic web simulator that enables start-up developers and venture capitalists to explore the economic viability of closed-loop geothermal systems (CLGSs) via computationally fast models and high-quality datasets. *GeoCLUSTER* was created using Python (version >=3.13.5) for its computations and Dash (version >=3.2.0) as its web framework, and the application provides users a collection of interactive methods for streamlining the exploration of the techno-economic modeling of CLGSs.
+*GeoCLUSTER* (https://geocluster.labworks.org/) is a techno-economic web simulator that enables start-up developers and venture capitalists to explore the economic viability of closed-loop geothermal systems (CLGSs) via computationally fast models and high-quality datasets. *GeoCLUSTER* was created using Python (version >=3.13.5) for its computations and Dash (version >=3.2.0) as its web framework, and the application provides users with a collection of interactive methods for streamlining the exploration of the techno-economic modeling of CLGSs.
 
 ![](https://img.shields.io/badge/GeoCLUSTER-Dash%20App-blue)
 ![](https://img.shields.io/badge/Geothermal-Energy%20Research-orange)
@@ -38,9 +38,9 @@ Deep (3- to 10-km depths) geothermal resources with temperatures greater than 15
 
 1.	A large but compressed, **precomputed HDF5 database of over 2.5 million simulation runs**. The HDF5 database represents the **below-ground** thermal–hydraulic response of the reservoir–well system (i.e., outlet temperature and pressure versus time) and it is combined with an **above-ground plant** and **economic model**. It uses simple function calls and object construction methods to allow for rapid interpolation and data parsing on the HDF5 dataset (packages: *scipy*, *CoolProp*, *h5py*, *numpy*). Furthermore, all data are preloaded by the application to speed up computations while interactive callbacks streamline its visuals (packages: *dash*, *plotly*). Notably, chunking the HDF5 database recently reduced the application’s memory usage by 97% (6.5 GB to 200 MB).
 
-2.	On-the-fly simulations computed by a simulator model, the Slender Body Theory (SBT) v1.0 and v2.0 models, for approximating heat production and profiling pressure over time. **This simulator allows users to create scenarios that were not originally included in the HDF5 database**. For example, users can simulate for depths deeper than 5 km and geothermal gradients larger than 70°C/km, which were originally upper limits in the HDF5 database. And this also includes adding more parameters that users can edit like Rock Specific Heat Capacity and Rock Density. Notably, a recent spare matrix solution ensures that the application's CPU usage remains below 4%. Similar to the HDF5 database, the outputs of the simulator model is combined with the **same above-ground plant** and **economic model**.
+2.	On-the-fly simulations computed by a simulator model, the Slender Body Theory (SBT) v1.0 and v2.0 models, for approximating heat production and profiling pressure over time. **This simulator allows users to create scenarios that were not originally included in the HDF5 database**. For example, users can simulate for depths deeper than 5 km and geothermal gradients larger than 70°C/km, which were originally upper limits in the HDF5 database. And this also includes adding more parameters that users can edit like Rock Specific Heat Capacity and Rock Density. Notably, a recent sparse matrix solution ensures that the application's CPU usage remains below 4%. Similar to the HDF5 database, the outputs of the simulator model are combined with the **same above-ground plant** and **economic model**.
 
-Users can explore scenarios on *GeoCLUSTER* through several methods: 1) toggling between the heat-exchanger designs, working fluids, and end-use, 2) optimizing power output and economic competitiveness by clicking on the scenario buttons, 3) moving easy-to-use parameter sliders, and 4) visualizing simultaneous graphics and downloading its data. For example, when a user creates a scenario, the entire application will update to display subsurface and economic results linearly over time, contour representations between a parameter and mass flow rate, and summary tables of fixed and interactive parameter values and their results. A user can then save their scenario by downloading the summary tables and results into a multi-tabbed Excel file.
+Users can explore scenarios on *GeoCLUSTER* through several methods: 1) toggling between the heat-exchanger designs, working fluids, and end-use, 2) optimizing power output and economic competitiveness by clicking on the scenario buttons, 3) moving easy-to-use parameter sliders, and 4) visualizing simultaneous graphics and downloading their data. For example, when a user creates a scenario, the entire application will update to display subsurface and economic results linearly over time, contour representations between a parameter and mass flow rate, and summary tables of fixed and interactive parameter values and their results. A user can then save their scenario by downloading the summary tables and results into a multi-tabbed Excel file.
 
 ![](https://img.shields.io/badge/GeoCLUSTER_V1.0-Database-darkgrey) 
 ![](https://img.shields.io/badge/GeoCLUSTERV_2.0-Simulator-darkgrey)
@@ -51,7 +51,7 @@ Users can explore scenarios on *GeoCLUSTER* through several methods: 1) toggling
 
 ## Parameters <a name="parameters"></a>
 
-To better view all possible parameters a user can edit, a full list of editable and fixed parameters are annotated below. For easier readability, parameters are binned into 8 higher level categories: model fine-tuning, geologic properties, wellbore operations, tube geometry, component performance, power-cycle operations, thermodynamic references, and economics. In total, **32 parameters are editable in GeoCLUSTER**. Parameters annotated with "(fixed)" are not editable but instead assumptions. Note that more editable parameters are available when a user selects "Simulator" as their model rather than "Database". 
+To better view all possible parameters a user can edit, a full list of editable and fixed parameters is annotated below. For easier readability, parameters are binned into 8 higher-level categories: model fine-tuning, geologic properties, wellbore operations, tube geometry, component performance, power-cycle operations, thermodynamic references, and economics. In total, **32 parameters are editable in GeoCLUSTER**. Parameters annotated with "(fixed)" are not editable but are instead assumptions. Note that more editable parameters are available when a user selects "Simulator" as their model rather than "Database". 
 
 | Model Fine-tuning | Database Options | Simulator Options |
 |-----------------|------------------|-------------------|
@@ -132,7 +132,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 
 ![](https://img.shields.io/badge/Python-3.13.5-yellow)  
 
-Also, *GeoCLUSTER* most importantly requires **Dash version >=2.9.x**. Dash >=2.9.x supports [advanced callbacks](https://dash.plotly.com/duplicate-callback-outputs) but it only works in Python >= 3.8. 
+Also, *GeoCLUSTER* requires **Dash version >=2.9.x**. Dash >=2.9.x supports [advanced callbacks](https://dash.plotly.com/duplicate-callback-outputs) and it only works in Python >= 3.8. 
 
 The `requirements.txt` in `dash_app` lists Python packages and their versions needed to run *GeoCLUSTER* following Python installation. Here are those packages listed below:
   
@@ -165,7 +165,7 @@ Git clone this repository. In terminal (MacOS) or command prompt (Windows), navi
 $ python app.py
 ```
 
-A URL with an IP address including `127.0.0.1` should appear that can be copied and pasted in a browser. `127.0.0.1` is the localhost of your local machine, and the `8060` is the port that is specified in the application:
+A URL with an IP address including `127.0.0.1` should appear that can be copied and pasted into a browser. `127.0.0.1` is the localhost of your local machine, and the `8060` is the port that is specified in the application:
 
 ```
 Dash is running on http://127.0.0.1:8060/
@@ -182,7 +182,7 @@ After launching the application, you should see and be able to interact with *Ge
 
 ### Apache Web Server
 
-A Dash app is a web framework, but without a web server, Dash apps can only run on localhost where only you can access them on your own machine ([see Running *GeoCLUSTER* Locally](#local)). To deploy and share *GeoCLUSTER* with a public IP or domain name, it needs a virtual web server, like Apache. **Apache** is an open-source HTTP server for modern operating systems, and it can communicate over networks from client to server using the TCP/IP protocol. The TCP/IP protocol specifies how devices exchange data over the internet to one another via channels of communication (TPC) and routes and addresses (IP). Apache can be used for a various protocols, but the most common is HTTP/S.
+A Dash app is a web framework, but without a web server, Dash apps can only run on localhost where only you can access them on your own machine ([see Running *GeoCLUSTER* Locally](#local)). To deploy and share *GeoCLUSTER* with a public IP or domain name, it needs a virtual web server, like Apache. **Apache** is an open-source HTTP server for modern operating systems, and it can communicate over networks from client to server using the TCP/IP protocol. The TCP/IP protocol specifies how devices exchange data over the internet to one another via channels of communication (TCP) and routes and addresses (IP). Apache can be used for various protocols, but the most common is HTTP/S.
 
 Apache version 2.4.56 is recommended.
 
@@ -196,7 +196,7 @@ Apache can communicate over networks but it also needs to communicate with the P
 
 ### Apache Config File
 
-The **Apache configuration file** then needs to be scripted and the installed WSGI module loaded in the config file so that the WSGI can mediate all communication between the web server and *GeoCLUSTER*.
+The **Apache configuration file** then needs to be written and the installed WSGI module loaded in the config file so that the WSGI can mediate all communication between the web server and *GeoCLUSTER*.
 
 The Apache config file, `geocluster.ssl.conf`, shows how the Apache config file needs to be set up in order to load and use WSGI, with the most important setup as follows: 
 
@@ -258,7 +258,7 @@ sys.path.insert(0, "/var/www/<path>/dash_app")
 
 Also, in `paths.py`, define the absolute path to the app directory (`dash_app`) and set it as the absolute_path (L8).
 
-Finally, for errors regarding file requests, especially due to arguments like `url_base_pathname` or `requests_pathname_prefix` when initiating the Dash application in `app.py`, please refer to the `dash.Dash()` documentation is located online on the [Dash API Reference page](https://dash.plotly.com/reference).
+Finally, for errors regarding file requests, especially due to arguments like `url_base_pathname` or `requests_pathname_prefix` when initiating the Dash application in `app.py`, please refer to the `dash.Dash()` documentation located online on the [Dash API Reference page](https://dash.plotly.com/reference).
 
 ### Systems Architecture Diagram
 
@@ -272,7 +272,7 @@ The models underlying *GeoCLUSTER* are also available as APIs. The APIs are avai
 
 To view how to use the deployed API, refer to this notebook: https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing
 
-To view how to run this API locally, got to the documentation for it in this repo:  https://github.com/pnnl/GeoCLUSTER/blob/adding_api/API/README.md
+To view how to run this API locally, go to the documentation for it in this repo:  https://github.com/pnnl/GeoCLUSTER/blob/adding_api/API/README.md
 
 
 ## Authors <a name="authors"></a>
@@ -290,36 +290,36 @@ To view how to run this API locally, got to the documentation for it in this rep
 
 ### 2025
 
-Hakes, Raquel S. P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, et al. **Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems**. Geothermal Rising Conference, 2025.
+Raquel S. P. Hakes, Radoslav Bozinoski, Mohammed Aljubran, Gabriela B. Anleu, Anastasia Bernat, Alex Buchko. **Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems**. Geothermal Rising Conference, 2025.
 
-Bernat, Anastasia, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. **GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies**.Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.
+Anastasia Bernat, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. **GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies**. Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.
 
-Anleu, Gabriela Bran, Raquel S. P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. **A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection**. Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12–14, 2025.
+Gabriela Bran Anleu, Raquel S. P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. **A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection**. Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12–14, 2025.
 
 ### 2024
 
-White, Mark, Yaroslav Vasyliiv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, et al. **Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs**. Geothermics 116 (2024): 102852. ([paper](https://doi.org/10.1016/j.geothermics.2023.102852))
+Mark White, Yaroslav Vasyliv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, et al. **Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs**. Geothermics 116 (2024): 102852. ([paper](https://doi.org/10.1016/j.geothermics.2023.102852))
 
 U.S. Department of Energy. **Pathways to Commercial Liftoff: Next-Generation Geothermal Power**. March 2024.
 
 ### 2023
 
-White, Mark, Mario Martinez, Yaroslav Vasyliiv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, et al. **Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+Mark White, Mario Martinez, Yaroslav Vasyliv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, et al. **Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
 
-Beckers, Koenraad, Yaroslav Vasyliiv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, and Mark White. **Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+Koenraad Beckers, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, and Mark White. **Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
 
-Parisi, Carlo, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. **Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+Carlo Parisi, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. McLing, and Mark D. White. **Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
 
-Beckers, Koenraad, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, et al. **Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications**.
+Koenraad Beckers, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, et al. **Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications**.
 Pacific Northwest National Laboratory, February 3, 2023. Distributed by Geothermal Data Repository. ([dataset](https://doi.org/10.15121/1972213))
 
 ### 2021
 
-White, Mark, Mario Martinez, Yaroslav Vasyliiv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, et al. **Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
+Mark White, Mario Martinez, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, et al. **Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
 
-Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. **Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
+Carlo Parisi, Paolo Balestra, and Theron D. Marshall. **Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
 
-Vasiliv, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. **Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
+Yaroslav V. Vasyliv, Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. **Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
 
 ## Funding <a name="funding"></a>
 
