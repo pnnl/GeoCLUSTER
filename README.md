@@ -121,7 +121,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Drilling Cost | 0 &#36; / m to 4,000 &#36; / m |
 | Discount Rate | 0% to 20% |
 | System Lifetime | 0 years to 40 years |
-| Direct-Use Heat Plant CAPEX | 0 &#36; / $kWₜ$ to 1,000 &#36 ;/ $kWₜ$ |
+| Direct-Use Heat Plant CAPEX | 0 &#36; / $kWₜ$ to 1,000 &#36; / $kWₜ$ |
 | Power Plant CAPEX (electricity) | 0 &#36; / $kWₑ$ to 10,000 &#36; / $kWₑ$ |
 | Operation and Maintenance Cost (Plant % of Capital Cost) | 1.5% (fixed) |
 | Electricity Rate in Direct-Use | 10% (fixed) |
