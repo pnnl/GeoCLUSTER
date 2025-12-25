@@ -6,3 +6,5 @@ dash_app/data/decompressed_clgs_results_final_float32.h5
 .DS_Store
 python*.mat
 sbt_original/
+.Rhistory
+.vscode

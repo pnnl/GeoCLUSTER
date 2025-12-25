@@ -13,15 +13,16 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Parameters](#parameters)
-3. [Python Requirements](#requirements)
-4. [Run Locally](#local)
-5. [Deployment](#deploying)
-6. [API](#API)
-7. [Authors](#authors)
-8. [Publications](#publications)
-9. [Funding](#funding)
-10. [Disclaimer](#disclaimer)
+2. [Models](#models)
+3. [Parameters](#parameters)
+4. [Python Requirements](#requirements)
+5. [Run Locally](#local)
+6. [Deployment](#deploying)
+7. [API](#API)
+8. [Authors](#authors)
+9. [Publications](#publications)
+10. [Funding](#funding)
+11. [Disclaimer](#disclaimer)
 
 <br>
 
@@ -35,14 +36,18 @@ Deep (3- to 10-km depths) geothermal resources with temperatures greater than 15
 
 *GeoCLUSTER* was designed to interactively visualize a large, closed-loop geothermal dataset and detailed numerical simulations. It does so by enabling users to query, generate and/or visualize closed-loop systems in conduction-only reservoirs (i.e., transfer of heat through direct contact only) via:
 
-1.	A large but compressed, **precomputed HDF5 database of over 2.5 million simulation runs**. The HDF5 database represents the below-ground thermal–hydraulic response of the reservoir–well system (i.e., outlet temperature and pressure versus time) and it combined with an above-ground plant and economic model. It uses simple function calls and object construction methods to allow for rapid interpolation and data parsing on the HDF5 dataset (packages: *scipy*, *CoolProp*, *h5py*, *numpy*). Furthermore, all data are preloaded by the application to speed up computations while interactive callbacks streamline its visuals (packages: *dash*, *plotly*). Notably, chunking the HDF5 database recently reduced the application’s memory usage by 97% (6.5 GB to 200 MB).
+1.	A large but compressed, **precomputed HDF5 database of over 2.5 million simulation runs**. The HDF5 database represents the **below-ground** thermal–hydraulic response of the reservoir–well system (i.e., outlet temperature and pressure versus time) and it is combined with an **above-ground plant** and **economic model**. It uses simple function calls and object construction methods to allow for rapid interpolation and data parsing on the HDF5 dataset (packages: *scipy*, *CoolProp*, *h5py*, *numpy*). Furthermore, all data are preloaded by the application to speed up computations while interactive callbacks streamline its visuals (packages: *dash*, *plotly*). Notably, chunking the HDF5 database recently reduced the application’s memory usage by 97% (6.5 GB to 200 MB).
 
-2.	On-the-fly simulations computed by a simulator model, the Slender Body Theory (SBT) v1.0 and v2.0 models, for approximating heat production and profiling pressure over time. **This simulator allows users to create scenarios that were not originally included in the HDF5 database**. For example, users can simulate for depths deeper than 5 km and geothermal gradients larger than 70°C/km, which were originally upper limits in the HDF5 database. And this also includes adding more parameters that users can edit like Rock Specific Heat Capacity and Rock Density. Notably, a recent spare matrix solution ensures that the application's CPU usage remains below 4%.
+2.	On-the-fly simulations computed by a simulator model, the Slender Body Theory (SBT) v1.0 and v2.0 models, for approximating heat production and profiling pressure over time. **This simulator allows users to create scenarios that were not originally included in the HDF5 database**. For example, users can simulate for depths deeper than 5 km and geothermal gradients larger than 70°C/km, which were originally upper limits in the HDF5 database. And this also includes adding more parameters that users can edit like Rock Specific Heat Capacity and Rock Density. Notably, a recent spare matrix solution ensures that the application's CPU usage remains below 4%. Similar to the HDF5 database, the outputs of the simulator model is combined with the **same above-ground plant** and **economic model**.
 
 Users can explore scenarios on *GeoCLUSTER* through several methods: 1) toggling between the heat-exchanger designs, working fluids, and end-use, 2) optimizing power output and economic competitiveness by clicking on the scenario buttons, 3) moving easy-to-use parameter sliders, and 4) visualizing simultaneous graphics and downloading its data. For example, when a user creates a scenario, the entire application will update to display subsurface and economic results linearly over time, contour representations between a parameter and mass flow rate, and summary tables of fixed and interactive parameter values and their results. A user can then save their scenario by downloading the summary tables and results into a multi-tabbed Excel file.
 
 ![](https://img.shields.io/badge/GeoCLUSTER_V1.0-Database-darkgrey) 
 ![](https://img.shields.io/badge/GeoCLUSTERV_2.0-Simulator-darkgrey)
+
+## Models <a name="models"></a>
+
+![](src/geocluster-models.png)
 
 ## Parameters <a name="parameters"></a>
 
@@ -113,11 +118,11 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Economic Parameters | Database / Simulator Options |
 |--------------------|------------------------------|
 | End-Use | Heating, Electricity |
-| Drilling Cost | 0 $/m to 4,000 $/m |
+| Drilling Cost | 0 &#36;/m to 4,000 &#36;/m |
 | Discount Rate | 0% to 20% |
 | System Lifetime | 0 years to 40 years |
-| Direct-Use Heat Plant CAPEX | 0 $/kWₜ to 1,000 $/kWₜ |
-| Power Plant CAPEX (electricity) | 0 $/kWₑ to 10,000 $/kWₑ |
+| Direct-Use Heat Plant CAPEX | 0 &#36;/$kWₜ$ to 1,000 &#36;/$kWₜ$ |
+| Power Plant CAPEX (electricity) | 0 &#36;/$kWₑ$ to 10,000 &#36;/$kWₑ$ |
 | Operation and Maintenance Cost (Plant % of Capital Cost) | 1.5% (fixed) |
 | Electricity Rate in Direct-Use | 10% (fixed) |
 
@@ -255,36 +260,70 @@ Also, in `paths.py`, define the absolute path to the app directory (`dash_app`) 
 
 Finally, for errors regarding file requests, especially due to arguments like `url_base_pathname` or `requests_pathname_prefix` when initiating the Dash application in `app.py`, please refer to the `dash.Dash()` documentation is located online on the [Dash API Reference page](https://dash.plotly.com/reference).
 
-## API
-The models underlying the GeoCLUSTER tool (HDF5 and SBT) are available as APIs in addition to the web interface. 
-The APIs are available both deployed on NLOR's website at https://api.openei.org/geocluster_api/ and the source code is 
-in this repository and can be ran locally. 
+### Systems Architecture Diagram
 
-To view how to use the API on NLOR, refer to this notebook: https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing
+*GeoCLUSTER* can be deployed on the cloud. For example, a minimal setup on Amazon Web Services (AWS) is shown below, where the Apache web server, Dash-Plotly web framework, and data files are all on the same Elastic Container Compute (EC2)
+instance, with traffic distributed by an Elastic Load Balancer (ELB). In this architecture, the web server does not just serve *GeoCLUSTER*, but it is also involved in processing requests, making it responsible for both the view (the display of the data) and the controller (the processing behind requests).
+
+![](src/systems-architecture.png)
+
+## API
+The models underlying *GeoCLUSTER* are also available as APIs. The APIs are available on OpenEI's website at https://api.openei.org/geocluster_api/ (deployed) and as the original source code in this repository (local).
+
+To view how to use the deployed API, refer to this notebook: https://colab.research.google.com/drive/1MDtSh6ymGeOTGAXI57BygN2D-PXFD-bX?usp=sharing
 
 To view how to run this API locally, got to the documentation for it in this repo:  https://github.com/pnnl/GeoCLUSTER/blob/adding_api/API/README.md
 
 
 ## Authors <a name="authors"></a>
 
-*GeoCLUSTER* represents the extensive collection of data formatting, processing, and visualization **created by the Closed-Loop Geothermal Working Group (CLGWG)**. CLGWG was a collaborative study involving teams of scientists and engineers from four national laboratories and two universities, plus expert panel members. National labs were Idaho National Laboratory (INL), National Renewable Energy Laboratory (NREL), Sandia National Laboratories (SNL), and Pacific Northwest National Laboratory (PNNL). Universities were Stanford University and Pennsylvania State University.
+*GeoCLUSTER* represents the extensive collection of data formatting, processing, and visualization **created by the Closed-Loop Geothermal Working Group (CLGWG)**. CLGWG was a collaborative study involving teams of scientists and engineers from four national laboratories and two universities, plus expert panel members. National labs were Idaho National Laboratory (INL), National Laboratory of the Rockies (NLR), Sandia National Laboratories (SNL), and Pacific Northwest National Laboratory (PNNL). Universities were Stanford University and Pennsylvania State University.
 
 ![](https://img.shields.io/badge/-PNNL-orange) 
 ![](https://img.shields.io/badge/-INL-%230a4e91)
-![](https://img.shields.io/badge/-NREL-blue)
+![](https://img.shields.io/badge/-NLR-blue)
 ![](https://img.shields.io/badge/-Sandia-lightblue)
 ![](https://img.shields.io/badge/-Stanford-%23d60000)
 ![](https://img.shields.io/badge/-PennState-%23011f3d)
 
 ## Publications <a name="publications"></a>
 
-Beckers, K., et al. Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications. *Geothermal Data Repository*. 2023. ([dataset](https://doi.org/10.15121/1972213))
+### 2025
 
-White, M., et al. Numerical investigation of closed-loop geothermal systems in deep geothermal reservoirs. *Geothermics*. 2024. ([paper](https://doi.org/10.1016/j.geothermics.2023.102852))
+Hakes, Raquel S. P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, et al. **Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems**. Geothermal Rising Conference, 2025.
+
+Bernat, Anastasia, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. **GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies**.Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.
+
+Anleu, Gabriela Bran, Raquel S. P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. **A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection**. Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12–14, 2025.
+
+### 2024
+
+White, Mark, Yaroslav Vasyliiv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, et al. **Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs**. Geothermics 116 (2024): 102852. ([paper](https://doi.org/10.1016/j.geothermics.2023.102852))
+
+U.S. Department of Energy. **Pathways to Commercial Liftoff: Next-Generation Geothermal Power**. March 2024.
+
+### 2023
+
+White, Mark, Mario Martinez, Yaroslav Vasyliiv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, et al. **Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+
+Beckers, Koenraad, Yaroslav Vasyliiv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, and Mark White. **Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+
+Parisi, Carlo, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. **Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes**. Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.
+
+Beckers, Koenraad, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, et al. **Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications**.
+Pacific Northwest National Laboratory, February 3, 2023. Distributed by Geothermal Data Repository. ([dataset](https://doi.org/10.15121/1972213))
+
+### 2021
+
+White, Mark, Mario Martinez, Yaroslav Vasyliiv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, et al. **Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
+
+Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. **Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
+
+Vasiliv, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. **Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs**. Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.
 
 ## Funding <a name="funding"></a>
 
-This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of closed-loop geothermal systems (CLGSs) involving four national laboratories and two universities. 
+This research was funded by the Geothermal Technologies Office (GTO) within the Office of Energy Efficiency and Renewable Energy (EERE) at the U.S. Department of Energy (DOE) to form a collaborative study of closed-loop geothermal systems (CLGSs) involving four national laboratories and two universities. **Last updated December 2025**.
 
 ![](https://img.shields.io/badge/-GTO-%230b7c80)
 ![](https://img.shields.io/badge/-EERE-%2328ad3c)
