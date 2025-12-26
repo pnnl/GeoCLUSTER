@@ -791,6 +791,7 @@ app.layout = html.Div(
         dcc.Store(id="summary-memory"),
         dcc.Store(id="TandP-data"),
         dcc.Store(id="slider-values-store", data={}),  # Store slider values per model
+        dcc.Store(id="sbt-params-store", data={}),  # Store SBT-specific parameters for Excel export
         dcc.Store(
             id="fluid-selection-store",
             data={"preferred": "All", "last_specific": "H2O"},
@@ -960,9 +961,13 @@ def show_clipboard_toast(n_clicks, is_open):
         Input(component_id="thermal-results-time", component_property="data"),
         Input(component_id="econ-results", component_property="data"),
     ],
+    [
+        State(component_id="model-select", component_property="value"),
+        State(component_id="sbt-params-store", component_property="data"),
+    ],
     prevent_initial_call=True,
 )
-def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
+def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ, model, sbt_params):
     if "btn_xlsx" == ctx.triggered_id:
         write_excelsheet(
             df_summary=df_tbl,
@@ -970,6 +975,8 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ):
             df_subsurf_res_time=df_time,
             df_econ=df_econ,
             geoCLUSTER_results_pathname=geoCLUSTER_results_pathname,
+            model=model,
+            sbt_params=sbt_params or {},
         )
         return dcc.send_file(geoCLUSTER_results_pathname)
     else:
@@ -3569,6 +3576,7 @@ def update_plot_title(fluid, end_use, checklist):
     [
         Output(component_id="table", component_property="figure"),
         Output(component_id="summary-memory", component_property="data"),
+        Output(component_id="sbt-params-store", component_property="data"),
     ],
     [
         Input(component_id="interpolation-select", component_property="value"),
@@ -3694,6 +3702,35 @@ def update_table(
         if model != "HDF5" and tandp_data:
             thermal_dict["TandP-data"] = tandp_data
 
+        sbt_params = {}
+        if model in ["SBT V1.0", "SBT V2.0"]:
+            lateral_flow_display = PipeParam4
+            if isinstance(PipeParam4, list):
+                lateral_flow_display = ", ".join([f"{x:.4f}" for x in PipeParam4])
+            
+            sbt_params = {
+                "model": model,
+                "Tsurf": Tsurf if Tsurf is not None else "-",
+                "c_m": c_m if c_m is not None else "-",
+                "rho_m": rho_m if rho_m is not None else "-",
+                "Diameter1": Diameter1 if Diameter1 is not None else "-",
+                "Diameter2": Diameter2 if Diameter2 is not None else "-",
+                "n_laterals": PipeParam3 if (case == "utube" and PipeParam3 is not None) else "-",
+                "lateral_flow_allocation": lateral_flow_display if case == "utube" else "-",
+                "lateral_multiplier": PipeParam5 if (case == "utube" and PipeParam5 is not None) else "-",
+                "center_pipe_thickness": PipeParam3 if (case == "coaxial" and PipeParam3 is not None) else "-",
+                "insulation_thermal_conductivity": PipeParam4 if (case == "coaxial" and PipeParam4 is not None) else "-",
+                "coaxial_flow_type": coaxial_flow_type if (case == "coaxial" and coaxial_flow_type is not None) else "-",
+                "mesh": mesh if mesh is not None else "-",
+                "accuracy": accuracy if accuracy is not None else "-",
+                "pipe_roughness": pipe_roughness if pipe_roughness is not None else "-",
+                "HyperParam1": HyperParam1 if HyperParam1 is not None else "-",
+                "HyperParam3": HyperParam3 if HyperParam3 is not None else "-",
+                "HyperParam5": HyperParam5 if HyperParam5 is not None else "-",
+                "case": case if case is not None else "-",
+                "fluid": fluid if fluid is not None else "-",
+            }
+
         tbl, summary_dict = generate_summary_table(
             mdot,
             L2,
@@ -3717,13 +3754,13 @@ def update_table(
             econ_dict,
         )
 
-        return tbl, summary_dict
+        return tbl, summary_dict, sbt_params
     except Exception as e:
         print(f"Error in update_table: {e}")
         # Return empty table and empty summary on error
         import plotly.graph_objects as go
         empty_table = go.Figure()
-        return empty_table, {}
+        return empty_table, {}, {}
 
 
 @app.callback(
