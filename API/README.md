@@ -58,9 +58,14 @@ pip install .
 
 3. Run the server:
 ```bash
+# On Windows Command Prompt:
 fastapi dev .\src\geocluster_api\main.py
 ```
 
+```bash
+# On macOS/Linux:
+fastapi dev src/geocluster_api/main.py
+```
 
 The API will be available at `http://localhost:8000`
 
