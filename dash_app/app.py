@@ -496,7 +496,7 @@ about_tab = dcc.Tab(
                                     "resource-card-6",
                                     "Geothermal Rising Conference, 2025",
                                     [
-                                        "Hakes, Raquel S.P., Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. ",
+                                        "Raquel S.P. Hakes, Radoslav Bozinoski, Jassim Aljubran, Gabriela B. Anleu, Ryan P. Abernathey, Anastasia Bernat, and Aaron C. Buchko. ",
                                         html.Span("Multi-Site Techno-Economic Analysis of Closed-Loop Geothermal Systems.", style={"fontWeight": "bold"}),
                                         " Geothermal Rising Conference, 2025.",
                                     ],
@@ -506,7 +506,7 @@ about_tab = dcc.Tab(
                                     "resource-card-3",
                                     "Stanford Geothermal Workshop, 2025",
                                     [
-                                        "Bernat, Anastasia, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. ",
+                                        "Anastasia Bernat, Alexander Buchko, Koenraad Beckers, and Aaron Moreno. ",
                                         html.Span("GeoCLUSTER v2.0: A Closed-Loop, Techno-Economic Simulator Supporting New Case Studies.", style={"fontWeight": "bold"}),
                                         " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 10–12, 2025.",
                                     ],
@@ -516,7 +516,7 @@ about_tab = dcc.Tab(
                                     "resource-card-5",
                                     "Stanford Geothermal Workshop, 2025",
                                     [
-                                        "Anleu, Gabriela Bran, Raquel S.P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. ",
+                                        "Gabriela A. Bran-Anleu, Raquel S.P. Hakes, Radoslav Bozinoski, and Koenraad Beckers. ",
                                         html.Span("A Parametric Study of L-Shape Coaxial Closed-Loop Geothermal Systems with Reservoir Convection.", style={"fontWeight": "bold"}),
                                         " Proceedings of the 50th Workshop on Geothermal Reservoir Engineering, Stanford University, February 12-14, 2025.",
                                     ],
@@ -546,7 +546,7 @@ about_tab = dcc.Tab(
                                     "resource-card-4",
                                     "Geothermics, 2024",
                                     [
-                                        "White, Mark, Yaroslav Vasyliv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, Chad Augustine, Gabriela Bran-Anleu, Roland Horne, Laura Pauley, Giorgia Bettini, Theron Marshall, and Anastasia Bernat. ",
+                                        "Mark White, Yaroslav Vasyliv, Koenraad Beckers, Mario Martinez, Paolo Balestra, Carlo Parisi, Chad Augustine, Gabriela Bran-Anleu, Roland Horne, Laura Pauley, Giorgia Bettini, Theron Marshall, and Anastasia Bernat. ",
                                         html.Span("Numerical Investigation of Closed-Loop Geothermal Systems in Deep Geothermal Reservoirs.", style={"fontWeight": "bold"}),
                                         " Geothermics 116 (2024): 102852.",
                                     ],
@@ -556,7 +556,7 @@ about_tab = dcc.Tab(
                                     "resource-card-15",
                                     "Geothermal Data Repository, 2023",
                                     [
-                                        "Beckers, Koenraad, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, Doug Blankenship, Zach Frone, Sean Porse, Seunghwan Baek, Paolo Balestra, Anastasia Bernat, Giorgia Bettin, Gabriela Bran-Anleu, Alec Kucala, Brian Kyanjo, Theron Marshall, Mario Martinez, Travis McLing, Carlo Parisi, Sam Subia, Yaroslav Vasyliv, and Mark White. ",
+                                        "Koenraad Beckers, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Andy Adams, Doug Blankenship, Zach Frone, Sean Porse, Seunghwan Baek, Paolo Balestra, Anastasia Bernat, Giorgia Bettini, Gabriela Bran-Anleu, Alec Kucala, Brian Kyanjo, Theron Marshall, Mario Martinez, Travis McLing, Carlo Parisi, Sam Subia, Yaroslav Vasyliv, and Mark White. ",
                                         html.Span("Closed Loop Geothermal Working Group: GeoCLUSTER App, Subsurface Simulation Results, and Publications.", style={"fontWeight": "bold"}),
                                         " Pacific Northwest National Laboratory, February, 3, 2023. Distributed by Geothermal Data Repository.",
                                     ],
@@ -571,7 +571,7 @@ about_tab = dcc.Tab(
                                     "resource-card-7",
                                     "Stanford Geothermal Workshop, 2023",
                                     [
-                                        "Parisi, Carlo, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. ",
+                                        "Carlo Parisi, Paolo Balestra, Brian Kyanjo, Theron D. Marshall, Travis L. Meling, and Mark D. White. ",
                                         html.Span("Closed Loop Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-FALCON Coupled Codes.", style={"fontWeight": "bold"}),
                                         " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
                                     ],
@@ -581,7 +581,7 @@ about_tab = dcc.Tab(
                                     "resource-card-8",
                                     "Stanford Geothermal Workshop, 2023",
                                     [
-                                        "Beckers, Koenraad, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, Mark White, and the Closed-Loop Geothermal Working Group. ",
+                                        "Koenraad Beckers, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Mario Martinez, Chad Augustine, Mark White, and the Closed-Loop Geothermal Working Group. ",
                                         html.Span("Tabulated Database of Closed-Loop Geothermal Systems Performance for Cloud-Based Technical and Economic Modeling of Heat Production and Electricity Generation.", style={"fontWeight": "bold"}),
                                         " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6-8, 2023.",
                                     ],
@@ -591,7 +591,7 @@ about_tab = dcc.Tab(
                                     "resource-card-9",
                                     "Stanford Geothermal Workshop, 2023",
                                     [
-                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Giorgia Bettin, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        "Mark White, Mario Martinez, Yaroslav Vasyliv, Koenraad Beckers, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Giorgia Bettini, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
                                         html.Span("Closed-Loop Geothermal Working Group Study – Understanding Thermal Performance and Economic Forecasts via Numerical Simulation.", style={"fontWeight": "bold"}),
                                         " Proceedings of the 48th Workshop on Geothermal Reservoir Engineering, Stanford University, February 6–8, 2023.",
                                     ],
@@ -601,7 +601,7 @@ about_tab = dcc.Tab(
                                     "resource-card-12",
                                     "Geothermal Rising Conference, 2021",
                                     [
-                                        "White, Mark, Mario Martinez, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Giorgia Bettini, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
+                                        "Mark White, Mario Martinez, Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Carlo Parisi, Paolo Balestra, Roland Horne, Chad Augustine, Laura Pauley, Doug Hollett, Giorgia Bettini, Theron Marshall, and the Closed Loop Geothermal Working Group. ",
                                         html.Span("Thermal and Mechanical Energy Performance Analysis of Closed-Loop Systems in Hot-Dry-Rock and Hot-Wet-Rock Reservoirs.", style={"fontWeight": "bold"}),
                                         " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
                                     ],
@@ -611,7 +611,7 @@ about_tab = dcc.Tab(
                                     "resource-card-11",
                                     "Geothermal Rising Conference, 2021",
                                     [
-                                        "Vasilvi, Yaroslav V., Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. ",
+                                        "Yaroslav Vasyliv, Gabriela A. Bran-Anleu, Alec Kucala, Sam Subia, and Mario J. Martinez. ",
                                         html.Span("Analysis and Optimization of a Closed Loop Geothermal System in Hot Rock Reservoirs.", style={"fontWeight": "bold"}),
                                         " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
                                     ],
@@ -621,7 +621,7 @@ about_tab = dcc.Tab(
                                     "resource-card-10",
                                     "Geothermal Rising Conference, 2021",
                                     [
-                                        "Parisi, Carlo, Paolo Balestra, and Theron D. Marshall. ",
+                                        "Carlo Parisi, Paolo Balestra, and Theron D. Marshall. ",
                                         html.Span("Geothermal Analysis Modeling and Simulation Using Idaho National Laboratory RELAP5-3D-PRONGHORN Coupled Codes.", style={"fontWeight": "bold"}),
                                         " Proceedings of the Geothermal Rising Conference, Vol. 45, 2021.",
                                     ],
