@@ -625,6 +625,32 @@ MODEL_LABELS = {
     "SBT V2.0": "Simulator"
 }
 
+# Parameters whose titles naturally wrap to two lines and need extra icon offset
+MULTILINE_INFO_PARAMS = {
+    "Rock Thermal Conductivity (W/m-°C)",
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)",
+    "Rock Specific Heat Capacity (J/kg-°C)",
+    "Rock Specific Heat Capacity (Btu/lb-˚F)",
+}
+
+MULTILINE_INFO_CUSTOM_OFFSETS = {
+    "Rock Thermal Conductivity (W/m-°C)": "-10px",
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)": "-10px",
+    "Rock Specific Heat Capacity (J/kg-°C)": "-10px",
+    "Rock Specific Heat Capacity (Btu/lb-˚F)": "-10px",
+}
+
+# Parameters related to lateral configuration needing custom icon alignment
+LATERAL_INFO_PARAMS = {
+    "Number of Laterals",
+    "Lateral Flow Multiplier",
+    "Lateral Flow Allocation",
+}
+
+LATERAL_CUSTOM_TRANSFORMS = {
+    "Lateral Flow Allocation": "translateX(-6px)",
+}
+
 def param_name_to_id_suffix(name: str) -> str:
     """
     Turn a PARAMETER_INFO key into a consistent id suffix.
@@ -648,6 +674,19 @@ def create_info_button(parameter_name, button_id=None):
             "param": param_name_to_id_suffix(parameter_name),
         }
     
+    top_offset = "-3px"
+    horizontal_transform = "translateX(-2px)"
+
+    if parameter_name in MULTILINE_INFO_PARAMS:
+        top_offset = MULTILINE_INFO_CUSTOM_OFFSETS.get(parameter_name, "-6px")
+
+    if parameter_name in LATERAL_INFO_PARAMS:
+        top_offset = "1px"
+        horizontal_transform = LATERAL_CUSTOM_TRANSFORMS.get(parameter_name, "translateX(-8px)")
+
+    if parameter_name is None:
+        top_offset = "-3px"
+
     return html.Div([
         dbc.Button(
             html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
@@ -663,9 +702,10 @@ def create_info_button(parameter_name, button_id=None):
                 "display": "inline-flex",
                 "alignItems": "center",
                 "justifyContent": "center",
-                "transform": "translateX(-3px) translateY(1px)",
+                "verticalAlign": "middle",
                 "position": "relative",
-                "top": "1px"
+                "top": top_offset,
+                "transform": horizontal_transform
             }
         )
     ])
