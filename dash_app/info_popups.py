@@ -880,12 +880,23 @@ def register_info_modal_callbacks(app):
             return True, bold_title, modal_content, last_ts
 
         # Standard handling for other parameters
-        header_style = {"fontSize": "16px", "fontWeight": "bold"}
         modal_content = []
-        if "description" in info and info["description"]:
-            modal_content.append(
-                html.P(info["description"], className="mb-3"),
-            )
+        info_sections = [
+            ("Definition", "definition"),
+            ("Recommended Range", "recommended_range"),
+            ("Typical Value", "typical_value"),
+            ("Description", "description"),
+        ]
+
+        for label, key in info_sections:
+            value = info.get(key)
+            if value:
+                modal_content.append(html.H6(f"{label}:", className="text-primary"))
+                modal_content.append(html.P(value, className="mb-3"))
+
+        if not modal_content:
+            modal_content.append(html.P("No additional information available yet.", className="mb-3"))
+
         return True, f"Information: {param}", modal_content, last_ts
 
     @app.callback(
