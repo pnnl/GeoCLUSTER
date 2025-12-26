@@ -788,9 +788,9 @@ def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, 
         ])
 
 def create_info_modal():
-    """Create the info modal component with timestamp store to prevent automatic opening when switching models or units"""
+    """Create the info modal component with click count store to prevent automatic opening when switching models or units"""
     return html.Div([
-        dcc.Store(id="info-btn-last-ts", data=0),
+        dcc.Store(id="info-btn-last-clicks", data={}),
         dbc.Modal([
             dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
             dbc.ModalBody(id="info-modal-body"),
@@ -811,25 +811,24 @@ def register_info_modal_callbacks(app):
         [Output("info-modal", "is_open"),
          Output("info-modal-title", "children"),
          Output("info-modal-body", "children"),
-         Output("info-btn-last-ts", "data")],
+         Output("info-btn-last-clicks", "data")],
         [
             Input({"type": "info-btn", "param": ALL}, "n_clicks"),
         ],
         [
-            State("info-btn-last-ts", "data"),
+            State("info-btn-last-clicks", "data"),
             State("info-modal", "is_open"),
             State("model-select", "value"),
-            State({"type": "info-btn", "param": ALL}, "n_clicks_timestamp"),
         ],
         prevent_initial_call=True,
     )
-    def toggle_info_modal(clicks_list, last_ts, is_open, selected_model, ts_list):
+    def toggle_info_modal(clicks_list, last_clicks, is_open, selected_model):
         """Handle info popup clicks for all parameters dynamically using pattern matching."""
-        # No buttons mounted or nothing ever clicked
-        if not clicks_list or not ts_list:
+        if not clicks_list:
             raise PreventUpdate
 
-        # Find which button was clicked
+        last_clicks = last_clicks or {}
+
         triggered = ctx.triggered_id
         if not triggered or not isinstance(triggered, dict) or triggered.get("type") != "info-btn":
             raise PreventUpdate
@@ -839,28 +838,14 @@ def register_info_modal_callbacks(app):
         if not param:
             raise PreventUpdate
 
-        # Get the timestamp for the triggered button to verify it's a new click
-        try:
-            trigger_index = list(suffix_to_param.keys()).index(suffix)
-            if trigger_index < len(ts_list) and ts_list[trigger_index]:
-                current_ts = ts_list[trigger_index]
-                # If no new click since last time, do nothing
-                if current_ts <= (last_ts or 0):
-                    raise PreventUpdate
-                # Update last_ts to current_ts for return
-                last_ts = current_ts
-            else:
-                # Fallback: use max timestamp if we can't find the specific one
-                current_max = max((t or 0) for t in ts_list)
-                if current_max <= (last_ts or 0):
-                    raise PreventUpdate
-                last_ts = current_max
-        except (ValueError, IndexError):
-            # Fallback: use max timestamp
-            current_max = max((t or 0) for t in ts_list)
-            if current_max <= (last_ts or 0):
-                raise PreventUpdate
-            last_ts = current_max
+        max_clicks = max((c or 0) for c in clicks_list) if clicks_list else 0
+        
+        if max_clicks == 0:
+            raise PreventUpdate
+        
+        last_clicks = last_clicks.copy()
+        last_clicks["_max"] = max_clicks
+        last_clicks[suffix] = max_clicks
 
         info = PARAMETER_INFO.get(param)
         if not info:
@@ -917,7 +902,7 @@ def register_info_modal_callbacks(app):
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)
-            return True, bold_title, modal_content, last_ts
+            return True, bold_title, modal_content, last_clicks
 
         # Standard handling for other parameters
         modal_content = []
@@ -937,7 +922,7 @@ def register_info_modal_callbacks(app):
         if not modal_content:
             modal_content.append(html.P("No additional information available yet.", className="mb-3"))
 
-        return True, f"Information: {param}", modal_content, last_ts
+        return True, f"Information: {param}", modal_content, last_clicks
 
     @app.callback(
         Output("info-modal", "is_open", allow_duplicate=True),
