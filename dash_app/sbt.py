@@ -15,6 +15,17 @@ import math
 from scipy.interpolate import RegularGridInterpolator
 from traceback import print_stack
 import cProfile
+
+# NumPy 2.x renamed trapz to trapezoid; prefer the new name but keep backward compatibility.
+_TRAPEZOID_INTEGRATOR = getattr(np, "trapezoid", None)
+if _TRAPEZOID_INTEGRATOR is None:
+    _TRAPEZOID_INTEGRATOR = getattr(np, "trapz", None)
+if _TRAPEZOID_INTEGRATOR is None:
+    raise AttributeError("NumPy missing trapezoidal integration routine required by SBT.")
+
+
+def _trapz(y, x):
+    return _TRAPEZOID_INTEGRATOR(y, x)
 #has SBT v1 for co-axial and U-loop, SBT v2 for co-axial,as well as FMM algorithm
 
 # sourced scripts
@@ -509,7 +520,7 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsF
         if Amin1 > Amax1:
             Amax1 = 10 * Amin1
         Adomain1 = np.logspace(np.log10(Amin1), np.log10(Amax1), NoDiscrFinitePipeCorrection)
-        finitecorrectiony[i] = np.trapz(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
+        finitecorrectiony[i] = _trapz(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
 
     #precalculate besselintegration for infinite cylinder
     if clg_configuration == 1: # co-axial geometry (1)
@@ -528,7 +539,7 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, NoArgumentsF
     besselcylinderresult = np.zeros(NoArgumentsInfCylIntegration)
 
     for i, argumentbessel in enumerate(argumentbesselvec):
-        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * np.trapz((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
+        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * _trapz((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
 
     N = len(Deltaz)  # Number of elements
     elementcenters = 0.5 * np.column_stack((x[1:], y[1:], z[1:])) + 0.5 * np.column_stack((x[:-1], y[:-1], z[:-1]))  # Matrix that stores the mid point coordinates of each element

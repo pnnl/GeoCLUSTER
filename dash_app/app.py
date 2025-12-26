@@ -449,7 +449,6 @@ about_tab = dcc.Tab(
                                 },
                             ],
                             variant="dark",
-                            ride="carousel",
                             interval=3000,
                             controls=True,
                             indicators=False,
