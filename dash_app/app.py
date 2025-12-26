@@ -1103,8 +1103,12 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
 )
 def show_hide_see_all_button(model):
     if model is None:
-        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "none"}
+        return {"display": "none"}
+    elif model == "HDF5":
+        # No hidden parameters for database mode, so hide the button
+        return {"display": "none"}
     else:
+        # Show button for SBT simulator models (SBT V1.0 and SBT V2.0)
         return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
 
 
@@ -1153,6 +1157,7 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
         else:  # SBT V2.0
             # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+            # lat-flow (Lateral Flow Multiplier) is hidden by default, shown via "See all parameters"
             return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     # Handle button click
@@ -1167,19 +1172,22 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
                 # Hide all parameters for SBT V1.0
                 return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
             else:  # SBT V2.0
-                # Hide only: mesh, lat-flow, lat-allo, component-performance
+                # Hide: mesh, lat-flow (Lateral Flow Multiplier), lat-allo, component-performance
+                # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
                 return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
             # Show all parameters
             if model == "HDF5":
-                return style_none, style_none, style_none, style_none, style_none, style_block, "See less parameters", " ▲"
+                # Component Performance unavailable for HDF5 (database mode)
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
             elif model == "SBT V1.0":
-                # For SBT V1.0, show the 5 SBT-specific parameters (all are hidden by default)
-                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
+                # For SBT V1.0, show the SBT-specific parameters including component-performance (with Insulation Thermal Conductivity)
+                # lat-allo (Lateral Flow Allocation) is unavailable for simulator
+                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
             else:  # SBT V2.0
                 # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
-                # Only toggle: mesh, lat-flow, lat-allo, component-performance
-                return style_block, style_block, style_block, style_block, style_block, style_none, "See less parameters", " ▲"
+                # Show: mesh, lat-flow (Lateral Flow Multiplier), component-performance (lat-allo is unavailable for simulator)
+                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
     
     # Fallback - initial state
     if model == "HDF5":
@@ -1187,7 +1195,8 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     elif model == "SBT V1.0":
         return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
     else:  # SBT V2.0
-        # Keep pipe-roughness and hyperparam5 visible 
+        # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
+        # lat-flow (Lateral Flow Multiplier) is hidden by default, shown via "See all parameters"
         return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
 
 
@@ -1786,10 +1795,12 @@ def show_model_params(model):
         return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
-        return b, b, b, b, b, b, n, n, b, n, n, n  # Hide component-performance for SBT V1.0
+        # lat-allo (Lateral Flow Allocation) unavailable for simulator
+        return b, b, b, b, b, b, n, n, b, n, n, n
 
     if model == "SBT V2.0":
-        return b, b, b, b, b, b, n, b, b, n, b, n  # Hide component-performance for SBT V2.0
+        # lat-allo (Lateral Flow Allocation) unavailable for simulator
+        return b, b, b, b, b, b, n, b, b, n, b, n
 
 
 @app.callback(
@@ -2547,7 +2558,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 input_width="60px",
             )
             lateral_flow_value = get_saved_value("lateral-flow", start_vals_hdf5, "lateral-flow")
-            lateral_flow = lateral_flow_placeholder(value=lateral_flow_value, style=div_block_style)
+            # Lateral Flow Allocation is unavailable for simulator models, always return hidden placeholder
+            lateral_flow = lateral_flow_placeholder(value=lateral_flow_value, style=div_none_style)
             # Calculate multiplier based on number of laterals: 1/n_laterals
             multiplier_val = 1.0 / n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1.0
             lateral_multiplier = input_box(
@@ -2903,17 +2915,12 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     
     Creates multiple input fields (one per lateral) with equal distribution.
     Displays fractions (e.g., "1/3") in the inputs.
+    
+    Note: Lateral Flow Allocation is unavailable for simulator (SBT) models.
     """
-    # Only show for SBT models with utube case
-    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
-        from sliders import div_none_style
-        return lateral_flow_placeholder(style=div_none_style)
-    if case != "utube":
-        from sliders import div_none_style
-        return lateral_flow_placeholder(style=div_none_style)
-    if n_laterals is None or n_laterals <= 0:
-        from sliders import div_none_style
-        return lateral_flow_placeholder(style=div_none_style)
+    # Lateral Flow Allocation is unavailable for all models (always return placeholder)
+    from sliders import div_none_style
+    return lateral_flow_placeholder(style=div_none_style)
     
     from info_popups import create_info_button
     from sliders import div_block_style

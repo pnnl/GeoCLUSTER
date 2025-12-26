@@ -631,6 +631,7 @@ MULTILINE_INFO_PARAMS = {
     "Rock Thermal Conductivity (Btu/ft-h-˚F)",
     "Rock Specific Heat Capacity (J/kg-°C)",
     "Rock Specific Heat Capacity (Btu/lb-˚F)",
+    "Insulation Thermal Conductivity (W/m-°C)",
 }
 
 MULTILINE_INFO_CUSTOM_OFFSETS = {
@@ -638,6 +639,7 @@ MULTILINE_INFO_CUSTOM_OFFSETS = {
     "Rock Thermal Conductivity (Btu/ft-h-˚F)": "-10px",
     "Rock Specific Heat Capacity (J/kg-°C)": "-10px",
     "Rock Specific Heat Capacity (Btu/lb-˚F)": "-10px",
+    "Insulation Thermal Conductivity (W/m-°C)": "-15px",
 }
 
 # Parameters related to lateral configuration needing custom icon alignment
@@ -679,6 +681,9 @@ def create_info_button(parameter_name, button_id=None):
 
     if parameter_name in MULTILINE_INFO_PARAMS:
         top_offset = MULTILINE_INFO_CUSTOM_OFFSETS.get(parameter_name, "-6px")
+        # Only apply horizontal transform for Insulation Thermal Conductivity (needs more left adjustment)
+        if parameter_name == "Insulation Thermal Conductivity (W/m-°C)":
+            horizontal_transform = "translateX(-16px)"
 
     if parameter_name in LATERAL_INFO_PARAMS:
         top_offset = "1px"
