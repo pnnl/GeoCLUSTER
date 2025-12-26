@@ -1,6 +1,7 @@
 # Virtual environments
-venv/*
-.venv/*
+venv/
+.venv/
+.venv*/
 .env
 
 # Bytecode & caches
@@ -17,6 +18,7 @@ dist/
 
 # Data & large generated files
 dash_app/data/decompressed_clgs_results_final_float32.h5
+API/**/decompressed_clgs_results_final_float32.h5
 *.zarr
 python*.mat
 sbt_original/
@@ -24,4 +26,3 @@ sbt_original/
 # IDEs & OS files
 .DS_Store
 .vscode/
-

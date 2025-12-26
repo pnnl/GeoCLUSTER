@@ -182,7 +182,13 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
-        interpolated_points = interpn(grid, values_around_point, points)
+        try:
+            interpolated_points = interpn(grid, values_around_point, points)
+        except ValueError as e:
+            if "out of bounds" in str(e):
+                print(f"[ERROR] Interpolation out of bounds in clgs.py: {e}", flush=True)
+                return np.full(points.shape[0], np.nan)
+            raise
         return interpolated_points
 
     def reshape_output(self, tout):
@@ -223,8 +229,13 @@ class data:
                 *point,
                 "all",
             )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
-            Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
-            Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            try:
+                Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
+                Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+            except ValueError as e:
+                if "out of bounds" in str(e):
+                    raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
+                raise
             times = self.time
             # print("TEMP OUT: -----****")
             # print(Tout)

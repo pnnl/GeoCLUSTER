@@ -625,6 +625,34 @@ MODEL_LABELS = {
     "SBT V2.0": "Simulator"
 }
 
+# Parameters whose titles naturally wrap to two lines and need extra icon offset
+MULTILINE_INFO_PARAMS = {
+    "Rock Thermal Conductivity (W/m-°C)",
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)",
+    "Rock Specific Heat Capacity (J/kg-°C)",
+    "Rock Specific Heat Capacity (Btu/lb-˚F)",
+    "Insulation Thermal Conductivity (W/m-°C)",
+}
+
+MULTILINE_INFO_CUSTOM_OFFSETS = {
+    "Rock Thermal Conductivity (W/m-°C)": "-10px",
+    "Rock Thermal Conductivity (Btu/ft-h-˚F)": "-10px",
+    "Rock Specific Heat Capacity (J/kg-°C)": "-10px",
+    "Rock Specific Heat Capacity (Btu/lb-˚F)": "-10px",
+    "Insulation Thermal Conductivity (W/m-°C)": "-15px",
+}
+
+# Parameters related to lateral configuration needing custom icon alignment
+LATERAL_INFO_PARAMS = {
+    "Number of Laterals",
+    "Lateral Flow Multiplier",
+    "Lateral Flow Allocation",
+}
+
+LATERAL_CUSTOM_TRANSFORMS = {
+    "Lateral Flow Allocation": "translateX(-6px)",
+}
+
 def param_name_to_id_suffix(name: str) -> str:
     """
     Turn a PARAMETER_INFO key into a consistent id suffix.
@@ -648,6 +676,22 @@ def create_info_button(parameter_name, button_id=None):
             "param": param_name_to_id_suffix(parameter_name),
         }
     
+    top_offset = "-3px"
+    horizontal_transform = "translateX(-2px)"
+
+    if parameter_name in MULTILINE_INFO_PARAMS:
+        top_offset = MULTILINE_INFO_CUSTOM_OFFSETS.get(parameter_name, "-6px")
+        # Only apply horizontal transform for Insulation Thermal Conductivity (needs more left adjustment)
+        if parameter_name == "Insulation Thermal Conductivity (W/m-°C)":
+            horizontal_transform = "translateX(-16px)"
+
+    if parameter_name in LATERAL_INFO_PARAMS:
+        top_offset = "1px"
+        horizontal_transform = LATERAL_CUSTOM_TRANSFORMS.get(parameter_name, "translateX(-8px)")
+
+    if parameter_name is None:
+        top_offset = "-3px"
+
     return html.Div([
         dbc.Button(
             html.Img(src="/assets/info.svg", style={"width": "16px", "height": "16px"}),
@@ -663,9 +707,10 @@ def create_info_button(parameter_name, button_id=None):
                 "display": "inline-flex",
                 "alignItems": "center",
                 "justifyContent": "center",
-                "transform": "translateX(-3px) translateY(1px)",
+                "verticalAlign": "middle",
                 "position": "relative",
-                "top": "1px"
+                "top": top_offset,
+                "transform": horizontal_transform
             }
         )
     ])
@@ -748,9 +793,9 @@ def create_enhanced_input_box(DivID, ID, ptitle, min_v, max_v, start_v, step_i, 
         ])
 
 def create_info_modal():
-    """Create the info modal component with timestamp store to prevent automatic opening when switching models or units"""
+    """Create the info modal component with click count store to prevent automatic opening when switching models or units"""
     return html.Div([
-        dcc.Store(id="info-btn-last-ts", data=0),
+        dcc.Store(id="info-btn-last-clicks", data={}),
         dbc.Modal([
             dbc.ModalHeader(dbc.ModalTitle(id="info-modal-title")),
             dbc.ModalBody(id="info-modal-body"),
@@ -771,25 +816,24 @@ def register_info_modal_callbacks(app):
         [Output("info-modal", "is_open"),
          Output("info-modal-title", "children"),
          Output("info-modal-body", "children"),
-         Output("info-btn-last-ts", "data")],
+         Output("info-btn-last-clicks", "data")],
         [
             Input({"type": "info-btn", "param": ALL}, "n_clicks"),
         ],
         [
-            State("info-btn-last-ts", "data"),
+            State("info-btn-last-clicks", "data"),
             State("info-modal", "is_open"),
             State("model-select", "value"),
-            State({"type": "info-btn", "param": ALL}, "n_clicks_timestamp"),
         ],
         prevent_initial_call=True,
     )
-    def toggle_info_modal(clicks_list, last_ts, is_open, selected_model, ts_list):
+    def toggle_info_modal(clicks_list, last_clicks, is_open, selected_model):
         """Handle info popup clicks for all parameters dynamically using pattern matching."""
-        # No buttons mounted or nothing ever clicked
-        if not clicks_list or not ts_list:
+        if not clicks_list:
             raise PreventUpdate
 
-        # Find which button was clicked
+        last_clicks = last_clicks or {}
+
         triggered = ctx.triggered_id
         if not triggered or not isinstance(triggered, dict) or triggered.get("type") != "info-btn":
             raise PreventUpdate
@@ -799,28 +843,14 @@ def register_info_modal_callbacks(app):
         if not param:
             raise PreventUpdate
 
-        # Get the timestamp for the triggered button to verify it's a new click
-        try:
-            trigger_index = list(suffix_to_param.keys()).index(suffix)
-            if trigger_index < len(ts_list) and ts_list[trigger_index]:
-                current_ts = ts_list[trigger_index]
-                # If no new click since last time, do nothing
-                if current_ts <= (last_ts or 0):
-                    raise PreventUpdate
-                # Update last_ts to current_ts for return
-                last_ts = current_ts
-            else:
-                # Fallback: use max timestamp if we can't find the specific one
-                current_max = max((t or 0) for t in ts_list)
-                if current_max <= (last_ts or 0):
-                    raise PreventUpdate
-                last_ts = current_max
-        except (ValueError, IndexError):
-            # Fallback: use max timestamp
-            current_max = max((t or 0) for t in ts_list)
-            if current_max <= (last_ts or 0):
-                raise PreventUpdate
-            last_ts = current_max
+        max_clicks = max((c or 0) for c in clicks_list) if clicks_list else 0
+        
+        if max_clicks == 0:
+            raise PreventUpdate
+        
+        last_clicks = last_clicks.copy()
+        last_clicks["_max"] = max_clicks
+        last_clicks[suffix] = max_clicks
 
         info = PARAMETER_INFO.get(param)
         if not info:
@@ -877,16 +907,27 @@ def register_info_modal_callbacks(app):
             
             model_label = MODEL_LABELS.get(selected_model, "Model Version") if selected_model else "Model Version"
             bold_title = html.Strong(model_label)
-            return True, bold_title, modal_content, last_ts
+            return True, bold_title, modal_content, last_clicks
 
         # Standard handling for other parameters
-        header_style = {"fontSize": "16px", "fontWeight": "bold"}
         modal_content = []
-        if "description" in info and info["description"]:
-            modal_content.append(
-                html.P(info["description"], className="mb-3"),
-            )
-        return True, f"Information: {param}", modal_content, last_ts
+        info_sections = [
+            ("Definition", "definition"),
+            ("Recommended Range", "recommended_range"),
+            ("Typical Value", "typical_value"),
+            ("Description", "description"),
+        ]
+
+        for label, key in info_sections:
+            value = info.get(key)
+            if value:
+                modal_content.append(html.H6(f"{label}:", className="text-primary"))
+                modal_content.append(html.P(value, className="mb-3"))
+
+        if not modal_content:
+            modal_content.append(html.P("No additional information available yet.", className="mb-3"))
+
+        return True, f"Information: {param}", modal_content, last_clicks
 
     @app.callback(
         Output("info-modal", "is_open", allow_duplicate=True),
