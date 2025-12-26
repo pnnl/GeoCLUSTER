@@ -1,8 +1,27 @@
+# Virtual environments
 venv/*
 .venv/*
+.env
+
+# Bytecode & caches
 **/**/__pycache__/*
+*.py[cod]
+
+# Build & packaging artifacts
+build/
+dist/
+*.egg-info/
+
+# Test & analysis artifacts
+.Rhistory
+
+# Data & large generated files
 dash_app/data/decompressed_clgs_results_final_float32.h5
 *.zarr
-.DS_Store
 python*.mat
 sbt_original/
+
+# IDEs & OS files
+.DS_Store
+.vscode/
+
