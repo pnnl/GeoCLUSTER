@@ -45,36 +45,6 @@ def create_teaobject(TandP_dict,
     # ------------------------------------------
     # print(Flow_user, Gradient_user, Diameter_user, Tin_user, krock_user)
 
-    # Handle None values
-    if Flow_user is None:
-        Flow_user = 20.0
-    if Hor_length_user is None:
-        Hor_length_user = 10000.0
-    if Depth_user is None:
-        Depth_user = 3500.0
-    if Gradient_user is None:
-        Gradient_user = 0.05
-    if Diameter_user is None:
-        Diameter_user = 0.35
-    if Tin_user is None:
-        Tin_user = 30.0
-    if krock_user is None:
-        krock_user = 3.0
-    if Drilling_cost_per_m is None:
-        Drilling_cost_per_m = 1000.0
-    if Discount_rate is None:
-        Discount_rate = 7.0
-    if Lifetime is None:
-        Lifetime = 40
-    if Direct_use_heat_cost_per_kWth is None:
-        Direct_use_heat_cost_per_kWth = 100.0
-    if Power_plant_cost_per_kWe is None:
-        Power_plant_cost_per_kWe = 3000.0
-    if Pre_Cooling_Delta_T is None:
-        Pre_Cooling_Delta_T = 13.0
-    if Turbine_outlet_pressure is None:
-        Turbine_outlet_pressure = 80.0
-    
     # Clamp Pre_Cooling_Delta_T to valid range for CO2 (0-15 °C)
     # This prevents validation errors in TEA module
     if Pre_Cooling_Delta_T < 0:
