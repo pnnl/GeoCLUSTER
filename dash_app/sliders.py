@@ -426,7 +426,7 @@ def slider_card():
                                                             id="num-lat-container",
                                                             children=[ 
                                                                 input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                                                            min_v=1, max_v=10, start_v=start_vals_hdf5["n-laterals"] if start_vals_hdf5["n-laterals"] > 0 else 1, step_i=1, div_style=div_none_style, parameter_name="Number of Laterals", horizontal=True, input_width="60px")
+                                                                            min_v=1, max_v=30, start_v=start_vals_hdf5["n-laterals"] if start_vals_hdf5["n-laterals"] > 0 else 1, step_i=1, div_style=div_none_style, parameter_name="Number of Laterals", horizontal=True, input_width="60px")
                                                             ]),
                                                     html.Div(
                                                         id="lat-allo-container",

@@ -1133,14 +1133,18 @@ def show_hide_see_all_button(model):
     [
         Input(component_id="see-all-params-button", component_property="n_clicks"),
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [State(component_id="see-all-params-text", component_property="children")],
     prevent_initial_call='initial_duplicate',
 )
-def toggle_see_all_params(n_clicks, model, current_button_text):
+def toggle_see_all_params(n_clicks, model, case, current_button_text):
     callback_ctx = ctx
     style_none = {"display": "none"}
     style_block = {"display": "block"}
+    
+    # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
+    component_perf_style = style_none if case == "utube" else style_block
     
     # Get the trigger ID
     if not callback_ctx.triggered:
@@ -1155,9 +1159,9 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
-    # Handle model change
-    if trigger_id == "model-select":
-        # Model changed - set initial state: all hidden except those that are always visible
+    # Handle model or case change
+    if trigger_id == "model-select" or trigger_id == "case-select":
+        # Model or case changed - set initial state: all hidden except those that are always visible
         if model == "HDF5":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
         elif model == "SBT V1.0":
@@ -1190,11 +1194,13 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
             elif model == "SBT V1.0":
                 # For SBT V1.0, show the SBT-specific parameters including component-performance (with Insulation Thermal Conductivity)
                 # lat-allo (Lateral Flow Allocation) is unavailable for simulator
-                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
+                # Component Performance only for coaxial
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
             else:  # SBT V2.0
                 # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
                 # Show: mesh, lat-flow (Lateral Flow Multiplier), component-performance (lat-allo is unavailable for simulator)
-                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
+                # Component Performance only for coaxial
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
     
     # Fallback - initial state
     if model == "HDF5":
@@ -1793,25 +1799,29 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     ],
     [
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call='initial_duplicate',
 )
-def show_model_params(model):
+def show_model_params(model, case):
     # print("show_model_params: ", model)
 
     b = {"display": "block"}
     n = {"display": "none"}
 
+    # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
+    component_perf_style = n if case == "utube" else n  # Hidden by default, shown via "See all parameters" for coaxial
+    
     if model == "HDF5":
         return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, n, b, n, n, n
+        return b, b, b, b, b, b, n, n, b, n, n, component_perf_style
 
     if model == "SBT V2.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, b, b, n, b, n
+        return b, b, b, b, b, b, n, b, b, n, b, component_perf_style
 
 
 @app.callback(
@@ -2598,7 +2608,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
                 min_v=1,
-                max_v=10,
+                max_v=30,
                 start_v=n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1,
                 step_i=1,
                 div_style=div_block_style,
@@ -2986,7 +2996,7 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     
     info_button = create_info_button("Lateral Flow Allocation")
     num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
-    num_laterals = min(max(1, num_laterals), 10)  # Clamp between 1 and 10
+    num_laterals = min(max(1, num_laterals), 30)  # Clamp between 1 and 30
     allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
     
     # Get saved values if available
@@ -3331,6 +3341,16 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
+        # For coaxial case, use insulation_thermal_conductivity from Component Performance section if provided
+        # Otherwise fall back to PipeParam4 (from lateral-flow-select in Tube Geometry section)
+        if case == "coaxial":
+            if insulation_thermal_conductivity is not None:
+                actual_PipeParam4 = insulation_thermal_conductivity
+            else:
+                actual_PipeParam4 = PipeParam4
+        else:
+            actual_PipeParam4 = PipeParam4
+        
         (
             subplots,
             forty_yr_TPmeans_dict,
@@ -3358,7 +3378,7 @@ def update_subsurface_results_plots(
             Diameter1,
             Diameter2,
             PipeParam3,
-            PipeParam4,
+            actual_PipeParam4,
             PipeParam5,
             mesh,
             accuracy,
