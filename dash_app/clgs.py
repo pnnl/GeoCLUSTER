@@ -322,21 +322,18 @@ class data:
                     PipeParam5 = 1  # Default to "Inject in Annulus" if invalid value
                 
                 # Ensure Diameter1 and Diameter2 have default values if None
-                # Note: radius-vertical-select returns diameters (despite name), radius-lateral-select returns radii
-                # Defaults: wellbore diameter 0.4572 m, center pipe radius 0.127 m
+                # Note: radius-vertical-select returns diameters (despite name), radius-lateral-select now returns diameters
+                # Defaults: wellbore diameter 0.4572 m, center pipe diameter 0.254 m (0.127 m radius)
                 if Diameter1 is None:
                     Diameter1 = 0.4572  # Default wellbore diameter
                     print(f"[WARNING] Diameter1 was None for coaxial, using default: {Diameter1} m (diameter)", flush=True)
                 if Diameter2 is None:
-                    Diameter2 = 0.127  # Default center pipe radius
-                    print(f"[WARNING] Diameter2 was None for coaxial, using default: {Diameter2} m (radius)", flush=True)
+                    Diameter2 = 0.254  # Default center pipe diameter (0.127 m radius)
+                    print(f"[WARNING] Diameter2 was None for coaxial, using default: {Diameter2} m (diameter)", flush=True)
                 
-                # Convert radius to diameter for Diameter2 only (center pipe)
                 # Diameter1 (wellbore) is already a diameter from radius-vertical-select
-                # Diameter2 (center pipe) is a radius from radius-lateral-select, needs conversion
+                # Diameter2 (center pipe) is now a diameter from radius-lateral-select
                 # set_tube_geometry expects diameters and divides by 2 to get radii
-                Diameter2_radius = Diameter2  # Store original radius value for logging
-                Diameter2 = Diameter2 * 2  # Convert radius to diameter
                 # Ensure PipeParam3 (thicknesscenterpipe) has a default value if None
                 if PipeParam3 is None:
                     PipeParam3 = 0.0127  # Default center pipe thickness (12.7 mm)

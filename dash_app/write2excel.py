@@ -114,12 +114,9 @@ def _add_sbt_parameters_sheet(writer, model, sbt_params):
         if sbt_params.get("Diameter1") not in [None, "-"]:
             editable_params.append(["Wellbore Diameter", format_val("Diameter1", sbt_params.get("Diameter1")), "m"])
         if sbt_params.get("Diameter2") not in [None, "-"]:
-            # Diameter2 for coaxial is center pipe radius, convert to diameter for display
-            radius_val = format_val("Diameter2", sbt_params.get("Diameter2"))
-            if isinstance(radius_val, (int, float)):
-                editable_params.append(["Center Pipe Diameter", radius_val * 2, "m"])
-            else:
-                editable_params.append(["Center Pipe Diameter", radius_val, "m"])
+            # Diameter2 for coaxial is center pipe diameter
+            diameter_val = format_val("Diameter2", sbt_params.get("Diameter2"))
+            editable_params.append(["Center Pipe Diameter", diameter_val, "m"])
         if sbt_params.get("center_pipe_thickness") not in [None, "-"]:
             editable_params.append(["Center Pipe Thickness", format_val("center_pipe_thickness", sbt_params.get("center_pipe_thickness")), "m"])
         if sbt_params.get("insulation_thermal_conductivity") not in [None, "-"]:

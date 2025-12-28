@@ -2647,10 +2647,10 @@ def update_sliders_heat_exchanger(model, case, store_data):
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
 
             # For coaxial, use stable defaults to ensure valid results on initial load
-            # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
-            # Smaller center pipe radius (0.1 m) works for both H2O and CO2 (larger annulus = lower velocities)
-            coaxial_default_radius = 0.4445  # Maximum wellbore radius for better flow area and stability
-            coaxial_default_radiuscenterpipe = 0.1  # Smaller center pipe radius works for CO2 (larger annulus = lower velocities)
+            # Use larger wellbore diameter (0.4445 m) to improve flow area and reduce velocities
+            # Smaller center pipe diameter (0.2 m) works for both H2O and CO2 (larger annulus = lower velocities)
+            coaxial_default_radius = 0.4445  # Maximum wellbore diameter for better flow area and stability
+            coaxial_default_radiuscenterpipe = 0.1  # Center pipe radius (0.1 m) = 0.2 m diameter works for CO2 (larger annulus = lower velocities)
 
             radius = slider1(
                 DivID="radius-vertical-select-div",
@@ -2668,14 +2668,14 @@ def update_sliders_heat_exchanger(model, case, store_data):
             radiuscenterpipe = slider1(
                 DivID="radius-lateral-select-div",
                 ID="radius-lateral-select",
-                ptitle="Center Pipe Radius (m)",
-                min_v=0.0635,
-                max_v=0.174,  #  # Center Pipe Radius (coaxial)	0.0635	0.174
+                ptitle="Center Pipe Diameter (m)",
+                min_v=0.127,
+                max_v=0.348,
                 mark_dict=radius_centerpipe_dict,
-                step_i=0.001,
-                start_v=coaxial_default_radiuscenterpipe,  # Always use default, ignore saved values
+                step_i=0.002,
+                start_v=coaxial_default_radiuscenterpipe * 2,  # Convert default radius to diameter
                 div_style=div_block_style,
-                parameter_name="Center Pipe Radius (m)",
+                parameter_name="Center Pipe Diameter (m)",
             )
 
             thicknesscenterpipe = slider1(
