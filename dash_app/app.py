@@ -2018,6 +2018,23 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
 
 @app.callback(
+    Output(component_id="coaxial-flow-type-wrapper", component_property="style"),
+    [
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+    ],
+)
+def show_hide_coaxial_flow_type(model, case):
+    """Show Coaxial Flow Type dropdown when Simulator is selected and case is coaxial"""
+    if model is None or case is None:
+        return {"display": "none"}
+    if model in ["SBT V1.0", "SBT V2.0"] and case == "coaxial":
+        return {"display": "block"}
+    else:
+        return {"display": "none"}
+
+
+@app.callback(
     [
         Output(
             component_id="grad-container",

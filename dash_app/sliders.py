@@ -360,6 +360,23 @@ def slider_card():
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
                                                                                                 options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
                                                     ]),
+                                                    # Coaxial Flow Type dropdown - visible when Simulator is selected and case is coaxial
+                                                    html.Div(
+                                                        id="coaxial-flow-type-wrapper",
+                                                        style={"display": "none"},
+                                                        className="name-input-container-dd",
+                                                        children=[
+                                                            html.P("Coaxial Flow Type", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                id="coaxial-flow-type-select",
+                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
+                                                                value="Inject in Annulus",
+                                                                clearable=False,
+                                                                searchable=False,
+                                                                className="select-dropdown"
+                                                            )
+                                                        ]
+                                                    ),
                                                 ]
 
                                             ),
@@ -425,23 +442,6 @@ def slider_card():
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier", horizontal=True, input_width="60px")
                                                             ]
-                                                    ),
-                                                    # Hidden coaxial flow type dropdown (always exists for callbacks)
-                                                    html.Div(
-                                                        id="coaxial-flow-type-wrapper",
-                                                        style={"display": "none"},
-                                                        className="name-input-container-dd",
-                                                        children=[
-                                                            html.P("Coaxial Flow Type", className="input-title"),
-                                                            dcc.Dropdown(
-                                                                id="coaxial-flow-type-select",
-                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
-                                                                value="Inject in Annulus",
-                                                                clearable=False,
-                                                                searchable=False,
-                                                                className="select-dropdown"
-                                                            )
-                                                        ]
                                                     ),
                                                     # html.Div(
                                                     #     id="num-lat-div",
