@@ -2308,6 +2308,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -2315,7 +2316,7 @@ def update_slider_ranges(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, model, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, store_data):
     """Save slider values to store, keyed by model"""
     if model is None:
         raise PreventUpdate
@@ -2340,6 +2341,7 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
         "n-laterals": n_laterals,
         "lateral-flow": lateral_flow,
         "lateral-multiplier": lateral_multiplier,
+        "inlet-pressure": mass_mode,  # For SBT V2.0, this is Inlet Pressure (MPa); for others it's a dropdown value
     }
     
     return store_data
@@ -3011,9 +3013,15 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     [
         Input(component_id="model-select", component_property="value"),
     ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
     prevent_initial_call=False,
 )
-def update_sliders_hyperparms(model):
+def update_sliders_hyperparms(model, store_data):
+    if store_data is None:
+        store_data = {}
+    
     if model == "SBT V1.0":
         hyperparam1 = dropdown_box(
             DivID="mass-flow-mode-div",
@@ -3055,6 +3063,24 @@ def update_sliders_hyperparms(model):
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
 
     elif model == "SBT V2.0":
+        # Get saved inlet pressure value from store, checking current model first, then other models
+        saved_inlet_pressure = None
+        if model in store_data and "inlet-pressure" in store_data[model]:
+            saved_inlet_pressure = store_data[model]["inlet-pressure"]
+        else:
+            # Check other models for saved value
+            for other_model in ["SBT V1.0", "HDF5"]:
+                if other_model in store_data and "inlet-pressure" in store_data[other_model]:
+                    val = store_data[other_model]["inlet-pressure"]
+                    # Only use if it's a numeric value (for SBT V2.0, inlet pressure is a number)
+                    if isinstance(val, (int, float)):
+                        saved_inlet_pressure = val
+                        break
+        # Use saved value if available and valid (numeric), otherwise use default
+        inlet_pressure_start = saved_inlet_pressure if (saved_inlet_pressure is not None and isinstance(saved_inlet_pressure, (int, float))) else start_vals_sbt["inletpressure"]
+        # Clamp to valid range
+        inlet_pressure_start = max(5, min(20, inlet_pressure_start))
+        
         inlet_pressure = slider1(
             DivID="mass-flow-mode-div",
             ID="mass-mode-select",
@@ -3063,7 +3089,7 @@ def update_sliders_hyperparms(model):
             max_v=20,
             mark_dict=inlet_pressure_dict,
             step_i=0.1,
-            start_v=start_vals_sbt["inletpressure"],
+            start_v=inlet_pressure_start,
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
