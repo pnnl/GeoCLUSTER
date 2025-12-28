@@ -3286,19 +3286,6 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # Use the correct PipeParam4 and PipeParam5 based on case
-        if case == "coaxial":
-            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
-            else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
-        else:
-            actual_PipeParam4 = PipeParam4
-            actual_PipeParam5 = PipeParam5
-        
         (
             subplots,
             forty_yr_TPmeans_dict,
@@ -3326,8 +3313,8 @@ def update_subsurface_results_plots(
             Diameter1,
             Diameter2,
             PipeParam3,
-            actual_PipeParam4,
-            actual_PipeParam5,
+            PipeParam4,
+            PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3502,22 +3489,6 @@ def update_econ_plots(
             pipe_roughness = 1  # Default to 1 µm
         pipe_roughness_m = pipe_roughness * 1e-6
         
-        # Use the correct PipeParam4 and PipeParam5 based on case
-        # For coaxial: PipeParam4 is insulation thermal conductivity (use Component Performance slider if available)
-        # For U-tube: PipeParam4 is lateral flow allocation
-        if case == "coaxial":
-            # For coaxial, use insulation-thermal-conductivity-select if available, otherwise fall back to lateral-flow-select
-            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
-            else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
-        else:
-            actual_PipeParam4 = PipeParam4
-            actual_PipeParam5 = PipeParam5
-            
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
         # -----------------------------------------------------------------------------
@@ -3727,18 +3698,6 @@ def update_table(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
-        if case == "coaxial":
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
-            else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
-        else:
-            actual_PipeParam5 = PipeParam5
-            
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:
             thermal_dict["TandP-data"] = tandp_data
