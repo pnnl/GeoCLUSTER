@@ -1612,7 +1612,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         #         return output
 
         elif "btn-nclicks-3" == ctx.triggered_id:
-            if case == "coaxial" and fluid == "H2O" or fluid == "All":
+            if case == "coaxial" and (fluid == "H2O" or fluid == "All"):
                 if end_use == "Electricity":
                     output = (
                         39.2,
@@ -1630,6 +1630,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         73.4,
@@ -1647,9 +1648,9 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
-            if case == "utube" and fluid == "H2O" or fluid == "All":
+            if case == "utube" and (fluid == "H2O" or fluid == "All"):
                 if end_use == "Electricity":
                     output = (
                         43,
@@ -1667,6 +1668,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         100,
@@ -1684,7 +1686,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
             if case == "coaxial" and fluid == "sCO2":
                 if end_use == "Electricity":
@@ -1704,6 +1706,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         69.6,
@@ -1721,7 +1724,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
             if case == "utube" and fluid == "sCO2":
                 if end_use == "Electricity":
@@ -1741,6 +1744,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         100,
@@ -1758,7 +1762,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
         else:
             raise PreventUpdate
@@ -3209,7 +3213,7 @@ def update_sliders_hyperparms(model, store_data):
         ),  # PipeParam3
         Input(
             component_id="lateral-flow-select", component_property="value"
-        ),  # PipeParam4
+        ),  # PipeParam4 (for U-tube lateral flow allocation, or coaxial insulation thermal conductivity)
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5 (for U-tube)
@@ -3222,6 +3226,7 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_subsurface_results_plots(
@@ -3254,6 +3259,7 @@ def update_subsurface_results_plots(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -3280,9 +3286,9 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        # Use the correct PipeParam4 and PipeParam5 based on case
         if case == "coaxial":
+            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
             if coaxial_flow_type == "Inject in Annulus":
                 actual_PipeParam5 = 1
             elif coaxial_flow_type == "Inject in Center Pipe":
@@ -3290,6 +3296,7 @@ def update_subsurface_results_plots(
             else:
                 actual_PipeParam5 = 1  # Default to "Inject in Annulus"
         else:
+            actual_PipeParam4 = PipeParam4
             actual_PipeParam5 = PipeParam5
         
         (
@@ -3319,7 +3326,7 @@ def update_subsurface_results_plots(
             Diameter1,
             Diameter2,
             PipeParam3,
-            PipeParam4,
+            actual_PipeParam4,
             actual_PipeParam5,
             mesh,
             accuracy,
@@ -3439,6 +3446,7 @@ def update_subsurface_contours_plots(
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_econ_plots(
@@ -3479,6 +3487,7 @@ def update_econ_plots(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
@@ -3493,9 +3502,12 @@ def update_econ_plots(
             pipe_roughness = 1  # Default to 1 µm
         pipe_roughness_m = pipe_roughness * 1e-6
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        # Use the correct PipeParam4 and PipeParam5 based on case
+        # For coaxial: PipeParam4 is insulation thermal conductivity (use Component Performance slider if available)
+        # For U-tube: PipeParam4 is lateral flow allocation
         if case == "coaxial":
+            # For coaxial, use insulation-thermal-conductivity-select if available, otherwise fall back to lateral-flow-select
+            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
             if coaxial_flow_type == "Inject in Annulus":
                 actual_PipeParam5 = 1
             elif coaxial_flow_type == "Inject in Center Pipe":
@@ -3503,6 +3515,7 @@ def update_econ_plots(
             else:
                 actual_PipeParam5 = 1  # Default to "Inject in Annulus"
         else:
+            actual_PipeParam4 = PipeParam4
             actual_PipeParam5 = PipeParam5
             
         # -----------------------------------------------------------------------------
@@ -3643,6 +3656,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_table(
@@ -3682,6 +3696,7 @@ def update_table(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
