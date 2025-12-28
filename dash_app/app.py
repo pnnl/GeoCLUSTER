@@ -135,6 +135,7 @@ plotly_config = {
 }
 
 
+
 darkergrey = "#383838"
 lightbrown = "#ede6dd"
 
@@ -1133,14 +1134,18 @@ def show_hide_see_all_button(model):
     [
         Input(component_id="see-all-params-button", component_property="n_clicks"),
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [State(component_id="see-all-params-text", component_property="children")],
     prevent_initial_call='initial_duplicate',
 )
-def toggle_see_all_params(n_clicks, model, current_button_text):
+def toggle_see_all_params(n_clicks, model, case, current_button_text):
     callback_ctx = ctx
     style_none = {"display": "none"}
     style_block = {"display": "block"}
+    
+    # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
+    component_perf_style = style_none if case == "utube" else style_block
     
     # Get the trigger ID
     if not callback_ctx.triggered:
@@ -1155,9 +1160,9 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
-    # Handle model change
-    if trigger_id == "model-select":
-        # Model changed - set initial state: all hidden except those that are always visible
+    # Handle model or case change
+    if trigger_id == "model-select" or trigger_id == "case-select":
+        # Model or case changed - set initial state: all hidden except those that are always visible
         if model == "HDF5":
             return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
         elif model == "SBT V1.0":
@@ -1190,11 +1195,13 @@ def toggle_see_all_params(n_clicks, model, current_button_text):
             elif model == "SBT V1.0":
                 # For SBT V1.0, show the SBT-specific parameters including component-performance (with Insulation Thermal Conductivity)
                 # lat-allo (Lateral Flow Allocation) is unavailable for simulator
-                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
+                # Component Performance only for coaxial
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
             else:  # SBT V2.0
                 # For SBT V2.0, pipe-roughness and hyperparam5 are already visible, so keep them visible
                 # Show: mesh, lat-flow (Lateral Flow Multiplier), component-performance (lat-allo is unavailable for simulator)
-                return style_block, style_block, style_block, style_block, style_none, style_block, "See less parameters", " ▲"
+                # Component Performance only for coaxial
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
     
     # Fallback - initial state
     if model == "HDF5":
@@ -1398,9 +1405,8 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True,
 )
 def update_working_fluid(model, fluid_store, current_fluid):
-    # When Simulator is selected (SBT V1.0 or SBT V2.0), allow all fluid options
-    # The model will automatically switch based on fluid selection
-    if model in ("SBT V2.0", "SBT V1.0"):
+    # Allow all fluid options for all models
+    if model in ("HDF5", "SBT V2.0", "SBT V1.0"):
         fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
             # Preserve previously selected fluid if it's valid
@@ -1612,7 +1618,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         #         return output
 
         elif "btn-nclicks-3" == ctx.triggered_id:
-            if case == "coaxial" and fluid == "H2O" or fluid == "All":
+            if case == "coaxial" and (fluid == "H2O" or fluid == "All"):
                 if end_use == "Electricity":
                     output = (
                         39.2,
@@ -1630,6 +1636,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         73.4,
@@ -1647,9 +1654,9 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
-            if case == "utube" and fluid == "H2O" or fluid == "All":
+            if case == "utube" and (fluid == "H2O" or fluid == "All"):
                 if end_use == "Electricity":
                     output = (
                         43,
@@ -1667,6 +1674,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         100,
@@ -1684,7 +1692,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
             if case == "coaxial" and fluid == "sCO2":
                 if end_use == "Electricity":
@@ -1704,6 +1712,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         69.6,
@@ -1721,7 +1730,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
             if case == "utube" and fluid == "sCO2":
                 if end_use == "Electricity":
@@ -1741,6 +1750,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
+                    return output + default_output
                 if end_use == "Heating" or end_use == "All":
                     output = (
                         100,
@@ -1758,7 +1768,7 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
                         13,
                         80,
                     )
-                return output + default_output
+                    return output + default_output
 
         else:
             raise PreventUpdate
@@ -1789,25 +1799,29 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     ],
     [
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call='initial_duplicate',
 )
-def show_model_params(model):
+def show_model_params(model, case):
     # print("show_model_params: ", model)
 
     b = {"display": "block"}
     n = {"display": "none"}
 
+    # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
+    component_perf_style = n if case == "utube" else n  # Hidden by default, shown via "See all parameters" for coaxial
+    
     if model == "HDF5":
         return n, n, n, n, n, n, b, n, n, n, n, n
 
     if model == "SBT V1.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, n, b, n, n, n
+        return b, b, b, b, b, b, n, n, b, n, n, component_perf_style
 
     if model == "SBT V2.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, b, b, n, b, n
+        return b, b, b, b, b, b, n, b, b, n, b, component_perf_style
 
 
 @app.callback(
@@ -2014,6 +2028,23 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
 
 
 @app.callback(
+    Output(component_id="coaxial-flow-type-wrapper", component_property="style"),
+    [
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+    ],
+)
+def show_hide_coaxial_flow_type(model, case):
+    """Show Coaxial Flow Type dropdown when Simulator is selected and case is coaxial"""
+    if model is None or case is None:
+        return {"display": "none"}
+    if model in ["SBT V1.0", "SBT V2.0"] and case == "coaxial":
+        return {"display": "block"}
+    else:
+        return {"display": "none"}
+
+
+@app.callback(
     [
         Output(
             component_id="grad-container",
@@ -2204,6 +2235,7 @@ def update_slider_ranges(model, case, store_data):
             start_v=coaxial_default_grad if (case == "coaxial" and coaxial_default_grad is not None) else (saved_values.get("grad", coaxial_default_grad if coaxial_default_grad is not None else start_vals_d["grad"])),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
+            step_i=0.001,
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -2229,6 +2261,7 @@ def update_slider_ranges(model, case, store_data):
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
+        mdot_step = 1 if case == "coaxial" else None
         mdot_container = slider2(
             DivID="mdot-select-div",
             ID="mdot-select",
@@ -2240,6 +2273,7 @@ def update_slider_ranges(model, case, store_data):
             start_v=coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else (saved_values.get("mdot", coaxial_default_mdot if coaxial_default_mdot is not None else start_vals_d["mdot"])),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
+            step_i=mdot_step,
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
@@ -2308,6 +2342,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -2315,7 +2350,7 @@ def update_slider_ranges(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, model, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, store_data):
     """Save slider values to store, keyed by model"""
     if model is None:
         raise PreventUpdate
@@ -2340,6 +2375,7 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
         "n-laterals": n_laterals,
         "lateral-flow": lateral_flow,
         "lateral-multiplier": lateral_multiplier,
+        "inlet-pressure": mass_mode,  # For SBT V2.0, this is Inlet Pressure (MPa); for others it's a dropdown value
     }
     
     return store_data
@@ -2396,6 +2432,10 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     c = get_value("c", current_c, start_vals_hdf5.get("c", 790.0))
     rho = get_value("rho", current_rho, start_vals_hdf5.get("rho", 2800))
     
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if current_tsurf == Tsurf and current_c == c and current_rho == rho:
+        raise PreventUpdate
+    
     return Tsurf, c, rho
 
 
@@ -2410,18 +2450,28 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
         Output(component_id="k-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
+        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="model-select", component_property="value"),
         State(component_id="case-select", component_property="value"),
+        State(component_id="mdot-select", component_property="value"),
+        State(component_id="L2-select", component_property="value"),
+        State(component_id="L1-select", component_property="value"),
+        State(component_id="grad-select", component_property="value"),
+        State(component_id="diameter-select", component_property="value"),
+        State(component_id="Tinj-select", component_property="value"),
+        State(component_id="k-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def restore_slider_values(mdot_container, store_data, model, case):
-    """Restore slider values from store after sliders are created"""
+def restore_slider_values(model, store_data, case, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
+    """Restore slider values from store when model switches (not on initial load)"""
     if model is None:
+        raise PreventUpdate
+    
+    # Only restore when model-select actually changed (not on initial load)
+    if not ctx.triggered or ctx.triggered_id != "model-select":
         raise PreventUpdate
     
     # Don't restore values for coaxial - let users set their own values
@@ -2475,6 +2525,11 @@ def restore_slider_values(mdot_container, store_data, model, case):
     D = D if D is not None else start_vals_d.get("D", 0.3500)
     Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
     k = k if k is not None else start_vals_d.get("k", 3.0)
+    
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if (current_mdot == mdot and current_L2 == L2 and current_L1 == L1 and 
+        current_grad == grad and current_D == D and current_Tinj == Tinj and current_k == k):
+        raise PreventUpdate
     
     return mdot, L2, L1, grad, D, Tinj, k
 
@@ -2556,7 +2611,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
                 min_v=1,
-                max_v=10,
+                max_v=30,
                 start_v=n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1,
                 step_i=1,
                 div_style=div_block_style,
@@ -2595,10 +2650,10 @@ def update_sliders_heat_exchanger(model, case, store_data):
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
 
             # For coaxial, use stable defaults to ensure valid results on initial load
-            # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
-            # Smaller center pipe radius (0.1 m) works for both H2O and CO2 (larger annulus = lower velocities)
-            coaxial_default_radius = 0.4445  # Maximum wellbore radius for better flow area and stability
-            coaxial_default_radiuscenterpipe = 0.1  # Smaller center pipe radius works for CO2 (larger annulus = lower velocities)
+            # Use larger wellbore diameter (0.4445 m) to improve flow area and reduce velocities
+            # Smaller center pipe diameter (0.2 m) works for both H2O and CO2 (larger annulus = lower velocities)
+            coaxial_default_radius = 0.4445  # Maximum wellbore diameter for better flow area and stability
+            coaxial_default_radiuscenterpipe = 0.1  # Center pipe radius (0.1 m) = 0.2 m diameter works for CO2 (larger annulus = lower velocities)
 
             radius = slider1(
                 DivID="radius-vertical-select-div",
@@ -2616,14 +2671,14 @@ def update_sliders_heat_exchanger(model, case, store_data):
             radiuscenterpipe = slider1(
                 DivID="radius-lateral-select-div",
                 ID="radius-lateral-select",
-                ptitle="Center Pipe Radius (m)",
-                min_v=0.0635,
-                max_v=0.174,  #  # Center Pipe Radius (coaxial)	0.0635	0.174
+                ptitle="Center Pipe Diameter (m)",
+                min_v=0.127,
+                max_v=0.348,
                 mark_dict=radius_centerpipe_dict,
-                step_i=0.001,
-                start_v=coaxial_default_radiuscenterpipe,  # Always use default, ignore saved values
+                step_i=0.002,
+                start_v=coaxial_default_radiuscenterpipe * 2,  # Convert default radius to diameter
                 div_style=div_block_style,
-                parameter_name="Center Pipe Radius (m)",
+                parameter_name="Center Pipe Diameter (m)",
             )
 
             thicknesscenterpipe = slider1(
@@ -2763,11 +2818,10 @@ def update_sliders_heat_exchanger(model, case, store_data):
         Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="Diameter1-container", component_property="children"),
+        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="model-select", component_property="value"),
         State(component_id="case-select", component_property="value"),
         State(component_id="radius-vertical-select", component_property="value"),
         State(component_id="radius-lateral-select", component_property="value"),
@@ -2777,9 +2831,13 @@ def update_sliders_heat_exchanger(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def restore_sbt_sliders(diameter1_container, store_data, model, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
-    """Restore SBT-specific slider values after sliders are created"""
+def restore_sbt_sliders(model, store_data, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+    """Restore SBT-specific slider values when model switches (not on initial load)"""
     if model is None:
+        raise PreventUpdate
+    
+    # Only restore when model-select actually changed (not on initial load)
+    if not ctx.triggered or ctx.triggered_id != "model-select":
         raise PreventUpdate
     
     # Only restore for SBT models
@@ -2830,6 +2888,12 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
         lateral_multiplier = 1.0 / n_laterals
     else:
         lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if (current_radius_vertical == radius_vertical and current_radius_lateral == radius_lateral and 
+        current_n_laterals == n_laterals and current_lateral_flow == lateral_flow and 
+        current_lateral_multiplier == lateral_multiplier):
+        raise PreventUpdate
     
     return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
 
@@ -2935,7 +2999,7 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     
     info_button = create_info_button("Lateral Flow Allocation")
     num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
-    num_laterals = min(max(1, num_laterals), 10)  # Clamp between 1 and 10
+    num_laterals = min(max(1, num_laterals), 30)  # Clamp between 1 and 30
     allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
     
     # Get saved values if available
@@ -3011,9 +3075,15 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     [
         Input(component_id="model-select", component_property="value"),
     ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
     prevent_initial_call=False,
 )
-def update_sliders_hyperparms(model):
+def update_sliders_hyperparms(model, store_data):
+    if store_data is None:
+        store_data = {}
+    
     if model == "SBT V1.0":
         hyperparam1 = dropdown_box(
             DivID="mass-flow-mode-div",
@@ -3055,6 +3125,24 @@ def update_sliders_hyperparms(model):
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
 
     elif model == "SBT V2.0":
+        # Get saved inlet pressure value from store, checking current model first, then other models
+        saved_inlet_pressure = None
+        if model in store_data and "inlet-pressure" in store_data[model]:
+            saved_inlet_pressure = store_data[model]["inlet-pressure"]
+        else:
+            # Check other models for saved value
+            for other_model in ["SBT V1.0", "HDF5"]:
+                if other_model in store_data and "inlet-pressure" in store_data[other_model]:
+                    val = store_data[other_model]["inlet-pressure"]
+                    # Only use if it's a numeric value (for SBT V2.0, inlet pressure is a number)
+                    if isinstance(val, (int, float)):
+                        saved_inlet_pressure = val
+                        break
+        # Use saved value if available and valid (numeric), otherwise use default
+        inlet_pressure_start = saved_inlet_pressure if (saved_inlet_pressure is not None and isinstance(saved_inlet_pressure, (int, float))) else start_vals_sbt["inletpressure"]
+        # Clamp to valid range
+        inlet_pressure_start = max(5, min(20, inlet_pressure_start))
+        
         inlet_pressure = slider1(
             DivID="mass-flow-mode-div",
             ID="mass-mode-select",
@@ -3063,7 +3151,7 @@ def update_sliders_hyperparms(model):
             max_v=20,
             mark_dict=inlet_pressure_dict,
             step_i=0.1,
-            start_v=start_vals_sbt["inletpressure"],
+            start_v=inlet_pressure_start,
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
@@ -3183,7 +3271,7 @@ def update_sliders_hyperparms(model):
         ),  # PipeParam3
         Input(
             component_id="lateral-flow-select", component_property="value"
-        ),  # PipeParam4
+        ),  # PipeParam4 (for U-tube lateral flow allocation, or coaxial insulation thermal conductivity)
         Input(
             component_id="lateral-multiplier-select", component_property="value"
         ),  # PipeParam5 (for U-tube)
@@ -3196,6 +3284,7 @@ def update_sliders_hyperparms(model):
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_subsurface_results_plots(
@@ -3228,6 +3317,7 @@ def update_subsurface_results_plots(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -3254,17 +3344,15 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
+        # For coaxial case, use insulation_thermal_conductivity from Component Performance section if provided
+        # Otherwise fall back to PipeParam4 (from lateral-flow-select in Tube Geometry section)
         if case == "coaxial":
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
+            if insulation_thermal_conductivity is not None:
+                actual_PipeParam4 = insulation_thermal_conductivity
             else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
+                actual_PipeParam4 = PipeParam4
         else:
-            actual_PipeParam5 = PipeParam5
+            actual_PipeParam4 = PipeParam4
         
         (
             subplots,
@@ -3293,8 +3381,8 @@ def update_subsurface_results_plots(
             Diameter1,
             Diameter2,
             PipeParam3,
-            PipeParam4,
-            actual_PipeParam5,
+            actual_PipeParam4,
+            PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3413,6 +3501,7 @@ def update_subsurface_contours_plots(
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_econ_plots(
@@ -3453,6 +3542,7 @@ def update_econ_plots(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
@@ -3467,18 +3557,6 @@ def update_econ_plots(
             pipe_roughness = 1  # Default to 1 µm
         pipe_roughness_m = pipe_roughness * 1e-6
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
-        if case == "coaxial":
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
-            else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
-        else:
-            actual_PipeParam5 = PipeParam5
-            
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
         # -----------------------------------------------------------------------------
@@ -3617,6 +3695,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="temp-mode-select", component_property="value"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_table(
@@ -3656,6 +3735,7 @@ def update_table(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
+    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
@@ -3686,18 +3766,6 @@ def update_table(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # Use the correct PipeParam5 based on case
-        # For coaxial: use coaxial_flow_type, for U-tube: use PipeParam5 (lateral multiplier)
-        if case == "coaxial":
-            if coaxial_flow_type == "Inject in Annulus":
-                actual_PipeParam5 = 1
-            elif coaxial_flow_type == "Inject in Center Pipe":
-                actual_PipeParam5 = 2
-            else:
-                actual_PipeParam5 = 1  # Default to "Inject in Annulus"
-        else:
-            actual_PipeParam5 = PipeParam5
-            
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:
             thermal_dict["TandP-data"] = tandp_data

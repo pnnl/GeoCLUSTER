@@ -838,7 +838,6 @@ button:hover{
 
 #radio-graphic-control3, #radio-graphic-control4 {
     width: 70px;
-    float: right;
     background-color: white !important;
     color: black;
     padding-left: 10px;
@@ -846,17 +845,11 @@ button:hover{
     border:solid 1px var(--blue) !important;
     font-size: var(--smaller-fontsize) !important;
     box-shadow: inset 27px 0px 0px var(--blue), 0px 0px 0px 0px var(--darkteal), 0px 0px 1px var(--grey) !important;
-    margin-right: 23px;
     border-radius: 3px 3px 3px 3px;
-    position: sticky;
-}
-
-#radio-graphic-control3 {
-    margin-top: -450px;
-}
-
-#radio-graphic-control4 {
-    margin-top: -800px;
+    position: absolute;
+    top: 140px;
+    right: 23px;
+    z-index: 10;
 }
 
 /* Graphs
