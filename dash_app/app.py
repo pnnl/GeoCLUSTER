@@ -2402,6 +2402,10 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     c = get_value("c", current_c, start_vals_hdf5.get("c", 790.0))
     rho = get_value("rho", current_rho, start_vals_hdf5.get("rho", 2800))
     
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if current_tsurf == Tsurf and current_c == c and current_rho == rho:
+        raise PreventUpdate
+    
     return Tsurf, c, rho
 
 
@@ -2416,18 +2420,28 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
         Output(component_id="k-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="mdot-container", component_property="children"),  # Trigger after sliders are created
+        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="model-select", component_property="value"),
         State(component_id="case-select", component_property="value"),
+        State(component_id="mdot-select", component_property="value"),
+        State(component_id="L2-select", component_property="value"),
+        State(component_id="L1-select", component_property="value"),
+        State(component_id="grad-select", component_property="value"),
+        State(component_id="diameter-select", component_property="value"),
+        State(component_id="Tinj-select", component_property="value"),
+        State(component_id="k-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def restore_slider_values(mdot_container, store_data, model, case):
-    """Restore slider values from store after sliders are created"""
+def restore_slider_values(model, store_data, case, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
+    """Restore slider values from store when model switches (not on initial load)"""
     if model is None:
+        raise PreventUpdate
+    
+    # Only restore when model-select actually changed (not on initial load)
+    if not ctx.triggered or ctx.triggered_id != "model-select":
         raise PreventUpdate
     
     # Don't restore values for coaxial - let users set their own values
@@ -2481,6 +2495,11 @@ def restore_slider_values(mdot_container, store_data, model, case):
     D = D if D is not None else start_vals_d.get("D", 0.3500)
     Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
     k = k if k is not None else start_vals_d.get("k", 3.0)
+    
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if (current_mdot == mdot and current_L2 == L2 and current_L1 == L1 and 
+        current_grad == grad and current_D == D and current_Tinj == Tinj and current_k == k):
+        raise PreventUpdate
     
     return mdot, L2, L1, grad, D, Tinj, k
 
@@ -2769,11 +2788,10 @@ def update_sliders_heat_exchanger(model, case, store_data):
         Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="Diameter1-container", component_property="children"),
+        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="model-select", component_property="value"),
         State(component_id="case-select", component_property="value"),
         State(component_id="radius-vertical-select", component_property="value"),
         State(component_id="radius-lateral-select", component_property="value"),
@@ -2783,9 +2801,13 @@ def update_sliders_heat_exchanger(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def restore_sbt_sliders(diameter1_container, store_data, model, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
-    """Restore SBT-specific slider values after sliders are created"""
+def restore_sbt_sliders(model, store_data, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+    """Restore SBT-specific slider values when model switches (not on initial load)"""
     if model is None:
+        raise PreventUpdate
+    
+    # Only restore when model-select actually changed (not on initial load)
+    if not ctx.triggered or ctx.triggered_id != "model-select":
         raise PreventUpdate
     
     # Only restore for SBT models
@@ -2836,6 +2858,12 @@ def restore_sbt_sliders(diameter1_container, store_data, model, case, current_ra
         lateral_multiplier = 1.0 / n_laterals
     else:
         lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+    
+    # Only update if values have changed to prevent unnecessary cascading updates
+    if (current_radius_vertical == radius_vertical and current_radius_lateral == radius_lateral and 
+        current_n_laterals == n_laterals and current_lateral_flow == lateral_flow and 
+        current_lateral_multiplier == lateral_multiplier):
+        raise PreventUpdate
     
     return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
 
