@@ -76,10 +76,12 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Inlet Pressure | 200 bar (fixed) | 5 MPa to 20 MPa |
 | Mass Flow Rate Mode | — | Constant, Variable |
 | Injection Temperature Mode | — | Constant, Variable |
+| Fluid Properties Mode | — | Constant, Temperature-Pressure Dependent |
 | Fluid Specific Heat Capacity | — | 4,200 J/kg·°C (fixed) |
 | Fluid Density | — | 1,000 kg/m³ (fixed) |
 | Fluid Thermal Conductivity | — | 0.68 W/m·°C (fixed) |
 | Fluid Dynamic Viscosity | — | 600×10⁻⁶ Pa·s (fixed) |
+| Flow Type (coaxial) | — | Inject in Annulus, Inject in Center Pipe |
 
 | Tube Geometry Parameters | Database Options | Simulator Options |
 |--------------------------|------------------|-------------------|
@@ -93,7 +95,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m |
 | Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m |
 | Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m |
-| Number of Laterals | 1 (fixed) | 0 to 30 |
+| Number of Laterals (U-tube) | 1 (fixed) | 0 to 30 |
 
 | Component Performance | Database Options | Simulator Options |
 |----------------------|------------------|-------------------|
