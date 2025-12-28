@@ -173,16 +173,27 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                     )
 
 
-def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, custom_title=False):
+def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, custom_title=False, step_i=None):
 
     # ---------------------------------------------------------------------------
-    # Create a Div with the name and the slider stacked **without** the option to 
-    # define steps.
+    # Create a Div with the name and the slider stacked **with** optional step parameter.
     # ---------------------------------------------------------------------------
     
     from info_popups import create_info_button
     
     info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+
+    slider_props = {
+        "id": ID,
+        "min": min_v,
+        "max": max_v,
+        "marks": mark_dict,
+        "value": start_v,
+        "tooltip": {"placement": "bottom", "always_visible": True}
+    }
+    
+    if step_i is not None:
+        slider_props["step"] = step_i
 
     return html.Div(id=DivID,
                     style=div_style,
@@ -196,12 +207,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
                        ]),
-                       dcc.Slider(id=ID,
-                       min=min_v, max=max_v, #step=None,
-                       marks=mark_dict,
-                       value=start_v,
-                       tooltip={"placement": "bottom", "always_visible": True}
-                       ),
+                       dcc.Slider(**slider_props),
                        ]
                     )
 

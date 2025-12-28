@@ -2235,6 +2235,7 @@ def update_slider_ranges(model, case, store_data):
             start_v=coaxial_default_grad if (case == "coaxial" and coaxial_default_grad is not None) else (saved_values.get("grad", coaxial_default_grad if coaxial_default_grad is not None else start_vals_d["grad"])),
             div_style=div_block_style,
             parameter_name="Geothermal Gradient (°C/m)",
+            step_i=0.001,
         )
         k_container = slider2(
             DivID="k-select-div",
@@ -2260,6 +2261,7 @@ def update_slider_ranges(model, case, store_data):
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
+        mdot_step = 1 if case == "coaxial" else None
         mdot_container = slider2(
             DivID="mdot-select-div",
             ID="mdot-select",
@@ -2271,6 +2273,7 @@ def update_slider_ranges(model, case, store_data):
             start_v=coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else (saved_values.get("mdot", coaxial_default_mdot if coaxial_default_mdot is not None else start_vals_d["mdot"])),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
+            step_i=mdot_step,
         )
         diameter_container = slider1(
             DivID="diameter-select-div",
