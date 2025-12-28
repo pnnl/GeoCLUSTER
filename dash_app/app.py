@@ -135,6 +135,7 @@ plotly_config = {
 }
 
 
+
 darkergrey = "#383838"
 lightbrown = "#ede6dd"
 
@@ -1404,9 +1405,8 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True,
 )
 def update_working_fluid(model, fluid_store, current_fluid):
-    # When Simulator is selected (SBT V1.0 or SBT V2.0), allow all fluid options
-    # The model will automatically switch based on fluid selection
-    if model in ("SBT V2.0", "SBT V1.0"):
+    # Allow all fluid options for all models
+    if model in ("HDF5", "SBT V2.0", "SBT V1.0"):
         fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
             # Preserve previously selected fluid if it's valid

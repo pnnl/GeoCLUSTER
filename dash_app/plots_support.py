@@ -315,16 +315,16 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
 		fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
 		                    tickfont = dict(size=12), title_font=dict(size=14))
 	# Legend
-	# Adjust top margin and height based on whether T-S diagram is shown
-	# When T-S is shown (3 rows), use standard top margin; when not shown (2 rows), adjust for better spacing
 	top_margin = 30 if is_plot_ts_check else 50
-	# Set figure height to maintain consistent subplot aspect ratios
-	# With 3 rows, use default height; with 2 rows, set height to match production appearance
 	figure_height = None if is_plot_ts_check else 800
 	layout_dict = {
 		'legend_title_text': 'Working Fluid',
 		'template': 'none',
-		'margin': dict(l=70, r=70, t=top_margin, b=70)
+		'margin': dict(l=70, r=70, t=top_margin, b=70),
+		'legend': dict(
+			y=0.98,
+			yanchor='top'
+		)
 	}
 	if figure_height is not None:
 		layout_dict['height'] = figure_height
@@ -335,8 +335,6 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
 		fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
 		                    font=dict(size=10)
 		                    )
-		# Adjust y position based on whether T-S diagram is shown
-		# When T-S is shown (3 rows): y=0.673, when not shown (2 rows): y=0.52
 		electricity_title_y = 0.673 if is_plot_ts_check else 0.52
 		fig.update_layout(annotations=[go.layout.Annotation(
 		                                showarrow=False, text=f'<b>End-Use: Electricity</b>',

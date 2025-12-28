@@ -25,3 +25,13 @@ testpaths=["test"]
 
 [tool.mypy]
 mypy_path = "src"
+
+[tool.basedpyright]
+pythonVersion = "3.13"
+typeCheckingMode = "basic"
+reportMissingImports = true
+reportMissingTypeStubs = false
+extraPaths = ["src"]
+executionEnvironments = [
+    { root = "src", pythonVersion = "3.13" },
+]

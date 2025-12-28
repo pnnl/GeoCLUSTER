@@ -1258,7 +1258,7 @@ def generate_econ_lineplots(TandP_dict,
             is_display_legend = True
             row_num = 1
         else:
-            is_display_legend = False
+            is_display_legend = True
             row_num = 2
 
         if fluid == "sCO2" or fluid == "All":
