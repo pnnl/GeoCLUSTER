@@ -364,7 +364,7 @@ def slider_card():
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
+                                                                                                options=["Constant", "Temperature–Pressure Dependent"], disabled=False, div_style=div_none_style)
                                                     ]),
                                                     # Coaxial Flow Type dropdown - visible when Simulator is selected and case is coaxial
                                                     html.Div(

@@ -3270,7 +3270,7 @@ def update_sliders_hyperparms(model, store_data):
             DivID="fluid-mode-div",
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
-            options=["Variable", "Constant"],
+            options=["Constant", "Temperature–Pressure Dependent"],
             disabled=False,
             div_style=div_block_style,
         )

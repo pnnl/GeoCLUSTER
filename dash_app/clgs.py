@@ -298,7 +298,7 @@ class data:
 
                 if fluid_mode == "Constant":
                     fluid_mode_b = 0
-                elif fluid_mode == "Variable":
+                elif fluid_mode == "Variable" or fluid_mode == "Temperature–Pressure Dependent":
                     fluid_mode_b = 1
                 
                 # Ensure HyperParam1 is a float (Inlet Pressure in MPa)
