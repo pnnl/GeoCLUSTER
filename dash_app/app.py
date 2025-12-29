@@ -3266,14 +3266,34 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_block_style,
             parameter_name="Pipe Roughness (µm)",
         )
-        hyperparam5 = dropdown_box(
-            DivID="fluid-mode-div",
-            ID="fluid-mode-select",
-            ptitle="Fluid Properties Mode",
-            options=["Constant", "Temperature–Pressure Dependent"],
-            disabled=False,
-            div_style=div_block_style,
-        )
+        saved_fluid_mode = None
+        if model in store_data and "fluid-mode" in store_data[model]:
+            saved_fluid_mode = store_data[model]["fluid-mode"]
+        
+        fluid_mode_options = ["Constant", "Temperature–Pressure Dependent"]
+        if saved_fluid_mode == "Variable":
+            default_fluid_mode = "Temperature–Pressure Dependent"
+        elif saved_fluid_mode in fluid_mode_options:
+            default_fluid_mode = saved_fluid_mode
+        else:
+            default_fluid_mode = "Temperature–Pressure Dependent"
+        
+        hyperparam5 = html.Div(
+            id="fluid-mode-div",
+            className="name-input-container-dd",
+            style=div_block_style,
+            children=[
+                html.P("Fluid Properties Mode", className="input-title"),
+                dcc.Dropdown(
+                    id="fluid-mode-select",
+                    options=[{"label": opt, "value": opt} for opt in fluid_mode_options],
+                    value=default_fluid_mode,
+                    clearable=False,
+                    searchable=False,
+                    disabled=False,
+                    className="select-dropdown"
+                ),
+            ])
 
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
 
