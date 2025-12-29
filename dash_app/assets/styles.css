@@ -852,6 +852,10 @@ button:hover{
     z-index: 10;
 }
 
+.simulator-mode #radio-graphic-control3 {
+    top: 100px;
+}
+
 /* Graphs
 –––––––––––––––––––––––––––––––––––––––––––––––––– */
 

@@ -799,7 +799,8 @@ app.layout = html.Div(
         ),  # Remember user fluid preferences across tabs
         dcc.Store(id="plot-inputs-cache", data={}),
         dcc.Store(id="see-all-params-state", data={"expanded": False}),
-        dcc.Store(id="clipboard-init", data=0),  # Store to trigger clipboard event listener setup
+        dcc.Store(id="calculation-request-id", data=0),
+        dcc.Store(id="clipboard-init", data=0),
         # Left column
         html.Div(
             id="left-column",
@@ -1348,6 +1349,7 @@ def update_loading(selected_model):
             children=[
                 html.Div(
                     id="graphics-container",
+                    className="simulator-mode",
                     children=[
                         dcc.Graph(id="geothermal_time_plots", config=plotly_config),
                         dbc.RadioItems(
@@ -3339,6 +3341,7 @@ def update_sliders_hyperparms(model, store_data):
         Output(component_id="thermal-results-time", component_property="data"),
         Output(component_id="thermal-results-errors", component_property="data"),
         Output(component_id="TandP-data", component_property="data"),
+        Output(component_id="calculation-request-id", component_property="data", allow_duplicate=True),
     ],
     [
         Input(component_id="interpolation-select", component_property="value"),
@@ -3383,7 +3386,11 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
-    [State(component_id="plot-inputs-cache", component_property="data")],
+    [
+        State(component_id="plot-inputs-cache", component_property="data"),
+        State(component_id="calculation-request-id", component_property="data"),
+    ],
+    prevent_initial_call='initial_duplicate',
 )
 def update_subsurface_results_plots(
     interp_time,
@@ -3417,6 +3424,7 @@ def update_subsurface_results_plots(
     HyperParam5,
     insulation_thermal_conductivity,
     plot_inputs_cache,
+    current_request_id,
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
@@ -3467,12 +3475,20 @@ def update_subsurface_results_plots(
             normalized_cached = normalize_dict(cached_inputs)
             
             if normalized_current == normalized_cached:
-                # Inputs haven't changed, prevent recalculation to avoid clearing/regenerating plots
+                # Inputs haven't changed, return cached outputs to avoid clearing/regenerating plots
                 cached_outputs = plot_inputs_cache.get("outputs")
                 if cached_outputs and len(cached_outputs) == 6:
-                    trigger_id = ctx.triggered_id if ctx.triggered else None
-                    print(f"[CACHE] Plot inputs unchanged (triggered by {trigger_id}), preventing recalculation", flush=True)
-                    raise PreventUpdate
+                    cached_figure = cached_outputs[0]
+                    if cached_figure and isinstance(cached_figure, dict):
+                        figure_data = cached_figure.get("data", [])
+                        if figure_data and len(figure_data) > 0:
+                            trigger_id = ctx.triggered_id if ctx.triggered else None
+                            print(f"[CACHE] Plot inputs unchanged (triggered by {trigger_id}), returning cached plots", flush=True)
+                            if isinstance(cached_outputs, tuple):
+                                return (*cached_outputs, current_request_id if current_request_id is not None else 0)
+                            else:
+                                return list(cached_outputs) + [current_request_id if current_request_id is not None else 0]
+                    # If cached figure is invalid, fall through to regenerate
         
         # Inputs changed or no cache, proceed with calculation
         # Convert pipe roughness from µm (UI) to meters (model)
@@ -3553,7 +3569,16 @@ def update_subsurface_results_plots(
             TandP_dict,
         )
         
-        return outputs
+        if subplots and isinstance(subplots, dict):
+            figure_data = subplots.get("data", [])
+            if not figure_data or len(figure_data) == 0:
+                # Figure is empty, return empty figure to show blank state
+                import plotly.graph_objects as go
+                from plotly.subplots import make_subplots
+                empty_fig = make_subplots(rows=2, cols=3)
+                return empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0)
+        
+        return (*outputs, current_request_id if current_request_id is not None else 0)
     except PreventUpdate:
         # Re-raise PreventUpdate - it's not an error, it's a signal to skip updating
         raise
@@ -3565,7 +3590,7 @@ def update_subsurface_results_plots(
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
         empty_fig = make_subplots(rows=2, cols=3)
-        return empty_fig, {}, {}, {}, {}, {}
+        return (empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0))
 
 
 @app.callback(
