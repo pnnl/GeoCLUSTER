@@ -6,7 +6,7 @@ import numpy as np
 import h5py
 from scipy.interpolate import interpn, interp1d
 import CoolProp.CoolProp as CP
-import itertools as iter
+import itertools
 from sbt_v27 import run_sbt as run_sbt_final
 import time
 from functools import lru_cache
@@ -183,11 +183,15 @@ class data:
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
         try:
-            interpolated_points = interpn(grid, values_around_point, points)
+            # Ensure points is a numpy array
+            points_array = np.asarray(points)
+            interpolated_points = interpn(grid, values_around_point, points_array)
         except ValueError as e:
             if "out of bounds" in str(e):
                 print(f"[ERROR] Interpolation out of bounds in clgs.py: {e}", flush=True)
-                return np.full(points.shape[0], np.nan)
+                # Ensure points is a numpy array before accessing shape
+                points_array = np.asarray(points)
+                return np.full(points_array.shape[0], np.nan)
             raise
         return interpolated_points
 
@@ -213,7 +217,7 @@ class data:
         """
         if sbt_version == 0:
             points = list(
-                iter.product(
+                itertools.product(
                     (point[0],),
                     (point[1],),
                     (point[2],),
@@ -653,7 +657,7 @@ class data:
             var_index = None
             if param == "Horizontal Extent (m)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         self.L2,
                         (point[1],),
@@ -667,7 +671,7 @@ class data:
                 var_index = 1
             if param == "Vertical Extent (m)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         (point[0],),
                         self.L1,
@@ -681,7 +685,7 @@ class data:
                 var_index = 2
             if param == "Geothermal Gradient (°C/m)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         (point[0],),
                         (point[1],),
@@ -695,7 +699,7 @@ class data:
                 var_index = 3
             if param == "Borehole Diameter (m)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         (point[0],),
                         (point[1],),
@@ -709,7 +713,7 @@ class data:
                 var_index = 4
             if param == "Injection Temperature (˚C)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         (point[0],),
                         (point[1],),
@@ -723,7 +727,7 @@ class data:
                 var_index = 5
             if param == "Rock Thermal Conductivity (W/m-°C)":
                 points = list(
-                    iter.product(
+                    itertools.product(
                         self.mdot,
                         (point[0],),
                         (point[1],),
