@@ -442,11 +442,11 @@ PARAMETER_INFO = {
     },
     
     "Inlet Pressure (MPa)": {
-        "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells.",
+        "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells. This parameter only applies to sCO2 for SBT V2.0.",
         "recommended_range": "5-20 MPa",
         "typical_value": "10 MPa",
         "unit": "MPa",
-        "description": "Higher inlet pressures can improve flow rates but increase pumping requirements."
+        "description": "Higher inlet pressures can improve flow rates but increase pumping requirements. This parameter only applies to sCO2 for SBT V2.0."
     },
     
     "Wellbore Diameter (m)": {

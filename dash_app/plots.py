@@ -240,8 +240,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5
                                                         )
-                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
-                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_sco2 == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_sco2 = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_sco2 = 1e7
+                    else:
+                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
+                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                 except Exception as e:
@@ -328,8 +337,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             print(f"[ERROR] Coaxial sCO2_Tout contains invalid values. Min={np.min(sCO2_Tout_arr):.2f}K, Max={np.max(sCO2_Tout_arr):.2f}K. Setting to blank.", flush=True)
                             raise ValueError(f"Invalid temperature values in sCO2_Tout: min={np.min(sCO2_Tout_arr):.2f}K, max={np.max(sCO2_Tout_arr):.2f}K")
                     
-                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
-                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_sco2 == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_sco2 = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_sco2 = 1e7
+                    else:
+                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
+                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                     # Store sCO2 time for later use
