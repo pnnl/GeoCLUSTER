@@ -86,7 +86,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Tube Geometry Parameters | Database Options | Simulator Options | Default |
 |--------------------------|------------------|-------------------|---------|
 | Heat-Exchanger Design | U-Loop, Co-axial | U-Loop, Co-axial | U-Loop |
-| Borehole Diameter | 0.2159 m to 0.4445 m | — | - |
+| Borehole Diameter | 0.2159 m to 0.4445 m | — | 0.35 m |
 | Wellbore Diameter Vertical (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
