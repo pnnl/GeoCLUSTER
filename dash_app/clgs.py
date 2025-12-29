@@ -90,12 +90,8 @@ class data:
 
         self.GWhr = 1e6 * 3600000.0
 
-        self.kWe_avg = (
-            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
-        self.kWt_avg = (
-            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
+        self.kWe_avg = (We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
+        self.kWt_avg = (Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
 
         # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
         self.shape = (
