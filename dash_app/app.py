@@ -3502,9 +3502,9 @@ def update_subsurface_results_plots(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
             except (TypeError, ValueError):
-                hyperparam1_value = 10.0
+                hyperparam1_value = 20.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
@@ -4116,9 +4116,9 @@ def update_table(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
             except (TypeError, ValueError):
-                hyperparam1_value = 10.0
+                hyperparam1_value = 20.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
