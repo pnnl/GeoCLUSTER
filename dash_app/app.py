@@ -1578,20 +1578,11 @@ def change_dropdown(at, fluid, model, fluid_store):
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
     interpol_options = [{"label": i, "value": i} for i in interpol_list]
 
-    # Prevent update if only tabs changed and values would be the same
     if trigger_id == "tabs":
-        # Check if fluid value would actually change
-        if selected_fluid == fluid and fluid_options == [{"label": i, "value": i} for i in (["H2O", "sCO2"] if at == "energy-tab" else ["All", "H2O", "sCO2"])]:
-            # Only update if fluid options actually changed (e.g., switching between energy-tab and other tabs)
-            # For now, we need to update options when switching tabs, but prevent fluid value change if not needed
-            if selected_fluid == fluid:
-                # Options might have changed, but fluid value didn't - check if we really need to update
-                # If we're just switching tabs and fluid is already valid for both, prevent update
-                if (at == "energy-tab" and fluid in ["H2O", "sCO2"]) or (at != "energy-tab" and fluid in ["All", "H2O", "sCO2"]):
-                    # Fluid is already valid for the new tab, only update options if they changed
-                    current_options = [{"label": i, "value": i} for i in (["H2O", "sCO2"] if at == "energy-tab" else ["All", "H2O", "sCO2"])]
-                    # We still need to return the options, but we can check if fluid needs to change
-                    pass  # Continue to return values
+        if selected_fluid == fluid:
+            current_fluid_options = [{"label": i, "value": i} for i in (["H2O", "sCO2"] if at == "energy-tab" else ["All", "H2O", "sCO2"])]
+            if fluid_options == current_fluid_options:
+                raise PreventUpdate
 
     return (
         fluid_options,
@@ -3431,8 +3422,6 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
-        # Always check if plot inputs have actually changed (regardless of what triggered this callback)
-        # This prevents unnecessary recalculations when tabs change but inputs haven't
         current_inputs = {
             "interp_time": interp_time,
             "fluid": fluid,
@@ -3464,10 +3453,8 @@ def update_subsurface_results_plots(
             "insulation_thermal_conductivity": insulation_thermal_conductivity,
         }
         
-        # Compare with cached inputs
         if plot_inputs_cache and plot_inputs_cache.get("inputs"):
             cached_inputs = plot_inputs_cache.get("inputs", {})
-            # Normalize None values for comparison (treat None and missing keys the same)
             def normalize_dict(d):
                 return {k: (v if v is not None else "None") for k, v in d.items()}
             
@@ -3482,15 +3469,13 @@ def update_subsurface_results_plots(
                     if cached_figure and isinstance(cached_figure, dict):
                         figure_data = cached_figure.get("data", [])
                         if figure_data and len(figure_data) > 0:
-                            trigger_id = ctx.triggered_id if ctx.triggered else None
-                            print(f"[CACHE] Plot inputs unchanged (triggered by {trigger_id}), returning cached plots", flush=True)
+                            print(f"[CACHE] Plot inputs unchanged, returning cached plots", flush=True)
                             if isinstance(cached_outputs, tuple):
                                 return (*cached_outputs, current_request_id if current_request_id is not None else 0)
                             else:
                                 return list(cached_outputs) + [current_request_id if current_request_id is not None else 0]
                     # If cached figure is invalid, fall through to regenerate
         
-        # Inputs changed or no cache, proceed with calculation
         # Convert pipe roughness from µm (UI) to meters (model)
         # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
         if pipe_roughness is None:
@@ -3633,7 +3618,6 @@ def update_plot_inputs_cache(interp_time, fluid, case, mdot, L2, L1, grad, D, Ti
                              coaxial_flow_type, mesh, accuracy, HyperParam1, HyperParam3, pipe_roughness,
                              HyperParam5, insulation_thermal_conductivity, current_cache):
     """Update cache of plot inputs to detect when only tabs change"""
-    # Only update cache if triggered by something other than tabs
     trigger_id = ctx.triggered_id if ctx.triggered else None
     if trigger_id == "tabs":
         # Don't update cache on tab changes - let the plot callback handle that
@@ -3671,6 +3655,8 @@ def update_plot_inputs_cache(interp_time, fluid, case, mdot, L2, L1, grad, D, Ti
             "insulation_thermal_conductivity": insulation_thermal_conductivity,
         }
     }
+    if current_cache and current_cache.get("outputs"):
+        new_cache["outputs"] = None
     return new_cache
 
 

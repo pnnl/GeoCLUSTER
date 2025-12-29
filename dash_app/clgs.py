@@ -305,8 +305,11 @@ class data:
                 try:
                     hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar)
                 except (TypeError, ValueError):
-                    hyperparam1 = 20.0*10  # Default to 20 MPa if conversion fails
-                hyperparam2 = HyperParam3 # pipe roughness
+                    hyperparam1 = 20.0*10
+                try:
+                    hyperparam2 = float(HyperParam3) if HyperParam3 is not None else 1e-6
+                except (TypeError, ValueError):
+                    hyperparam2 = 1e-6  # Default to 1 µm if conversion fails
                 hyperparam3 = fluid_mode_b # fluid mode
                 hyperparam4 = reltolerance
                 hyperparam5 = maxnumberofiterations
