@@ -47,17 +47,19 @@ def create_teaobject(TandP_dict,
 
     # Clamp Pre_Cooling_Delta_T to valid range for CO2 (0-15 °C)
     # This prevents validation errors in TEA module
-    if Pre_Cooling_Delta_T < 0:
-        Pre_Cooling_Delta_T = 0.0
-    elif Pre_Cooling_Delta_T > 15:
-        Pre_Cooling_Delta_T = 15.0
+    # NOTE: Removed because this errors on the T-P Diagram and the LCOE but can restrain the sliders instead.
+    # if Pre_Cooling_Delta_T < 0:
+    #     Pre_Cooling_Delta_T = 0.0
+    # elif Pre_Cooling_Delta_T > 15:
+    #     Pre_Cooling_Delta_T = 15.0
     
     # Clamp Turbine_outlet_pressure to valid range for CO2 (75-200 bar)
     # This prevents validation errors in TEA module
-    if Turbine_outlet_pressure < 75:
-        Turbine_outlet_pressure = 75.0
-    elif Turbine_outlet_pressure > 200:
-        Turbine_outlet_pressure = 200.0
+    # NOTE: Sliders already restrain this. So uncommented for now.
+    # if Turbine_outlet_pressure < 75:
+    #     Turbine_outlet_pressure = 75.0
+    # elif Turbine_outlet_pressure > 200:
+    #     Turbine_outlet_pressure = 200.0
 
     # Gradient_user = Gradient_user / 1000
     Tin_user = Tin_user + to_kelvin_factor # to kelvin

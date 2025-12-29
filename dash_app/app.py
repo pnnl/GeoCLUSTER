@@ -4205,7 +4205,7 @@ if __name__ == "__main__":
     app.run(
         # host="127.0.0.1",
         port=8060,
-        debug=False,  # needs to be False in production
+        debug=True,  # needs to be False in production
         ssl_context="adhoc",
     )
 
