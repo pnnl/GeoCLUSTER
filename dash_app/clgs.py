@@ -183,9 +183,33 @@ class data:
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
         try:
-            # Ensure points is a numpy array
             points_array = np.asarray(points)
-            interpolated_points = interpn(grid, values_around_point, points_array)
+            points_clamped = points_array.copy()
+            
+            if points_array.ndim == 1:
+                for i, grid_axis in enumerate(grid):
+                    if len(grid_axis) > 0:
+                        min_val = grid_axis[0]
+                        max_val = grid_axis[-1]
+                        tolerance = max(1e-10, abs(max_val - min_val) * 1e-10)
+                        points_clamped[i] = np.clip(
+                            points_array[i],
+                            min_val - tolerance,
+                            max_val + tolerance
+                        )
+            else:
+                for i, grid_axis in enumerate(grid):
+                    if len(grid_axis) > 0:
+                        min_val = grid_axis[0]
+                        max_val = grid_axis[-1]
+                        tolerance = max(1e-10, abs(max_val - min_val) * 1e-10)
+                        points_clamped[:, i] = np.clip(
+                            points_array[:, i],
+                            min_val - tolerance,
+                            max_val + tolerance
+                        )
+            
+            interpolated_points = interpn(grid, values_around_point, points_clamped)
         except ValueError as e:
             if "out of bounds" in str(e):
                 print(f"[ERROR] Interpolation out of bounds in clgs.py: {e}", flush=True)
