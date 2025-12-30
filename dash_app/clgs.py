@@ -43,11 +43,24 @@ def _get_cached_result(cache_key):
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
+    print(f"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
+    cache_size_before = len(_sbt_cache)
+    cache_keys_before = list(_sbt_cache.keys())[:5]  # First 5 keys
     if len(_sbt_cache) >= _cache_max_size:
         # Remove oldest entry (simple FIFO)
         oldest_key = next(iter(_sbt_cache))
+        print(f"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
         del _sbt_cache[oldest_key]
     _sbt_cache[cache_key] = result
+    cache_size_after = len(_sbt_cache)
+    cache_keys_after = list(_sbt_cache.keys())[:5]  # First 5 keys
+    print(f"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
+    print(f"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
+    # Verify the key is actually in the cache
+    if cache_key in _sbt_cache:
+        print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
+    else:
+        print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -236,6 +249,9 @@ class data:
                     HyperParam1, HyperParam3, HyperParam5
                     # mass_mode, temp_mode
                     ): # needs to be a callback option
+        import uuid
+        call_id = str(uuid.uuid4())[:8]  # Unique ID for this call
+        print(f"[CALL START] {call_id} - interp_outlet_states called: fluid={self.fluid}, case={self.case}, Tinj={point[5] if len(point) > 5 else 'N/A'}K", flush=True)
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -271,8 +287,12 @@ class data:
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
 
-            # print("\n -------------------------------- UI -------------------------------- ")
-            # print(f"mdot (kg/s): {mdot} L2 (m): {L2} L1 (m): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (K): {Tinj} RockThermCond, k ((W/m-K)): {k}")
+            print(f"\n[DEBUG] interp_outlet_states: sbt_version={sbt_version}, model={'SBT' if sbt_version > 0 else 'HDF5'}, case={self.case}, fluid={self.fluid}", flush=True)
+            print(f"[DEBUG] Parameters: mdot={mdot}, L2={L2}, L1={L1}, grad={grad}, D={D}, Tinj={Tinj}, k={k}", flush=True)
+            print(f"[DEBUG] Geometry: Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}", flush=True)
+            print(f"[DEBUG] Rock props: c_m={c_m}, rho_m={rho_m}, Tsurf={Tsurf}", flush=True)
+            print(f"[DEBUG] SBT settings: mesh={mesh}, accuracy={accuracy}", flush=True)
+            print(f"[DEBUG] HyperParams: HyperParam1={HyperParam1}, HyperParam3={HyperParam3}, HyperParam5={HyperParam5}", flush=True)
             
             # AB UNIT CONVERSIONS AND RENAMING
             # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
@@ -281,7 +301,7 @@ class data:
             Tinj = Tinj-273.15
             # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
-            if self.CP_fluid == "H20":
+            if self.CP_fluid == "H2O":
                 fluid = 1
             elif self.CP_fluid == "CO2":
                 fluid = 2
@@ -566,6 +586,9 @@ class data:
                 raise ValueError(f"Unsupported case '{self.case}' for SBT run")
 
             # Create cache key from all parameters
+            # Debug: Print all parameters that go into cache key
+            print(f"[DEBUG] Cache key parameters: sbt_version={sbt_version}, mesh={mesh}, hyperparam1={hyperparam1}, hyperparam2={hyperparam2}, hyperparam3={hyperparam3}, hyperparam4={hyperparam4}, hyperparam5={hyperparam5}, accuracy={accuracy}, case={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}, L1={L1}, L2={L2}, Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}, Tsurf={Tsurf}, grad={grad}, k={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
+            
             cache_key = _make_cache_key(
                 sbt_version=sbt_version, mesh=mesh, hyperparam1=hyperparam1, hyperparam2=hyperparam2,
                 hyperparam3=hyperparam3, hyperparam4=hyperparam4, hyperparam5=hyperparam5,
@@ -575,17 +598,44 @@ class data:
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
             
-            # Check cache first
-            cached_result = _get_cached_result(cache_key)
+            # IMMEDIATELY capture cache_key to prevent any overwriting - use string copy to ensure it's a new object
+            cache_key_saved = str(cache_key)  # Create a new string object, not just a reference
+            print(f"[CACHE KEY SAVED] {call_id} - Immediately after assignment: cache_key={cache_key}, cache_key_saved={cache_key_saved}, id(cache_key)={id(cache_key)}, id(cache_key_saved)={id(cache_key_saved)}", flush=True)
+            
+            if isinstance(cache_key, tuple):
+                cache_key_str = str(cache_key)[:200]  # First 200 chars
+                print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
+            else:
+                print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
+            
+            # Check cache first - use saved cache_key
+            print(f"[CACHE CHECK] Looking for cache key: {cache_key_saved} (current cache_key: {cache_key}), current cache size: {len(_sbt_cache)}, cache keys: {list(_sbt_cache.keys())[:5]}", flush=True)
+            cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
-                print(f"[CACHE HIT] Reusing cached SBT result for parameters", flush=True)
+                tout_max_cached = np.max(cached_result[1]) - 273.15
+                print(f"[CACHE HIT] Reusing cached SBT result for cache key: {cache_key_saved}, Tout max: {tout_max_cached:.2f}°C", flush=True)
                 times, Tout, Pout = cached_result
             else:
+                print(f"[CACHE MISS] No cached result found for cache key: {cache_key_saved} (cache size: {len(_sbt_cache)})", flush=True)
                 start = time.time()
                 
                 # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
+                print(f"[DEBUG] Calling run_sbt_final with: sbt_version={sbt_version}, mesh={mesh}, accuracy={accuracy}", flush=True)
+                print(f"[DEBUG]   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
+                print(f"[DEBUG]   mdot={mdot}, Tinj={Tinj:.1f}°C (already converted from K to °C), fluid={fluid} (1=H2O, 2=sCO2), case={case} (utube/coaxial)", flush=True)
+                print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
+                print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
+                print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
                 try:
+                    # Log ALL parameters being passed to run_sbt_final for this specific call
+                    print(f"[RUN_SBT_PARAMS] {call_id} - All parameters for run_sbt_final:", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   sbt_version={sbt_version}, mesh_fineness={mesh}, accuracy={accuracy}", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   clg_configuration={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   DrillingDepth_L1={L1}, HorizontalExtent_L2={L2}", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
+                    print(f"[RUN_SBT_PARAMS] {call_id} -   Tsurf={Tsurf}, GeoGradient={grad}, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -604,10 +654,25 @@ class data:
                         Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
                         # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                     )
+                    print(f"[DEBUG] {call_id} - run_sbt_final returned: len(times)={len(times)}, times_range=[{times[0]:.4f}, {times[-1]:.4f}] years", flush=True)
+                    print(f"[DEBUG] {call_id} -   Tout_range=[{np.min(Tout):.2f}, {np.max(Tout):.2f}] K = [{np.min(Tout)-273.15:.2f}, {np.max(Tout)-273.15:.2f}] °C", flush=True)
+                    print(f"[DEBUG] {call_id} -   Tout array id: {id(Tout)}, first 3 values: {Tout[:3] if len(Tout) >= 3 else Tout} K", flush=True)
                     
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
-                        _set_cached_result(cache_key, (times, Tout, Pout))
+                        tout_max_before_cache = np.max(Tout) - 273.15
+                        # Re-verify cache_key_saved matches call_id to ensure we're using the right key
+                        # Create a fresh copy to be absolutely sure
+                        final_cache_key = str(cache_key_saved)
+                        print(f"[CACHE STORE] {call_id} - About to store: final_cache_key={final_cache_key}, cache_key_saved={cache_key_saved}, cache_key={cache_key}, id(final_cache_key)={id(final_cache_key)}, id(cache_key_saved)={id(cache_key_saved)}, id(cache_key)={id(cache_key)}, Tout max: {tout_max_before_cache:.2f}°C", flush=True)
+                        _set_cached_result(final_cache_key, (times, Tout, Pout))
+                        # Verify what we just cached
+                        cached_verify = _get_cached_result(final_cache_key)
+                        if cached_verify is not None:
+                            tout_max_after_cache = np.max(cached_verify[1]) - 273.15
+                            print(f"[CACHE STORE] {call_id} - Stored result with Tout max={tout_max_before_cache:.2f}°C, verified cache has {tout_max_after_cache:.2f}°C using key {final_cache_key}", flush=True)
+                        else:
+                            print(f"[CACHE STORE] {call_id} - ❌ ERROR: After storing, final_cache_key {final_cache_key} not found in cache! cache_key_saved={cache_key_saved}, cache_key={cache_key}", flush=True)
                         end = time.time()
                         print(f"[CACHE MISS] SBT calculation took {end-start:.2f}s, cached result", flush=True)
                 except Exception as e:
@@ -661,6 +726,15 @@ class data:
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
+            
+            # Debug: Print raw SBT results after skipping first 14 points
+            if len(times) > 0:
+                print(f"[DEBUG] {call_id} - Raw SBT results after [14:]: len={len(times)}, time_range=[{times[0]:.4f}, {times[-1]:.4f}] years", flush=True)
+                print(f"[DEBUG] {call_id} -   Tout range: [{np.min(Tout):.2f}, {np.max(Tout):.2f}] K = [{np.min(Tout)-273.15:.2f}, {np.max(Tout)-273.15:.2f}] °C", flush=True)
+                print(f"[DEBUG] {call_id} -   Tout array id: {id(Tout)}, first 3 values: {Tout[:3] if len(Tout) >= 3 else Tout} K", flush=True)
+                print(f"[DEBUG] {call_id} -   Pout range: [{np.min(Pout)/1e6:.2f}, {np.max(Pout)/1e6:.2f}] MPa", flush=True)
+                print(f"[DEBUG] {call_id} -   First 5 Tout values: {Tout[:5] - 273.15} °C", flush=True)
+                print(f"[DEBUG] {call_id} -   Last 5 Tout values: {Tout[-5:] - 273.15} °C", flush=True)
             
             # Final validation after slicing
             if Tout is not None and len(Tout) > 0:
