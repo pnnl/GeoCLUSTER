@@ -356,6 +356,7 @@ def admin_fluid_properties():
 
 def compute_tube_geometry(sbt_version, clg_configuration, fluid,
                                 radius, radiuscenterpipe, thicknesscenterpipe,
+                                k_center_pipe,
                                 x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat,
                                 mdot,
                                 piperoughness,
