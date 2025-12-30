@@ -557,16 +557,12 @@ def slider_card():
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_none_style, parameter_name="Mesh Fineness"),
                                                     html.Div(
                                                             id="hyperparam1-container",
-                                                            children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-                                                        ]),
+                                                            children=[]
+                                                        ),
                                                     html.Div(
                                                             id="hyperparam3-container",
-                                                            children=[
-                                                                dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-                                                        ]),
+                                                            children=[]
+                                                        ),
                                                 ]
 
                                             ),

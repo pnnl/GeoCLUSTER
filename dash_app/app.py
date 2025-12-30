@@ -801,6 +801,8 @@ app.layout = html.Div(
         dcc.Store(id="see-all-params-state", data={"expanded": False}),
         dcc.Store(id="calculation-request-id", data=0),
         dcc.Store(id="clipboard-init", data=0),
+        dcc.Store(id="mass-mode-select", data="Constant"),
+        dcc.Store(id="temp-mode-select", data="Constant"),
         # Left column
         html.Div(
             id="left-column",
@@ -2432,7 +2434,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="data"),
     ],
     [
         State(component_id="model-select", component_property="value"),
@@ -3175,22 +3177,8 @@ def update_sliders_hyperparms(model, store_data):
         store_data = {}
     
     if model == "SBT V1.0":
-        hyperparam1 = dropdown_box(
-            DivID="mass-flow-mode-div",
-            ID="mass-mode-select",
-            ptitle="Mass Flow Rate Mode",
-            options=["Constant", "Variable"],
-            disabled=True,
-            div_style=div_block_style,
-        )
-        hyperparam3 = dropdown_box(
-            DivID="temp-flow-mode-div",
-            ID="temp-mode-select",
-            ptitle="Injection Temperature Mode",
-            options=["Constant", "Variable"],
-            disabled=True,
-            div_style=div_block_style,
-        )
+        hyperparam1 = html.Div(id="hyperparam1-container", children=[])
+        hyperparam3 = html.Div(id="hyperparam3-container", children=[])
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",
             ID="fluid-mode-select",
@@ -3234,8 +3222,8 @@ def update_sliders_hyperparms(model, store_data):
         inlet_pressure_start = max(5, min(20, inlet_pressure_start))
         
         inlet_pressure = slider1(
-            DivID="mass-flow-mode-div",
-            ID="mass-mode-select",
+            DivID="inlet-pressure-div",
+            ID="inlet-pressure-select",
             ptitle="Inlet Pressure (MPa)",
             min_v=5,
             max_v=20,
@@ -3245,15 +3233,8 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_block_style,
             parameter_name="Inlet Pressure (MPa)",
         )
-        hyperparam1 = html.Div()  # Empty for SBT V2.0 since Inlet Pressure moved to Wellbore Operations
-        hyperparam3 = dropdown_box(
-            DivID="temp-flow-mode-div",
-            ID="temp-mode-select",
-            ptitle="Injection Temperature Mode",
-            options=["Constant", "Variable"],
-            disabled=True,
-            div_style=div_none_style,  # Hidden for SBT V2.0
-        )
+        hyperparam1 = html.Div()
+        hyperparam3 = html.Div(id="hyperparam3-container", children=[])
         pipe_roughness = slider1(
             DivID="pipe-roughness-div",
             ID="pipe-roughness-select",
@@ -3272,11 +3253,11 @@ def update_sliders_hyperparms(model, store_data):
         
         fluid_mode_options = ["Constant", "Temperature–Pressure Dependent"]
         if saved_fluid_mode == "Variable":
-            default_fluid_mode = "Temperature–Pressure Dependent"
+            default_fluid_mode = "Constant"
         elif saved_fluid_mode in fluid_mode_options:
             default_fluid_mode = saved_fluid_mode
         else:
-            default_fluid_mode = "Temperature–Pressure Dependent"
+            default_fluid_mode = "Constant"
         
         hyperparam5 = html.Div(
             id="fluid-mode-div",
@@ -3298,27 +3279,13 @@ def update_sliders_hyperparms(model, store_data):
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
 
     elif model == "HDF5":
-        hyperparam1 = dropdown_box(
-            DivID="mass-flow-mode-div",
-            ID="mass-mode-select",
-            ptitle="Mass Flow Rate Mode",
-            options=["Constant", "Variable"],
-            disabled=True,
-            div_style=div_none_style,
-        )
-        hyperparam3 = dropdown_box(
-            DivID="temp-flow-mode-div",
-            ID="temp-mode-select",
-            ptitle="Injection Temperature Mode",
-            options=["Constant", "Variable"],
-            disabled=True,
-            div_style=div_none_style,
-        )
+        hyperparam1 = html.Div(id="hyperparam1-container", children=[])
+        hyperparam3 = html.Div(id="hyperparam3-container", children=[])
         hyperparam5 = dropdown_box(
             DivID="fluid-mode-div",
             ID="fluid-mode-select",
             ptitle="Fluid Properties Mode",
-            options=["Variable", "Constant"],
+            options=["Constant", "Variable"],
             disabled=False,
             div_style=div_none_style,
         )
@@ -3391,8 +3358,8 @@ def update_sliders_hyperparms(model, store_data):
         ),  # PipeParam5 (for coaxial)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="value"),
-        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
@@ -3705,8 +3672,8 @@ def update_subsurface_results_plots(
         Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="value"),
-        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
@@ -3791,8 +3758,8 @@ def update_plot_inputs_cache(interp_time, fluid, case, mdot, L2, L1, grad, D, Ti
         State(component_id="coaxial-flow-type-select", component_property="value"),
         State(component_id="mesh-select", component_property="value"),
         State(component_id="accuracy-select", component_property="value"),
-        State(component_id="mass-mode-select", component_property="value"),
-        State(component_id="temp-mode-select", component_property="value"),
+        State(component_id="mass-mode-select", component_property="data"),
+        State(component_id="temp-mode-select", component_property="data"),
         State(component_id="pipe-roughness-select", component_property="value"),
         State(component_id="fluid-mode-select", component_property="value"),
         State(component_id="insulation-thermal-conductivity-select", component_property="value"),
@@ -3943,8 +3910,8 @@ def update_subsurface_contours_plots(
         Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="value"),
-        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
@@ -4137,8 +4104,8 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="value"),
-        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
