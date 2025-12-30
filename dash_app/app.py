@@ -3564,9 +3564,48 @@ def update_subsurface_results_plots(
                 else:
                     actual_PipeParam3 = 0.0127
         else:
-            actual_PipeParam4 = PipeParam4
-            actual_PipeParam5 = PipeParam5
-            actual_PipeParam3 = PipeParam3
+            if PipeParam3 is not None:
+                try:
+                    laterals_val = float(PipeParam3)
+                    if laterals_val < 1.0 or laterals_val != int(laterals_val):
+                        actual_PipeParam3 = 1
+                        print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid (expected integer >= 1 for number of laterals), using default={actual_PipeParam3}", flush=True)
+                    else:
+                        actual_PipeParam3 = int(laterals_val)
+                except (TypeError, ValueError):
+                    actual_PipeParam3 = 1
+                    print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid, using default={actual_PipeParam3}", flush=True)
+            else:
+                actual_PipeParam3 = 1
+            
+            if PipeParam4 is not None:
+                try:
+                    lateral_flow_val = float(PipeParam4)
+                    if isinstance(PipeParam4, (list, tuple)):
+                        actual_PipeParam4 = PipeParam4
+                    elif 0.0 <= lateral_flow_val <= 1.0:
+                        actual_PipeParam4 = PipeParam4
+                    else:
+                        actual_PipeParam4 = max(0.0, min(1.0, lateral_flow_val))
+                        print(f"[WARNING] U-tube PipeParam4={PipeParam4} out of range (expected 0-1 for lateral flow allocation), clamped to {actual_PipeParam4}", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam4 = PipeParam4
+            else:
+                actual_PipeParam4 = PipeParam4
+            
+            if PipeParam5 is not None:
+                try:
+                    multiplier_val = float(PipeParam5)
+                    if 0.0 <= multiplier_val <= 1.0:
+                        actual_PipeParam5 = PipeParam5
+                    else:
+                        actual_PipeParam5 = max(0.0, min(1.0, multiplier_val))
+                        print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid (expected 0-1 for lateral flow multiplier), clamped to {actual_PipeParam5}", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam5 = 1.0
+                    print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid, using default={actual_PipeParam5}", flush=True)
+            else:
+                actual_PipeParam5 = 1.0
         
         (
             subplots,
