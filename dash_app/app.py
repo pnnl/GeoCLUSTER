@@ -3516,15 +3516,57 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # For coaxial case, use insulation_thermal_conductivity from Component Performance section if provided
-        # Otherwise fall back to PipeParam4 (from lateral-flow-select in Tube Geometry section)
         if case == "coaxial":
             if insulation_thermal_conductivity is not None:
                 actual_PipeParam4 = insulation_thermal_conductivity
             else:
                 actual_PipeParam4 = PipeParam4
+            
+            if coaxial_flow_type is not None:
+                if isinstance(coaxial_flow_type, str):
+                    if coaxial_flow_type == "Inject in Annulus":
+                        actual_PipeParam5 = 1
+                    elif coaxial_flow_type == "Inject in Center Pipe":
+                        actual_PipeParam5 = 2
+                    else:
+                        actual_PipeParam5 = 1
+                else:
+                    actual_PipeParam5 = int(coaxial_flow_type) if coaxial_flow_type in [1, 2] else 1
+            else:
+                actual_PipeParam5 = 1
+            
+            if model == "HDF5" and PipeParam3 is not None:
+                try:
+                    thickness_val = float(PipeParam3)
+                    if thickness_val >= 1.0:
+                        actual_PipeParam3 = 0.0127
+                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                    elif 0.005 <= thickness_val <= 0.025:
+                        actual_PipeParam3 = thickness_val
+                    else:
+                        actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
+                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} out of range, clamped to {actual_PipeParam3} m", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam3 = 0.0127
+            else:
+                if PipeParam3 is not None:
+                    try:
+                        thickness_val = float(PipeParam3)
+                        if thickness_val >= 1.0:
+                            actual_PipeParam3 = 0.0127
+                            print(f"[WARNING] SBT coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                        elif 0.005 <= thickness_val <= 0.025:
+                            actual_PipeParam3 = thickness_val
+                        else:
+                            actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
+                    except (TypeError, ValueError):
+                        actual_PipeParam3 = 0.0127
+                else:
+                    actual_PipeParam3 = 0.0127
         else:
             actual_PipeParam4 = PipeParam4
+            actual_PipeParam5 = PipeParam5
+            actual_PipeParam3 = PipeParam3
         
         (
             subplots,
@@ -3552,9 +3594,9 @@ def update_subsurface_results_plots(
             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1,
             Diameter2,
-            PipeParam3,
+            actual_PipeParam3,
             actual_PipeParam4,
-            PipeParam5,
+            actual_PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,

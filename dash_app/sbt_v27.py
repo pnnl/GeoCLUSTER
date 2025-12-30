@@ -384,7 +384,8 @@ def run_sbt(
     Tinstore, mstore = get_profiles(sbt_version=sbt_version, times=times,
                                     variableinjectiontemperature=variableinjectiontemperature,
                                     variableflowrate=variableflowrate, flowratefilename=flowratefilename, 
-                                    Tinj=Tinj, mdot=mdot
+                                    Tinj=Tinj, mdot=mdot,
+                                    injectiontemperaturefilename=injectiontemperaturefilename
                                     )
     
     # Initialize variables that are only set conditionally in get_profiles
