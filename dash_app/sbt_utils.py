@@ -245,11 +245,66 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
     numberoflaterals = radiusvertical = radiuslateral = lateralflowmultiplier = lateralflowallocation =  None # uloop 
     
     if clg_configuration == 1:  # co-axial geometry (1)
-        radius = Diameter1/2  # 0.2286/2                # Wellbore radius [m] (everything is assumed open-hole)
-        radiuscenterpipe = Diameter2/2  # 0.127/2       # Inner radius of inner pipe [m]
-        thicknesscenterpipe = PipeParam3 # 0.0127       # Thickness of inner pipe [m]
-        k_center_pipe = PipeParam4 # 0.006                                           # Thermal conductivity of insulation of center pipe wall [W/m/K]
-        coaxialflowtype = PipeParam5 # 1                                             # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
+        radius = Diameter1/2
+        radiuscenterpipe = Diameter2/2
+        
+        if PipeParam3 is not None:
+            try:
+                thickness_val = float(PipeParam3)
+                if thickness_val >= 1.0:
+                    thicknesscenterpipe = 0.0127
+                    print(f"[WARNING] Coaxial PipeParam3={PipeParam3} looks like number of laterals, using default thickness={thicknesscenterpipe} m", flush=True)
+                elif 0.005 <= thickness_val <= 0.025:
+                    thicknesscenterpipe = thickness_val
+                else:
+                    thicknesscenterpipe = max(0.005, min(0.025, thickness_val))
+                    print(f"[WARNING] Coaxial PipeParam3={PipeParam3} out of range, clamped to {thicknesscenterpipe} m", flush=True)
+            except (TypeError, ValueError):
+                thicknesscenterpipe = 0.0127
+                print(f"[WARNING] Coaxial PipeParam3={PipeParam3} invalid, using default thickness={thicknesscenterpipe} m", flush=True)
+        else:
+            thicknesscenterpipe = 0.0127
+        
+        if PipeParam4 is not None:
+            try:
+                if isinstance(PipeParam4, (list, tuple)):
+                    k_center_pipe = 0.006
+                    print(f"[WARNING] Coaxial PipeParam4={PipeParam4} is a list (U-tube parameter), using default thermal conductivity={k_center_pipe} W/m/K", flush=True)
+                else:
+                    k_val = float(PipeParam4)
+                    if 0.025 <= k_val <= 0.5:
+                        k_center_pipe = k_val
+                    else:
+                        k_center_pipe = max(0.025, min(0.5, k_val))
+                        print(f"[WARNING] Coaxial PipeParam4={PipeParam4} out of range, clamped to {k_center_pipe} W/m/K", flush=True)
+            except (TypeError, ValueError):
+                k_center_pipe = 0.006
+                print(f"[WARNING] Coaxial PipeParam4={PipeParam4} invalid, using default thermal conductivity={k_center_pipe} W/m/K", flush=True)
+        else:
+            k_center_pipe = 0.006
+        
+        if PipeParam5 is not None:
+            if isinstance(PipeParam5, str):
+                if PipeParam5 == "Inject in Annulus":
+                    coaxialflowtype = 1
+                elif PipeParam5 == "Inject in Center Pipe":
+                    coaxialflowtype = 2
+                else:
+                    coaxialflowtype = 1
+                    print(f"[WARNING] Coaxial PipeParam5={PipeParam5} invalid string, using default flow type={coaxialflowtype}", flush=True)
+            else:
+                try:
+                    flow_type = int(PipeParam5)
+                    if flow_type in [1, 2]:
+                        coaxialflowtype = flow_type
+                    else:
+                        coaxialflowtype = 1
+                        print(f"[WARNING] Coaxial PipeParam5={PipeParam5} invalid, using default flow type={coaxialflowtype}", flush=True)
+                except (TypeError, ValueError):
+                    coaxialflowtype = 1
+                    print(f"[WARNING] Coaxial PipeParam5={PipeParam5} invalid, using default flow type={coaxialflowtype}", flush=True)
+        else:
+            coaxialflowtype = 1
 
     elif clg_configuration == 2: # U-loop geometry (2)
 
@@ -612,13 +667,15 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity
 
 
-def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot):
+def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot, injectiontemperaturefilename=None):
 
     # Read injection temperature profile if provided
     Tinstore = np.zeros(len(times))
     # print(variableinjectiontemperature)
     if variableinjectiontemperature == 1 and sbt_version == 1:
         # User has provided injection temperature in an Excel spreadsheet. (can currently only be used with sbt version 1)
+        if injectiontemperaturefilename is None:
+            raise ValueError("injectiontemperaturefilename must be provided when variableinjectiontemperature == 1")
         num = pd.read_excel(injectiontemperaturefilename)
         Tintimearray = np.array(num.iloc[:, 0])
         Tintemperaturearray = np.array(num.iloc[:, 1])

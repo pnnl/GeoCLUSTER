@@ -125,7 +125,7 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "thicknesscenterpipe": 0.0127,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
-                    "inletpressure": 10,
+                    "inletpressure": 20,
                     "piperoughness": 1  # 1 µm (display value), actual value in meters is 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
@@ -364,7 +364,7 @@ def slider_card():
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
+                                                                                                options=["Constant", "Temperature–Pressure Dependent"], disabled=False, div_style=div_none_style)
                                                     ]),
                                                     # Coaxial Flow Type dropdown - visible when Simulator is selected and case is coaxial
                                                     html.Div(

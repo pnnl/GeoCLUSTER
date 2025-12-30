@@ -797,7 +797,10 @@ app.layout = html.Div(
             id="fluid-selection-store",
             data={"preferred": "All", "last_specific": "H2O"},
         ),  # Remember user fluid preferences across tabs
-        dcc.Store(id="clipboard-init", data=0),  # Store to trigger clipboard event listener setup
+        dcc.Store(id="plot-inputs-cache", data={}),
+        dcc.Store(id="see-all-params-state", data={"expanded": False}),
+        dcc.Store(id="calculation-request-id", data=0),
+        dcc.Store(id="clipboard-init", data=0),
         # Left column
         html.Div(
             id="left-column",
@@ -1135,11 +1138,15 @@ def show_hide_see_all_button(model):
         Input(component_id="see-all-params-button", component_property="n_clicks"),
         Input(component_id="model-select", component_property="value"),
         Input(component_id="case-select", component_property="value"),
+        Input(component_id="tabs", component_property="value"),
     ],
-    [State(component_id="see-all-params-text", component_property="children")],
+    [
+        State(component_id="see-all-params-text", component_property="children"),
+        State(component_id="see-all-params-state", component_property="data"),
+    ],
     prevent_initial_call='initial_duplicate',
 )
-def toggle_see_all_params(n_clicks, model, case, current_button_text):
+def toggle_see_all_params(n_clicks, model, case, tab, current_button_text, params_state):
     callback_ctx = ctx
     style_none = {"display": "none"}
     style_block = {"display": "block"}
@@ -1147,30 +1154,69 @@ def toggle_see_all_params(n_clicks, model, case, current_button_text):
     # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
     component_perf_style = style_none if case == "utube" else style_block
     
+    # Initialize params_state if not present
+    if params_state is None:
+        params_state = {"expanded": False}
+    
     # Get the trigger ID
     if not callback_ctx.triggered:
-        # Initial state - all hidden except those that are always visible
-        if model == "HDF5":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        elif model == "SBT V1.0":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:  # SBT V2.0
-            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
-            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+        # Initial state - check cache first, otherwise use defaults
+        is_expanded = params_state.get("expanded", False)
+        if is_expanded:
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
+            elif model == "SBT V1.0":
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+            else:  # SBT V2.0
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+        else:
+            # Use default collapsed state
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            elif model == "SBT V1.0":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:  # SBT V2.0
+                return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     trigger_id = callback_ctx.triggered[0]["prop_id"].split(".")[0]
     
-    # Handle model or case change
+    # Handle tab change - restore cached state
+    if trigger_id == "tabs":
+        is_expanded = params_state.get("expanded", False)
+        if is_expanded:
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
+            elif model == "SBT V1.0":
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+            else:  # SBT V2.0
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+        else:
+            # Use default collapsed state
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            elif model == "SBT V1.0":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:  # SBT V2.0
+                return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+    
+    # Handle model or case change - restore cached state instead of resetting
     if trigger_id == "model-select" or trigger_id == "case-select":
-        # Model or case changed - set initial state: all hidden except those that are always visible
-        if model == "HDF5":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        elif model == "SBT V1.0":
-            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-        else:  # SBT V2.0
-            # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
-            # lat-flow (Lateral Flow Multiplier) is hidden by default, shown via "See all parameters"
-            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+        is_expanded = params_state.get("expanded", False)
+        if is_expanded:
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
+            elif model == "SBT V1.0":
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+            else:  # SBT V2.0
+                return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+        else:
+            # Use default collapsed state
+            if model == "HDF5":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            elif model == "SBT V1.0":
+                return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+            else:  # SBT V2.0
+                return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
     
     # Handle button click
     if trigger_id == "see-all-params-button" and n_clicks is not None and n_clicks > 0:
@@ -1188,7 +1234,7 @@ def toggle_see_all_params(n_clicks, model, case, current_button_text):
                 # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
                 return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
         else:
-            # Show all parameters
+            # Show all parameters - cache will be updated by separate callback
             if model == "HDF5":
                 # Component Performance unavailable for HDF5 (database mode)
                 return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
@@ -1203,15 +1249,47 @@ def toggle_see_all_params(n_clicks, model, case, current_button_text):
                 # Component Performance only for coaxial
                 return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
     
-    # Fallback - initial state
-    if model == "HDF5":
-        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-    elif model == "SBT V1.0":
-        return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
-    else:  # SBT V2.0
-        # Keep pipe-roughness and hyperparam5 visible (they're always visible for SBT V2.0)
-        # lat-flow (Lateral Flow Multiplier) is hidden by default, shown via "See all parameters"
-        return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+    # Fallback - check cache for state
+    is_expanded = params_state.get("expanded", False)
+    if is_expanded:
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See less parameters", " ▲"
+        elif model == "SBT V1.0":
+            return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+        else:  # SBT V2.0
+            return style_block, style_block, style_block, style_block, style_none, component_perf_style, "See less parameters", " ▲"
+    else:
+        if model == "HDF5":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        elif model == "SBT V1.0":
+            return style_none, style_none, style_none, style_none, style_none, style_none, "See all parameters", " ▼"
+        else:  # SBT V2.0
+            return style_none, style_block, style_block, style_none, style_none, style_none, "See all parameters", " ▼"
+
+
+@app.callback(
+    Output(component_id="see-all-params-state", component_property="data"),
+    [
+        Input(component_id="see-all-params-button", component_property="n_clicks"),
+    ],
+    [
+        State(component_id="see-all-params-text", component_property="children"),
+        State(component_id="see-all-params-state", component_property="data"),
+    ],
+    prevent_initial_call=True,
+)
+def update_see_all_params_cache(n_clicks, current_button_text, current_state):
+    """Update cache when 'See all parameters' button is clicked"""
+    if n_clicks is None or n_clicks == 0:
+        raise PreventUpdate
+    
+    if current_state is None:
+        current_state = {"expanded": False}
+    
+    is_expanded = current_button_text == "See less parameters" if current_button_text else False
+    new_state = {"expanded": not is_expanded}
+    
+    return new_state
 
 
 
@@ -1271,6 +1349,7 @@ def update_loading(selected_model):
             children=[
                 html.Div(
                     id="graphics-container",
+                    className="simulator-mode",
                     children=[
                         dcc.Graph(id="geothermal_time_plots", config=plotly_config),
                         dbc.RadioItems(
@@ -1342,6 +1421,11 @@ def switch_tab_on_model_change(model, current_tab):
     prevent_initial_call=True,
 )
 def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
+    # Only process if triggered by tabs (not buttons or fluid changes)
+    trigger_id = ctx.triggered_id if ctx.triggered else None
+    if trigger_id not in ["tabs", None]:
+        raise PreventUpdate
+    
     if tab == "energy-tab" and fluid == "All":
         # Switching to contours/energy tab with "All" selected - change to H2O but preserve "All" in store
         if fluid_store is None:
@@ -1493,6 +1577,12 @@ def change_dropdown(at, fluid, model, fluid_store):
 
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
     interpol_options = [{"label": i, "value": i} for i in interpol_list]
+
+    if trigger_id == "tabs":
+        if selected_fluid == fluid:
+            current_fluid_options = [{"label": i, "value": i} for i in (["H2O", "sCO2"] if at == "energy-tab" else ["All", "H2O", "sCO2"])]
+            if fluid_options == current_fluid_options:
+                raise PreventUpdate
 
     return (
         fluid_options,
@@ -3176,14 +3266,34 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_block_style,
             parameter_name="Pipe Roughness (µm)",
         )
-        hyperparam5 = dropdown_box(
-            DivID="fluid-mode-div",
-            ID="fluid-mode-select",
-            ptitle="Fluid Properties Mode",
-            options=["Variable", "Constant"],
-            disabled=False,
-            div_style=div_block_style,
-        )
+        saved_fluid_mode = None
+        if model in store_data and "fluid-mode" in store_data[model]:
+            saved_fluid_mode = store_data[model]["fluid-mode"]
+        
+        fluid_mode_options = ["Constant", "Temperature–Pressure Dependent"]
+        if saved_fluid_mode == "Variable":
+            default_fluid_mode = "Temperature–Pressure Dependent"
+        elif saved_fluid_mode in fluid_mode_options:
+            default_fluid_mode = saved_fluid_mode
+        else:
+            default_fluid_mode = "Temperature–Pressure Dependent"
+        
+        hyperparam5 = html.Div(
+            id="fluid-mode-div",
+            className="name-input-container-dd",
+            style=div_block_style,
+            children=[
+                html.P("Fluid Properties Mode", className="input-title"),
+                dcc.Dropdown(
+                    id="fluid-mode-select",
+                    options=[{"label": opt, "value": opt} for opt in fluid_mode_options],
+                    value=default_fluid_mode,
+                    clearable=False,
+                    searchable=False,
+                    disabled=False,
+                    className="select-dropdown"
+                ),
+            ])
 
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
 
@@ -3242,6 +3352,7 @@ def update_sliders_hyperparms(model, store_data):
         Output(component_id="thermal-results-time", component_property="data"),
         Output(component_id="thermal-results-errors", component_property="data"),
         Output(component_id="TandP-data", component_property="data"),
+        Output(component_id="calculation-request-id", component_property="data", allow_duplicate=True),
     ],
     [
         Input(component_id="interpolation-select", component_property="value"),
@@ -3286,6 +3397,11 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="fluid-mode-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
+    [
+        State(component_id="plot-inputs-cache", component_property="data"),
+        State(component_id="calculation-request-id", component_property="data"),
+    ],
+    prevent_initial_call='initial_duplicate',
 )
 def update_subsurface_results_plots(
     interp_time,
@@ -3318,12 +3434,68 @@ def update_subsurface_results_plots(
     pipe_roughness,
     HyperParam5,
     insulation_thermal_conductivity,
+    plot_inputs_cache,
+    current_request_id,
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
 
     try:
+        current_inputs = {
+            "interp_time": interp_time,
+            "fluid": fluid,
+            "case": case,
+            "mdot": mdot,
+            "L2": L2,
+            "L1": L1,
+            "grad": grad,
+            "D": D,
+            "Tinj": Tinj,
+            "k_m": k_m,
+            "scale": scale,
+            "model": model,
+            "Tsurf": Tsurf,
+            "c_m": c_m,
+            "rho_m": rho_m,
+            "Diameter1": Diameter1,
+            "Diameter2": Diameter2,
+            "PipeParam3": PipeParam3,
+            "PipeParam4": PipeParam4,
+            "PipeParam5": PipeParam5,
+            "coaxial_flow_type": coaxial_flow_type,
+            "mesh": mesh,
+            "accuracy": accuracy,
+            "HyperParam1": HyperParam1,
+            "HyperParam3": HyperParam3,
+            "pipe_roughness": pipe_roughness,
+            "HyperParam5": HyperParam5,
+            "insulation_thermal_conductivity": insulation_thermal_conductivity,
+        }
+        
+        if plot_inputs_cache and plot_inputs_cache.get("inputs"):
+            cached_inputs = plot_inputs_cache.get("inputs", {})
+            def normalize_dict(d):
+                return {k: (v if v is not None else "None") for k, v in d.items()}
+            
+            normalized_current = normalize_dict(current_inputs)
+            normalized_cached = normalize_dict(cached_inputs)
+            
+            if normalized_current == normalized_cached:
+                # Inputs haven't changed, return cached outputs to avoid clearing/regenerating plots
+                cached_outputs = plot_inputs_cache.get("outputs")
+                if cached_outputs and len(cached_outputs) == 6:
+                    cached_figure = cached_outputs[0]
+                    if cached_figure and isinstance(cached_figure, dict):
+                        figure_data = cached_figure.get("data", [])
+                        if figure_data and len(figure_data) > 0:
+                            print(f"[CACHE] Plot inputs unchanged, returning cached plots", flush=True)
+                            if isinstance(cached_outputs, tuple):
+                                return (*cached_outputs, current_request_id if current_request_id is not None else 0)
+                            else:
+                                return list(cached_outputs) + [current_request_id if current_request_id is not None else 0]
+                    # If cached figure is invalid, fall through to regenerate
+        
         # Convert pipe roughness from µm (UI) to meters (model)
         # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
         if pipe_roughness is None:
@@ -3335,24 +3507,105 @@ def update_subsurface_results_plots(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
             except (TypeError, ValueError):
-                hyperparam1_value = 10.0
+                hyperparam1_value = 20.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        # For coaxial case, use insulation_thermal_conductivity from Component Performance section if provided
-        # Otherwise fall back to PipeParam4 (from lateral-flow-select in Tube Geometry section)
         if case == "coaxial":
             if insulation_thermal_conductivity is not None:
                 actual_PipeParam4 = insulation_thermal_conductivity
             else:
                 actual_PipeParam4 = PipeParam4
+            
+            if coaxial_flow_type is not None:
+                if isinstance(coaxial_flow_type, str):
+                    if coaxial_flow_type == "Inject in Annulus":
+                        actual_PipeParam5 = 1
+                    elif coaxial_flow_type == "Inject in Center Pipe":
+                        actual_PipeParam5 = 2
+                    else:
+                        actual_PipeParam5 = 1
+                else:
+                    actual_PipeParam5 = int(coaxial_flow_type) if coaxial_flow_type in [1, 2] else 1
+            else:
+                actual_PipeParam5 = 1
+            
+            if model == "HDF5" and PipeParam3 is not None:
+                try:
+                    thickness_val = float(PipeParam3)
+                    if thickness_val >= 1.0:
+                        actual_PipeParam3 = 0.0127
+                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                    elif 0.005 <= thickness_val <= 0.025:
+                        actual_PipeParam3 = thickness_val
+                    else:
+                        actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
+                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} out of range, clamped to {actual_PipeParam3} m", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam3 = 0.0127
+            else:
+                if PipeParam3 is not None:
+                    try:
+                        thickness_val = float(PipeParam3)
+                        if thickness_val >= 1.0:
+                            actual_PipeParam3 = 0.0127
+                            print(f"[WARNING] SBT coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                        elif 0.005 <= thickness_val <= 0.025:
+                            actual_PipeParam3 = thickness_val
+                        else:
+                            actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
+                    except (TypeError, ValueError):
+                        actual_PipeParam3 = 0.0127
+                else:
+                    actual_PipeParam3 = 0.0127
         else:
-            actual_PipeParam4 = PipeParam4
+            if PipeParam3 is not None:
+                try:
+                    laterals_val = float(PipeParam3)
+                    if laterals_val < 1.0 or laterals_val != int(laterals_val):
+                        actual_PipeParam3 = 1
+                        print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid (expected integer >= 1 for number of laterals), using default={actual_PipeParam3}", flush=True)
+                    else:
+                        actual_PipeParam3 = int(laterals_val)
+                except (TypeError, ValueError):
+                    actual_PipeParam3 = 1
+                    print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid, using default={actual_PipeParam3}", flush=True)
+            else:
+                actual_PipeParam3 = 1
+            
+            if PipeParam4 is not None:
+                try:
+                    lateral_flow_val = float(PipeParam4)
+                    if isinstance(PipeParam4, (list, tuple)):
+                        actual_PipeParam4 = PipeParam4
+                    elif 0.0 <= lateral_flow_val <= 1.0:
+                        actual_PipeParam4 = PipeParam4
+                    else:
+                        actual_PipeParam4 = max(0.0, min(1.0, lateral_flow_val))
+                        print(f"[WARNING] U-tube PipeParam4={PipeParam4} out of range (expected 0-1 for lateral flow allocation), clamped to {actual_PipeParam4}", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam4 = PipeParam4
+            else:
+                actual_PipeParam4 = PipeParam4
+            
+            if PipeParam5 is not None:
+                try:
+                    multiplier_val = float(PipeParam5)
+                    if 0.0 <= multiplier_val <= 1.0:
+                        actual_PipeParam5 = PipeParam5
+                    else:
+                        actual_PipeParam5 = max(0.0, min(1.0, multiplier_val))
+                        print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid (expected 0-1 for lateral flow multiplier), clamped to {actual_PipeParam5}", flush=True)
+                except (TypeError, ValueError):
+                    actual_PipeParam5 = 1.0
+                    print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid, using default={actual_PipeParam5}", flush=True)
+            else:
+                actual_PipeParam5 = 1.0
         
         (
             subplots,
@@ -3380,9 +3633,9 @@ def update_subsurface_results_plots(
             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1,
             Diameter2,
-            PipeParam3,
+            actual_PipeParam3,
             actual_PipeParam4,
-            PipeParam5,
+            actual_PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3393,7 +3646,7 @@ def update_subsurface_results_plots(
         # end = time.time()
         # print("run generate_subsurface_lineplots:", end - start)
 
-        return (
+        outputs = (
             subplots,
             forty_yr_TPmeans_dict,
             df_mass_flow_rate,
@@ -3401,6 +3654,20 @@ def update_subsurface_results_plots(
             err_subres_dict,
             TandP_dict,
         )
+        
+        if subplots and isinstance(subplots, dict):
+            figure_data = subplots.get("data", [])
+            if not figure_data or len(figure_data) == 0:
+                # Figure is empty, return empty figure to show blank state
+                import plotly.graph_objects as go
+                from plotly.subplots import make_subplots
+                empty_fig = make_subplots(rows=2, cols=3)
+                return empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0)
+        
+        return (*outputs, current_request_id if current_request_id is not None else 0)
+    except PreventUpdate:
+        # Re-raise PreventUpdate - it's not an error, it's a signal to skip updating
+        raise
     except Exception as e:
         print(f"[ERROR] Error in update_subsurface_results_plots: {e}")
         import traceback
@@ -3409,7 +3676,186 @@ def update_subsurface_results_plots(
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
         empty_fig = make_subplots(rows=2, cols=3)
-        return empty_fig, {}, {}, {}, {}, {}
+        return (empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0))
+
+
+@app.callback(
+    Output(component_id="plot-inputs-cache", component_property="data"),
+    [
+        Input(component_id="interpolation-select", component_property="value"),
+        Input(component_id="fluid-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+        Input(component_id="mdot-select", component_property="value"),
+        Input(component_id="L2-select", component_property="value"),
+        Input(component_id="L1-select", component_property="value"),
+        Input(component_id="grad-select", component_property="value"),
+        Input(component_id="diameter-select", component_property="value"),
+        Input(component_id="Tinj-select", component_property="value"),
+        Input(component_id="k-select", component_property="value"),
+        Input(component_id="radio-graphic-control3", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="Tsurf-select", component_property="value"),
+        Input(component_id="c-select", component_property="value"),
+        Input(component_id="rho-select", component_property="value"),
+        Input(component_id="radius-vertical-select", component_property="value"),
+        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
+        Input(component_id="mesh-select", component_property="value"),
+        Input(component_id="accuracy-select", component_property="value"),
+        Input(component_id="mass-mode-select", component_property="value"),
+        Input(component_id="temp-mode-select", component_property="value"),
+        Input(component_id="pipe-roughness-select", component_property="value"),
+        Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
+    ],
+    [State(component_id="plot-inputs-cache", component_property="data")],
+    prevent_initial_call=True,
+)
+def update_plot_inputs_cache(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
+                             Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                             coaxial_flow_type, mesh, accuracy, HyperParam1, HyperParam3, pipe_roughness,
+                             HyperParam5, insulation_thermal_conductivity, current_cache):
+    """Update cache of plot inputs to detect when only tabs change"""
+    trigger_id = ctx.triggered_id if ctx.triggered else None
+    if trigger_id == "tabs":
+        # Don't update cache on tab changes - let the plot callback handle that
+        raise PreventUpdate
+    
+    new_cache = {
+        "inputs": {
+            "interp_time": interp_time,
+            "fluid": fluid,
+            "case": case,
+            "mdot": mdot,
+            "L2": L2,
+            "L1": L1,
+            "grad": grad,
+            "D": D,
+            "Tinj": Tinj,
+            "k_m": k_m,
+            "scale": scale,
+            "model": model,
+            "Tsurf": Tsurf,
+            "c_m": c_m,
+            "rho_m": rho_m,
+            "Diameter1": Diameter1,
+            "Diameter2": Diameter2,
+            "PipeParam3": PipeParam3,
+            "PipeParam4": PipeParam4,
+            "PipeParam5": PipeParam5,
+            "coaxial_flow_type": coaxial_flow_type,
+            "mesh": mesh,
+            "accuracy": accuracy,
+            "HyperParam1": HyperParam1,
+            "HyperParam3": HyperParam3,
+            "pipe_roughness": pipe_roughness,
+            "HyperParam5": HyperParam5,
+            "insulation_thermal_conductivity": insulation_thermal_conductivity,
+        }
+    }
+    if current_cache and current_cache.get("outputs"):
+        new_cache["outputs"] = None
+    return new_cache
+
+
+@app.callback(
+    Output(component_id="plot-inputs-cache", component_property="data", allow_duplicate=True),
+    [
+        Input(component_id="TandP-data", component_property="data"),
+    ],
+    [
+        State(component_id="plot-inputs-cache", component_property="data"),
+        State(component_id="interpolation-select", component_property="value"),
+        State(component_id="fluid-select", component_property="value"),
+        State(component_id="case-select", component_property="value"),
+        State(component_id="mdot-select", component_property="value"),
+        State(component_id="L2-select", component_property="value"),
+        State(component_id="L1-select", component_property="value"),
+        State(component_id="grad-select", component_property="value"),
+        State(component_id="diameter-select", component_property="value"),
+        State(component_id="Tinj-select", component_property="value"),
+        State(component_id="k-select", component_property="value"),
+        State(component_id="radio-graphic-control3", component_property="value"),
+        State(component_id="model-select", component_property="value"),
+        State(component_id="Tsurf-select", component_property="value"),
+        State(component_id="c-select", component_property="value"),
+        State(component_id="rho-select", component_property="value"),
+        State(component_id="radius-vertical-select", component_property="value"),
+        State(component_id="radius-lateral-select", component_property="value"),
+        State(component_id="n-laterals-select", component_property="value"),
+        State(component_id="lateral-flow-select", component_property="value"),
+        State(component_id="lateral-multiplier-select", component_property="value"),
+        State(component_id="coaxial-flow-type-select", component_property="value"),
+        State(component_id="mesh-select", component_property="value"),
+        State(component_id="accuracy-select", component_property="value"),
+        State(component_id="mass-mode-select", component_property="value"),
+        State(component_id="temp-mode-select", component_property="value"),
+        State(component_id="pipe-roughness-select", component_property="value"),
+        State(component_id="fluid-mode-select", component_property="value"),
+        State(component_id="insulation-thermal-conductivity-select", component_property="value"),
+        State(component_id="geothermal_time_plots", component_property="figure"),
+        State(component_id="thermal-memory", component_property="data"),
+        State(component_id="thermal-results-mass", component_property="data"),
+        State(component_id="thermal-results-time", component_property="data"),
+        State(component_id="thermal-results-errors", component_property="data"),
+    ],
+    prevent_initial_call=True,
+)
+def update_plot_cache_with_outputs(tandp_data, current_cache, interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
+                                  Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+                                  coaxial_flow_type, mesh, accuracy, HyperParam1, HyperParam3, pipe_roughness,
+                                  HyperParam5, insulation_thermal_conductivity, figure, thermal_memory, thermal_mass, thermal_time, thermal_errors):
+    """Update cache with both inputs and outputs when plots are regenerated"""
+    if tandp_data is None or figure is None:
+        raise PreventUpdate
+    
+    if current_cache and current_cache.get("outputs") and current_cache["outputs"][5] == tandp_data:
+        raise PreventUpdate
+    
+    new_cache = {
+        "inputs": {
+            "interp_time": interp_time,
+            "fluid": fluid,
+            "case": case,
+            "mdot": mdot,
+            "L2": L2,
+            "L1": L1,
+            "grad": grad,
+            "D": D,
+            "Tinj": Tinj,
+            "k_m": k_m,
+            "scale": scale,
+            "model": model,
+            "Tsurf": Tsurf,
+            "c_m": c_m,
+            "rho_m": rho_m,
+            "Diameter1": Diameter1,
+            "Diameter2": Diameter2,
+            "PipeParam3": PipeParam3,
+            "PipeParam4": PipeParam4,
+            "PipeParam5": PipeParam5,
+            "coaxial_flow_type": coaxial_flow_type,
+            "mesh": mesh,
+            "accuracy": accuracy,
+            "HyperParam1": HyperParam1,
+            "HyperParam3": HyperParam3,
+            "pipe_roughness": pipe_roughness,
+            "HyperParam5": HyperParam5,
+            "insulation_thermal_conductivity": insulation_thermal_conductivity,
+        },
+        "outputs": (
+            figure,
+            thermal_memory,
+            thermal_mass,
+            thermal_time,
+            thermal_errors,
+            tandp_data,
+        )
+    }
+    return new_cache
 
 
 @app.callback(
@@ -3757,9 +4203,9 @@ def update_table(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
             except (TypeError, ValueError):
-                hyperparam1_value = 10.0
+                hyperparam1_value = 20.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
