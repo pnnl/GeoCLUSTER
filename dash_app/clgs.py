@@ -281,11 +281,13 @@ class data:
                 mass_mode = HyperParam1
                 temp_mode = HyperParam3
 
+                mass_mode_b = 0
                 if mass_mode == "Constant":
                     mass_mode_b = 0
                 elif mass_mode == "Variable":
                     mass_mode_b = 1
 
+                temp_mode_b = 0
                 if temp_mode == "Constant":
                     temp_mode_b = 0
                 elif temp_mode == "Variable":
