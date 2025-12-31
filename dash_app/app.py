@@ -1531,10 +1531,13 @@ def update_working_fluid(model, fluid_store, current_fluid, current_tab):
         Input(component_id="tabs", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
-    [State(component_id="fluid-selection-store", component_property="data")],
+    [
+        State(component_id="fluid-selection-store", component_property="data"),
+    ],
 )
-def change_dropdown(at, fluid, model, fluid_store):
+def change_dropdown(at, fluid, model, case, fluid_store):
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
@@ -1557,20 +1560,18 @@ def change_dropdown(at, fluid, model, fluid_store):
         last_specific = new_store["last_specific"]
 
     # Determine fluid list based on tab and model
-    # For Simulator (SBT V1.0 or SBT V2.0), always allow all options
-    # The model will automatically switch when fluid changes
     if at == "energy-tab":
         fluid_list = ["H2O", "sCO2"]
     else:
-        # Allow all options for Simulator models, they will auto-switch
         fluid_list = ["All", "H2O", "sCO2"]
+        if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
+            fluid_list = ["H2O", "sCO2"]
 
     interpol_list = ["True"]
 
     selected_fluid = fluid if fluid is not None else preferred
 
     if at == "energy-tab":
-        # Contours tab doesn't support "All" - must use H2O or sCO2
         if selected_fluid == "All" or selected_fluid not in fluid_list:
             fallback = (
                 last_specific if last_specific in fluid_list else fluid_list[0]
@@ -1579,6 +1580,11 @@ def change_dropdown(at, fluid, model, fluid_store):
     else:
         if preferred in fluid_list:
             selected_fluid = preferred
+        if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
+            if selected_fluid == "All" or selected_fluid not in fluid_list:
+                selected_fluid = "H2O"
+                new_store["preferred"] = "H2O"
+                new_store["last_specific"] = "H2O"
 
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
     interpol_options = [{"label": i, "value": i} for i in interpol_list]
@@ -3797,21 +3803,6 @@ def update_subsurface_results_plots(
         return (*empty_outputs6, request_id, empty_cache)
 
 
-@app.callback(
-    Output(component_id="mass-mode-select", component_property="data"),
-    [
-        Input(component_id="inlet-pressure-select", component_property="value"),
-    ],
-    [
-        State(component_id="model-select", component_property="value"),
-    ],
-    prevent_initial_call=True,
-)
-def update_mass_mode_with_inlet_pressure(inlet_pressure, model):
-    """Update mass-mode-select with inlet pressure value for SBT V2.0"""
-    if model == "SBT V2.0" and inlet_pressure is not None:
-        return float(inlet_pressure)
-    raise PreventUpdate
 
 
 
