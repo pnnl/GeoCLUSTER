@@ -295,7 +295,7 @@ def update_layout_properties_subsurface_contours(fig, param):
 
 
 
-def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_check=False):
+def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_check=False, fluid=None):
 
     if end_use == "Electricity":
         row_num = 1
@@ -468,11 +468,11 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         elif trace.showlegend:
             seen_names.add(trace.name)
     
-    if is_plot_ts_check and end_use != "Heating":
+    if is_plot_ts_check and end_use != "Heating" and fluid != "H2O":
         fig = _remove_ts_titles(fig)
         xaxis_name = "x5" if end_use == "All" else "x3"
         fig = _add_or_move_ts_title(fig, xaxis_name=xaxis_name)
-    elif is_plot_ts_check and end_use == "Heating":
+    elif is_plot_ts_check and (end_use == "Heating" or fluid == "H2O"):
         fig = _remove_ts_titles(fig)
 
     return fig

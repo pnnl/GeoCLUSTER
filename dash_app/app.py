@@ -3885,8 +3885,6 @@ def update_plot_title(fluid, end_use, checklist):
     if fluid == "H2O" or end_use == "Heating":
         return {"display": "none"}
 
-    # The T-S title is now handled as an annotation in plots_support.py
-    # So we should hide this HTML element for all end-use cases
     return {"display": "none"}
 
 
