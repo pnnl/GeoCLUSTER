@@ -343,18 +343,34 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         figure_height = 800  # Shorter height for Electricity with T-S diagram
     else:
         figure_height = 350 * rows + 100
-    layout_dict = {
-        'legend_title_text': 'Working Fluid',
-        'template': 'none',
-        'margin': dict(l=70, r=70, t=top_margin, b=70),
-        'height': figure_height,
-        'autosize': True,
-        'legend': dict(
-            y=0.98,
-            yanchor='top'
-        )
-    }
-    fig.update_layout(**layout_dict)
+    
+    # For Electricity + T-S, height and autosize are set in the Electricity block below
+    # So only set these if not Electricity + T-S
+    if not (is_plot_ts_check and end_use == "Electricity"):
+        layout_dict = {
+            'legend_title_text': 'Working Fluid',
+            'template': 'none',
+            'margin': dict(l=70, r=70, t=top_margin, b=70),
+            'height': figure_height,
+            'autosize': True,
+            'legend': dict(
+                y=0.98,
+                yanchor='top'
+            )
+        }
+        fig.update_layout(**layout_dict)
+    else:
+        # For Electricity + T-S, set basic layout without height/autosize (handled in Electricity block)
+        layout_dict = {
+            'legend_title_text': 'Working Fluid',
+            'template': 'none',
+            'margin': dict(l=70, r=70, t=top_margin, b=70),
+            'legend': dict(
+                y=0.98,
+                yanchor='top'
+            )
+        }
+        fig.update_layout(**layout_dict)
 
     # Subtitles
     if end_use == "All":
@@ -373,16 +389,39 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             )
 
     if end_use == "Electricity":
-        fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=1,
+        fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=0.99,
                             font=dict(size=10)
                             )
-        # Fix row domains for Electricity end-use when T-S diagram is shown
         if is_plot_ts_check:
-            # For Electricity: row 1 is Electricity plots, row 2 is T-S diagram
-            # Adjust domains to prevent plots from being too tall
-            fig.update_yaxes(domain=[0.50, 1], row=1, col=1)
-            fig.update_yaxes(domain=[0.50, 1], row=1, col=3)
-            fig.update_yaxes(domain=[0, 0.40], row=2, col=1)
+            # 1) Always use a deterministic height so the first render matches later renders
+            fig.update_layout(
+                height=900,
+                margin=dict(l=70, r=70, t=50, b=70),
+                autosize=False
+            )
+            
+            fig.update_yaxes(domain=[0.60, 1.00], row=1, col=1)
+            fig.update_yaxes(domain=[0.60, 1.00], row=1, col=3)
+            fig.update_yaxes(domain=[0.08, 0.42], row=2, col=1)
+            
+            new_annotations = []
+            if fig.layout.annotations:
+                for a in fig.layout.annotations:
+                    annotation_text = getattr(a, "text", "")
+                    if "Temperature-entropy (T-S) Diagram" not in annotation_text:
+                        new_annotations.append(a)
+            
+            new_annotations.append(go.layout.Annotation(
+                text="<b>Temperature-entropy (T-S) Diagram</b>",
+                showarrow=False,
+                x=0.18, y=0.42,
+                xref="paper", yref="paper",
+                xanchor="left", yanchor="bottom",
+                font=dict(size=14),
+                yshift=10,
+            ))
+            
+            fig.update_layout(annotations=new_annotations)
 
     # Remove duplicate legend entries by keeping only unique names
     seen_names = set()

@@ -4060,8 +4060,9 @@ def update_plot_title(fluid, end_use, checklist):
         return {"display": "none"}
 
     if end_use == "Electricity":
-        # For Electricity, T-S diagram is on row 2, so adjust title position accordingly
-        return {"display": "block", "marginTop": "-500px"}
+        # For Electricity, the T-S title is now handled as an annotation in plots_support.py
+        # So we can hide this HTML element
+        return {"display": "none"}
 
 
 @app.callback(
