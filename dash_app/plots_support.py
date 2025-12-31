@@ -226,11 +226,18 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale, is
     if is_simulator:
         fig.update_layout(
             legend_title_text='Working Fluid',
-            legend=dict(y=1.05, yanchor='top'),
+            legend=dict(y=1.05, yanchor='top', tracegroupgap=0),
             template='none', margin=dict(l=70, r=70, t=50, b=70),
             title_text=f'<b>Output Over Time</b>', title_x=0.5, title_y=0.99,
             font=dict(size=10)
         )
+        # Remove duplicate legend entries by keeping only unique names
+        seen_names = set()
+        for trace in fig.data:
+            if trace.showlegend and trace.name in seen_names:
+                trace.showlegend = False
+            elif trace.showlegend:
+                seen_names.add(trace.name)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=1)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=2)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=3)
@@ -239,6 +246,13 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale, is
                           template='none', margin=dict(l=70, r=70, t=35, b=70),)
         fig.update_layout(title_text=f'<b>Output Over Mass Flow Rate</b>', title_x=0.35, title_y=0.99,
                             font=dict(size=10))
+        # Remove duplicate legend entries by keeping only unique names
+        seen_names = set()
+        for trace in fig.data:
+            if trace.showlegend and trace.name in seen_names:
+                trace.showlegend = False
+            elif trace.showlegend:
+                seen_names.add(trace.name)
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>Output Over Time</b>',
                                         x=0.35,  y=0.44, xref='paper', yref='paper',
@@ -322,18 +336,24 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             tickfont = dict(size=12), title_font=dict(size=14))
     # Legend
     top_margin = 30 if is_plot_ts_check else 50
-    figure_height = None if is_plot_ts_check else 800
+    # Always set explicit height for both checkbox states to prevent warped plots
+    rows = 3 if is_plot_ts_check else 2
+    # Adjust height for Electricity end-use to prevent plots from being too tall
+    if is_plot_ts_check and end_use == "Electricity":
+        figure_height = 800  # Shorter height for Electricity with T-S diagram
+    else:
+        figure_height = 350 * rows + 100
     layout_dict = {
         'legend_title_text': 'Working Fluid',
         'template': 'none',
         'margin': dict(l=70, r=70, t=top_margin, b=70),
+        'height': figure_height,
+        'autosize': True,
         'legend': dict(
             y=0.98,
             yanchor='top'
         )
     }
-    if figure_height is not None:
-        layout_dict['height'] = figure_height
     fig.update_layout(**layout_dict)
 
     # Subtitles
@@ -356,6 +376,21 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=1,
                             font=dict(size=10)
                             )
+        # Fix row domains for Electricity end-use when T-S diagram is shown
+        if is_plot_ts_check:
+            # For Electricity: row 1 is Electricity plots, row 2 is T-S diagram
+            # Adjust domains to prevent plots from being too tall
+            fig.update_yaxes(domain=[0.50, 1], row=1, col=1)
+            fig.update_yaxes(domain=[0.50, 1], row=1, col=3)
+            fig.update_yaxes(domain=[0, 0.40], row=2, col=1)
+
+    # Remove duplicate legend entries by keeping only unique names
+    seen_names = set()
+    for trace in fig.data:
+        if trace.showlegend and trace.name in seen_names:
+            trace.showlegend = False
+        elif trace.showlegend:
+            seen_names.add(trace.name)
 
     return fig
 

@@ -739,7 +739,7 @@ economics_time_tab = dcc.Tab(
                 html.Div(
                     id="graphics-container-econ",
                     children=[
-                        dcc.Graph(id="econ_plots", config=plotly_config),
+                        dcc.Graph(id="econ_plots", config={**plotly_config, "responsive": True}),
                         dbc.RadioItems(
                             options=[
                                 {"label": "Auto Scale", "value": 1},
@@ -801,6 +801,7 @@ app.layout = html.Div(
         dcc.Store(id="see-all-params-state", data={"expanded": False}),
         dcc.Store(id="calculation-request-id", data=0),
         dcc.Store(id="clipboard-init", data=0),
+        dcc.Store(id="econ-resize-ping", data=0),
         dcc.Store(id="mass-mode-select", data="Constant"),
         dcc.Store(id="temp-mode-select", data="Constant"),
         # Left column
@@ -4059,7 +4060,8 @@ def update_plot_title(fluid, end_use, checklist):
         return {"display": "none"}
 
     if end_use == "Electricity":
-        return {"display": "block", "marginTop": "-620px"}
+        # For Electricity, T-S diagram is on row 2, so adjust title position accordingly
+        return {"display": "block", "marginTop": "-500px"}
 
 
 @app.callback(
@@ -4685,3 +4687,57 @@ if __name__ == "__main__":
 #  Output(component_id='n-laterals-select-div', component_property='style'),
 #  Output(component_id='lateral-flow-select-div', component_property='style'),
 #  Output(component_id='lateral-multiplier-select-div', component_property='style'),
+
+# Clientside callback: resize econ plot when tab becomes active
+app.clientside_callback(
+    """
+    function(tabValue, currentPing) {
+      if (tabValue !== "economics-time-tab") {
+        return currentPing || 0;
+      }
+      // Wait a tick so the tab is actually visible / laid out
+      setTimeout(function() {
+        try {
+          const graphDiv = document.getElementById("econ_plots");
+          if (!graphDiv) return;
+          // The actual plotly graph is inside the dcc.Graph container
+          const gd = graphDiv.querySelector(".js-plotly-plot");
+          if (gd && typeof Plotly !== 'undefined' && Plotly && Plotly.Plots && Plotly.Plots.resize) {
+            Plotly.Plots.resize(gd);
+          }
+        } catch(e) {
+          console.log("econ resize error", e);
+        }
+      }, 80);
+      return Date.now();
+    }
+    """,
+    Output("econ-resize-ping", "data"),
+    Input("tabs", "value"),
+    State("econ-resize-ping", "data"),
+)
+
+# Clientside callback: resize econ plot when T-S diagram checkbox changes
+app.clientside_callback(
+    """
+    function(val, currentPing) {
+      setTimeout(function() {
+        try {
+          const graphDiv = document.getElementById("econ_plots");
+          const gd = graphDiv && graphDiv.querySelector(".js-plotly-plot");
+          if (gd && typeof Plotly !== 'undefined' && Plotly && Plotly.Plots && Plotly.Plots.resize) {
+            Plotly.Plots.resize(gd);
+          }
+        } catch(e) {
+          console.log("econ resize error (checkbox)", e);
+        }
+      }, 80);
+      return currentPing || 0;
+    }
+    """,
+    Output("econ-resize-ping", "data", allow_duplicate=True),
+    Input("checklist", "value"),
+    State("econ-resize-ping", "data"),
+    prevent_initial_call=True,
+)
+

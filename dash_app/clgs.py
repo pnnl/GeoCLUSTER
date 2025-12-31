@@ -43,24 +43,12 @@ def _get_cached_result(cache_key):
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
-    print(f"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
     cache_size_before = len(_sbt_cache)
-    cache_keys_before = list(_sbt_cache.keys())[:5]  # First 5 keys
     if len(_sbt_cache) >= _cache_max_size:
         # Remove oldest entry (simple FIFO)
         oldest_key = next(iter(_sbt_cache))
-        print(f"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
         del _sbt_cache[oldest_key]
     _sbt_cache[cache_key] = result
-    cache_size_after = len(_sbt_cache)
-    cache_keys_after = list(_sbt_cache.keys())[:5]  # First 5 keys
-    print(f"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
-    print(f"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
-    # Verify the key is actually in the cache
-    if cache_key in _sbt_cache:
-        print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
-    else:
-        print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -612,11 +600,8 @@ class data:
             print(f"[CACHE CHECK] Looking for cache key: {cache_key_saved} (current cache_key: {cache_key}), current cache size: {len(_sbt_cache)}, cache keys: {list(_sbt_cache.keys())[:5]}", flush=True)
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
-                tout_max_cached = np.max(cached_result[1]) - 273.15
-                print(f"[CACHE HIT] Reusing cached SBT result for cache key: {cache_key_saved}, Tout max: {tout_max_cached:.2f}°C", flush=True)
                 times, Tout, Pout = cached_result
             else:
-                print(f"[CACHE MISS] No cached result found for cache key: {cache_key_saved} (cache size: {len(_sbt_cache)})", flush=True)
                 start = time.time()
                 
                 # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
@@ -660,21 +645,10 @@ class data:
                     
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
-                        tout_max_before_cache = np.max(Tout) - 273.15
                         # Re-verify cache_key_saved matches call_id to ensure we're using the right key
                         # Create a fresh copy to be absolutely sure
                         final_cache_key = str(cache_key_saved)
-                        print(f"[CACHE STORE] {call_id} - About to store: final_cache_key={final_cache_key}, cache_key_saved={cache_key_saved}, cache_key={cache_key}, id(final_cache_key)={id(final_cache_key)}, id(cache_key_saved)={id(cache_key_saved)}, id(cache_key)={id(cache_key)}, Tout max: {tout_max_before_cache:.2f}°C", flush=True)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
-                        # Verify what we just cached
-                        cached_verify = _get_cached_result(final_cache_key)
-                        if cached_verify is not None:
-                            tout_max_after_cache = np.max(cached_verify[1]) - 273.15
-                            print(f"[CACHE STORE] {call_id} - Stored result with Tout max={tout_max_before_cache:.2f}°C, verified cache has {tout_max_after_cache:.2f}°C using key {final_cache_key}", flush=True)
-                        else:
-                            print(f"[CACHE STORE] {call_id} - ❌ ERROR: After storing, final_cache_key {final_cache_key} not found in cache! cache_key_saved={cache_key_saved}, cache_key={cache_key}", flush=True)
-                        end = time.time()
-                        print(f"[CACHE MISS] SBT calculation took {end-start:.2f}s, cached result", flush=True)
                 except Exception as e:
                     # Log the exception before re-raising
                     if self.case == "coaxial":

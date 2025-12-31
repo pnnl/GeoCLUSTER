@@ -853,7 +853,13 @@ button:hover{
 }
 
 .simulator-mode #radio-graphic-control3 {
-    top: 100px;
+    top: auto !important;
+    bottom: 420px !important;
+}
+
+#radio-graphic-control4 {
+    top: auto !important;
+    bottom: 700px !important;
 }
 
 /* Graphs
