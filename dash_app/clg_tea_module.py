@@ -281,18 +281,18 @@ class TEA:
         elif model == "SBT V2.0" or model == 2:
             # For SBT V2.0, use the actual HyperParam1 value (inlet pressure in MPa) from the simulation
             # Convert from MPa to Pa: HyperParam1 is in MPa, so multiply by 1e6 to get Pa
-            # Default to 10 MPa (100 bar = 1e7 Pa) if not provided
+            # Default to 20 MPa (200 bar = 2e7 Pa) if not provided
             if HyperParam1 is not None:
                 try:
                     # HyperParam1 is in MPa, convert to Pa (1 MPa = 1e6 Pa)
                     inlet_pressure_mpa = float(HyperParam1)
                     self.P_in = inlet_pressure_mpa * 1e6  # Convert MPa to Pa
                 except (TypeError, ValueError):
-                    # Default to 10 MPa = 100 bar = 1e7 Pa if conversion fails
-                    self.P_in = 1e7
+                    # Default to 20 MPa = 200 bar = 2e7 Pa if conversion fails
+                    self.P_in = 2e7
             else:
-                # Default to 10 MPa = 100 bar = 1e7 Pa if not provided
-                self.P_in = 1e7
+                # Default to 20 MPa = 200 bar = 2e7 Pa if not provided
+                self.P_in = 2e7
         # For SBT V1.0, keep the default 200 bar (2e7 Pa) - no change needed
         
         hdf5_times = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 

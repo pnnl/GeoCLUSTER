@@ -240,8 +240,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                         mesh, accuracy, HyperParam1, HyperParam3, HyperParam5
                                                         )
-                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
-                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_sco2 == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_sco2 = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_sco2 = 1e7
+                    else:
+                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
+                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                 except Exception as e:
@@ -328,8 +337,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             print(f"[ERROR] Coaxial sCO2_Tout contains invalid values. Min={np.min(sCO2_Tout_arr):.2f}K, Max={np.max(sCO2_Tout_arr):.2f}K. Setting to blank.", flush=True)
                             raise ValueError(f"Invalid temperature values in sCO2_Tout: min={np.min(sCO2_Tout_arr):.2f}K, max={np.max(sCO2_Tout_arr):.2f}K")
                     
-                    # For SBT CO2, use 100 bar (1e7 Pa) as inlet pressure instead of HDF5 database value
-                    Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                    # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
+                    # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    if sbt_version_sco2 == 2 and HyperParam1 is not None:
+                        try:
+                            Pinj_sco2 = float(HyperParam1) * 1e6
+                        except (ValueError, TypeError):
+                            # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
+                            Pinj_sco2 = 1e7
+                    else:
+                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
+                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                     # Store sCO2 time for later use
@@ -405,32 +423,42 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
 
     # Figure generation 
-
-    fig = make_subplots(rows=2, cols=3,
-                        specs=[[{}, {}, None],
-                        [{}, {}, {}]],
-                        horizontal_spacing = 0.11,
-                        vertical_spacing = 0.21
-                        )
+    is_simulator = model in ("SBT V1.0", "SBT V2.0")
+    
+    if is_simulator:
+        fig = make_subplots(rows=2, cols=3,
+                            specs=[[{}, {}, None],
+                            [{}, {}, {}]],
+                            horizontal_spacing = 0.11,
+                            vertical_spacing = 0.21,
+                            row_heights=[0, 0.5]
+                            )
+    else:
+        fig = make_subplots(rows=2, cols=3,
+                            specs=[[{}, {}, None],
+                            [{}, {}, {}]],
+                            horizontal_spacing = 0.11,
+                            vertical_spacing = 0.21
+                            )
 
     if fluid == "sCO2" or fluid == "All":
 
-        # Plot HDF5 averages if available - these come from database, not SBT, so show even if SBT calculation failed
-        if sCO2_kWe_avg is not None and sCO2_kWt_avg is not None:
-            try:
-                fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
-                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                              line = dict(color='#c26219', width=lw),
-                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                              # margin=dict(pad=20),
-                              row=1, col=1)
-                fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
-                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                              line = dict(color='orange', width=lw),
-                              legendgroup=labels_cat[1], name=labels[1], showlegend=False),
-                              row=1, col=2)
-            except (ValueError, TypeError) as e:
-                print(f"[WARNING] Could not plot sCO2 averages: {e}", flush=True)
+        if not is_simulator:
+            if sCO2_kWe_avg is not None and sCO2_kWt_avg is not None:
+                try:
+                    fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWe_avg,
+                                  hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                                  line = dict(color='#c26219', width=lw),
+                                  legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                                  # margin=dict(pad=20),
+                                  row=1, col=1)
+                    fig.add_trace(go.Scatter(x=m_dot, y=sCO2_kWt_avg,
+                                  hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                                  line = dict(color='orange', width=lw),
+                                  legendgroup=labels_cat[1], name=labels[1], showlegend=False),
+                                  row=1, col=2)
+                except (ValueError, TypeError) as e:
+                    print(f"[WARNING] Could not plot sCO2 averages: {e}", flush=True)
 
         # Plot time-series data only if calculation succeeded
         if not is_blank_data:
@@ -462,15 +490,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             except (ValueError, TypeError):
                 pass  # Skip if data is empty
         else:
-            # Time-series calculation failed - show blank canvas for time-series plots only
-            # kWe/kWt vs mass flow rate plots (row 1) may still have HDF5 data, so don't blank them here
             blank_canvas(fig=fig, row_n=2, col_n=1)
             blank_canvas(fig=fig, row_n=2, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=3)
-            # If HDF5 averages are also not available, blank those too
-            if sCO2_kWe_avg is None or sCO2_kWt_avg is None:
-                blank_canvas(fig=fig, row_n=1, col_n=1)
-                blank_canvas(fig=fig, row_n=1, col_n=2)
+            if not is_simulator:
+                if sCO2_kWe_avg is None or sCO2_kWt_avg is None:
+                    blank_canvas(fig=fig, row_n=1, col_n=1)
+                    blank_canvas(fig=fig, row_n=1, col_n=2)
         
         if is_blank_data:
             mean_sCO2_Tout = "-"
@@ -505,19 +531,19 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     if fluid == "H2O" or fluid == "All":
 
         if not is_blank_data:
-            # kWe_avg and kWt_avg
-            fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWe_avg,
-                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWe</b>: %{y:.3f} ',
-                          line = dict(color='#c26219', width=lw, dash='dash'),
-                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                          # margin=dict(pad=20),
-                          row=1, col=1)
+            if not is_simulator:
+                fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWe_avg,
+                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWe</b>: %{y:.3f} ',
+                              line = dict(color='#c26219', width=lw, dash='dash'),
+                              legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                              # margin=dict(pad=20),
+                              row=1, col=1)
 
-            fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWt_avg,
-                          hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
-                          line = dict(color='orange', width=lw, dash='dash'),
-                          legendgroup=labels_cat[0], name=labels[0], showlegend=False),
-                          row=1, col=2)
+                fig.add_trace(go.Scatter(x=m_dot, y=H2O_kWt_avg,
+                              hovertemplate='<b>Mass Flow Rate (kg/s)</b>: %{x:.1f}<br><b>Average kWt</b>: %{y:.3f} ',
+                              line = dict(color='orange', width=lw, dash='dash'),
+                              legendgroup=labels_cat[0], name=labels[0], showlegend=False),
+                              row=1, col=2)
 
             # kWe vs. time
             fig.add_trace(go.Scatter(x=time, y=H2O_kWe, 
@@ -545,8 +571,9 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 pass  # Skip if data is empty
 
         if is_blank_data:
-            blank_canvas(fig=fig, row_n=1, col_n=1)
-            blank_canvas(fig=fig, row_n=1, col_n=2)
+            if not is_simulator:
+                blank_canvas(fig=fig, row_n=1, col_n=1)
+                blank_canvas(fig=fig, row_n=1, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=1)
             blank_canvas(fig=fig, row_n=2, col_n=2)
             blank_canvas(fig=fig, row_n=2, col_n=3)
@@ -580,7 +607,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 pass  # Skip if data is empty
 
     
-    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale)
+    fig = update_layout_properties_subsurface_results(fig=fig, m_dot=m_dot, time=time, plot_scale=scale, is_simulator=is_simulator)
 
     forty_yr_means_dict = {'Mean H2O Tout': mean_H2O_Tout, 
                             'Mean H2O Pout': mean_H2O_Pout,
@@ -1051,7 +1078,7 @@ def generate_econ_lineplots(TandP_dict,
                             specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                     [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
                             horizontal_spacing = 0.11,
-                            vertical_spacing = 0.12
+                            vertical_spacing = 0.15
                             )
     
     fig.data = []
@@ -1258,7 +1285,7 @@ def generate_econ_lineplots(TandP_dict,
             is_display_legend = True
             row_num = 1
         else:
-            is_display_legend = False
+            is_display_legend = True
             row_num = 2
 
         if fluid == "sCO2" or fluid == "All":
@@ -1446,7 +1473,7 @@ def generate_econ_lineplots(TandP_dict,
                 error_message = parse_error_message(e=e, e_name='Err Econ4b')
                 error_messages_dict['Err Econ4b'] = error_message
 
-    fig = update_layout_properties_econ_results(fig, end_use, scale)
+    fig = update_layout_properties_econ_results(fig, end_use, scale, is_plot_ts_check)
     fig = update_lcoh_lcoe_table(fig, fluid, end_use, lcoh_sCO2, lcoh_H2O, lcoe_sCO2, lcoe_H2O) # table
     fig.update_traces(cells_font=dict(size = 13), row=1, col=5)
     fig.update_traces(cells_font=dict(size = 13), row=2, col=5)

@@ -67,12 +67,15 @@ def run_sbt(
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
 
+    print(" ***!!!!!!**** ")
+    print(clg_configuration)
     tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
                                                 clg_configuration=clg_configuration, 
                                                 Diameter1=Diameter1, Diameter2=Diameter2, 
                                                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                                 )
-    globals().update(tube_geometry_dict)
+    print(" ***!!!!!!**** ")
+    print(tube_geometry_dict)
     
     # Extract autoadjustlateralflowrates from tube_geometry_dict (set by set_tube_geometry)
     autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates", None)
@@ -159,10 +162,13 @@ def run_sbt(
     if clg_configuration == 1:  # Coaxial
         radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
         thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
+        k_center_pipe = tube_geometry_dict.get('k_center_pipe', None)
         if radiuscenterpipe is None:
             raise ValueError(f"radiuscenterpipe is None for coaxial configuration. Diameter2={Diameter2}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
         if thicknesscenterpipe is None:
             raise ValueError(f"thicknesscenterpipe is None for coaxial configuration. PipeParam3={PipeParam3}")
+        if k_center_pipe is None:
+            raise ValueError(f"k_center_pipe is None for coaxial configuration. PipeParam4={PipeParam4}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
         numberoflaterals = None  # Not used for coaxial
         lateralflowmultiplier = None  # Not used for coaxial
         radiuslateral = None  # Not used for coaxial
@@ -193,6 +199,7 @@ def run_sbt(
         
         radiuscenterpipe = None  # Not used for U-loop
         thicknesscenterpipe = None  # Not used for U-loop
+        k_center_pipe = None  # Not used for U-loop
     else:
         # Default/fallback
         radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
@@ -207,23 +214,18 @@ def run_sbt(
                                                         DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
                                                         numberoflaterals=numberoflaterals
                                                         )
-    globals().update(wellbore_geometry_dict)
-    
-    # Retrieve wellbore geometry coordinates from globals() (set by set_wellbore_geometry)
-    # These are required for U-loop geometry (clg_configuration == 2) and may be used for plotting
-    # For coaxial geometry, these will be None, which is fine
-    xinj = globals().get("xinj")
-    xprod = globals().get("xprod")
-    xlat = globals().get("xlat")
-    yinj = globals().get("yinj")
-    yprod = globals().get("yprod")
-    ylat = globals().get("ylat")
-    zinj = globals().get("zinj")
-    zprod = globals().get("zprod")
-    zlat = globals().get("zlat")
-    x = globals().get("x")
-    y = globals().get("y")
-    z = globals().get("z")
+    xinj = wellbore_geometry_dict.get("xinj")
+    xprod = wellbore_geometry_dict.get("xprod")
+    xlat = wellbore_geometry_dict.get("xlat")
+    yinj = wellbore_geometry_dict.get("yinj")
+    yprod = wellbore_geometry_dict.get("yprod")
+    ylat = wellbore_geometry_dict.get("ylat")
+    zinj = wellbore_geometry_dict.get("zinj")
+    zprod = wellbore_geometry_dict.get("zprod")
+    zlat = wellbore_geometry_dict.get("zlat")
+    x = wellbore_geometry_dict.get("x")
+    y = wellbore_geometry_dict.get("y")
+    z = wellbore_geometry_dict.get("z")
     
     # Validate that required coordinates are set for U-loop geometry
     if clg_configuration == 2:  # U-loop geometry
@@ -244,7 +246,6 @@ def run_sbt(
                                                     mesh_fineness=mesh_fineness, fluid=fluid, 
                                                     HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
                                                     HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
-    globals().update(sbt_hyperparams_dict)
     
     # Extract SBT hyperparameters directly from sbt_hyperparams_dict for use in compute_tube_geometry
     # This ensures the linter recognizes these variables as defined
@@ -272,8 +273,7 @@ def run_sbt(
     LimitSoverL = sbt_hyperparams_dict.get("LimitSoverL", None)
     M = sbt_hyperparams_dict.get("M", None)
 
-    fluid_properties = admin_fluid_properties() 
-    globals().update(fluid_properties)
+    fluid_properties = admin_fluid_properties()
     
     # Extract fluid properties directly from fluid_properties dict for use in prepare_interpolators
     # This ensures the linter recognizes these variables as defined
@@ -294,6 +294,7 @@ def run_sbt(
     tube_geometry_dict2 = compute_tube_geometry(sbt_version=sbt_version, clg_configuration=clg_configuration, fluid=fluid,
                                                 radius=radius,
                                                 radiuscenterpipe=radiuscenterpipe, thicknesscenterpipe=thicknesscenterpipe,
+                                                k_center_pipe=k_center_pipe if clg_configuration == 1 else None,
                                                 x=x, y=y, z=z, 
                                                 xinj=xinj, yinj=yinj, zinj=zinj, 
                                                 xprod=xprod, yprod=yprod, zprod=zprod, 
@@ -304,10 +305,6 @@ def run_sbt(
                                                 radiuslateral=radiuslateral, radiusvertical=radiusvertical,
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
-    globals().update(tube_geometry_dict2)
-    
-    # Extract variables from compute_tube_geometry for use in the simulation
-    # This ensures the linter recognizes these variables as defined
     interconnections = tube_geometry_dict2.get("interconnections", None)
     Deltaz = tube_geometry_dict2.get("Deltaz", None)
     radiusvector = tube_geometry_dict2.get("radiusvector", None)
@@ -323,21 +320,12 @@ def run_sbt(
     signofcorrection = tube_geometry_dict2.get("signofcorrection", None)
     secondaverageabslateralflowcorrection = tube_geometry_dict2.get("secondaverageabslateralflowcorrection", None)
     
-    # For coaxial geometry, ensure radius is still available from globals() after compute_tube_geometry
-    # (it should be the same value, but we verify it's set)
-    if clg_configuration == 1:  # Coaxial
-        radius_from_globals = globals().get("radius")
-        if radius_from_globals is not None and radius_from_globals != radius:
-            # If globals() has a different value, use it (though this shouldn't happen)
-            radius = radius_from_globals
-    
-    # Retrieve coaxial-specific geometry parameters from globals() (set by compute_tube_geometry)
-    if clg_configuration == 1:  # Coaxial
-        outerradiuscenterpipe = globals().get("outerradiuscenterpipe")
-        k_center_pipe = globals().get("k_center_pipe")
-        Dh_annulus = globals().get("Dh_annulus")
-        A_flow_annulus = globals().get("A_flow_annulus")
-        A_flow_centerpipe = globals().get("A_flow_centerpipe")
+    if clg_configuration == 1:
+        outerradiuscenterpipe = tube_geometry_dict2.get("outerradiuscenterpipe")
+        k_center_pipe = tube_geometry_dict2.get("k_center_pipe")
+        Dh_annulus = tube_geometry_dict2.get("Dh_annulus")
+        A_flow_annulus = tube_geometry_dict2.get("A_flow_annulus")
+        A_flow_centerpipe = tube_geometry_dict2.get("A_flow_centerpipe")
         if outerradiuscenterpipe is None:
             raise ValueError(f"outerradiuscenterpipe is None after compute_tube_geometry. This should have been calculated as radiuscenterpipe + thicknesscenterpipe.")
         if k_center_pipe is None:
@@ -349,12 +337,12 @@ def run_sbt(
         if A_flow_centerpipe is None:
             raise ValueError(f"A_flow_centerpipe is None after compute_tube_geometry. This should have been calculated.")
     
-    mlateral = globals().get("mlateral") 
-    mlateralold = globals().get("mlateralold")
-    Tw_down_previous = globals().get("Tw_down_previous") 
-    Tfluiddownnodes = globals().get("Tfluiddownnodes")
-    TwMatrix =  globals().get("TwMatrix")
-    coaxialflowtype = globals().get("coaxialflowtype")
+    mlateral = tube_geometry_dict2.get("mlateral")
+    mlateralold = tube_geometry_dict2.get("mlateralold")
+    Tw_down_previous = tube_geometry_dict2.get("Tw_down_previous")
+    Tfluiddownnodes = tube_geometry_dict2.get("Tfluiddownnodes")
+    TwMatrix = tube_geometry_dict2.get("TwMatrix")
+    coaxialflowtype = tube_geometry_dict.get("coaxialflowtype")
     Tfluidnodes = None
     Pfluidnodes = None
     Pfluidlateralexit = None
@@ -384,7 +372,8 @@ def run_sbt(
     Tinstore, mstore = get_profiles(sbt_version=sbt_version, times=times,
                                     variableinjectiontemperature=variableinjectiontemperature,
                                     variableflowrate=variableflowrate, flowratefilename=flowratefilename, 
-                                    Tinj=Tinj, mdot=mdot
+                                    Tinj=Tinj, mdot=mdot,
+                                    injectiontemperaturefilename=injectiontemperaturefilename
                                     )
     
     # Initialize variables that are only set conditionally in get_profiles
@@ -582,6 +571,8 @@ def run_sbt(
                 raise ValueError(error_msg)
             
             # Calculate velocity field
+            print(" ***!!!!!!**** ")
+            print(coaxialflowtype)
             if coaxialflowtype == 1:  # CXA
                 velocityfluiddownmidpoints = mdot / A_flow_annulus / densityfluiddownmidpoints #Downgoing fluid velocity at midpoints in annulus [m/s]
                 velocityfluidupmidpoints = mdot / A_flow_centerpipe / densityfluidupmidpoints #Upgoing fluid velocity at midpoint in center pipe [m/s]

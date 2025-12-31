@@ -108,7 +108,7 @@ rho_dict = {1000: '1000', 3500: '3500'}
 
 diameter_vertical_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
 diameter_lateral_dict = {0.2159: '0.2159', 0.4445: '0.4445'}
-radius_centerpipe_dict = {0.0635: '0.0635', 0.174: '0.174'}
+radius_centerpipe_dict = {0.127: '0.127', 0.348: '0.348'}
 thickness_centerpipe_dict = {0.005: '0.005', 0.025: '0.025'}
 
 inlet_pressure_dict = {5: '5', 20: '20'}
@@ -125,7 +125,7 @@ start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "thicknesscenterpipe": 0.0127,
                     "k_center_pipe": 0.006,
                     "coaxialflowtype": 1,
-                    "inletpressure": 10,
+                    "inletpressure": 20,
                     "piperoughness": 1  # 1 µm (display value), actual value in meters is 1e-6
                     } 
 start_vals_econ = {"drillcost": 1000, "discount-rate": 7.0, "lifetime": 40, "kwt": 100,
@@ -173,16 +173,27 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                     )
 
 
-def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, custom_title=False):
+def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, parameter_name=None, custom_title=False, step_i=None):
 
     # ---------------------------------------------------------------------------
-    # Create a Div with the name and the slider stacked **without** the option to 
-    # define steps.
+    # Create a Div with the name and the slider stacked **with** optional step parameter.
     # ---------------------------------------------------------------------------
     
     from info_popups import create_info_button
     
     info_button = create_info_button(parameter_name) if parameter_name else html.Div()
+
+    slider_props = {
+        "id": ID,
+        "min": min_v,
+        "max": max_v,
+        "marks": mark_dict,
+        "value": start_v,
+        "tooltip": {"placement": "bottom", "always_visible": True}
+    }
+    
+    if step_i is not None:
+        slider_props["step"] = step_i
 
     return html.Div(id=DivID,
                     style=div_style,
@@ -196,12 +207,7 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
                                info_button
                            ], style={"display": "flex", "alignItems": "center", "gap": "5px"})
                        ]),
-                       dcc.Slider(id=ID,
-                       min=min_v, max=max_v, #step=None,
-                       marks=mark_dict,
-                       value=start_v,
-                       tooltip={"placement": "bottom", "always_visible": True}
-                       ),
+                       dcc.Slider(**slider_props),
                        ]
                     )
 
@@ -358,8 +364,25 @@ def slider_card():
                                                         id="hyperparam5-container",
                                                         children=[
                                                                 dropdown_box(DivID="fluid-mode-div", ID="fluid-mode-select", ptitle="Fluid Properties Mode", 
-                                                                                                options=["Variable", "Constant"], disabled=False, div_style=div_none_style)
+                                                                                                options=["Constant", "Temperature–Pressure Dependent"], disabled=False, div_style=div_none_style)
                                                     ]),
+                                                    # Coaxial Flow Type dropdown - visible when Simulator is selected and case is coaxial
+                                                    html.Div(
+                                                        id="coaxial-flow-type-wrapper",
+                                                        style={"display": "none"},
+                                                        className="name-input-container-dd",
+                                                        children=[
+                                                            html.P("Coaxial Flow Type", className="input-title"),
+                                                            dcc.Dropdown(
+                                                                id="coaxial-flow-type-select",
+                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
+                                                                value="Inject in Annulus",
+                                                                clearable=False,
+                                                                searchable=False,
+                                                                className="select-dropdown"
+                                                            )
+                                                        ]
+                                                    ),
                                                 ]
 
                                             ),
@@ -409,7 +432,7 @@ def slider_card():
                                                             id="num-lat-container",
                                                             children=[ 
                                                                 input_box(DivID="num-lat-div", ID="n-laterals-select", ptitle="Number of Laterals", 
-                                                                            min_v=1, max_v=10, start_v=start_vals_hdf5["n-laterals"] if start_vals_hdf5["n-laterals"] > 0 else 1, step_i=1, div_style=div_none_style, parameter_name="Number of Laterals", horizontal=True, input_width="60px")
+                                                                            min_v=1, max_v=30, start_v=start_vals_hdf5["n-laterals"] if start_vals_hdf5["n-laterals"] > 0 else 1, step_i=1, div_style=div_none_style, parameter_name="Number of Laterals", horizontal=True, input_width="60px")
                                                             ]),
                                                     html.Div(
                                                         id="lat-allo-container",
@@ -425,23 +448,6 @@ def slider_card():
                                                                 input_box(DivID="lat-flow-mul-div", ID="lateral-multiplier-select", ptitle="Lateral Flow Multiplier", 
                                                                                         min_v=0, max_v=1, start_v=start_vals_hdf5["lateral-multiplier"], step_i=0.05, div_style=div_none_style, parameter_name="Lateral Flow Multiplier", horizontal=True, input_width="60px")
                                                             ]
-                                                    ),
-                                                    # Hidden coaxial flow type dropdown (always exists for callbacks)
-                                                    html.Div(
-                                                        id="coaxial-flow-type-wrapper",
-                                                        style={"display": "none"},
-                                                        className="name-input-container-dd",
-                                                        children=[
-                                                            html.P("Coaxial Flow Type", className="input-title"),
-                                                            dcc.Dropdown(
-                                                                id="coaxial-flow-type-select",
-                                                                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
-                                                                value="Inject in Annulus",
-                                                                clearable=False,
-                                                                searchable=False,
-                                                                className="select-dropdown"
-                                                            )
-                                                        ]
                                                     ),
                                                     # html.Div(
                                                     #     id="num-lat-div",

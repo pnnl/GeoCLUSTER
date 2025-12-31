@@ -442,11 +442,11 @@ PARAMETER_INFO = {
     },
     
     "Inlet Pressure (MPa)": {
-        "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells.",
+        "definition": "Set the pressure of the fluid entering the system. A value of 10 MPa (or 100 bar) ensures flow in deep or high-resistant wells. This parameter only applies to sCO2 for SBT V2.0.",
         "recommended_range": "5-20 MPa",
         "typical_value": "10 MPa",
         "unit": "MPa",
-        "description": "Higher inlet pressures can improve flow rates but increase pumping requirements."
+        "description": "Higher inlet pressures can improve flow rates but increase pumping requirements. This parameter only applies to sCO2 for SBT V2.0."
     },
     
     "Wellbore Diameter (m)": {
@@ -457,10 +457,10 @@ PARAMETER_INFO = {
         "description": "Affects the heat transfer area and flow resistance in coaxial systems."
     },
     
-    "Center Pipe Radius (m)": {
-        "definition": "Set the inner radius of the injection pipe. A value of 0.010 m (1 cm) is standard for high-velocity flow.",
-        "recommended_range": "0.0635-0.174 m",
-        "typical_value": "0.010 m",
+    "Center Pipe Diameter (m)": {
+        "definition": "Set the inner diameter of the injection pipe. A value of 0.2 m (20 cm) is standard for high-velocity flow.",
+        "recommended_range": "0.127-0.348 m",
+        "typical_value": "0.2 m",
         "unit": "m",
         "description": "Affects the annular flow area and heat transfer characteristics in coaxial systems."
     },
