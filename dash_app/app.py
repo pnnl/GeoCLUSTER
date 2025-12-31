@@ -1075,7 +1075,8 @@ def toggle_collapse(n, is_open):
 def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_state):
     """
     Update model-select options and value based on fluid selection and model selection.
-    When Simulator is selected, automatically choose SBT V1.0 for H2O, SBT V2.0 for All/sCO2.
+    - Database (HDF5): Always stays as HDF5 regardless of fluid
+    - Simulator: H2O → SBT V1.0, sCO2/All → SBT V2.0
     """
     from dropdowns import get_model_options
     
@@ -1088,31 +1089,14 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     # Get updated options based on current fluid
     new_options = get_model_options(current_fluid)
     
-    # If model-select was triggered (user changed model dropdown)
-    if trigger_id == "model-select":
-        # User selected a model - if they selected a Simulator, set to correct version
-        if model_selection in ("SBT V1.0", "SBT V2.0"):
-            # User selected Simulator, determine correct version based on fluid
-            if current_fluid == "H2O":
-                new_value = "SBT V1.0"
-            else:  # "All" or "sCO2"
-                new_value = "SBT V2.0"
+    if model_selection == "HDF5":
+        new_value = "HDF5"
+    elif model_selection in ("SBT V1.0", "SBT V2.0"):
+        if current_fluid == "H2O":
+            new_value = "SBT V1.0"
         else:
-            # User selected Database
-            new_value = "HDF5"
-    # If fluid-select was triggered (user changed fluid)
-    elif trigger_id == "fluid-select":
-        # If current model is a Simulator, update to correct version based on new fluid
-        if model_selection in ("SBT V1.0", "SBT V2.0"):
-            if current_fluid == "H2O":
-                new_value = "SBT V1.0"
-            else:  # "All" or "sCO2"
-                new_value = "SBT V2.0"
-        else:
-            # Keep Database selection
-            new_value = model_selection
+            new_value = "SBT V2.0"
     else:
-        # Unknown trigger, keep current selection
         new_value = model_selection
     
     return new_options, new_value
