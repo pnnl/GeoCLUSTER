@@ -418,7 +418,8 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         'template': 'none',
         'margin': dict(l=70, r=70, t=top_margin, b=70),
         'height': figure_height,
-        'autosize': False,
+        'width': None,
+        'autosize': True,
         'legend': dict(
             y=0.98,
             yanchor='top'
