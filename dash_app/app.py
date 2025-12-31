@@ -2251,7 +2251,7 @@ def update_slider_ranges(model, case, store_data):
     saved_values = store_data.get(model, {})
 
     if model == "HDF5":  # hide the other params (happens in the next callback)
-        Tinj_dict = {30: "30", 59: "59"}
+        Tinj_dict = {30: "30", 45: "", 59: "59"}
         mdot_dict = create_steps(
             arg_arr=u_sCO2.mdot, str_round_place="{:.1f}", val_round_place=1
         )
@@ -2357,7 +2357,7 @@ def update_slider_ranges(model, case, store_data):
         c_dict = {700: "700", 1200: "1200"}
         rho_dict = {400: "400", 4000: "4000"}
 
-        Tinj_dict = {30: "30", 100: "100"}
+        Tinj_dict = {30: "30", 65: "", 100: "100"}
         grad_dict = {0.015: "0.015", 0.2: "0.200"}
         mdot_dict = {5: "5", 300: "300"}
         L2_dict = {1000: "1k", 50000: "50k"}

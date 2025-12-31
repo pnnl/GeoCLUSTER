@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = {30: "30", 59: "59"}
+Tinj_dict = {30: "30", 45: "", 59: "59"}
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
