@@ -90,7 +90,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Wellbore Diameter Vertical (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
-| Center Pipe Radius (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
+| Center Pipe Diameter (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
 | Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.013 m |
 | Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m | 1×10⁻⁶ |
 | Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m | 10,000 m |
@@ -99,7 +99,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 
 | Component Performance | Database Options | Simulator Options | Default |
 |----------------------|------------------|-------------------|---------|
-| Insulation Thermal Conductivity | 0.06 W/m·°C | 0.025 W/m·°C to 0.50 W/m·°C | 0.025 W/m·°C  |
+| Insulation Thermal Conductivity (coaxial) | 0.06 W/m·°C | 0.025 W/m·°C to 0.50 W/m·°C | 0.025 W/m·°C  |
 | Pump Efficiency (Circulation Pump) | 80% (fixed) | 80% (fixed) | 80% |
 | Turbine Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) | 90% |
 | Compressor Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) | 90% |
