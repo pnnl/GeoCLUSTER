@@ -1061,22 +1061,14 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    if is_plot_ts_check:
-        fig = make_subplots(rows=3, cols=5,
-                            specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                    [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                    [{'colspan': 2}, None, None, None, None]
-                                    ],
-                            horizontal_spacing = 0.11,
-                            vertical_spacing = 0.18
-                            )
-    else:
-        fig = make_subplots(rows=2, cols=5,
-                            specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
-                                    [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
-                            horizontal_spacing = 0.11,
-                            vertical_spacing = 0.18
-                            )
+    fig = make_subplots(rows=3, cols=5,
+                        specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
+                                [{'colspan': 2}, None, None, None, None]
+                                ],
+                        horizontal_spacing = 0.11,
+                        vertical_spacing = 0.18
+                        )
     
     fig.data = []
 

@@ -383,13 +383,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
     fig.update_xaxes(title_text="Time (year)", showgrid=True, range=[0, 40], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
 
-    fig.update_yaxes(title_text="Heat Production (MWt)", # range=[0, 55], 
+    fig.update_yaxes(title_text="Heat Production (MWt)", 
                         row=1, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Annual Heat Production (GWh)", # range=[0, 500], 
+    fig.update_yaxes(title_text="Annual Heat Production (GWh)", 
                     row=1, col=3, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Electricity Production (MWe)", # range=[-1.25, 7], 
-                        row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-    fig.update_yaxes(title_text="Annual Electricity Production (GWe)", #range=[-10, 55], 
+    fig.update_yaxes(title_text="Electricity Production (MWe)", 
+                        row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14))
+    fig.update_yaxes(title_text="Annual Electricity Production (GWe)", 
                         row=row_num, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
     if plot_scale == 2:
@@ -399,40 +399,32 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_yaxes(title_text="Annual Heat Production (GWh)", range=[0, 500], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
         fig.update_yaxes(title_text="Electricity Production (MWe)", range=[-1.25, 7], row=row_num, col=1,
-                            tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
+                            tickfont = dict(size=12), title_font=dict(size=14))
         fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    top_margin = 30 if is_plot_ts_check else 50
-    rows = 3 if is_plot_ts_check else 2
-    if is_plot_ts_check and end_use == "Electricity":
-        figure_height = 800
-    else:
+    rows = 3
+    if end_use == "Heating":
+        top_margin = 50
         figure_height = 350 * rows + 100
-    
-    if not (is_plot_ts_check and end_use == "Electricity"):
-        layout_dict = {
-            'legend_title_text': 'Working Fluid',
-            'template': 'none',
-            'margin': dict(l=70, r=70, t=top_margin, b=70),
-            'height': figure_height,
-            'autosize': True,
-            'legend': dict(
-                y=0.98,
-                yanchor='top'
-            )
-        }
-        fig.update_layout(**layout_dict)
+    elif end_use == "Electricity":
+        top_margin = 30
+        figure_height = 900
     else:
-        layout_dict = {
-            'legend_title_text': 'Working Fluid',
-            'template': 'none',
-            'margin': dict(l=70, r=70, t=top_margin, b=70),
-            'legend': dict(
-                y=0.98,
-                yanchor='top'
-            )
-        }
-        fig.update_layout(**layout_dict)
+        top_margin = 30
+        figure_height = 1150
+    
+    layout_dict = {
+        'legend_title_text': 'Working Fluid',
+        'template': 'none',
+        'margin': dict(l=70, r=70, t=top_margin, b=70),
+        'height': figure_height,
+        'autosize': False,
+        'legend': dict(
+            y=0.98,
+            yanchor='top'
+        )
+    }
+    fig.update_layout(**layout_dict)
 
     # Subtitles
     if end_use == "All":
@@ -440,21 +432,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             font=dict(size=10)
                             )
         
+        fig.update_yaxes(domain=[0.72, 1.00], row=1, col=1)
+        fig.update_yaxes(domain=[0.72, 1.00], row=1, col=3)
+        fig.update_yaxes(domain=[0.40, 0.66], row=2, col=1)
+        fig.update_yaxes(domain=[0.40, 0.66], row=2, col=3)
         if is_plot_ts_check:
-            # Always set 3-row domains (prevents leftover Electricity domains)
-            fig.update_yaxes(domain=[0.72, 1.00], row=1, col=1)
-            fig.update_yaxes(domain=[0.72, 1.00], row=1, col=3)
-            fig.update_yaxes(domain=[0.40, 0.66], row=2, col=1)
-            fig.update_yaxes(domain=[0.40, 0.66], row=2, col=3)
             fig.update_yaxes(domain=[0.08, 0.30], row=3, col=1)
-            electricity_title_y = 0.66
-        else:
-            # Always set 2-row domains (prevents leftover T-S domains)
-            fig.update_yaxes(domain=[0.55, 1.00], row=1, col=1)
-            fig.update_yaxes(domain=[0.55, 1.00], row=1, col=3)
-            fig.update_yaxes(domain=[0.05, 0.50], row=2, col=1)
-            fig.update_yaxes(domain=[0.05, 0.50], row=2, col=3)
-            electricity_title_y = 0.50
+        electricity_title_y = 0.66
         
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>End-Use: Electricity</b>',
@@ -470,21 +454,10 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=0.99,
                             font=dict(size=10)
                             )
+        fig.update_yaxes(domain=[0.62, 1.00], row=1, col=1)
+        fig.update_yaxes(domain=[0.62, 1.00], row=1, col=3)
         if is_plot_ts_check:
-            fig.update_layout(
-                height=900,
-                margin=dict(l=70, r=70, t=55, b=70),
-                autosize=False
-            )
-            
-            # Always set 2-row domains (prevents leftover All domains)
-            fig.update_yaxes(domain=[0.62, 1.00], row=1, col=1)
-            fig.update_yaxes(domain=[0.62, 1.00], row=1, col=3)
             fig.update_yaxes(domain=[0.10, 0.45], row=2, col=1)
-        else:
-            # Always set 1-row domains (prevents leftover T-S domains)
-            fig.update_yaxes(domain=[0.05, 1.00], row=1, col=1)
-            fig.update_yaxes(domain=[0.05, 1.00], row=1, col=3)
 
     # Remove duplicate legend entries by keeping only unique names
     seen_names = set()
