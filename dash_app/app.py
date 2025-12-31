@@ -2304,11 +2304,11 @@ def update_slider_ranges(model, case, store_data):
             max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else (saved_values.get("Tinj", coaxial_default_tinj if coaxial_default_tinj is not None else start_vals_d["Tinj"])),
+            start_v=coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else (saved_values.get("Tinj", coaxial_default_tinj if coaxial_default_tinj is not None else 55.0)),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
-        mdot_step = 1 if case == "coaxial" else None
+        mdot_step = 1
         mdot_container = slider2(
             DivID="mdot-select-div",
             ID="mdot-select",
