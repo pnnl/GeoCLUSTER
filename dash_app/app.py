@@ -2001,27 +2001,24 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
     ],
 )
 def show_hide_detailed_card(tab, fluid, end_use):
-    # print("show_hide_detailed_card, tab: ", tab, end_use)
-
     if tab == "energy-time-tab" or tab == "energy-tab":
-        # print("white 1")
         return {"border": "solid 0px white"}, {"display": "none"}, {"display": "none"}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
-        if fluid == "H2O" and end_use == "Electricity":
-            # print("white 2")
+        if fluid == "H2O":
             return (
-                {"border": "solid 0px white"},
+                {"border": "solid 0px white", "display": "none"},
                 {"display": "none"},
                 {"display": "none"},
             )
         else:
-            # print("orange")
             return (
                 {"border": "solid 3px #c4752f", "display": "block"},
                 {"display": "block"},
                 {"display": "inline-block"},
             )
+    
+    return {"border": "solid 0px white", "display": "none"}, {"display": "none"}, {"display": "none"}
 
 
 @app.callback(
