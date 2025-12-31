@@ -164,15 +164,18 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     sbt_version_h2o = sbt_version
     
     # For simulator (SBT models) only, not database (HDF5)
-    # Override sbt_version for each fluid based on fluid selection for utube
-    if model in ("SBT V1.0", "SBT V2.0") and case == "utube":
+    # Override sbt_version for each fluid based on fluid selection
+    if model in ("SBT V1.0", "SBT V2.0"):
         if fluid == "H2O":
             sbt_version_h2o = 1
+            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
         elif fluid == "sCO2":
             sbt_version_sco2 = 2
+            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
         elif fluid == "All":
             sbt_version_h2o = 1
             sbt_version_sco2 = 2
+            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
     
     # sCO2 is supported if using SBT V2.0 or HDF5 database
     sCO2_supported = (sbt_version_sco2 == 2) or (model == "HDF5")
@@ -1080,15 +1083,18 @@ def generate_econ_lineplots(TandP_dict,
     sbt_version_h2o = sbt_version
     
     # For simulator (SBT models) only, not database (HDF5)
-    # Override sbt_version for each fluid based on fluid selection for utube
-    if model in ("SBT V1.0", "SBT V2.0") and case == "utube":
+    # Override sbt_version for each fluid based on fluid selection
+    if model in ("SBT V1.0", "SBT V2.0"):
         if fluid == "H2O":
             sbt_version_h2o = 1
+            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
         elif fluid == "sCO2":
             sbt_version_sco2 = 2
+            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
         elif fluid == "All":
             sbt_version_h2o = 1
             sbt_version_sco2 = 2
+            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
     
     # Convert numeric versions to model strings for create_teaobject
     model_sco2 = "HDF5" if sbt_version_sco2 == 0 else (f"SBT V{sbt_version_sco2}.0" if sbt_version_sco2 > 0 else model)
@@ -1151,6 +1157,7 @@ def generate_econ_lineplots(TandP_dict,
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
                         teaobj_sCO2 = None
                     else:
+                        print(f"[DEBUG generate_econ_lineplots] Creating sCO2 TEA object with model={model_sco2}", flush=True)
                         teaobj_sCO2 = create_teaobject(TandP_dict,
                                                         u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                         case, end_use, "sCO2", model_sco2,
@@ -1247,6 +1254,7 @@ def generate_econ_lineplots(TandP_dict,
                         teaobj_H2O = None
                     else:
                         # TODO: update D ... based on radial
+                        print(f"[DEBUG generate_econ_lineplots] Creating H2O TEA object with model={model_h2o}", flush=True)
                         teaobj_H2O = create_teaobject(TandP_dict,
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, "H2O", model_h2o,
@@ -1331,6 +1339,7 @@ def generate_econ_lineplots(TandP_dict,
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
                         teaobj_sCO2_electricity = None
                     else:
+                        print(f"[DEBUG generate_econ_lineplots] Creating sCO2 electricity TEA object with model={model_sco2}", flush=True)
                         teaobj_sCO2_electricity = create_teaobject(TandP_dict, 
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, "sCO2", model_sco2,
