@@ -881,19 +881,19 @@ button:hover{
 }
 
 #graphics-container-econ {
-    min-height: 1000px;
+    min-height: 1200px;
 }
 
 #graphics-parent-econ {
-    min-height: 1000px;
+    min-height: 1200px;
 }
 
 #graphics-container {
-    height: 650px;
+    height: 750px;
 }
 
 #graphics-parent {
-    height: 700px;
+    height: 750px;
 }
 
 #geothermal_time_plots {
@@ -921,7 +921,7 @@ button:hover{
 }
 
 #econ_plots {
-    height: 1000px !important;
+    height: 1200px !important;
     z-index: 0 !important;
 }
 

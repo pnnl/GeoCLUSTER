@@ -334,18 +334,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
         fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    # Legend
     top_margin = 30 if is_plot_ts_check else 50
-    # Always set explicit height for both checkbox states to prevent warped plots
     rows = 3 if is_plot_ts_check else 2
-    # Adjust height for Electricity end-use to prevent plots from being too tall
     if is_plot_ts_check and end_use == "Electricity":
-        figure_height = 800  # Shorter height for Electricity with T-S diagram
+        figure_height = 800
     else:
         figure_height = 350 * rows + 100
     
-    # For Electricity + T-S, height and autosize are set in the Electricity block below
-    # So only set these if not Electricity + T-S
     if not (is_plot_ts_check and end_use == "Electricity"):
         layout_dict = {
             'legend_title_text': 'Working Fluid',
@@ -360,7 +355,6 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         }
         fig.update_layout(**layout_dict)
     else:
-        # For Electricity + T-S, set basic layout without height/autosize (handled in Electricity block)
         layout_dict = {
             'legend_title_text': 'Working Fluid',
             'template': 'none',
@@ -377,7 +371,7 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
                             font=dict(size=10)
                             )
-        electricity_title_y = 0.673 if is_plot_ts_check else 0.52
+        electricity_title_y = 0.673 if is_plot_ts_check else 0.50
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>End-Use: Electricity</b>',
                                         x=0.35, y=electricity_title_y, xref='paper', yref='paper',
