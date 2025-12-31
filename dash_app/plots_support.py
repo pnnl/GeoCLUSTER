@@ -320,9 +320,8 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
         fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    # Legend
-    top_margin = 30 if is_plot_ts_check else 50
-    figure_height = None if is_plot_ts_check else 800
+    top_margin = 70 if is_plot_ts_check else 50
+    figure_height = 1200 if is_plot_ts_check else 800
     layout_dict = {
         'legend_title_text': 'Working Fluid',
         'template': 'none',
@@ -330,10 +329,9 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         'legend': dict(
             y=0.98,
             yanchor='top'
-        )
+        ),
+        'height': figure_height
     }
-    if figure_height is not None:
-        layout_dict['height'] = figure_height
     fig.update_layout(**layout_dict)
 
     # Subtitles
@@ -341,7 +339,7 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
                             font=dict(size=10)
                             )
-        electricity_title_y = 0.673 if is_plot_ts_check else 0.52
+        electricity_title_y = 0.673 if is_plot_ts_check else 0.50
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>End-Use: Electricity</b>',
                                         x=0.35, y=electricity_title_y, xref='paper', yref='paper',

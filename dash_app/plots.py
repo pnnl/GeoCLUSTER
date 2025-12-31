@@ -1061,9 +1061,6 @@ def generate_econ_lineplots(TandP_dict,
     econ_values_dict = {}
     error_messages_dict = {}
 
-    # Conditionally create subplot layout based on whether T-S diagram is shown
-    # Always create a FRESH figure with the correct layout - this ensures proper regeneration
-    # when switching models or when is_plot_ts_check changes
     if is_plot_ts_check:
         fig = make_subplots(rows=3, cols=5,
                             specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
@@ -1071,14 +1068,14 @@ def generate_econ_lineplots(TandP_dict,
                                     [{'colspan': 2}, None, None, None, None]
                                     ],
                             horizontal_spacing = 0.11,
-                            vertical_spacing = 0.12
+                            vertical_spacing = 0.18
                             )
     else:
         fig = make_subplots(rows=2, cols=5,
                             specs=[[{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}],
                                     [{'colspan': 2}, None, {'colspan': 2}, None, {"type": "table"}]],
                             horizontal_spacing = 0.11,
-                            vertical_spacing = 0.15
+                            vertical_spacing = 0.18
                             )
     
     fig.data = []
@@ -1097,6 +1094,7 @@ def generate_econ_lineplots(TandP_dict,
             is_display_legend = True
         if end_use == "All":
             is_display_legend = True
+            is_display_legend_electricity = False
 
         if fluid == "sCO2" or fluid == "All":
 
@@ -1285,7 +1283,7 @@ def generate_econ_lineplots(TandP_dict,
             is_display_legend = True
             row_num = 1
         else:
-            is_display_legend = True
+            is_display_legend = False
             row_num = 2
 
         if fluid == "sCO2" or fluid == "All":
@@ -1686,7 +1684,7 @@ def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
 
 
     fig.update_layout(title_text=f'<b>CO2 Temperature-entropy (T-s) Diagram</b>', 
-                        title_x=0.35, title_y=0.99,
+                        title_x=0.35, title_y=0.95,
                         font=dict(size=10)
                         )
     fig.update_yaxes(title_text="Temperature (°C)", 
