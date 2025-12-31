@@ -1424,6 +1424,13 @@ def switch_tab_on_model_change(model, current_tab):
 )
 def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
     trigger_id = ctx.triggered_id if ctx.triggered else None
+    
+    if trigger_id in ["btn-nclicks-1", "btn-nclicks-3"]:
+        if fluid == "All" or fluid is None:
+            if fluid_store is None:
+                fluid_store = {"preferred": "All", "last_specific": "H2O"}
+            return "H2O", fluid_store
+    
     if trigger_id not in ["tabs", None]:
         raise PreventUpdate
     
