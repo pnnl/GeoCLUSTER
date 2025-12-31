@@ -12,6 +12,7 @@ import time
 from functools import lru_cache
 import hashlib
 import pickle
+# import uuid
 
 # Global cache for SBT calculations
 _sbt_cache = {}
@@ -43,24 +44,24 @@ def _get_cached_result(cache_key):
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
-    print(f"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
+    # prif"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
     cache_size_before = len(_sbt_cache)
     cache_keys_before = list(_sbt_cache.keys())[:5]  # First 5 keys
     if len(_sbt_cache) >= _cache_max_size:
         # Remove oldest entry (simple FIFO)
         oldest_key = next(iter(_sbt_cache))
-        print(f"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
+        # prif"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
         del _sbt_cache[oldest_key]
     _sbt_cache[cache_key] = result
     cache_size_after = len(_sbt_cache)
     cache_keys_after = list(_sbt_cache.keys())[:5]  # First 5 keys
-    print(f"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
-    print(f"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
+    # prif"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
+    # prif"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
     # Verify the key is actually in the cache
-    if cache_key in _sbt_cache:
-        print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
-    else:
-        print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
+    # if cache_key in _sbt_cache:
+    #     print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
+    # else:
+    #     print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -155,7 +156,7 @@ class data:
             else:
                 # Value is slightly outside range, might be interpolation - warn
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                print(lineprint)
+                # print(lineprint)
             # raise Exception(
             #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
             # )
@@ -195,41 +196,9 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
-        try:
-            points_array = np.asarray(points)
-            points_clamped = points_array.copy()
-            
-            if points_array.ndim == 1:
-                for i, grid_axis in enumerate(grid):
-                    if len(grid_axis) > 0:
-                        min_val = grid_axis[0]
-                        max_val = grid_axis[-1]
-                        tolerance = max(1e-10, abs(max_val - min_val) * 1e-10)
-                        points_clamped[i] = np.clip(
-                            points_array[i],
-                            min_val - tolerance,
-                            max_val + tolerance
-                        )
-            else:
-                for i, grid_axis in enumerate(grid):
-                    if len(grid_axis) > 0:
-                        min_val = grid_axis[0]
-                        max_val = grid_axis[-1]
-                        tolerance = max(1e-10, abs(max_val - min_val) * 1e-10)
-                        points_clamped[:, i] = np.clip(
-                            points_array[:, i],
-                            min_val - tolerance,
-                            max_val + tolerance
-                        )
-            
-            interpolated_points = interpn(grid, values_around_point, points_clamped)
-        except ValueError as e:
-            if "out of bounds" in str(e):
-                print(f"[ERROR] Interpolation out of bounds in clgs.py: {e}", flush=True)
-                # Ensure points is a numpy array before accessing shape
-                points_array = np.asarray(points)
-                return np.full(points_array.shape[0], np.nan)
-            raise
+
+        interpolated_points = interpn(grid, values_around_point, points)
+
         return interpolated_points
 
     def reshape_output(self, tout):
@@ -249,9 +218,9 @@ class data:
                     HyperParam1, HyperParam3, HyperParam5
                     # mass_mode, temp_mode
                     ): # needs to be a callback option
-        import uuid
-        call_id = str(uuid.uuid4())[:8]  # Unique ID for this call
-        print(f"[CALL START] {call_id} - interp_outlet_states called: fluid={self.fluid}, case={self.case}, Tinj={point[5] if len(point) > 5 else 'N/A'}K", flush=True)
+        
+        # call_id = str(uuid.uuid4())[:8]  # Unique ID for this call
+        # print(f"[CALL START] {call_id} - interp_outlet_states called: fluid={self.fluid}, case={self.case}, Tinj={point[5] if len(point) > 5 else 'N/A'}K", flush=True)
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
@@ -281,25 +250,13 @@ class data:
                     raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
                 raise
             times = self.time
-            # print("TEMP OUT: -----****")
-            # print(Tout)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
 
-            print(f"\n[DEBUG] interp_outlet_states: sbt_version={sbt_version}, model={'SBT' if sbt_version > 0 else 'HDF5'}, case={self.case}, fluid={self.fluid}", flush=True)
-            print(f"[DEBUG] Parameters: mdot={mdot}, L2={L2}, L1={L1}, grad={grad}, D={D}, Tinj={Tinj}, k={k}", flush=True)
-            print(f"[DEBUG] Geometry: Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}", flush=True)
-            print(f"[DEBUG] Rock props: c_m={c_m}, rho_m={rho_m}, Tsurf={Tsurf}", flush=True)
-            print(f"[DEBUG] SBT settings: mesh={mesh}, accuracy={accuracy}", flush=True)
-            print(f"[DEBUG] HyperParams: HyperParam1={HyperParam1}, HyperParam3={HyperParam3}, HyperParam5={HyperParam5}", flush=True)
-            
-            # AB UNIT CONVERSIONS AND RENAMING
-            # DIAMETER NEEDS TO GO FROM M TO KM so divide by 1000
             L2 = L2/1000
             L1 = L1/1000
             Tinj = Tinj-273.15
-            # print(f"mdot (kg/s): {mdot} L2 (km): {L2} L1 (km): {L1} GeoGrad (K/m): {grad} BoreDiam (m): {D} Tinj (C): {Tinj} RockThermCond, k ((W/m-K)): {k}")
 
             if self.CP_fluid == "H2O":
                 fluid = 1
@@ -317,15 +274,11 @@ class data:
                     mass_mode_b = 0
                 elif mass_mode == "Variable":
                     mass_mode_b = 1
-                else:
-                    mass_mode_b = 0  # Default to Constant
 
                 if temp_mode == "Constant":
                     temp_mode_b = 0
                 elif temp_mode == "Variable":
                     temp_mode_b = 1
-                else:
-                    temp_mode_b = 0  # Default to Constant
                 
                 hyperparam1 = mass_mode_b
                 hyperparam2 = "MassFlowRate.xlsx"
@@ -339,80 +292,36 @@ class data:
                 maxnumberofiterations =  15
                 fluid_mode = HyperParam5
                 
-
                 if fluid_mode == "Constant":
                     fluid_mode_b = 0
                 elif fluid_mode == "Variable" or fluid_mode == "Temperature–Pressure Dependent":
                     fluid_mode_b = 1
                 
-                # Ensure HyperParam1 is a float (Inlet Pressure in MPa)
-                try:
-                    hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar)
-                except (TypeError, ValueError):
-                    hyperparam1 = 20.0*10
-                try:
-                    hyperparam2 = float(HyperParam3) if HyperParam3 is not None else 1e-6
-                except (TypeError, ValueError):
-                    hyperparam2 = 1e-6  # Default to 1 µm if conversion fails
+                # Ensure HyperParam1 and HyperParam3 are floats 
+                hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar) | (Inlet Pressure in MPa)
+                hyperparam2 = float(HyperParam3) # pipe roughness, default is 1e-6
                 hyperparam3 = fluid_mode_b # fluid mode
                 hyperparam4 = reltolerance
                 hyperparam5 = maxnumberofiterations
 
-            case = None
             if self.case == "coaxial":
                 case = 1
-                # Ensure PipeParam5 is set for coaxial configuration
-                if PipeParam5 is None:
-                    PipeParam5 = 1  # Default to "Inject in Annulus"
-                elif PipeParam5 == "Inject in Annulus":
+                if PipeParam5 == "Inject in Annulus":
                     PipeParam5 = 1
-                elif PipeParam5 == "Inject in Center Pipe":
+                if PipeParam5 == "Inject in Center Pipe":
                     PipeParam5 = 2
-                # If PipeParam5 is already an integer (1 or 2), keep it as is
-                elif PipeParam5 not in [1, 2]:
-                    PipeParam5 = 1  # Default to "Inject in Annulus" if invalid value
                 
-                # Ensure Diameter1 and Diameter2 have default values if None
-                # Note: radius-vertical-select returns diameters (despite name), radius-lateral-select now returns diameters
-                # Defaults: wellbore diameter 0.4572 m, center pipe diameter 0.254 m (0.127 m radius)
-                if Diameter1 is None:
-                    Diameter1 = 0.4572  # Default wellbore diameter
-                    print(f"[WARNING] Diameter1 was None for coaxial, using default: {Diameter1} m (diameter)", flush=True)
-                if Diameter2 is None:
-                    Diameter2 = 0.254  # Default center pipe diameter (0.127 m radius)
-                    print(f"[WARNING] Diameter2 was None for coaxial, using default: {Diameter2} m (diameter)", flush=True)
-                
-                # Diameter1 (wellbore) is already a diameter from radius-vertical-select
-                # Diameter2 (center pipe) is now a diameter from radius-lateral-select
-                # set_tube_geometry expects diameters and divides by 2 to get radii
-                # Ensure PipeParam3 (thicknesscenterpipe) has a default value if None
-                if PipeParam3 is None:
-                    PipeParam3 = 0.0127  # Default center pipe thickness (12.7 mm)
-                    print(f"[WARNING] PipeParam3 (thicknesscenterpipe) was None for coaxial, using default: {PipeParam3} m", flush=True)
-                
-                # Validate and clamp PipeParam3 to reasonable range (0.005-0.025 m)
-                try:
-                    thickness = float(PipeParam3)
-                    if thickness < 0.005 or thickness > 0.025:
-                        clamped_thickness = max(0.005, min(0.025, thickness))
-                        print(
-                            f"[WARNING] PipeParam3 (thicknesscenterpipe) out of range ({thickness:.6f} m). "
-                            f"Clamping to {clamped_thickness:.6f} m (valid range: 0.005-0.025 m)",
-                            flush=True,
-                        )
-                        PipeParam3 = clamped_thickness
-                except (TypeError, ValueError):
-                    print(f"[WARNING] Could not parse PipeParam3 ({PipeParam3}), using default 0.0127 m", flush=True)
-                    PipeParam3 = 0.0127
+                # PipeParam3 = center pipe thickness | thickness = float(PipeParam3)
                 
                 # Guardrail: coaxial geometry requires inner (center pipe) diameter < outer (wellbore/annulus) diameter.
                 # Also ensure that outerradiuscenterpipe (radiuscenterpipe + thicknesscenterpipe) < radius
                 # If UI / stored values violate this, SBT2 can end up with negative/invalid annulus hydraulic diameter,
                 # which shows up as negative Reynolds numbers and "laminar flow" termination.
+                # TODO AB: An SME needs to evaluate this.
                 if Diameter1 is not None and Diameter2 is not None:
                     try:
-                        d1 = float(Diameter1)
-                        d2 = float(Diameter2)
+                        d1 = float(Diameter1) # Diameter1 = wellbore
+                        d2 = float(Diameter2)  # Diameter2 = center_pipe
                         thickness_val = float(PipeParam3)
                         
                         # Calculate radii (after set_tube_geometry divides by 2)
@@ -420,14 +329,12 @@ class data:
                         radiuscenterpipe = d2 / 2
                         outerradiuscenterpipe = radiuscenterpipe + thickness_val
                         
-                        # Check if outerradiuscenterpipe exceeds wellbore radius
                         if outerradiuscenterpipe >= radius_wellbore:
-                            # Need to reduce either Diameter2 or thicknesscenterpipe
-                            # Strategy: Ensure minimum flow area for annulus (not just clearance)
-                            # Minimum annulus flow area: 1e-4 m² = 100 cm²
-                            # For annulus: A = π*(r_wellbore² - r_outer²)
-                            # Solving: r_outer_max = sqrt(r_wellbore² - A_min/π)
-                            A_flow_min = 1e-4  # Minimum annulus flow area [m²]
+                            """ 
+                            Need to reduce either Diameter2 or thicknesscenterpipe. 
+                            Strategy: Ensure minimum flow area for annulus (not just clearance). Minimum annulus flow area: 1e-4 m² = 100 cm² .
+                            For annulus: A = π*(r_wellbore² - r_outer²) . Solving: r_outer_max = sqrt(r_wellbore² - A_min/π)
+                            """
                             r_outer_max_sq = radius_wellbore**2 - A_flow_min / np.pi
                             if r_outer_max_sq <= 0:
                                 # Wellbore is too small to accommodate minimum flow area
@@ -435,7 +342,7 @@ class data:
                                            f"minimum annulus flow area ({A_flow_min:.6e} m²). "
                                            f"Minimum wellbore diameter required: {2*np.sqrt(A_flow_min/np.pi):.6f} m. "
                                            f"Simulation terminated.")
-                                print(f"[ERROR] {error_msg}", flush=True)
+                                # print(f"[ERROR] {error_msg}", flush=True)
                                 raise ValueError(error_msg)
                             max_outerradius = np.sqrt(r_outer_max_sq)
                             # Also ensure at least 5mm clearance as a safety margin
@@ -449,42 +356,19 @@ class data:
                                     # Even with minimum thickness, we need to reduce center pipe radius
                                     new_radiuscenterpipe = max_outerradius - 0.005
                                     new_d2 = new_radiuscenterpipe * 2
-                                    print(
-                                        f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
-                                        f"wellbore radius ({radius_wellbore:.6f} m). Clamping Diameter2 from {d2:.6f} to {new_d2:.6f} m "
-                                        f"to ensure minimum annulus clearance. fluid={self.fluid}",
-                                        flush=True,
-                                    )
                                     Diameter2 = new_d2
                                 else:
-                                    print(
-                                        f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
-                                        f"wellbore radius ({radius_wellbore:.6f} m). Clamping PipeParam3 from {thickness_val:.6f} to {new_thickness:.6f} m.",
-                                        flush=True,
-                                    )
                                     PipeParam3 = new_thickness
                             else:
                                 # Thickness is OK, but center pipe radius is too large
                                 new_radiuscenterpipe = max_outerradius - thickness_val
                                 new_d2 = new_radiuscenterpipe * 2
-                                print(
-                                    f"[WARNING] Coaxial geometry invalid: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= "
-                                    f"wellbore radius ({radius_wellbore:.6f} m). Clamping Diameter2 from {d2:.6f} to {new_d2:.6f} m. fluid={self.fluid}",
-                                    flush=True,
-                                )
                                 Diameter2 = new_d2
                         
                         # Also check if Diameter2 >= Diameter1 (before accounting for thickness)
                         elif d2 >= d1:
                             # Use a more reasonable clamp: 40% of wellbore diameter, but at least 0.15m
                             new_d2 = max(0.15, min(0.4 * d1, d1 * 0.4))
-                            print(
-                                f"[WARNING] Coaxial geometry invalid (Diameter2 >= Diameter1). "
-                                f"Clamping Diameter2 from {d2:.3f} to {new_d2:.3f}. "
-                                f"Original values: Diameter1={d1:.3f}, Diameter2={d2:.3f} "
-                                f"(radii: {d1/2:.3f}, {d2/2:.3f})",
-                                flush=True,
-                            )
                             Diameter2 = new_d2
                         
                         # After any clamping, validate that flow areas are reasonable
@@ -560,41 +444,13 @@ class data:
                         # If parsing fails, let SBT handle validation downstream.
                         print(f"[WARNING] Could not validate coaxial geometry: {e}", flush=True)
                         pass
-            elif self.case == "utube":
+            if self.case == "utube":
                 case = 2
-                # Ensure Diameter1 and Diameter2 have default values if None
-                # Defaults: radius_vertical 0.35 m, radius_lateral 0.35 m
-                if Diameter1 is None:
-                    Diameter1 = 0.35  # Default vertical radius
-                    print(f"[WARNING] Diameter1 was None for utube, using default: {Diameter1} m (radius)", flush=True)
-                if Diameter2 is None:
-                    Diameter2 = 0.35  # Default lateral radius
-                    print(f"[WARNING] Diameter2 was None for utube, using default: {Diameter2} m (radius)", flush=True)
-                
                 num_laterals = int(PipeParam3) if PipeParam3 is not None else 1
-                num_laterals = max(1, num_laterals)
-                
-                if PipeParam4 is not None:
-                    if isinstance(PipeParam4, (list, tuple)):
-                        if len(PipeParam4) == num_laterals:
-                            PipeParam4 = list(PipeParam4)
-                        else:
-                            print(f"[WARNING] PipeParam4 array length ({len(PipeParam4)}) doesn't match num_laterals ({num_laterals}). Using evenly distributed allocation.", flush=True)
-                            allocation_per_lateral = 1.0 / num_laterals
-                            PipeParam4 = [allocation_per_lateral] * num_laterals
-                    else:
-                        allocation_per_lateral = 1.0 / num_laterals
-                        PipeParam4 = [allocation_per_lateral] * num_laterals
-                else:
-                    allocation_per_lateral = 1.0 / num_laterals
-                    PipeParam4 = [allocation_per_lateral] * num_laterals
-            else:
-                raise ValueError(f"Unsupported case '{self.case}' for SBT run")
+                allocation_per_lateral = 1 / num_laterals
+                PipeParam4 = [allocation_per_lateral] * num_laterals # PipeParam4 is lateralflowallocation in this case | e.g., [1/3,1/3,1/3]
 
             # Create cache key from all parameters
-            # Debug: Print all parameters that go into cache key
-            print(f"[DEBUG] Cache key parameters: sbt_version={sbt_version}, mesh={mesh}, hyperparam1={hyperparam1}, hyperparam2={hyperparam2}, hyperparam3={hyperparam3}, hyperparam4={hyperparam4}, hyperparam5={hyperparam5}, accuracy={accuracy}, case={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}, L1={L1}, L2={L2}, Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}, Tsurf={Tsurf}, grad={grad}, k={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-            
             cache_key = _make_cache_key(
                 sbt_version=sbt_version, mesh=mesh, hyperparam1=hyperparam1, hyperparam2=hyperparam2,
                 hyperparam3=hyperparam3, hyperparam4=hyperparam4, hyperparam5=hyperparam5,
@@ -603,45 +459,22 @@ class data:
                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
-            
-            # IMMEDIATELY capture cache_key to prevent any overwriting - use string copy to ensure it's a new object
-            cache_key_saved = str(cache_key)  # Create a new string object, not just a reference
-            print(f"[CACHE KEY SAVED] {call_id} - Immediately after assignment: cache_key={cache_key}, cache_key_saved={cache_key_saved}, id(cache_key)={id(cache_key)}, id(cache_key_saved)={id(cache_key_saved)}", flush=True)
+            cache_key_saved = str(cache_key) 
             
             if isinstance(cache_key, tuple):
                 cache_key_str = str(cache_key)[:200]  # First 200 chars
                 print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
             else:
                 print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
-            
-            # Check cache first - use saved cache_key
-            print(f"[CACHE CHECK] Looking for cache key: {cache_key_saved} (current cache_key: {cache_key}), current cache size: {len(_sbt_cache)}, cache keys: {list(_sbt_cache.keys())[:5]}", flush=True)
+
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
                 tout_max_cached = np.max(cached_result[1]) - 273.15
-                print(f"[CACHE HIT] Reusing cached SBT result for cache key: {cache_key_saved}, Tout max: {tout_max_cached:.2f}°C", flush=True)
                 times, Tout, Pout = cached_result
             else:
-                print(f"[CACHE MISS] No cached result found for cache key: {cache_key_saved} (cache size: {len(_sbt_cache)})", flush=True)
                 start = time.time()
-                
-                # print(hyperparam1, hyperparam2, hyperparam3, hyperparam4, hyperparam5)
 
-                print(f"[DEBUG] Calling run_sbt_final with: sbt_version={sbt_version}, mesh={mesh}, accuracy={accuracy}", flush=True)
-                print(f"[DEBUG]   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
-                print(f"[DEBUG]   mdot={mdot}, Tinj={Tinj:.1f}°C (already converted from K to °C), fluid={fluid} (1=H2O, 2=sCO2), case={case} (utube/coaxial)", flush=True)
-                print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
-                print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
-                print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
                 try:
-                    # Log ALL parameters being passed to run_sbt_final for this specific call
-                    print(f"[RUN_SBT_PARAMS] {call_id} - All parameters for run_sbt_final:", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   sbt_version={sbt_version}, mesh_fineness={mesh}, accuracy={accuracy}", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   clg_configuration={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   DrillingDepth_L1={L1}, HorizontalExtent_L2={L2}", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
-                    print(f"[RUN_SBT_PARAMS] {call_id} -   Tsurf={Tsurf}, GeoGradient={grad}, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -660,38 +493,36 @@ class data:
                         Tsurf=Tsurf, GeoGradient=grad, k_m=k, c_m=c_m, rho_m=rho_m, 
                         # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                     )
-                    print(f"[DEBUG] {call_id} - run_sbt_final returned: len(times)={len(times)}, times_range=[{times[0]:.4f}, {times[-1]:.4f}] years", flush=True)
-                    print(f"[DEBUG] {call_id} -   Tout_range=[{np.min(Tout):.2f}, {np.max(Tout):.2f}] K = [{np.min(Tout)-273.15:.2f}, {np.max(Tout)-273.15:.2f}] °C", flush=True)
-                    print(f"[DEBUG] {call_id} -   Tout array id: {id(Tout)}, first 3 values: {Tout[:3] if len(Tout) >= 3 else Tout} K", flush=True)
-                    
+
+                    # if case == 1:
+                    #     if fluid == 1:
+                            # print(" ************* ")
+                            # print(f"[run-sbt-params] {call_id} - All parameters for SBT:", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   sbt_version={sbt_version}, mesh_fineness={mesh}, accuracy={accuracy}", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   variableflowrate={hyperparam1}, flowratefilename={hyperparam2}, variableinjectiontemperature={hyperparam3}, injectiontemperaturefilename={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   clg_configuration={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   DrillingDepth_L1={L1}, HorizontalExtent_L2={L2}", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   Diameter1(Annulus)={Diameter1}, Diameter2 (Center Pipe Radius)={Diameter2}, PipeParam3 (thicknesscenterpipe)={PipeParam3}, PipeParam4 (k_center_pipe)={PipeParam4}, PipeParam5(coaxialflowtype)={PipeParam5}", flush=True)
+                            # print(f"[run-sbt-params] {call_id} -   Tsurf={Tsurf}, GeoGradient={grad}, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
+
+                    # print(f"[DEBUG] Calling SBT with: sbt_version={sbt_version}, mesh={mesh}, accuracy={accuracy}", flush=True)
+                    # print(f"[DEBUG]   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
+                    # print(f"[DEBUG]   mdot={mdot}, Tinj={Tinj:.1f}°C (already converted from K to °C), fluid={fluid} (1=H2O, 2=sCO2), case={case} (utube/coaxial)", flush=True)
+                    # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
+                    # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
+                    # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
+                    print(times)
+                    print(Tout)
+                    print(Pout)
+
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
                         tout_max_before_cache = np.max(Tout) - 273.15
-                        # Re-verify cache_key_saved matches call_id to ensure we're using the right key
-                        # Create a fresh copy to be absolutely sure
                         final_cache_key = str(cache_key_saved)
-                        print(f"[CACHE STORE] {call_id} - About to store: final_cache_key={final_cache_key}, cache_key_saved={cache_key_saved}, cache_key={cache_key}, id(final_cache_key)={id(final_cache_key)}, id(cache_key_saved)={id(cache_key_saved)}, id(cache_key)={id(cache_key)}, Tout max: {tout_max_before_cache:.2f}°C", flush=True)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
-                        # Verify what we just cached
                         cached_verify = _get_cached_result(final_cache_key)
-                        if cached_verify is not None:
-                            tout_max_after_cache = np.max(cached_verify[1]) - 273.15
-                            print(f"[CACHE STORE] {call_id} - Stored result with Tout max={tout_max_before_cache:.2f}°C, verified cache has {tout_max_after_cache:.2f}°C using key {final_cache_key}", flush=True)
-                        else:
-                            print(f"[CACHE STORE] {call_id} - ❌ ERROR: After storing, final_cache_key {final_cache_key} not found in cache! cache_key_saved={cache_key_saved}, cache_key={cache_key}", flush=True)
                         end = time.time()
-                        print(f"[CACHE MISS] SBT calculation took {end-start:.2f}s, cached result", flush=True)
                 except Exception as e:
-                    # Log the exception before re-raising
-                    if self.case == "coaxial":
-                        print(f"[ERROR] clgs.interp_outlet_states: Exception in {self.fluid} coaxial simulation: {type(e).__name__}: {e}", flush=True)
-                        print(f"[ERROR]   Exception occurred with parameters:", flush=True)
-                        print(f"[ERROR]     Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam5={PipeParam5}", flush=True)
-                        print(f"[ERROR]     mdot={mdot} kg/s, Tinj={Tinj} K, fluid={fluid}, sbt_version={sbt_version}", flush=True)
-                        print(f"[ERROR]     L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
-                        import traceback
-                        print(f"[ERROR]   Full traceback:", flush=True)
-                        traceback.print_exc()
                     # Re-raise the exception so the calling code knows it failed
                     raise
             
@@ -700,58 +531,24 @@ class data:
                 Tout_arr = np.array(Tout)
                 if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
                     np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                    print(f"[ERROR] interp_outlet_states: Simulation returned invalid Tout values. "
-                          f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, "
-                          f"case={self.case}, fluid={self.fluid}, Diameter1={Diameter1}, Diameter2={Diameter2}, "
-                          f"mdot={mdot}, sbt_version={sbt_version}", flush=True)
                     # Remove invalid result from cache
                     if cache_key in _sbt_cache:
                         del _sbt_cache[cache_key]
                     # Return empty arrays to signal failure
                     return np.array([]), np.array([]), np.array([])
-            elif Tout is None or len(Tout) == 0:
-                print(f"[ERROR] interp_outlet_states: Simulation returned empty Tout. "
-                      f"case={self.case}, fluid={self.fluid}, sbt_version={sbt_version}", flush=True)
-                return np.array([]), np.array([]), np.array([])
             
             if Pout is None:
                 constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
                 # constant_pressure = 22228604.37405011
                 Pout = constant_pressure * np.ones_like(Tout)
             
-            # Check if arrays are empty before slicing
-            if len(times) < 15:
-                print(f"[ERROR] interp_outlet_states: times array too short ({len(times)}), cannot slice [14:]. "
-                      f"case={self.case}, sbt_version={sbt_version}", flush=True)
-                return np.array([]), np.array([]), np.array([])
-                
             end = time.time()
-            # print("sbt function run: ", end-start) # 4 seconds to run, 11 seconds total (run + render)
-            # self.time = times
-
+            
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
             
-            # Debug: Print raw SBT results after skipping first 14 points
-            if len(times) > 0:
-                print(f"[DEBUG] {call_id} - Raw SBT results after [14:]: len={len(times)}, time_range=[{times[0]:.4f}, {times[-1]:.4f}] years", flush=True)
-                print(f"[DEBUG] {call_id} -   Tout range: [{np.min(Tout):.2f}, {np.max(Tout):.2f}] K = [{np.min(Tout)-273.15:.2f}, {np.max(Tout)-273.15:.2f}] °C", flush=True)
-                print(f"[DEBUG] {call_id} -   Tout array id: {id(Tout)}, first 3 values: {Tout[:3] if len(Tout) >= 3 else Tout} K", flush=True)
-                print(f"[DEBUG] {call_id} -   Pout range: [{np.min(Pout)/1e6:.2f}, {np.max(Pout)/1e6:.2f}] MPa", flush=True)
-                print(f"[DEBUG] {call_id} -   First 5 Tout values: {Tout[:5] - 273.15} °C", flush=True)
-                print(f"[DEBUG] {call_id} -   Last 5 Tout values: {Tout[-5:] - 273.15} °C", flush=True)
-            
-            # Final validation after slicing
-            if Tout is not None and len(Tout) > 0:
-                Tout_arr = np.array(Tout)
-                if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
-                    np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                    print(f"[ERROR] interp_outlet_states: Tout contains invalid values after slicing. "
-                          f"Min={np.min(Tout_arr):.2f}K, Max={np.max(Tout_arr):.2f}K, length={len(Tout_arr)}", flush=True)
-                    return np.array([]), np.array([]), np.array([])
-            
-            # Note: run_sbt_final already returns times in years (converted from seconds)
+            # Note: SBT model already returns times in years (converted from seconds)
             # Debug: Check time range for SBT2
             if sbt_version == 2 and len(times) > 0:
                 pass
@@ -916,6 +713,7 @@ class data:
         mdot = self.mdot
         Tinj = point[4]
         
+        # TODO AB: CHECK ! ***********
         # Use provided Pinj if given (for SBT models), otherwise use database value
         inlet_pressure = Pinj if Pinj is not None else self.Pinj
 
@@ -959,6 +757,8 @@ class data:
                 ) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
             kWe = mdot * calc
+            
+            # TODO: AB CHECK by with with np.errstate is added?
             with np.errstate(invalid='ignore'):
                 calc = (enthalpy_out - enthalpy_in) / 1000.0
             calc = np.reshape(calc, (dim_one, dim_two), order="C")
