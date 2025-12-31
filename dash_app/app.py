@@ -84,6 +84,7 @@ app = dash.Dash(
     external_stylesheets=[BOOTSTRAP_CSS],  # ← use the dict, not dbc.themes.BOOTSTRAP
     # url_base_pathname=url_base_pathname, # not needed
     requests_pathname_prefix=requests_pathname_prefix,
+    suppress_callback_exceptions=True,
     meta_tags=[
         {"name": "viewport", "content": "width=device-width"},
         {
@@ -3794,6 +3795,23 @@ def update_subsurface_results_plots(
         empty_cache = {"inputs": error_inputs, "outputs": empty_outputs6}
         request_id = current_request_id if current_request_id is not None else 0
         return (*empty_outputs6, request_id, empty_cache)
+
+
+@app.callback(
+    Output(component_id="mass-mode-select", component_property="data"),
+    [
+        Input(component_id="inlet-pressure-select", component_property="value"),
+    ],
+    [
+        State(component_id="model-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def update_mass_mode_with_inlet_pressure(inlet_pressure, model):
+    """Update mass-mode-select with inlet pressure value for SBT V2.0"""
+    if model == "SBT V2.0" and inlet_pressure is not None:
+        return float(inlet_pressure)
+    raise PreventUpdate
 
 
 

@@ -330,12 +330,6 @@ class data:
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
             cache_key_saved = str(cache_key) 
-            
-            if isinstance(cache_key, tuple):
-                cache_key_str = str(cache_key)[:200]  # First 200 chars
-                print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
-            else:
-                print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
 
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
