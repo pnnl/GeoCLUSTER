@@ -302,6 +302,74 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
     else:
         row_num = 2
 
+    def _norm(s: str) -> str:
+        """Normalize text for comparison (strip HTML, normalize dashes, lowercase, etc.)."""
+        s = s or ""
+        s = re.sub(r"<[^>]+>", "", s)
+        s = s.replace("–", "-")
+        s = s.lower().strip()
+        s = re.sub(r"\s+", " ", s)
+        return s
+
+    def _remove_ts_titles(fig):
+        """Remove all T-S diagram title annotations (including auto-generated subplot_titles)."""
+        anns = list(fig.layout.annotations) if fig.layout.annotations else []
+        kept = []
+        for a in anns:
+            txt = _norm(getattr(a, "text", ""))
+            if ("temperature-entropy" in txt) or ("t-s" in txt) or ("t s" in txt):
+                continue
+            kept.append(a)
+        fig.update_layout(annotations=kept)
+        return fig
+
+    def _add_or_move_ts_title(fig, xaxis_name="x5", text="<b>Temperature-entropy (T-S) Diagram</b>"):
+        """
+        Add a single T-S title anchored to a specific subplot x-axis domain (e.g., x5 for row3 col1).
+        Anchoring to x-domain is much more stable than paper coords when domains change.
+        """
+        idx = 1 if xaxis_name == "x" else int(xaxis_name[1:])
+        xaxis_layout_name = "xaxis" if idx == 1 else f"xaxis{idx}"
+        xa = getattr(fig.layout, xaxis_layout_name, None)
+
+        if xa is None or not hasattr(xa, "domain") or xa.domain is None:
+            return fig
+
+        x0, x1 = xa.domain
+        x = x0 + 0.02
+        y = 1.0
+
+        yaxis_layout_name = "yaxis" if idx == 1 else f"yaxis{idx}"
+        ya = getattr(fig.layout, yaxis_layout_name, None)
+        if ya is not None and hasattr(ya, "domain") and ya.domain is not None:
+            y0, y1 = ya.domain
+            y = y1
+        else:
+            y = 0.95
+
+        ann = go.layout.Annotation(
+            text=text,
+            showarrow=False,
+            x=x,
+            y=y,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(size=14),
+            yshift=10,
+        )
+
+        anns = list(fig.layout.annotations) if fig.layout.annotations else []
+        anns.append(ann)
+        fig.update_layout(annotations=anns)
+        return fig
+
+    if is_plot_ts_check:
+        title_text = (getattr(fig.layout.title, "text", "") or "")
+        if any(s in title_text for s in ["Temperature-entropy", "T-S", "T-s", "CO2 Temperature"]):
+            fig.update_layout(title_text="")
+
     # Sync Axes
     fig.update_layout(hovermode="x unified", hoverlabel=dict(font_size=12))
 
@@ -371,7 +439,23 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
                             font=dict(size=10)
                             )
-        electricity_title_y = 0.673 if is_plot_ts_check else 0.50
+        
+        if is_plot_ts_check:
+            # Always set 3-row domains (prevents leftover Electricity domains)
+            fig.update_yaxes(domain=[0.72, 1.00], row=1, col=1)
+            fig.update_yaxes(domain=[0.72, 1.00], row=1, col=3)
+            fig.update_yaxes(domain=[0.40, 0.66], row=2, col=1)
+            fig.update_yaxes(domain=[0.40, 0.66], row=2, col=3)
+            fig.update_yaxes(domain=[0.08, 0.30], row=3, col=1)
+            electricity_title_y = 0.66
+        else:
+            # Always set 2-row domains (prevents leftover T-S domains)
+            fig.update_yaxes(domain=[0.55, 1.00], row=1, col=1)
+            fig.update_yaxes(domain=[0.55, 1.00], row=1, col=3)
+            fig.update_yaxes(domain=[0.05, 0.50], row=2, col=1)
+            fig.update_yaxes(domain=[0.05, 0.50], row=2, col=3)
+            electricity_title_y = 0.50
+        
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>End-Use: Electricity</b>',
                                         x=0.35, y=electricity_title_y, xref='paper', yref='paper',
@@ -387,35 +471,20 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             font=dict(size=10)
                             )
         if is_plot_ts_check:
-            # 1) Always use a deterministic height so the first render matches later renders
             fig.update_layout(
                 height=900,
-                margin=dict(l=70, r=70, t=50, b=70),
+                margin=dict(l=70, r=70, t=55, b=70),
                 autosize=False
             )
             
-            fig.update_yaxes(domain=[0.60, 1.00], row=1, col=1)
-            fig.update_yaxes(domain=[0.60, 1.00], row=1, col=3)
-            fig.update_yaxes(domain=[0.08, 0.42], row=2, col=1)
-            
-            new_annotations = []
-            if fig.layout.annotations:
-                for a in fig.layout.annotations:
-                    annotation_text = getattr(a, "text", "")
-                    if "Temperature-entropy (T-S) Diagram" not in annotation_text:
-                        new_annotations.append(a)
-            
-            new_annotations.append(go.layout.Annotation(
-                text="<b>Temperature-entropy (T-S) Diagram</b>",
-                showarrow=False,
-                x=0.18, y=0.42,
-                xref="paper", yref="paper",
-                xanchor="left", yanchor="bottom",
-                font=dict(size=14),
-                yshift=10,
-            ))
-            
-            fig.update_layout(annotations=new_annotations)
+            # Always set 2-row domains (prevents leftover All domains)
+            fig.update_yaxes(domain=[0.62, 1.00], row=1, col=1)
+            fig.update_yaxes(domain=[0.62, 1.00], row=1, col=3)
+            fig.update_yaxes(domain=[0.10, 0.45], row=2, col=1)
+        else:
+            # Always set 1-row domains (prevents leftover T-S domains)
+            fig.update_yaxes(domain=[0.05, 1.00], row=1, col=1)
+            fig.update_yaxes(domain=[0.05, 1.00], row=1, col=3)
 
     # Remove duplicate legend entries by keeping only unique names
     seen_names = set()
@@ -424,6 +493,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
             trace.showlegend = False
         elif trace.showlegend:
             seen_names.add(trace.name)
+    
+    if is_plot_ts_check and end_use != "Heating":
+        fig = _remove_ts_titles(fig)
+        xaxis_name = "x5" if end_use == "All" else "x3"
+        fig = _add_or_move_ts_title(fig, xaxis_name=xaxis_name)
+    elif is_plot_ts_check and end_use == "Heating":
+        fig = _remove_ts_titles(fig)
 
     return fig
 

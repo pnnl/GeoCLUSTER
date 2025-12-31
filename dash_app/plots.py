@@ -1687,10 +1687,6 @@ def get_Ts_diagram(fig, teaobj, nrow, ncol, tmatrix_pathname):
         error_dict['TS-error3'] = e
 
 
-    fig.update_layout(title_text=f'<b>CO2 Temperature-entropy (T-s) Diagram</b>', 
-                        title_x=0.35, title_y=0.95,
-                        font=dict(size=10)
-                        )
     fig.update_yaxes(title_text="Temperature (°C)", 
                             row=nrow, col=ncol,
                             tickfont = dict(size=12), title_font=dict(size=14))
