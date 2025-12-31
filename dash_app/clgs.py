@@ -298,9 +298,8 @@ class data:
                 elif fluid_mode == "Variable" or fluid_mode == "Temperature–Pressure Dependent":
                     fluid_mode_b = 1
                 
-                # Ensure HyperParam1 and HyperParam3 are floats 
-                hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar) | (Inlet Pressure in MPa)
-                hyperparam2 = float(HyperParam3) # pipe roughness, default is 1e-6
+                hyperparam1 = HyperParam1*10 # Pin (convert MPa to bar)
+                hyperparam2 = HyperParam3 # pipe roughness
                 hyperparam3 = fluid_mode_b # fluid mode
                 hyperparam4 = reltolerance
                 hyperparam5 = maxnumberofiterations

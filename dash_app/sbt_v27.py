@@ -67,141 +67,48 @@ def run_sbt(
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
 
-    print(" ***!!!!!!**** ")
-    print(clg_configuration)
     tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
                                                 clg_configuration=clg_configuration, 
                                                 Diameter1=Diameter1, Diameter2=Diameter2, 
                                                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                                 )
-    print(" ***!!!!!!**** ")
-    print(tube_geometry_dict)
-    
-    # Extract autoadjustlateralflowrates from tube_geometry_dict (set by set_tube_geometry)
-    autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates", None)
-    
-    # Early validation for coaxial geometry to prevent numerical instability
-    if clg_configuration == 1:  # Coaxial
-        radius = tube_geometry_dict.get('radius', None)
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        
-        if radius is not None and radiuscenterpipe is not None and thicknesscenterpipe is not None:
-            outerradiuscenterpipe = radiuscenterpipe + thicknesscenterpipe
-            
-            # Validate annulus geometry early
-            if outerradiuscenterpipe >= radius:
-                error_msg = (f"Error: Invalid coaxial geometry detected early. "
-                           f"outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= radius ({radius:.6f} m). "
-                           f"This will cause zero or negative annulus flow area. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m. "
-                           f"Please ensure center pipe outer diameter is significantly smaller than wellbore diameter. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-            
-            # Check for very thin annulus (may cause numerical instability)
-            annulus_thickness = radius - outerradiuscenterpipe
-            min_annulus_thickness_ratio = 0.05  # At least 5% of wellbore radius
-            min_annulus_thickness = radius * min_annulus_thickness_ratio
-            
-            if annulus_thickness < min_annulus_thickness:
-                warning_msg = (f"[WARNING] Very thin annulus detected: annulus_thickness={annulus_thickness:.6f} m "
-                             f"< recommended minimum={min_annulus_thickness:.6f} m ({min_annulus_thickness_ratio*100:.1f}% of radius). "
-                             f"This may cause numerical instability. "
-                             f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m.")
-                print(warning_msg, flush=True)
-            
-            # Validate flow areas will be reasonable
-            A_flow_annulus_est = np.pi * (radius**2 - outerradiuscenterpipe**2)
-            A_flow_centerpipe_est = np.pi * radiuscenterpipe**2
-            
-            # CO2 requires larger flow areas due to lower density (~200-800 kg/m³ vs ~1000 kg/m³ for H2O)
-            if fluid == 2:  # CO2
-                A_flow_min = 5e-3  # Minimum flow area for CO2 [m²] = 5000 cm² (5x larger than H2O)
-                A_flow_min_reason = "CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), requiring larger flow areas"
-            else:  # H2O
-                A_flow_min = 1e-4  # Minimum flow area for H2O [m²] = 100 cm²
-                A_flow_min_reason = "standard minimum for H2O"
-            
-            fluid_name = "CO2" if fluid == 2 else "H2O"
-            
-            if A_flow_annulus_est < A_flow_min:
-                error_msg = (f"Error: Estimated annulus flow area ({A_flow_annulus_est:.6e} m²) is too small "
-                           f"(< {A_flow_min:.6e} m² for {fluid_name}). This will cause numerical instability. "
-                           f"{A_flow_min_reason}. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m. "
-                           f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-            
-            if A_flow_centerpipe_est < A_flow_min:
-                error_msg = (f"Error: Estimated center pipe flow area ({A_flow_centerpipe_est:.6e} m²) is too small "
-                           f"(< {A_flow_min:.6e} m² for {fluid_name}). This will cause numerical instability. "
-                           f"{A_flow_min_reason}. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m. "
-                           f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-        elif radius is None:
-            raise ValueError(f"radius is None after set_tube_geometry for coaxial. This should have been calculated from Diameter1={Diameter1}.")
-    elif clg_configuration == 2:  # U-tube
-        # For U-tube, radius is not used in the same way, but we set it to radiusvertical for consistency
-        # (radius is only used in CPCP calculation which is coaxial-specific)
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        if radiusvertical is None:
-            raise ValueError(f"radiusvertical is None after set_tube_geometry for U-tube. This should have been calculated from Diameter1={Diameter1}.")
-        radius = radiusvertical  # Set radius for U-tube to avoid None errors
-    else:
-        raise ValueError(f"Invalid clg_configuration: {clg_configuration}. Must be 1 (coaxial) or 2 (U-tube).")
+    globals().update(tube_geometry_dict)
     
     # Extract configuration-specific parameters directly from tube_geometry_dict (not globals)
     # These are needed for compute_tube_geometry call below
     if clg_configuration == 1:  # Coaxial
+        radius = tube_geometry_dict.get('radius', None)
         radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
         thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
         k_center_pipe = tube_geometry_dict.get('k_center_pipe', None)
-        if radiuscenterpipe is None:
-            raise ValueError(f"radiuscenterpipe is None for coaxial configuration. Diameter2={Diameter2}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
-        if thicknesscenterpipe is None:
-            raise ValueError(f"thicknesscenterpipe is None for coaxial configuration. PipeParam3={PipeParam3}")
-        if k_center_pipe is None:
-            raise ValueError(f"k_center_pipe is None for coaxial configuration. PipeParam4={PipeParam4}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
         numberoflaterals = None  # Not used for coaxial
         lateralflowmultiplier = None  # Not used for coaxial
         radiuslateral = None  # Not used for coaxial
         radiusvertical = None  # Not used for coaxial
         lateralflowallocation = None  # Not used for coaxial
     elif clg_configuration == 2:  # U-loop
-        # Ensure numberoflaterals is an integer >= 1 for U-loop geometry
         num_lat = tube_geometry_dict.get('numberoflaterals', None)
         if num_lat is None or not isinstance(num_lat, (int, np.integer)):
             num_lat = int(num_lat) if num_lat is not None else 1
         numberoflaterals = max(1, int(num_lat))
         globals()['numberoflaterals'] = numberoflaterals
         
-        # Ensure lateralflowmultiplier is set
         lateralflowmultiplier = tube_geometry_dict.get('lateralflowmultiplier', 1)
         if lateralflowmultiplier is None:
             lateralflowmultiplier = 1
         globals()['lateralflowmultiplier'] = lateralflowmultiplier
         
-        # Retrieve U-tube specific geometry parameters
         radiusvertical = tube_geometry_dict.get('radiusvertical', None)
         radiuslateral = tube_geometry_dict.get('radiuslateral', None)
         lateralflowallocation = tube_geometry_dict.get('lateralflowallocation', None)
-        if radiusvertical is None:
-            raise ValueError(f"radiusvertical is None for U-tube configuration. Diameter1={Diameter1}")
-        if radiuslateral is None:
-            raise ValueError(f"radiuslateral is None for U-tube configuration. Diameter2={Diameter2}")
+        radius = radiusvertical  # Set radius for U-tube to avoid None errors
         
         radiuscenterpipe = None  # Not used for U-loop
         thicknesscenterpipe = None  # Not used for U-loop
         k_center_pipe = None  # Not used for U-loop
     else:
         # Default/fallback
+        radius = tube_geometry_dict.get('radius', None)
         radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
         thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
         numberoflaterals = tube_geometry_dict.get('numberoflaterals', None)
@@ -226,15 +133,6 @@ def run_sbt(
     x = wellbore_geometry_dict.get("x")
     y = wellbore_geometry_dict.get("y")
     z = wellbore_geometry_dict.get("z")
-    
-    # Validate that required coordinates are set for U-loop geometry
-    if clg_configuration == 2:  # U-loop geometry
-        if xinj is None or xprod is None:
-            error_msg = (f"Error: xinj or xprod is None for U-loop geometry. "
-                       f"xinj={xinj}, xprod={xprod}. This indicates wellbore geometry was not set correctly. "
-                       f"DrillingDepth_L1={DrillingDepth_L1}, HorizontalExtent_L2={HorizontalExtent_L2}, numberoflaterals={numberoflaterals}")
-            print(f"[ERROR] {error_msg}", flush=True)
-            raise ValueError(error_msg)
 
     if is_plot:
         plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
@@ -326,23 +224,13 @@ def run_sbt(
         Dh_annulus = tube_geometry_dict2.get("Dh_annulus")
         A_flow_annulus = tube_geometry_dict2.get("A_flow_annulus")
         A_flow_centerpipe = tube_geometry_dict2.get("A_flow_centerpipe")
-        if outerradiuscenterpipe is None:
-            raise ValueError(f"outerradiuscenterpipe is None after compute_tube_geometry. This should have been calculated as radiuscenterpipe + thicknesscenterpipe.")
-        if k_center_pipe is None:
-            raise ValueError(f"k_center_pipe is None after compute_tube_geometry. This should have been set from PipeParam4.")
-        if Dh_annulus is None:
-            raise ValueError(f"Dh_annulus is None after compute_tube_geometry. This should have been calculated as 2*(radius - outerradiuscenterpipe).")
-        if A_flow_annulus is None:
-            raise ValueError(f"A_flow_annulus is None after compute_tube_geometry. This should have been calculated.")
-        if A_flow_centerpipe is None:
-            raise ValueError(f"A_flow_centerpipe is None after compute_tube_geometry. This should have been calculated.")
     
     mlateral = tube_geometry_dict2.get("mlateral")
     mlateralold = tube_geometry_dict2.get("mlateralold")
     Tw_down_previous = tube_geometry_dict2.get("Tw_down_previous")
     Tfluiddownnodes = tube_geometry_dict2.get("Tfluiddownnodes")
     TwMatrix = tube_geometry_dict2.get("TwMatrix")
-    coaxialflowtype = tube_geometry_dict.get("coaxialflowtype")
+    coaxialflowtype = globals().get("coaxialflowtype")
     Tfluidnodes = None
     Pfluidnodes = None
     Pfluidlateralexit = None
@@ -558,21 +446,7 @@ def run_sbt(
                 else:
                     print("Initial pressure field calculated but maximum relative tolerance not met")
             
-            # Validate flow areas before calculating velocities to prevent extremely high velocities
-            A_flow_annulus_val = float(A_flow_annulus) if not isinstance(A_flow_annulus, np.ndarray) else A_flow_annulus
-            A_flow_centerpipe_val = float(A_flow_centerpipe) if not isinstance(A_flow_centerpipe, np.ndarray) else A_flow_centerpipe
-            A_flow_min = 1e-4  # Minimum flow area [m²] to prevent very high velocities
-            if A_flow_annulus_val < A_flow_min or A_flow_centerpipe_val < A_flow_min:
-                error_msg = (f"Error: Flow areas too small for numerical stability. "
-                           f"A_flow_annulus={A_flow_annulus_val:.6e} m², A_flow_centerpipe={A_flow_centerpipe_val:.6e} m². "
-                           f"Minimum required: {A_flow_min:.6e} m². This indicates invalid geometry (likely from clamping). "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m. Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-            
             # Calculate velocity field
-            print(" ***!!!!!!**** ")
-            print(coaxialflowtype)
             if coaxialflowtype == 1:  # CXA
                 velocityfluiddownmidpoints = mdot / A_flow_annulus / densityfluiddownmidpoints #Downgoing fluid velocity at midpoints in annulus [m/s]
                 velocityfluidupmidpoints = mdot / A_flow_centerpipe / densityfluidupmidpoints #Upgoing fluid velocity at midpoint in center pipe [m/s]
@@ -583,41 +457,6 @@ def run_sbt(
                 velocityfluidupmidpoints = mdot / A_flow_annulus / densityfluidupmidpoints #Upgoing fluid velocity at midpoint in annulus [m/s]
                 velocityfluiddownnodes = mdot / A_flow_centerpipe / densityfluiddownnodes #Downgoing fluid velocity at nodes in center pipe [m/s]
                 velocityfluidupnodes = mdot / A_flow_annulus / densityfluidupnodes #Upgoing fluid velocity at nodes in annulus [m/s]
-            
-            # Validate velocities immediately after calculation
-            u_max = 600.0  # Maximum velocity [m/s] - increased to allow borderline cases that still produce valid results
-            max_vel_down = np.max(np.abs(velocityfluiddownmidpoints)) if hasattr(velocityfluiddownmidpoints, '__len__') else abs(velocityfluiddownmidpoints)
-            max_vel_up = np.max(np.abs(velocityfluidupmidpoints)) if hasattr(velocityfluidupmidpoints, '__len__') else abs(velocityfluidupmidpoints)
-            if max_vel_down > u_max or max_vel_up > u_max:
-                # Calculate density that would cause this velocity for diagnostic purposes
-                min_density_down = mdot / (A_flow_annulus_val * max_vel_down) if max_vel_down > 0 else 0
-                min_density_up = mdot / (A_flow_centerpipe_val * max_vel_up) if max_vel_up > 0 else 0
-                actual_min_density = min(np.min(densityfluiddownmidpoints), np.min(densityfluidupmidpoints)) if hasattr(densityfluiddownmidpoints, '__len__') else min(densityfluiddownmidpoints, densityfluidupmidpoints)
-                fluid_name = "CO2" if fluid == 2 else "H2O"
-                
-                # Build fluid-specific error message
-                if fluid == 2:  # CO2
-                    density_explanation = (f"CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), causing higher velocities for the same geometry. "
-                                          f"Consider: (1) increasing flow area (larger wellbore or smaller center pipe), (2) reducing mass flow rate, or (3) adjusting pressure/temperature to increase CO2 density.")
-                else:  # H2O
-                    if actual_min_density < 100:  # H2O density should be ~1000 kg/m³, if it's < 100, something is very wrong
-                        density_explanation = (f"WARNING: H2O density is abnormally low ({actual_min_density:.2f} kg/m³). Expected ~1000 kg/m³. "
-                                             f"This may indicate a simulation error or invalid fluid properties. "
-                                             f"Check: (1) fluid property tables, (2) pressure/temperature conditions, (3) simulation parameters.")
-                    else:
-                        density_explanation = (f"H2O density ({actual_min_density:.2f} kg/m³) is normal, but velocities are still too high. "
-                                             f"Consider: (1) increasing flow area (larger wellbore or smaller center pipe), or (2) reducing mass flow rate.")
-                
-                error_msg = (f"Error: Fluid velocities too high for numerical stability (SBT v1). "
-                           f"Max |velocity_down|={max_vel_down:.2f} m/s, Max |velocity_up|={max_vel_up:.2f} m/s. "
-                           f"Maximum allowed: {u_max:.2f} m/s. "
-                           f"A_flow_annulus={A_flow_annulus_val:.6e} m², A_flow_centerpipe={A_flow_centerpipe_val:.6e} m², "
-                           f"mdot={mdot} kg/s, fluid={fluid_name}. "
-                           f"Minimum density observed: {actual_min_density:.2f} kg/m³. "
-                           f"{density_explanation} "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
             
             # Obtain initial viscosity distribution [Pa*s]
             viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, BBinitial + 273.15)]))
@@ -1221,57 +1060,6 @@ def run_sbt(
         
 
             if clg_configuration == 1: #co-axial geometry 
-                # Validate flow areas and velocities before matrix construction to prevent numerical instability
-                A_flow_annulus_val = float(A_flow_annulus) if not isinstance(A_flow_annulus, np.ndarray) else A_flow_annulus
-                A_flow_centerpipe_val = float(A_flow_centerpipe) if not isinstance(A_flow_centerpipe, np.ndarray) else A_flow_centerpipe
-                
-                # Ensure flow areas are not too small (minimum 1e-4 m² to prevent very large matrix terms)
-                # CO2 requires larger flow areas due to lower density (~200-800 kg/m³ vs ~1000 kg/m³ for H2O)
-                if fluid == 2:  # CO2
-                    A_flow_min = 5e-3  # Minimum flow area for CO2 [m²] = 5000 cm² (5x larger than H2O)
-                    A_flow_min_reason = "CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), requiring larger flow areas"
-                else:  # H2O
-                    A_flow_min = 1e-4  # Minimum flow area for H2O [m²] = 100 cm²
-                    A_flow_min_reason = "standard minimum for H2O"
-                
-                if A_flow_annulus_val < A_flow_min or A_flow_centerpipe_val < A_flow_min:
-                    fluid_name = "CO2" if fluid == 2 else "H2O"
-                    error_msg = (f"Error: Flow areas too small for numerical stability ({fluid_name}, SBT v1). "
-                               f"A_flow_annulus={A_flow_annulus_val:.6e} m², A_flow_centerpipe={A_flow_centerpipe_val:.6e} m². "
-                               f"Minimum required: {A_flow_min:.6e} m² ({A_flow_min_reason}). "
-                               f"This indicates invalid geometry for {fluid_name}. "
-                               f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                               f"Simulation terminated.")
-                    print(f"[ERROR] {error_msg}", flush=True)
-                    raise ValueError(error_msg)
-                
-                # Validate velocities are reasonable (not too high, which could cause instability)
-                # Maximum velocity: 600 m/s - increased to allow borderline cases that still produce valid results
-                u_max = 600.0  # Maximum velocity [m/s]
-                if np.any(np.abs(u_down) > u_max) or np.any(np.abs(u_up) > u_max):
-                    max_u_down = np.max(np.abs(u_down)) if hasattr(u_down, '__len__') else abs(u_down)
-                    max_u_up = np.max(np.abs(u_up)) if hasattr(u_up, '__len__') else abs(u_up)
-                    error_msg = (f"Error: Fluid velocities too high for numerical stability. "
-                               f"Max |u_down|={max_u_down:.2f} m/s, Max |u_up|={max_u_up:.2f} m/s. "
-                               f"Maximum allowed: {u_max:.2f} m/s. This may indicate invalid geometry or flow conditions. Simulation terminated.")
-                    print(f"[ERROR] {error_msg}", flush=True)
-                    raise ValueError(error_msg)
-                
-                # Validate matrix coefficient terms before construction
-                # The term 1/(A_flow*rho_f*cp_f) should not be too large
-                # Typical values: A_flow ~ 0.01-0.1 m², rho_f ~ 1000 kg/m³, cp_f ~ 4000 J/kg-K
-                # So 1/(A_flow*rho_f*cp_f) ~ 1/(0.01*1000*4000) = 2.5e-5, maximum reasonable ~ 1e-3
-                max_matrix_coeff = 1e-3  # Maximum reasonable value for 1/(A_flow*rho_f*cp_f) [s/m³/K]
-                coeff_annulus = 1.0 / (A_flow_annulus_val * rho_f * cp_f)
-                coeff_centerpipe = 1.0 / (A_flow_centerpipe_val * rho_f * cp_f)
-                if coeff_annulus > max_matrix_coeff or coeff_centerpipe > max_matrix_coeff:
-                    error_msg = (f"Error: Matrix coefficients too large for numerical stability. "
-                               f"1/(A_flow_annulus*rho_f*cp_f)={coeff_annulus:.6e}, "
-                               f"1/(A_flow_centerpipe*rho_f*cp_f)={coeff_centerpipe:.6e}. "
-                               f"Maximum allowed: {max_matrix_coeff:.6e}. This indicates invalid geometry or fluid properties. Simulation terminated.")
-                    print(f"[ERROR] {error_msg}", flush=True)
-                    raise ValueError(error_msg)
-                
                 if coaxialflowtype == 1: #CXA    
                     #Populate L and R for downflowing fluid heat balance for first element (which has the injection temperature specified)
                     L[0,0] = 1 / Deltat + u_down / Deltaz[0]*2  + 1/R_cp/(A_flow_annulus*rho_f*cp_f)
@@ -1612,73 +1400,22 @@ def run_sbt(
                     Numidpointsdown = 0.023 * (np.abs(Refluiddownmidpoints) ** (4 / 5)) * (Prandtlfluiddownmidpoints ** 0.4)  # Nusselt Number [-]
         
                     if coaxialflowtype == 1:  # CXA (injection in annulus; production from center pipe)
-                        # Validate required values before calculation
-                        if Dh_annulus is None:
-                            raise ValueError(f"Dh_annulus is None for coaxial geometry. This should have been retrieved from globals() after compute_tube_geometry.")
-                        if thermalconductivityfluiddownmidpoints is None:
-                            raise ValueError(f"thermalconductivityfluiddownmidpoints is None for coaxial geometry. This should have been calculated from fluid properties.")
-                        if Numidpointsdown is None:
-                            raise ValueError(f"Numidpointsdown is None for coaxial geometry. This should have been calculated from Reynolds and Prandtl numbers.")
-                        
                         # Thermal resistance in annulus (downflowing)
                         Nu_down_o = Numidpointsdown  # %Based on Section 8.6 in Bergman (2011), for annulus turbulent flow, the Nusselt numbers for the inner and outer wall can be assumed the same
                         Nu_down_i = Numidpointsdown  
                         hmidpointsdown_o = Nu_down_o * thermalconductivityfluiddownmidpoints / Dh_annulus
                         hmidpointsdown_i = Nu_down_i * thermalconductivityfluiddownmidpoints / Dh_annulus
-                        
-                        # Validate hmidpointsdown_o is not None before using it
-                        if hmidpointsdown_o is None or np.any(np.isnan(hmidpointsdown_o)) or np.any(np.isinf(hmidpointsdown_o)):
-                            raise ValueError(f"hmidpointsdown_o is invalid (None, NaN, or Inf) for coaxial geometry. "
-                                           f"Dh_annulus={Dh_annulus}, thermalconductivityfluiddownmidpoints min={np.min(thermalconductivityfluiddownmidpoints) if hasattr(thermalconductivityfluiddownmidpoints, '__len__') else thermalconductivityfluiddownmidpoints}, "
-                                           f"Numidpointsdown min={np.min(Numidpointsdown) if hasattr(Numidpointsdown, '__len__') else Numidpointsdown}.")
-                        
                         Rt = 1 / (np.pi * hmidpointsdown_o * radius * 2)  #Thermal resistance between annulus flow and surrounding rock (open-hole assumed)
                     
                         # Thermal resistance in center pipe (upflowing)
                         Nu_up = Numidpointsup
                         hmidpointsup = Nu_up * thermalconductivityfluidupmidpoints / (2 * radiuscenterpipe)
                         
-                        # Validate geometry before calculating R_cp
-                        if outerradiuscenterpipe <= radiuscenterpipe:
-                            error_msg = (f"Error: Invalid coaxial geometry: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) <= radiuscenterpipe ({radiuscenterpipe:.6f} m). "
-                                       f"This indicates thicknesscenterpipe is invalid or negative. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        
-                        # Validate heat transfer coefficients are positive
-                        if np.any(hmidpointsup <= 0) or np.any(hmidpointsdown_i <= 0):
-                            error_msg = (f"Error: Invalid heat transfer coefficients for coaxial geometry. "
-                                       f"hmidpointsup min={np.min(hmidpointsup):.2e}, hmidpointsdown_i min={np.min(hmidpointsdown_i):.2e}. "
-                                       f"This may indicate invalid fluid properties or geometry. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        
                         R_cp = (
                             1 / (np.pi * hmidpointsup * 2 * radiuscenterpipe) +
                             np.log((2 * outerradiuscenterpipe) / (2 * radiuscenterpipe)) / (2 * np.pi * k_center_pipe) +
                             1 / (np.pi * hmidpointsdown_i * 2 * outerradiuscenterpipe)
                         )  # thermal resistance between annulus flow and center pipe flow
-                        
-                        # Clamp R_cp to minimum value to prevent numerical instability
-                        # Very small R_cp causes matrix terms 1/R_cp/(A_flow*rho_f*cp_f) to become very large
-                        # Minimum threshold: 1e-5 K/W (typical values are 1e-3 to 1e-2 K/W)
-                        R_cp_min = 1e-5
-                        if np.any(R_cp < R_cp_min):
-                            num_clamped = np.sum(R_cp < R_cp_min)
-                            original_min = np.min(R_cp)
-                            R_cp = np.maximum(R_cp, R_cp_min)
-                            if num_clamped > 0:
-                                print(f"[WARNING] Clamped {num_clamped} R_cp values below minimum ({R_cp_min:.2e} K/W) to prevent numerical instability. "
-                                      f"Original min={original_min:.2e} K/W", flush=True)
-                        
-                        # Validate R_cp is positive
-                        if np.any(R_cp <= 0):
-                            min_R_cp_val = np.min(R_cp)
-                            error_msg = (f"Error: Thermal resistance R_cp is invalid (min={min_R_cp_val:.2e} K/W <= 0) for coaxial geometry. "
-                                       f"This indicates a calculation error. outerradiuscenterpipe={outerradiuscenterpipe:.6f} m, "
-                                       f"radiuscenterpipe={radiuscenterpipe:.6f} m, k_center_pipe={k_center_pipe:.6f} W/m-K. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
                 
                     elif coaxialflowtype == 2:  # CXC (injection in center pipe; production from annulus)
                         # Thermal resistance in annulus (upflowing)
@@ -1692,47 +1429,11 @@ def run_sbt(
                         Nu_down = Numidpointsdown
                         hmidpointsdown = Nu_down * thermalconductivityfluiddownmidpoints / (2 * radiuscenterpipe)
                         
-                        # Validate geometry before calculating R_cp
-                        if outerradiuscenterpipe <= radiuscenterpipe:
-                            error_msg = (f"Error: Invalid coaxial geometry: outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) <= radiuscenterpipe ({radiuscenterpipe:.6f} m). "
-                                       f"This indicates thicknesscenterpipe is invalid or negative. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        
-                        # Validate heat transfer coefficients are positive
-                        if np.any(hmidpointsdown <= 0) or np.any(hmidpointsup_i <= 0):
-                            error_msg = (f"Error: Invalid heat transfer coefficients for coaxial geometry. "
-                                       f"hmidpointsdown min={np.min(hmidpointsdown):.2e}, hmidpointsup_i min={np.min(hmidpointsup_i):.2e}. "
-                                       f"This may indicate invalid fluid properties or geometry. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        
                         R_cp = (
                             1 / (np.pi * hmidpointsdown * 2 * radiuscenterpipe) +
                             np.log((2 * outerradiuscenterpipe) / (2 * radiuscenterpipe)) / (2 * np.pi * k_center_pipe) +
                             1 / (np.pi * hmidpointsup_i * 2 * outerradiuscenterpipe)
                         )  # Thermal resistance between annulus flow and center pipe flow
-                        
-                        # Clamp R_cp to minimum value to prevent numerical instability
-                        # Very small R_cp causes matrix terms 1/R_cp/(A_flow*rho_f*cp_f) to become very large
-                        # Minimum threshold: 1e-5 K/W (typical values are 1e-3 to 1e-2 K/W)
-                        R_cp_min = 1e-5
-                        if np.any(R_cp < R_cp_min):
-                            num_clamped = np.sum(R_cp < R_cp_min)
-                            original_min = np.min(R_cp)
-                            R_cp = np.maximum(R_cp, R_cp_min)
-                            if num_clamped > 0:
-                                print(f"[WARNING] Clamped {num_clamped} R_cp values below minimum ({R_cp_min:.2e} K/W) to prevent numerical instability. "
-                                      f"Original min={original_min:.2e} K/W", flush=True)
-                        
-                        # Validate R_cp is positive
-                        if np.any(R_cp <= 0):
-                            min_R_cp_val = np.min(R_cp)
-                            error_msg = (f"Error: Thermal resistance R_cp is invalid (min={min_R_cp_val:.2e} K/W <= 0) for coaxial geometry. "
-                                       f"This indicates a calculation error. outerradiuscenterpipe={outerradiuscenterpipe:.6f} m, "
-                                       f"radiuscenterpipe={radiuscenterpipe:.6f} m, k_center_pipe={k_center_pipe:.6f} W/m-K. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
                 elif clg_configuration == 2: #u-loop geometry  
                     Numidpoints = 0.023*np.abs(Refluidmidpoints)**(4/5)*Prandtlfluidmidpoints**(0.4) #Nusselt Number [-]
                     hmidpoints = Numidpoints*thermalconductivityfluidmidpoints/Dvector
@@ -1822,96 +1523,6 @@ def run_sbt(
                             
                 #populate L and R
                 if clg_configuration == 1: #co-axial geometry 
-                    # Validate flow areas and velocities before matrix construction (SBT v2)
-                    A_flow_annulus_val = float(A_flow_annulus) if not isinstance(A_flow_annulus, np.ndarray) else A_flow_annulus
-                    A_flow_centerpipe_val = float(A_flow_centerpipe) if not isinstance(A_flow_centerpipe, np.ndarray) else A_flow_centerpipe
-                    
-                    # Ensure flow areas are not too small
-                    # CO2 requires larger flow areas due to lower density (~200-800 kg/m³ vs ~1000 kg/m³ for H2O)
-                    # For CO2, we need ~5x larger flow area to keep velocities reasonable
-                    if fluid == 2:  # CO2
-                        A_flow_min = 5e-3  # Minimum flow area for CO2 [m²] = 5000 cm² (5x larger than H2O)
-                        A_flow_min_reason = "CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), requiring larger flow areas"
-                    else:  # H2O
-                        A_flow_min = 1e-4  # Minimum flow area for H2O [m²] = 100 cm²
-                        A_flow_min_reason = "standard minimum for H2O"
-                    
-                    if A_flow_annulus_val < A_flow_min or A_flow_centerpipe_val < A_flow_min:
-                        fluid_name = "CO2" if fluid == 2 else "H2O"
-                        error_msg = (f"Error: Flow areas too small for numerical stability (SBT v2, {fluid_name}). "
-                                   f"A_flow_annulus={A_flow_annulus_val:.6e} m², A_flow_centerpipe={A_flow_centerpipe_val:.6e} m². "
-                                   f"Minimum required: {A_flow_min:.6e} m² ({A_flow_min_reason}). "
-                                   f"This indicates invalid geometry for {fluid_name}. "
-                                   f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                                   f"Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Validate velocities are reasonable
-                    max_vel_down = np.max(np.abs(velocityfluiddownmidpoints)) if hasattr(velocityfluiddownmidpoints, '__len__') else abs(velocityfluiddownmidpoints)
-                    max_vel_up = np.max(np.abs(velocityfluidupmidpoints)) if hasattr(velocityfluidupmidpoints, '__len__') else abs(velocityfluidupmidpoints)
-                    u_max = 600.0  # Maximum velocity [m/s] - increased to allow borderline cases that still produce valid results
-                    
-                    # Debug logging for CO2 velocity check
-                    if fluid == 2:  # CO2
-                        min_density_down = np.min(densityfluiddownmidpoints) if hasattr(densityfluiddownmidpoints, '__len__') else densityfluiddownmidpoints
-                        min_density_up = np.min(densityfluidupmidpoints) if hasattr(densityfluidupmidpoints, '__len__') else densityfluidupmidpoints
-                    
-                    if max_vel_down > u_max or max_vel_up > u_max:
-                        # Calculate density for diagnostic purposes
-                        min_density_down = mdot / (A_flow_annulus_val * max_vel_down) if max_vel_down > 0 else 0
-                        min_density_up = mdot / (A_flow_centerpipe_val * max_vel_up) if max_vel_up > 0 else 0
-                        actual_min_density = min(np.min(densityfluiddownmidpoints), np.min(densityfluidupmidpoints)) if hasattr(densityfluiddownmidpoints, '__len__') else min(densityfluiddownmidpoints, densityfluidupmidpoints)
-                        fluid_name = "CO2" if fluid == 2 else "H2O"
-                        
-                        # Build fluid-specific error message
-                        if fluid == 2:  # CO2
-                            density_explanation = (f"CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), causing higher velocities for the same geometry. "
-                                                  f"Consider: (1) increasing flow area (larger wellbore or smaller center pipe), (2) reducing mass flow rate, or (3) adjusting pressure/temperature to increase CO2 density.")
-                        else:  # H2O
-                            if actual_min_density < 100:  # H2O density should be ~1000 kg/m³, if it's < 100, something is very wrong
-                                density_explanation = (f"WARNING: H2O density is abnormally low ({actual_min_density:.2f} kg/m³). Expected ~1000 kg/m³. "
-                                                     f"This may indicate a simulation error or invalid fluid properties. "
-                                                     f"Check: (1) fluid property tables, (2) pressure/temperature conditions, (3) simulation parameters.")
-                            else:
-                                density_explanation = (f"H2O density ({actual_min_density:.2f} kg/m³) is normal, but velocities are still too high. "
-                                                     f"Consider: (1) increasing flow area (larger wellbore or smaller center pipe), or (2) reducing mass flow rate.")
-                        
-                        error_msg = (f"Error: Fluid velocities too high for numerical stability (SBT v2). "
-                                   f"Max |velocity_down|={max_vel_down:.2f} m/s, Max |velocity_up|={max_vel_up:.2f} m/s. "
-                                   f"Maximum allowed: {u_max:.2f} m/s. "
-                                   f"A_flow_annulus={A_flow_annulus_val:.6e} m², A_flow_centerpipe={A_flow_centerpipe_val:.6e} m², "
-                                   f"mdot={mdot} kg/s, fluid={fluid_name}. "
-                                   f"Minimum density observed: {actual_min_density:.2f} kg/m³. "
-                                   f"{density_explanation} "
-                                   f"Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Validate R_cp array values before matrix construction
-                    # The term 1/R_cp*Deltaz/2 should not be too large
-                    # Typical: R_cp ~ 1e-3 to 1e-2 K/W, Deltaz ~ 1-10 m
-                    # So 1/R_cp*Deltaz/2 ~ 1/(1e-3)*10/2 = 5000, maximum reasonable ~ 1e6
-                    max_R_cp_term = 1e6  # Maximum reasonable value for 1/R_cp*Deltaz/2 [m/K/W]
-                    R_cp_arr = np.asarray(R_cp)
-                    if np.any(R_cp_arr <= 0):
-                        min_R_cp_val = np.min(R_cp_arr)
-                        error_msg = (f"Error: Thermal resistance R_cp is invalid (min={min_R_cp_val:.2e} K/W <= 0) for coaxial geometry (SBT v2). "
-                                   f"Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Check if matrix terms would be too large
-                    max_deltaz = np.max(Deltaz) if hasattr(Deltaz, '__len__') else Deltaz
-                    max_R_cp_term_val = max_deltaz / (2.0 * np.min(R_cp_arr))
-                    if max_R_cp_term_val > max_R_cp_term:
-                        error_msg = (f"Error: Matrix coefficient term too large for numerical stability (SBT v2). "
-                                   f"max(1/R_cp*Deltaz/2)={max_R_cp_term_val:.2e}, Maximum allowed: {max_R_cp_term:.2e}. "
-                                   f"min(R_cp)={np.min(R_cp_arr):.2e} K/W, max(Deltaz)={max_deltaz:.2f} m. "
-                                   f"This indicates numerical instability. Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
                     if coaxialflowtype == 1: #CXA (injection in annulus, production from center pipe) (1:Tdown; 2:Tr; 3:Q; 4:Tup)
                         #Populate L and R for downflowing fluid energy balance for first element (which has the injection temperature specified)
                         L[0,0] = mdot*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
@@ -2061,14 +1672,7 @@ def run_sbt(
                             L[(iiii-1)*3,(interconnections_new[0]-1)*3] = -mvector[iiii-1]*heatcapacityfluidmidpoints[iiii-1]
                         else: #All other elements
                             L[(iiii-1)*3,(iiii-2)*3] = -mvector[iiii-1]*heatcapacityfluidmidpoints[iiii-1]                          
-                            
-                        # Ensure xinj and xprod are not None before checking lengths
-                        if xinj is None or xprod is None:
-                            error_msg = (f"Error: xinj or xprod is None for U-loop geometry. "
-                                       f"xinj={xinj}, xprod={xprod}. This indicates wellbore geometry was not set correctly.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        
+                             
                         if iiii < len(xinj): #injection well
                             R[(iiii-1)*3,0]  = -mvector[iiii-1]*0.5*(velocityfluidnodes[iiii]**2-velocityfluidnodes[iiii-1]**2) - mvector[iiii-1]*g*verticalchange[iiii-1] - mvector[iiii-1]*Deltahstar[iiii-1]
                         elif iiii < (len(xinj)+len(xprod)-1): #production well
@@ -2107,115 +1711,7 @@ def run_sbt(
                     # Solving the linear system of equations
                     # Sol = np.linalg.solve(L, R)
                     L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
-                    
-                    # Validate thermal resistance before solving (prevents division by very small numbers)
-                    # R_cp is an array (one value per midpoint), check all elements
-                    min_R_cp = 1e-6  # Minimum thermal resistance [K/W] to prevent numerical instability
-                    R_cp_arr = np.asarray(R_cp)
-                    if np.any(R_cp_arr < min_R_cp):
-                        min_R_cp_val = np.min(R_cp_arr)
-                        error_msg = (f"Error: Thermal resistance R_cp too small (min={min_R_cp_val:.2e} K/W < {min_R_cp:.2e} K/W) "
-                                   f"for coaxial geometry. This causes numerical instability in the solver matrix. "
-                                   f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Validate flow areas are positive (should be caught earlier, but double-check)
-                    # A_flow_annulus and A_flow_centerpipe are scalars
-                    A_flow_annulus_val = float(A_flow_annulus) if not isinstance(A_flow_annulus, np.ndarray) else A_flow_annulus[0]
-                    A_flow_centerpipe_val = float(A_flow_centerpipe) if not isinstance(A_flow_centerpipe, np.ndarray) else A_flow_centerpipe[0]
-                    if A_flow_annulus_val <= 0 or A_flow_centerpipe_val <= 0:
-                        error_msg = (f"Error: Invalid flow areas detected. A_flow_annulus={A_flow_annulus_val:.6f} m², "
-                                   f"A_flow_centerpipe={A_flow_centerpipe_val:.6f} m². This indicates invalid geometry. "
-                                   f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Debug: Check matrix condition before solving
-                    cond_num = None
-                    try:
-                        cond_num = np.linalg.cond(L)
-                        # Threshold lowered to 5e7 based on observed failures:
-                        # - Cases with cond_num 6.54e7-8.85e7: producing large residuals (~33x threshold) and failing
-                        # - Cases with cond_num ~1.05e8-1.19e8: still producing invalid results (negative temps, -1800°C)
-                        # - Cases with cond_num ~1.21e8: valid results (244-252°C) - borderline
-                        # - Cases with cond_num 3.23e8-7.26e8: invalid results (600-1500°C or negative temps)
-                        # - Cases with cond_num >1e9: very unstable, caught by previous threshold
-                        # Lowered threshold to 5e7 to catch intermediate instabilities that cause large residuals
-                        if cond_num > 1.3e8:  # Threshold for ill-conditioned matrix (increased to allow borderline cases)
-                            error_msg = (f"Error: Solver matrix is ill-conditioned (condition number = {cond_num:.2e}) for coaxial geometry. "
-                                       f"This indicates numerical instability. Simulation terminated. "
-                                       f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        elif cond_num > 8e7:  # Warning threshold (only warn when close to error threshold to reduce noise)
-                            print(f"[WARNING] Coaxial solver: Matrix condition number high ({cond_num:.2e}), may indicate numerical instability. "
-                                  f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
-                    except ValueError:
-                        raise  # Re-raise ValueError from ill-conditioned check
-                    except Exception as e:
-                        print(f"[WARNING] Could not calculate condition number for L: {e}", flush=True)
-                    
-                    # Try solving with iterative refinement for better numerical stability
-                    # First attempt: direct solve
-                    try:
-                        Sol = spsolve(L_sparse, R)
-                    except Exception as e:
-                        # If direct solve fails, try with better tolerance or different method
-                        print(f"[WARNING] Direct solve failed: {e}. Attempting alternative approach...", flush=True)
-                        # Fallback: use dense solve (slower but more robust for small systems)
-                        try:
-                            Sol = np.linalg.solve(L, R)
-                        except Exception as e2:
-                            error_msg = (f"Error: Both sparse and dense solvers failed for coaxial geometry. "
-                                       f"Sparse solver error: {e}, Dense solver error: {e2}. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                    
-                    # Validate Sol contains reasonable values before using
-                    Sol_arr = Sol.ravel() if hasattr(Sol, 'ravel') else np.array(Sol).ravel()
-                    if (np.any(np.isnan(Sol_arr)) or np.any(np.isinf(Sol_arr)) or 
-                        np.any(np.abs(Sol_arr) > 1e10)):
-                        error_msg = (f"Error: Solver returned invalid values for coaxial geometry. "
-                                   f"Min={np.min(Sol_arr):.2e}, Max={np.max(Sol_arr):.2e}, "
-                                   f"NaN count={np.sum(np.isnan(Sol_arr))}, Inf count={np.sum(np.isinf(Sol_arr))}. "
-                                   f"Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Check residual to detect when solution doesn't satisfy equations well
-                    # This catches cases where condition number is "acceptable" but solution is still invalid
-                    try:
-                        residual = L_sparse @ Sol - R
-                        residual_norm = np.linalg.norm(residual)
-                        R_norm = np.linalg.norm(R)
-                        relative_residual = residual_norm / (R_norm + 1e-10)  # Add small value to avoid division by zero
-                        
-                        # Note: A constant relative residual of ~32.8 has been observed across iterations.
-                        # This appears to be a characteristic of the coaxial solver matrix structure rather than a convergence issue,
-                        # as H2O simulations still produce reasonable results despite this large residual.
-                                # The residual is symmetric (min ≈ -max), suggesting it may be related to specific equation types in the 4×N system.
-                        
-                        # If relative residual is too large, the solution is likely invalid
-                        # Typical good solutions have relative residual < 1e-6
-                        # Relaxed threshold to 100 to allow borderline cases that still produce valid plots
-                        # Note: Relative residual of ~32.8 is expected for coaxial solver and doesn't indicate a problem
-                        if relative_residual > 100:
-                            error_msg = (f"Error: Solver solution has large residual (relative residual = {relative_residual:.2e} > 1e-3) "
-                                       f"for coaxial geometry. This indicates the solution does not satisfy the equations well. "
-                                       f"Residual norm={residual_norm:.2e}, R norm={R_norm:.2e}. "
-                                       f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        elif relative_residual > 50:  # Only warn when close to error threshold (100) to reduce noise
-                            print(f"[WARNING] Coaxial solver: Large relative residual ({relative_residual:.2e}) indicates potential numerical issues. "
-                                  f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
-                    except ValueError:
-                        # Re-raise ValueError (our intentional error for large residual)
-                        raise
-                    except Exception as e:
-                        # If residual calculation itself fails (e.g., matrix multiplication error), continue but log warning
-                        print(f"[WARNING] Could not check solver residual: {e}", flush=True)
+                    Sol = spsolve(L_sparse, R)  
                     
                     if coaxialflowtype == 1: #CXA
                         Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
@@ -2223,17 +1719,6 @@ def run_sbt(
                     elif coaxialflowtype == 2: #CXC
                         Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[3::4]))
                         Tfluidupnodes = np.concatenate((Sol.ravel()[0::4],[Tfluiddownnodes[-1]]))
-                    
-                    # Validate Tfluidupnodes contains reasonable temperature values (should be in degC, roughly -50 to 500)
-                    # Note: For geothermal applications, outlet temps typically range from injection temp (~30-100°C) to ~200-300°C
-                    # Using a more lenient upper bound of 500°C to allow for edge cases, but catching clearly invalid values
-                    if (np.any(np.isnan(Tfluidupnodes)) or np.any(np.isinf(Tfluidupnodes)) or 
-                        np.any(Tfluidupnodes < -100) or np.any(Tfluidupnodes > 500)):
-                        error_msg = (f"Error: Invalid upflowing fluid temperatures calculated for coaxial geometry. "
-                                   f"Min={np.min(Tfluidupnodes):.2f}°C, Max={np.max(Tfluidupnodes):.2f}°C. "
-                                   f"Tinj={Tinj}°C, fluid={fluid}. Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
                     
                     Tfluiddownmidpoints = 0.5*Tfluiddownnodes[1:]+0.5*Tfluiddownnodes[:-1]
                     Tfluidupmidpoints = 0.5*Tfluidupnodes[1:]+0.5*Tfluidupnodes[:-1]
@@ -2298,14 +1783,8 @@ def run_sbt(
         
                     if coaxialflowtype == 1: #CXA
                         Refluiddownmidpoints = densityfluiddownmidpoints*velocityfluiddownmidpoints*(Dh_annulus)/viscosityfluiddownmidpoints
-                        # Ensure radiuscenterpipe is not None
-                        if radiuscenterpipe is None:
-                            raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
                         Refluidupmidpoints = densityfluidupmidpoints*velocityfluidupmidpoints*(2*radiuscenterpipe)/viscosityfluidupmidpoints
                     elif coaxialflowtype == 2: #CXC
-                        # Ensure radiuscenterpipe is not None
-                        if radiuscenterpipe is None:
-                            raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
                         Refluiddownmidpoints = densityfluiddownmidpoints*velocityfluiddownmidpoints*(2*radiuscenterpipe)/viscosityfluiddownmidpoints
                         Refluidupmidpoints = densityfluidupmidpoints*velocityfluidupmidpoints*(Dh_annulus)/viscosityfluidupmidpoints
                         

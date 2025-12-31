@@ -249,12 +249,7 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
         radiuscenterpipe = Diameter2/2
         thicknesscenterpipe = PipeParam3
         k_center_pipe = PipeParam4
-        if PipeParam5 == "Inject in Annulus":
-            coaxialflowtype = 1
-        if PipeParam5 == "Inject in Center Pipe":
-            coaxialflowtype = 2
-
-        ### NOTE STORING e.g. coaxialflowtype
+        coaxialflowtype = PipeParam5
         return locals()
 
     elif clg_configuration == 2: # U-loop geometry (2)
