@@ -139,9 +139,7 @@ class Data:
     def reshape_output(self, tout):
         NEW_SIZE = 161
         original_indices = np.arange(tout.shape[0])
-        new_indices = np.arange(
-            NEW_SIZE + 1,
-        )
+        new_indices = np.arange(NEW_SIZE + 1,)
         interpolator = interp1d(original_indices, tout, kind="quadratic")
         new_data = interpolator(new_indices)
         return new_data

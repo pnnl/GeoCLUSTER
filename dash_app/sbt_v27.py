@@ -67,15 +67,15 @@ def run_sbt(
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
 
-    print(" ***!!!!!!**** ")
-    print(clg_configuration)
+    # print(" ***!!!!!!**** ")
+    # print(clg_configuration)
     tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
                                                 clg_configuration=clg_configuration, 
                                                 Diameter1=Diameter1, Diameter2=Diameter2, 
                                                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                                 )
-    print(" ***!!!!!!**** ")
-    print(tube_geometry_dict)
+    # print(" ***!!!!!!**** ")
+    # print(tube_geometry_dict)
     
     # Extract autoadjustlateralflowrates from tube_geometry_dict (set by set_tube_geometry)
     autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates", None)

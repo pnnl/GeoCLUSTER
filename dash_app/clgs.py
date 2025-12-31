@@ -93,12 +93,8 @@ class data:
 
         self.GWhr = 1e6 * 3600000.0
 
-        self.kWe_avg = (
-            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
-        self.kWt_avg = (
-            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
+        self.kWe_avg = (We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
+        self.kWt_avg = (Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
 
         # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
         self.shape = (
@@ -145,7 +141,6 @@ class data:
             else:
                 # Value is slightly outside range, might be interpolation - warn
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                # print(lineprint)
             # raise Exception(
             #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
             # )
@@ -264,6 +259,9 @@ class data:
                 raise ValueError(f"Error during HDF5 database interpolation: {e}")
             times = self.time
 
+            mdot, L2, L1, grad, D , Tinj, k = point
+            print(mdot, L2, L1, grad, D , Tinj, k)
+
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
 
@@ -341,7 +339,7 @@ class data:
                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
-            cache_key_saved = str(cache_key) 
+            cache_key_saved = str(cache_key)
 
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
@@ -350,6 +348,7 @@ class data:
                 start = time.time()
 
                 try:
+                    print(sbt_version)
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -386,8 +385,8 @@ class data:
                     # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
                     # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
                     # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-                    print(times)
-                    print(Tout)
+                    print(len(times))
+                    print(Tout[-1])
                     print(Pout)
 
                     # Cache the result if valid (before validation)
