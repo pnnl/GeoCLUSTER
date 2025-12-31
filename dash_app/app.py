@@ -1885,16 +1885,10 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
                 "border-bottom": "solid 3px #c4752f",
                 "border-left": "solid 3px #c4752f"
             }
-            check_visual_style = {
-                "display": "inline-block",
-                "border-top": "solid 2px #c4752f",
-                "margin-top": "10px",
-                "clear": "both"
-            }
             return (
                 sCO2_card_style,
                 {"display": "none"},
-                check_visual_style,
+                {"display": "none"},
             )
         else:
             sCO2_card_style = {
