@@ -143,11 +143,12 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         sCO2_supported = False  # Skip sCO2 calculations entirely for SBT V1.0
     
     if fluid == "All":
-        # When "All" is selected, sCO2 requires SBT V2.0 (SBT V1.0 doesn't support sCO2)
-        # For H2O, we can use either, but prefer SBT V2.0 when "All" is selected for consistency
         if model in ("SBT V1.0", "SBT V2.0"):
-            sbt_version_sco2 = 2  # Always use SBT V2.0 for sCO2
-            sbt_version_h2o = 2   # Use SBT V2.0 for H2O when "All" is selected (supports both)
+            sbt_version_sco2 = 2
+            if case == "utube":
+                sbt_version_h2o = 1
+            else:
+                sbt_version_h2o = 2
 
     mean_H2O_Tout = "-"
     mean_H2O_Pout = "-"

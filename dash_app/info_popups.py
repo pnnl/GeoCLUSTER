@@ -900,8 +900,12 @@ def register_info_modal_callbacks(app):
                     " Slender-Body Theory V1.0 is used",
                     html.Br(),
                     "• ",
-                    html.Strong("sCO2 selected or both H2O and sCO2 selected:"),
+                    html.Strong("sCO2 selected:"),
                     " Slender-Body Theory V2.0 is used",
+                    html.Br(),
+                    "• ",
+                    html.Strong("All selected (utube only):"),
+                    " Slender-Body Theory V1.0 is used for H2O and Slender-Body Theory V2.0 is used for sCO2",
                 ], className="mb-3"),
             ]
             
