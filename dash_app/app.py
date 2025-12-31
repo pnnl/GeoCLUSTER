@@ -816,21 +816,28 @@ app.layout = html.Div(
             id="right-column",
             className="eight columns",
             children=[
-                html.Div(
-                    id="geothermal_card",
-                    # [dcc.Tabs(id='tabs', value='tab-1', children=[])]
+                dcc.Loading(
+                    id="main-loader",
+                    type="circle",
+                    parent_className="loader-wrapper",
+                    style={"minHeight": "100px"},
                     children=[
-                        dcc.Tabs(
-                            id="tabs",
-                            value="about-tab",
+                        html.Div(
+                            id="geothermal_card",
                             children=[
-                                about_tab,
-                                energy_time_tab,
-                                energy_tab,
-                                economics_time_tab,
-                                summary_tab,
+                                dcc.Tabs(
+                                    id="tabs",
+                                    value="about-tab",
+                                    children=[
+                                        about_tab,
+                                        energy_time_tab,
+                                        energy_tab,
+                                        economics_time_tab,
+                                        summary_tab,
+                                    ],
+                                )
                             ],
-                        )
+                        ),
                     ],
                 ),
             ],
@@ -1322,14 +1329,11 @@ def update_tabs(selected_model):
 
 
 @app.callback(
-    #    [
     Output(component_id="graphics-parent", component_property="children"),
-    # Output(component_id="graphics-parent-econ", component_property="children"),
-    #    ],
     Input(component_id="model-select", component_property="value"),
     prevent_initial_call=True,
 )
-def update_loading(selected_model):
+def update_graphics_container(selected_model):
     if selected_model == "HDF5":
         return html.Div(
             id="graphics-container",
@@ -1347,25 +1351,19 @@ def update_loading(selected_model):
         )
 
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
-        return dcc.Loading(
-            parent_className="loader-wrapper",
-            type="circle",
+        return html.Div(
+            id="graphics-container",
+            className="simulator-mode",
             children=[
-                html.Div(
-                    id="graphics-container",
-                    className="simulator-mode",
-                    children=[
-                        dcc.Graph(id="geothermal_time_plots", config=plotly_config),
-                        dbc.RadioItems(
-                            options=[
-                                {"label": "Auto Scale", "value": 1},
-                                {"label": "Full Scale", "value": 2},
-                            ],
-                            value=1,
-                            id="radio-graphic-control3",
-                        ),
+                dcc.Graph(id="geothermal_time_plots", config=plotly_config),
+                dbc.RadioItems(
+                    options=[
+                        {"label": "Auto Scale", "value": 1},
+                        {"label": "Full Scale", "value": 2},
                     ],
-                )
+                    value=1,
+                    id="radio-graphic-control3",
+                ),
             ],
         )
     else:
@@ -1535,13 +1533,10 @@ def change_dropdown(at, fluid, model, case, fluid_store):
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
-    # CRITICAL: For subsurface contours (energy-tab), ALWAYS exclude "All" from options
-    # Handle this FIRST with early return to bypass all other logic
     if at == "energy-tab":
         if fluid_store is None:
             fluid_store = {"preferred": "All", "last_specific": "H2O"}
         last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
-        # Force selected fluid to be H2O or sCO2, never "All"
         selected_fluid = fluid if fluid in ["H2O", "sCO2"] else last_specific
         if selected_fluid not in ["H2O", "sCO2"]:
             selected_fluid = "H2O"
