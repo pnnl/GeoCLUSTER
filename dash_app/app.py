@@ -3609,12 +3609,12 @@ def update_subsurface_results_plots(
                     thickness_val = float(PipeParam3)
                     if thickness_val >= 1.0:
                         actual_PipeParam3 = 0.0127
-                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                        # print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
                     elif 0.005 <= thickness_val <= 0.025:
                         actual_PipeParam3 = thickness_val
                     else:
                         actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
-                        print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} out of range, clamped to {actual_PipeParam3} m", flush=True)
+                        # print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} out of range, clamped to {actual_PipeParam3} m", flush=True)
                 except (TypeError, ValueError):
                     actual_PipeParam3 = 0.0127
             else:
@@ -4761,7 +4761,7 @@ if __name__ == "__main__":
     app.run(
         # host="127.0.0.1",
         port=8060,
-        debug=False,  # needs to be False in production
+        debug=True,  # needs to be False in production
         ssl_context="adhoc",
     )
 

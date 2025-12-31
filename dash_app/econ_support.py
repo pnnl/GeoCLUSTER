@@ -74,13 +74,6 @@ def create_teaobject(TandP_dict,
         Pre_Cooling_Delta_T = 13.0
     if Turbine_outlet_pressure is None:
         Turbine_outlet_pressure = 80.0
-    
-    # Clamp Turbine_outlet_pressure to valid range for CO2 (75-200 bar)
-    # This prevents validation errors in TEA module
-    if Turbine_outlet_pressure < 75:
-        Turbine_outlet_pressure = 75.0
-    elif Turbine_outlet_pressure > 200:
-        Turbine_outlet_pressure = 200.0
 
     # Gradient_user = Gradient_user / 1000
     Tin_user = Tin_user + to_kelvin_factor # to kelvin
