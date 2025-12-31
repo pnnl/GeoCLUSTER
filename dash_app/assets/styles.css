@@ -481,8 +481,34 @@ hr {
 }
 
 
+.loader-wrapper {
+    position: relative;
+}
+
 .loader-wrapper > div {
     visibility: visible !important;
+}
+
+.loader-wrapper .dash-spinner {
+    width: 60px !important;
+    height: 60px !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 1001 !important;
+}
+
+.loader-wrapper .dash-spinner .dash-spinner__circle {
+    border-width: 6px !important;
+    border-color: var(--blue) transparent transparent transparent !important;
+}
+
+.loader-wrapper .dash-spinner__circle {
+    width: 60px !important;
+    height: 60px !important;
+    border-width: 6px !important;
+    border-color: var(--blue) transparent transparent transparent !important;
 }
 
 #sCO2-card {
