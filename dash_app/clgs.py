@@ -60,9 +60,9 @@ def _set_cached_result(cache_key, result):
     # prif"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
     # Verify the key is actually in the cache
     # if cache_key in _sbt_cache:
-    #     print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
+    #     print(f"[_set_cached_result] Verified: cache key {cache_key} is now in cache", flush=True)
     # else:
-    #     print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
+    #     print(f"[_set_cached_result] ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -157,7 +157,6 @@ class data:
             else:
                 # Value is slightly outside range, might be interpolation - warn
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                # print(lineprint)
             # raise Exception(
             #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
             # )
@@ -252,6 +251,9 @@ class data:
                 raise
             times = self.time
 
+            mdot, L2, L1, grad, D , Tinj, k = point
+            print(mdot, L2, L1, grad, D , Tinj, k)
+
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
 
@@ -330,12 +332,11 @@ class data:
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
             cache_key_saved = str(cache_key) 
-            
-            if isinstance(cache_key, tuple):
-                cache_key_str = str(cache_key)[:200]  # First 200 chars
-                print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
-            else:
-                print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
+            # if isinstance(cache_key, tuple):
+            #     cache_key_str = str(cache_key)[:200]  # First 200 chars
+            #     print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
+            # else:
+            #     print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
 
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
