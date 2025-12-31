@@ -1425,24 +1425,17 @@ def switch_tab_on_model_change(model, current_tab):
     prevent_initial_call=True,
 )
 def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
-    # Only process if triggered by tabs (not buttons or fluid changes)
     trigger_id = ctx.triggered_id if ctx.triggered else None
     if trigger_id not in ["tabs", None]:
         raise PreventUpdate
     
-    if tab == "energy-tab" and fluid == "All":
-        # Switching to contours/energy tab with "All" selected - change to H2O but preserve "All" in store
-        if fluid_store is None:
-            fluid_store = {"preferred": "All", "last_specific": "H2O"}
-        else:
-            # Preserve "All" as preferred even though we're temporarily using "H2O"
-            if fluid_store.get("preferred") != "All":
-                fluid_store["preferred"] = "All"
-        return "H2O", fluid_store
-    elif tab != "energy-tab" and fluid != "All":
-        # Switching away from energy/contours tab - restore "All" if it was preferred
-        if fluid_store is not None and fluid_store.get("preferred") == "All":
-            return "All", fluid_store
+    if tab == "energy-tab":
+        if fluid == "All" or fluid is None:
+            if fluid_store is None:
+                fluid_store = {"preferred": "All", "last_specific": "H2O"}
+            return "H2O", fluid_store
+        return fluid, fluid_store
+    
     raise PreventUpdate
 
 
@@ -1494,18 +1487,18 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True,
 )
 def update_working_fluid(model, fluid_store, current_fluid, current_tab):
+    if current_tab == "energy-tab":
+        raise PreventUpdate
+    
     if model in ("HDF5", "SBT V2.0", "SBT V1.0"):
-        if current_tab == "energy-tab":
-            fluid_list = ["H2O", "sCO2"]
-        else:
-            fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
             if fluid_store is None:
                 fluid_store = {"preferred": "All", "last_specific": "H2O"}
             preferred = fluid_store.get("preferred", "All")
             last_specific = fluid_store.get("last_specific", "H2O")
             
-            # Use preferred if it's in the list, otherwise use last_specific, otherwise default to "All"
+            fluid_list = ["All", "H2O", "sCO2"]
+            
             if preferred in fluid_list:
                 selected_fluid = preferred
             elif last_specific in fluid_list:
@@ -1542,8 +1535,21 @@ def change_dropdown(at, fluid, model, case, fluid_store):
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
-    # When Simulator is selected (SBT V1.0 or SBT V2.0), allow all fluid options
-    # The model will automatically switch based on fluid selection via the update_model_based_on_fluid_and_selection callback
+    # CRITICAL: For subsurface contours (energy-tab), ALWAYS exclude "All" from options
+    # Handle this FIRST with early return to bypass all other logic
+    if at == "energy-tab":
+        if fluid_store is None:
+            fluid_store = {"preferred": "All", "last_specific": "H2O"}
+        last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
+        # Force selected fluid to be H2O or sCO2, never "All"
+        selected_fluid = fluid if fluid in ["H2O", "sCO2"] else last_specific
+        if selected_fluid not in ["H2O", "sCO2"]:
+            selected_fluid = "H2O"
+        # Create options WITHOUT "All" - hardcode to ensure it's never there
+        fluid_options = [{"label": "H2O", "value": "H2O"}, {"label": "sCO2", "value": "sCO2"}]
+        interpol_options = [{"label": "True", "value": "True"}]
+        new_store = {"preferred": fluid_store.get("preferred", "All"), "last_specific": last_specific}
+        return (fluid_options, selected_fluid, interpol_options, "True", new_store)
 
     if fluid_store is None:
         fluid_store = {"preferred": "All", "last_specific": "H2O"}
@@ -1560,34 +1566,23 @@ def change_dropdown(at, fluid, model, case, fluid_store):
         preferred = new_store["preferred"]
         last_specific = new_store["last_specific"]
 
-    # Determine fluid list based on tab and model
-    if at == "energy-tab":
+    fluid_list = ["All", "H2O", "sCO2"]
+    if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
         fluid_list = ["H2O", "sCO2"]
-    else:
-        fluid_list = ["All", "H2O", "sCO2"]
-        if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-            fluid_list = ["H2O", "sCO2"]
 
     interpol_list = ["True"]
-
     selected_fluid = fluid if fluid is not None else preferred
 
-    if at == "energy-tab":
+    if preferred in fluid_list:
+        selected_fluid = preferred
+    if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
         if selected_fluid == "All" or selected_fluid not in fluid_list:
-            fallback = (
-                last_specific if last_specific in fluid_list else fluid_list[0]
-            )
-            selected_fluid = fallback
-    else:
-        if preferred in fluid_list:
-            selected_fluid = preferred
-        if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-            if selected_fluid == "All" or selected_fluid not in fluid_list:
-                selected_fluid = "H2O"
-                new_store["preferred"] = "H2O"
-                new_store["last_specific"] = "H2O"
+            selected_fluid = "H2O"
+            new_store["preferred"] = "H2O"
+            new_store["last_specific"] = "H2O"
 
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
+    
     interpol_options = [{"label": i, "value": i} for i in interpol_list]
 
     if trigger_id == "tabs":
