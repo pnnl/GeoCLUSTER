@@ -184,9 +184,31 @@ class data:
         )
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
-        ]  # the grid is the values of the parameters at the points we're interpolating between
+        ]
 
-        interpolated_points = interpn(grid, values_around_point, points)
+        points_array = np.array(points, dtype=float)
+        if points_array.ndim == 1:
+            points_array = points_array.reshape(1, -1)
+        
+        for i, g in enumerate(grid):
+            if len(g) > 0:
+                lo = float(np.min(g))
+                hi = float(np.max(g))
+                points_array[:, i] = np.clip(points_array[:, i], lo, hi)
+        
+        if isinstance(points, list):
+            points_clamped = points_array.tolist()
+        else:
+            points_clamped = points_array
+
+        interpolated_points = interpn(
+            grid, 
+            values_around_point, 
+            points_clamped,
+            method="linear",
+            bounds_error=False,
+            fill_value=None
+        )
 
         return interpolated_points
 
@@ -238,6 +260,8 @@ class data:
                 if "out of bounds" in str(e):
                     raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
                 raise
+            except Exception as e:
+                raise ValueError(f"Error during HDF5 database interpolation: {e}")
             times = self.time
 
         else:

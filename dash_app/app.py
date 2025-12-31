@@ -27,7 +27,7 @@ import time
 import dash
 import dash_bootstrap_components as dbc  # Adds bootstrap components for more web themes and templates
 import dash_daq as daq  # Adds more data acquisition (DAQ) and controls to dash callbacks
-from dash import Dash, ctx, dcc, html
+from dash import Dash, ctx, dcc, html, no_update
 from dash.dependencies import Input, Output, State, ALL, MATCH
 from dash.exceptions import PreventUpdate
 from dropdowns import *
@@ -1650,15 +1650,12 @@ def flip_to_tab(tab, btn1, btn3):
         Output(component_id="Tsurf-select", component_property="value"),
         Output(component_id="c-select", component_property="value"),
         Output(component_id="rho-select", component_property="value"),
-        #  Output(component_id='radius-vertical-select', component_property='value'),
-        #  Output(component_id='radius-lateral-select', component_property='value'),
         Output(component_id="n-laterals-select", component_property="value"),
         Output(component_id="lateral-flow-select", component_property="value"),
         Output(component_id="lateral-multiplier-select", component_property="value"),
     ],
     [
         Input(component_id="btn-nclicks-1", component_property="n_clicks"),
-        # Input(component_id='btn-nclicks-2', component_property='n_clicks'),
         Input(component_id="btn-nclicks-3", component_property="n_clicks"),
         Input(component_id="tabs", component_property="value"),
         Input(component_id="case-select", component_property="value"),
@@ -1666,217 +1663,72 @@ def flip_to_tab(tab, btn1, btn3):
         Input(component_id="end-use-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
     ],
+    prevent_initial_call=True,
 )
 def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
-    # ----------------------------------------------------------------------------------------------
-    # Defines scenario button values when clicked.
-    #
-    # Commercial Scale:
-    # For example, consider a u-shaped configuration installed in a geothermal reservoir, with a
-    # horizontal extent of 10 km, vertical depth of 2.5 km, geothermal gradient of 0.065 ˚C/m, borehole
-    # diameter of 0.3 m, inlet temperature of 40˚C, and rock thermal conductivity of 3.5 W/m K,
-    # parameters within the range of anticipated values for commercial scale geothermal applications
-    #
-    #
-    # ----------------------------------------------------------------------------------------------
+    N_OUTPUTS = 20
+    trigger = ctx.triggered_id
 
-    default_output = (
-        25,  # Tsurf
-        790,  # c
+    if trigger not in ("btn-nclicks-1", "btn-nclicks-3"):
+        raise PreventUpdate
+
+    if model != "HDF5":
+        raise PreventUpdate
+
+    case = (case or "").strip()
+    fluid = (fluid or "").strip()
+    end_use = (end_use or "").strip()
+
+    default_tail = (
+        25,    # Tsurf
+        790,   # c
         2750,  # rho
-        1,  # n-laterals
-        1,  # lateral-flow
-        1,  # lateral-multiplier
+        1,     # n-laterals
+        1,     # lateral-flow
+        1,     # lateral-multiplier
     )
 
-    if model == "HDF5":
-        # output = ('utube', 24, 10000, 3500, 0.050, 0.35, 30, 3, 1000, 7.0, 40, 100, 3000, 13, 80) # return to default
+    if trigger == "btn-nclicks-1":
+        head = (
+            24,     # mdot
+            10000,  # L2
+            2500,   # L1
+            0.050,  # grad
+            0.30,   # diameter
+            40,     # Tinj
+            3.5,    # k
+            1000,   # drillcost
+            7.0,    # discount rate
+            40,     # lifetime
+            100,    # kwt
+            3000,   # kwe
+            13,     # precool
+            80,     # turb-pout
+        )
+        return head + default_tail
 
-        if "btn-nclicks-1" == ctx.triggered_id:
-            output = (
-                24,
-                10000,
-                2500,
-                0.050,
-                0.30,
-                40,
-                3.5,
-                1000,
-                7.0,
-                40,
-                100,
-                3000,
-                13,
-                80,
-            )
-            return output + default_output
+    presets = {
+        ("coaxial", "H2O", "Electricity"): (39.2, 20000, 5000, 0.070, 0.444, 60, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("coaxial", "H2O", "Heating"):     (73.4, 13000, 5000, 0.070, 0.444, 30, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("coaxial", "H2O", "All"):          (73.4, 13000, 5000, 0.070, 0.444, 30, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "H2O", "Electricity"):  (43,   20000, 5000, 0.070, 0.44,  60, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "H2O", "Heating"):     (100,  20000, 5000, 0.070, 0.44,  30, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "H2O", "All"):         (100,  20000, 5000, 0.070, 0.44,  30, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("coaxial", "sCO2", "Electricity"): (69.6, 13000, 5000, 0.070, 0.44,  60, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("coaxial", "sCO2", "Heating"):     (69.6, 6000,  5000, 0.070, 0.44,  45, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("coaxial", "sCO2", "All"):         (69.6, 6000,  5000, 0.070, 0.44,  45, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "sCO2", "Electricity"): (100,  20000, 5000, 0.070, 0.44,  60, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "sCO2", "Heating"):     (100,  11000, 5000, 0.070, 0.44,  45, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+        ("utube",   "sCO2", "All"):         (100,  11000, 5000, 0.070, 0.44,  45, 4.5, 1000, 7.0, 40, 100, 3000, 13, 80),
+    }
 
-        # elif "btn-nclicks-2" == ctx.triggered_id:
-        #     if case == 'coaxial':
-        #         output = (77, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-        #         return output
-        #     if case == "utube":
-        #         output = (100, 20000, 5000, 0.070, 0.44, 30, 4.5,  1000, 7.0, 40, 100, 3000, 13, 80)
-        #         return output
+    fluid_key = "H2O" if fluid in ("All", "H2O") else fluid
 
-        elif "btn-nclicks-3" == ctx.triggered_id:
-            if case == "coaxial" and (fluid == "H2O" or fluid == "All"):
-                if end_use == "Electricity":
-                    output = (
-                        39.2,
-                        20000,
-                        5000,
-                        0.070,
-                        0.444,
-                        60,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-                if end_use == "Heating" or end_use == "All":
-                    output = (
-                        73.4,
-                        13000,
-                        5000,
-                        0.070,
-                        0.444,
-                        30,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
+    head = presets.get((case, fluid_key, end_use))
+    if head is None:
+        return (no_update,) * N_OUTPUTS
 
-            if case == "utube" and (fluid == "H2O" or fluid == "All"):
-                if end_use == "Electricity":
-                    output = (
-                        43,
-                        20000,
-                        5000,
-                        0.070,
-                        0.44,
-                        60,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-                if end_use == "Heating" or end_use == "All":
-                    output = (
-                        100,
-                        20000,
-                        5000,
-                        0.070,
-                        0.44,
-                        30,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-
-            if case == "coaxial" and fluid == "sCO2":
-                if end_use == "Electricity":
-                    output = (
-                        69.6,
-                        13000,
-                        5000,
-                        0.070,
-                        0.44,
-                        60,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-                if end_use == "Heating" or end_use == "All":
-                    output = (
-                        69.6,
-                        6000,
-                        5000,
-                        0.070,
-                        0.44,
-                        45,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-
-            if case == "utube" and fluid == "sCO2":
-                if end_use == "Electricity":
-                    output = (
-                        100,
-                        20000,
-                        5000,
-                        0.070,
-                        0.44,
-                        60,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-                if end_use == "Heating" or end_use == "All":
-                    output = (
-                        100,
-                        11000,
-                        5000,
-                        0.070,
-                        0.44,
-                        45,
-                        4.5,
-                        1000,
-                        7.0,
-                        40,
-                        100,
-                        3000,
-                        13,
-                        80,
-                    )
-                    return output + default_output
-
-        else:
-            raise PreventUpdate
-
-    elif model == "SBT V1.0" or model == "SBT V2.0":
-        raise PreventUpdate
+    return head + default_tail
 
 
 @app.callback(
