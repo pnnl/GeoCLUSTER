@@ -89,7 +89,7 @@ turb_pout_dict = create_steps(arg_arr=np.arange(start=75, stop=201, step=10), st
 
 discount_dict = {0: '0', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 
                     11: '', 12: '', 13: '', 14: '', 15: '', 16: '', 17: '', 18: '', 19: '', 20: '20'}
-precool_dict = {0: '0', 5: '', 10: '', 15: '', 20: '', 25: '', 30: '', 35: '', 40: '40'}
+precool_dict = {0: '0', 5: '', 10: '', 15: '15'}
 
 fineness_dict = {0: '0 (coarse)', 1: '', 2: '2 (fine)'} #, 3: '', 4: '', 5: '5 (fine)'}
 accuracy_dict = {1: '1 (coarse)', 2: '', 3: '', 4: '', 5: '5 (fine)'}
@@ -511,7 +511,7 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=15, 
                                                                 mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style, parameter_name="Pre-cooling (˚C)"),
                                                         slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
                                                                 mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
