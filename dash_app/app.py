@@ -3301,7 +3301,6 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_none_style,  # Hidden for SBT V1.0
             parameter_name="Pipe Roughness (µm)",
         )
-
         return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
 
     elif model == "SBT V2.0":
@@ -3421,7 +3420,8 @@ def update_sliders_hyperparms(model, store_data):
         Output(component_id="thermal-results-time", component_property="data"),
         Output(component_id="thermal-results-errors", component_property="data"),
         Output(component_id="TandP-data", component_property="data"),
-        Output(component_id="calculation-request-id", component_property="data", allow_duplicate=True),
+        Output(component_id="calculation-request-id", component_property="data"),
+        Output(component_id="plot-inputs-cache", component_property="data"),
     ],
     [
         Input(component_id="interpolation-select", component_property="value"),
@@ -3470,7 +3470,7 @@ def update_sliders_hyperparms(model, store_data):
         State(component_id="plot-inputs-cache", component_property="data"),
         State(component_id="calculation-request-id", component_property="data"),
     ],
-    prevent_initial_call='initial_duplicate',
+    prevent_initial_call=True,
 )
 def update_subsurface_results_plots(
     interp_time,
@@ -3511,7 +3511,18 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
-        current_inputs = {
+        # Canonicalization function to normalize numeric types
+        def canon(v, nd=6):
+            if v is None:
+                return None
+            if isinstance(v, bool):
+                return v
+            if isinstance(v, (int, float)):
+                return round(float(v), nd)
+            return v
+        
+        # Build current_inputs and canonicalize immediately
+        current_inputs_raw = {
             "interp_time": interp_time,
             "fluid": fluid,
             "case": case,
@@ -3541,28 +3552,41 @@ def update_subsurface_results_plots(
             "HyperParam5": HyperParam5,
             "insulation_thermal_conductivity": insulation_thermal_conductivity,
         }
+        current_inputs = {k: canon(v) for k, v in current_inputs_raw.items()}
         
         if plot_inputs_cache and plot_inputs_cache.get("inputs"):
-            cached_inputs = plot_inputs_cache.get("inputs", {})
-            def normalize_dict(d):
-                return {k: (v if v is not None else "None") for k, v in d.items()}
+            cached_inputs_raw = plot_inputs_cache.get("inputs", {})
+            cached_inputs = {k: canon(v) for k, v in cached_inputs_raw.items()}
             
-            normalized_current = normalize_dict(current_inputs)
-            normalized_cached = normalize_dict(cached_inputs)
+            cache_equal = current_inputs == cached_inputs
             
-            if normalized_current == normalized_cached:
+            if cache_equal:
                 # Inputs haven't changed, return cached outputs to avoid clearing/regenerating plots
-                cached_outputs = plot_inputs_cache.get("outputs")
-                if cached_outputs and len(cached_outputs) == 6:
-                    cached_figure = cached_outputs[0]
-                    if cached_figure and isinstance(cached_figure, dict):
-                        figure_data = cached_figure.get("data", [])
+                cached_pack = plot_inputs_cache.get("outputs")
+                # cached_pack must be exactly 6-tuple: (figure, thermal_memory, mass, time, errors, TandP)
+                if cached_pack and len(cached_pack) == 6:
+                    cached_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp = cached_pack
+                    if cached_fig_dict and isinstance(cached_fig_dict, dict):
+                        figure_data = cached_fig_dict.get("data", [])
                         if figure_data and len(figure_data) > 0:
-                            print(f"[CACHE] Plot inputs unchanged, returning cached plots", flush=True)
-                            if isinstance(cached_outputs, tuple):
-                                return (*cached_outputs, current_request_id if current_request_id is not None else 0)
-                            else:
-                                return list(cached_outputs) + [current_request_id if current_request_id is not None else 0]
+                            # Rebuild figure from cached data with new uirevision to force Dash update
+                            import plotly.graph_objects as go
+                            import time
+                            fig = go.Figure(cached_fig_dict)
+                            uirev = f"{L1}-{grad}-{Tinj}-{mdot}-{scale}-{model}-{case}-{fluid}-{current_request_id}"
+                            fig.update_layout(
+                                uirevision=uirev,
+                                datarevision=current_request_id if current_request_id is not None else time.time()
+                            )
+                            new_fig_dict = fig.to_dict()
+                            # Build outputs6 explicitly: (figure, thermal_memory, mass, time, errors, TandP)
+                            outputs6 = (new_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp)
+                            new_cache = {
+                                "inputs": current_inputs,
+                                "outputs": outputs6
+                            }
+                            request_id = current_request_id if current_request_id is not None else 0
+                            return (*outputs6, request_id, new_cache)
                     # If cached figure is invalid, fall through to regenerate
         
         # Convert pipe roughness from µm (UI) to meters (model)
@@ -3715,7 +3739,8 @@ def update_subsurface_results_plots(
         # end = time.time()
         # print("run generate_subsurface_lineplots:", end - start)
 
-        outputs = (
+        # Build outputs6 explicitly: (figure, thermal_memory, mass, time, errors, TandP)
+        outputs6 = (
             subplots,
             forty_yr_TPmeans_dict,
             df_mass_flow_rate,
@@ -3731,9 +3756,28 @@ def update_subsurface_results_plots(
                 import plotly.graph_objects as go
                 from plotly.subplots import make_subplots
                 empty_fig = make_subplots(rows=2, cols=3)
-                return empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0)
+                empty_outputs6 = (empty_fig.to_dict(), {}, {}, {}, {}, {})
+                empty_cache = {"inputs": current_inputs, "outputs": empty_outputs6}
+                request_id = current_request_id if current_request_id is not None else 0
+                return (*empty_outputs6, request_id, empty_cache)
+            
+            # Force plotly.js to treat this as a new render every callback
+            import time
+            uirev = f"{L1}-{grad}-{Tinj}-{mdot}-{scale}-{model}-{case}-{fluid}-{current_request_id}"
+            subplots.setdefault("layout", {})
+            subplots["layout"]["uirevision"] = uirev
+            subplots["layout"]["datarevision"] = current_request_id if current_request_id is not None else time.time()
+            # Update outputs6 with modified subplots
+            outputs6 = (subplots, forty_yr_TPmeans_dict, df_mass_flow_rate, df_time, err_subres_dict, TandP_dict)
         
-        return (*outputs, current_request_id if current_request_id is not None else 0)
+        # Build cache with canonicalized inputs and outputs6
+        new_cache = {
+            "inputs": current_inputs,
+            "outputs": outputs6
+        }
+        
+        request_id = current_request_id if current_request_id is not None else 0
+        return (*outputs6, request_id, new_cache)
     except PreventUpdate:
         # Re-raise PreventUpdate - it's not an error, it's a signal to skip updating
         raise
@@ -3745,186 +3789,13 @@ def update_subsurface_results_plots(
         import plotly.graph_objects as go
         from plotly.subplots import make_subplots
         empty_fig = make_subplots(rows=2, cols=3)
-        return (empty_fig, {}, {}, {}, {}, {}, (current_request_id if current_request_id is not None else 0))
+        empty_outputs6 = (empty_fig.to_dict(), {}, {}, {}, {}, {})
+        error_inputs = current_inputs if 'current_inputs' in locals() else {}
+        empty_cache = {"inputs": error_inputs, "outputs": empty_outputs6}
+        request_id = current_request_id if current_request_id is not None else 0
+        return (*empty_outputs6, request_id, empty_cache)
 
 
-@app.callback(
-    Output(component_id="plot-inputs-cache", component_property="data"),
-    [
-        Input(component_id="interpolation-select", component_property="value"),
-        Input(component_id="fluid-select", component_property="value"),
-        Input(component_id="case-select", component_property="value"),
-        Input(component_id="mdot-select", component_property="value"),
-        Input(component_id="L2-select", component_property="value"),
-        Input(component_id="L1-select", component_property="value"),
-        Input(component_id="grad-select", component_property="value"),
-        Input(component_id="diameter-select", component_property="value"),
-        Input(component_id="Tinj-select", component_property="value"),
-        Input(component_id="k-select", component_property="value"),
-        Input(component_id="radio-graphic-control3", component_property="value"),
-        Input(component_id="model-select", component_property="value"),
-        Input(component_id="Tsurf-select", component_property="value"),
-        Input(component_id="c-select", component_property="value"),
-        Input(component_id="rho-select", component_property="value"),
-        Input(component_id="radius-vertical-select", component_property="value"),
-        Input(component_id="radius-lateral-select", component_property="value"),
-        Input(component_id="n-laterals-select", component_property="value"),
-        Input(component_id="lateral-flow-select", component_property="value"),
-        Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="coaxial-flow-type-select", component_property="value"),
-        Input(component_id="mesh-select", component_property="value"),
-        Input(component_id="accuracy-select", component_property="value"),
-        Input(component_id="mass-mode-select", component_property="data"),
-        Input(component_id="temp-mode-select", component_property="data"),
-        Input(component_id="pipe-roughness-select", component_property="value"),
-        Input(component_id="fluid-mode-select", component_property="value"),
-        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
-    ],
-    [State(component_id="plot-inputs-cache", component_property="data")],
-    prevent_initial_call=True,
-)
-def update_plot_inputs_cache(interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
-                             Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                             coaxial_flow_type, mesh, accuracy, HyperParam1, HyperParam3, pipe_roughness,
-                             HyperParam5, insulation_thermal_conductivity, current_cache):
-    """Update cache of plot inputs to detect when only tabs change"""
-    trigger_id = ctx.triggered_id if ctx.triggered else None
-    if trigger_id == "tabs":
-        # Don't update cache on tab changes - let the plot callback handle that
-        raise PreventUpdate
-    
-    new_cache = {
-        "inputs": {
-            "interp_time": interp_time,
-            "fluid": fluid,
-            "case": case,
-            "mdot": mdot,
-            "L2": L2,
-            "L1": L1,
-            "grad": grad,
-            "D": D,
-            "Tinj": Tinj,
-            "k_m": k_m,
-            "scale": scale,
-            "model": model,
-            "Tsurf": Tsurf,
-            "c_m": c_m,
-            "rho_m": rho_m,
-            "Diameter1": Diameter1,
-            "Diameter2": Diameter2,
-            "PipeParam3": PipeParam3,
-            "PipeParam4": PipeParam4,
-            "PipeParam5": PipeParam5,
-            "coaxial_flow_type": coaxial_flow_type,
-            "mesh": mesh,
-            "accuracy": accuracy,
-            "HyperParam1": HyperParam1,
-            "HyperParam3": HyperParam3,
-            "pipe_roughness": pipe_roughness,
-            "HyperParam5": HyperParam5,
-            "insulation_thermal_conductivity": insulation_thermal_conductivity,
-        }
-    }
-    if current_cache and current_cache.get("outputs"):
-        new_cache["outputs"] = None
-    return new_cache
-
-
-@app.callback(
-    Output(component_id="plot-inputs-cache", component_property="data", allow_duplicate=True),
-    [
-        Input(component_id="TandP-data", component_property="data"),
-    ],
-    [
-        State(component_id="plot-inputs-cache", component_property="data"),
-        State(component_id="interpolation-select", component_property="value"),
-        State(component_id="fluid-select", component_property="value"),
-        State(component_id="case-select", component_property="value"),
-        State(component_id="mdot-select", component_property="value"),
-        State(component_id="L2-select", component_property="value"),
-        State(component_id="L1-select", component_property="value"),
-        State(component_id="grad-select", component_property="value"),
-        State(component_id="diameter-select", component_property="value"),
-        State(component_id="Tinj-select", component_property="value"),
-        State(component_id="k-select", component_property="value"),
-        State(component_id="radio-graphic-control3", component_property="value"),
-        State(component_id="model-select", component_property="value"),
-        State(component_id="Tsurf-select", component_property="value"),
-        State(component_id="c-select", component_property="value"),
-        State(component_id="rho-select", component_property="value"),
-        State(component_id="radius-vertical-select", component_property="value"),
-        State(component_id="radius-lateral-select", component_property="value"),
-        State(component_id="n-laterals-select", component_property="value"),
-        State(component_id="lateral-flow-select", component_property="value"),
-        State(component_id="lateral-multiplier-select", component_property="value"),
-        State(component_id="coaxial-flow-type-select", component_property="value"),
-        State(component_id="mesh-select", component_property="value"),
-        State(component_id="accuracy-select", component_property="value"),
-        State(component_id="mass-mode-select", component_property="data"),
-        State(component_id="temp-mode-select", component_property="data"),
-        State(component_id="pipe-roughness-select", component_property="value"),
-        State(component_id="fluid-mode-select", component_property="value"),
-        State(component_id="insulation-thermal-conductivity-select", component_property="value"),
-        State(component_id="geothermal_time_plots", component_property="figure"),
-        State(component_id="thermal-memory", component_property="data"),
-        State(component_id="thermal-results-mass", component_property="data"),
-        State(component_id="thermal-results-time", component_property="data"),
-        State(component_id="thermal-results-errors", component_property="data"),
-    ],
-    prevent_initial_call=True,
-)
-def update_plot_cache_with_outputs(tandp_data, current_cache, interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m, scale, model,
-                                  Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-                                  coaxial_flow_type, mesh, accuracy, HyperParam1, HyperParam3, pipe_roughness,
-                                  HyperParam5, insulation_thermal_conductivity, figure, thermal_memory, thermal_mass, thermal_time, thermal_errors):
-    """Update cache with both inputs and outputs when plots are regenerated"""
-    if tandp_data is None or figure is None:
-        raise PreventUpdate
-    
-    if current_cache and current_cache.get("outputs") and current_cache["outputs"][5] == tandp_data:
-        raise PreventUpdate
-    
-    new_cache = {
-        "inputs": {
-            "interp_time": interp_time,
-            "fluid": fluid,
-            "case": case,
-            "mdot": mdot,
-            "L2": L2,
-            "L1": L1,
-            "grad": grad,
-            "D": D,
-            "Tinj": Tinj,
-            "k_m": k_m,
-            "scale": scale,
-            "model": model,
-            "Tsurf": Tsurf,
-            "c_m": c_m,
-            "rho_m": rho_m,
-            "Diameter1": Diameter1,
-            "Diameter2": Diameter2,
-            "PipeParam3": PipeParam3,
-            "PipeParam4": PipeParam4,
-            "PipeParam5": PipeParam5,
-            "coaxial_flow_type": coaxial_flow_type,
-            "mesh": mesh,
-            "accuracy": accuracy,
-            "HyperParam1": HyperParam1,
-            "HyperParam3": HyperParam3,
-            "pipe_roughness": pipe_roughness,
-            "HyperParam5": HyperParam5,
-            "insulation_thermal_conductivity": insulation_thermal_conductivity,
-        },
-        "outputs": (
-            figure,
-            thermal_memory,
-            thermal_mass,
-            thermal_time,
-            thermal_errors,
-            tandp_data,
-        )
-    }
-    return new_cache
 
 
 @app.callback(

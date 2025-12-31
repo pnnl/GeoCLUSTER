@@ -189,7 +189,8 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
         "max": max_v,
         "marks": mark_dict,
         "value": start_v,
-        "tooltip": {"placement": "bottom", "always_visible": True}
+        "tooltip": {"placement": "bottom", "always_visible": True},
+        "updatemode": "drag"  
     }
     
     if step_i is not None:
