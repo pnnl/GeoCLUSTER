@@ -571,8 +571,6 @@ def run_sbt(
                 raise ValueError(error_msg)
             
             # Calculate velocity field
-            print(" ***!!!!!!**** ")
-            print(coaxialflowtype)
             if coaxialflowtype == 1:  # CXA
                 velocityfluiddownmidpoints = mdot / A_flow_annulus / densityfluiddownmidpoints #Downgoing fluid velocity at midpoints in annulus [m/s]
                 velocityfluidupmidpoints = mdot / A_flow_centerpipe / densityfluidupmidpoints #Upgoing fluid velocity at midpoint in center pipe [m/s]
