@@ -138,24 +138,24 @@ Also, *GeoCLUSTER* requires **Dash version >=2.9.x**. Dash >=2.9.x supports [adv
 
 The `requirements.txt` in `dash_app` lists Python packages and their versions needed to run *GeoCLUSTER* following Python installation. Here are those packages listed below:
   
-![](https://img.shields.io/badge/boto3-1.34.34-darkgrey)  
-![](https://img.shields.io/badge/botocore-1.34.34-darkgrey)  
-![](https://img.shields.io/badge/CoolProp-6.6.0-darkgrey)  
-![](https://img.shields.io/badge/cryptography-42.0.5-darkgrey)  
-![](https://img.shields.io/badge/dash-2.14.2-darkgrey)  
-![](https://img.shields.io/badge/dash_bootstrap_components-1.5.0-darkgrey)  
-![](https://img.shields.io/badge/dash_daq-0.5.0-darkgrey)  
-![](https://img.shields.io/badge/flask-3.0.0-darkgrey)  
-![](https://img.shields.io/badge/flask--compress-1.14-darkgrey)  
-![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)  
-![](https://img.shields.io/badge/h5py-3.10.0-darkgrey)  
-![](https://img.shields.io/badge/matplotlib-3.8.2-darkgrey)  
-![](https://img.shields.io/badge/numpy-1.24.4-darkgrey)  
-![](https://img.shields.io/badge/pandas-2.0.3-darkgrey)  
-![](https://img.shields.io/badge/plotly-5.24.1-darkgrey)  
-![](https://img.shields.io/badge/python--dotenv-1.0.0-darkgrey)  
-![](https://img.shields.io/badge/scipy-1.11.4-darkgrey)  
-![](https://img.shields.io/badge/xlsxwriter-3.1.9-darkgrey)  
+![](https://img.shields.io/badge/CoolProp-7.2.0-darkgrey)
+![](https://img.shields.io/badge/dash-3.3.0-darkgrey)
+![](https://img.shields.io/badge/dash_bootstrap_components-2.0.4-darkgrey)
+![](https://img.shields.io/badge/dash_daq-0.6.0-darkgrey)
+![](https://img.shields.io/badge/flask-3.1.2-darkgrey)
+![](https://img.shields.io/badge/flask--compress-1.23-darkgrey)
+![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)
+![](https://img.shields.io/badge/h5py-3.15.1-darkgrey)
+![](https://img.shields.io/badge/numpy-2.4.0-darkgrey)
+![](https://img.shields.io/badge/pandas-2.3.3-darkgrey)
+![](https://img.shields.io/badge/plotly-6.5.0-darkgrey)
+![](https://img.shields.io/badge/scipy-1.16.3-darkgrey)
+![](https://img.shields.io/badge/matplotlib-3.10.8-darkgrey)
+![](https://img.shields.io/badge/boto3-1.42.16-darkgrey)
+![](https://img.shields.io/badge/botocore-1.42.16-darkgrey)
+![](https://img.shields.io/badge/python--dotenv-1.2.1-darkgrey)
+![](https://img.shields.io/badge/cryptography-46.0.3-darkgrey)
+![](https://img.shields.io/badge/xlsxwriter-3.2.9-darkgrey)
 
 We suggest your environment reflects these package versions.
 
@@ -186,9 +186,9 @@ After launching the application, you should see and be able to interact with *Ge
 
 A Dash app is a web framework, but without a web server, Dash apps can only run on localhost where only you can access them on your own machine ([see Running *GeoCLUSTER* Locally](#local)). To deploy and share *GeoCLUSTER* with a public IP or domain name, it needs a virtual web server, like Apache. **Apache** is an open-source HTTP server for modern operating systems, and it can communicate over networks from client to server using the TCP/IP protocol. The TCP/IP protocol specifies how devices exchange data over the internet to one another via channels of communication (TCP) and routes and addresses (IP). Apache can be used for various protocols, but the most common is HTTP/S.
 
-Apache version 2.4.56 is recommended.
+Apache version 2.4.62 is recommended.
 
-![](https://img.shields.io/badge/Apache-2.4.56-darkgrey)  
+![](https://img.shields.io/badge/Apache-2.4.62-darkgrey)  
 
 ### WSGI for Forwarding Requests
 
