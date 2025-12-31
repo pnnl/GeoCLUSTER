@@ -131,7 +131,7 @@ times, Tout, Pout = run_sbt_final(
         Diameter1=0.445, ## diameter wellbore (annulus)- done
         Diameter2=0.201, ## diameter center pipe - done
 
-        PipeParam3=0.013, ## thicknesscenterpipe - done 
+        PipeParam3=0.0192, ## thicknesscenterpipe - done 
         PipeParam4=0.025, ##  insulation thermal conductivity | k_center_pipe -- done
         PipeParam5="Inject in Annulus", ## coaxialflowtype where 1 is in inject in annulus and 2 center -- done
         )
@@ -179,7 +179,7 @@ times, Tout, Pout = run_sbt_final(
         Diameter1=0.445, ## diameter wellbore (annulus)- done
         Diameter2=0.201, ## diameter center pipe - done
 
-        PipeParam3=0.013, ## thicknesscenterpipe - done 
+        PipeParam3=0.0192, ## thicknesscenterpipe - done 
         PipeParam4=0.025, ##  insulation thermal conductivity | k_center_pipe -- done
         PipeParam5="Inject in Annulus", ## coaxialflowtype where 1 is in inject in annulus and 2 center -- done
         )

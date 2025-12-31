@@ -91,7 +91,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
 | Center Pipe Diameter (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
-| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.013 m |
+| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.0192 m |
 | Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m | 1×10⁻⁶ |
 | Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m | 10,000 m |
 | Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m | 3,500 m |

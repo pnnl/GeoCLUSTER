@@ -342,7 +342,7 @@ class data:
                 start = time.time()
 
                 try:
-                    print("SBT VERSION: ," sbt_version)
+                    print("SBT VERSION: ", sbt_version)
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
