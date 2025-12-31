@@ -1075,7 +1075,8 @@ def toggle_collapse(n, is_open):
 def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_state):
     """
     Update model-select options and value based on fluid selection and model selection.
-    When Simulator is selected, automatically choose SBT V1.0 for H2O, SBT V2.0 for All/sCO2.
+    - Database (HDF5): Always stays as HDF5 regardless of fluid
+    - Simulator: H2O → SBT V1.0, sCO2/All → SBT V2.0
     """
     from dropdowns import get_model_options
     
@@ -1088,31 +1089,14 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     # Get updated options based on current fluid
     new_options = get_model_options(current_fluid)
     
-    # If model-select was triggered (user changed model dropdown)
-    if trigger_id == "model-select":
-        # User selected a model - if they selected a Simulator, set to correct version
-        if model_selection in ("SBT V1.0", "SBT V2.0"):
-            # User selected Simulator, determine correct version based on fluid
-            if current_fluid == "H2O":
-                new_value = "SBT V1.0"
-            else:  # "All" or "sCO2"
-                new_value = "SBT V2.0"
+    if model_selection == "HDF5":
+        new_value = "HDF5"
+    elif model_selection in ("SBT V1.0", "SBT V2.0"):
+        if current_fluid == "H2O":
+            new_value = "SBT V1.0"
         else:
-            # User selected Database
-            new_value = "HDF5"
-    # If fluid-select was triggered (user changed fluid)
-    elif trigger_id == "fluid-select":
-        # If current model is a Simulator, update to correct version based on new fluid
-        if model_selection in ("SBT V1.0", "SBT V2.0"):
-            if current_fluid == "H2O":
-                new_value = "SBT V1.0"
-            else:  # "All" or "sCO2"
-                new_value = "SBT V2.0"
-        else:
-            # Keep Database selection
-            new_value = model_selection
+            new_value = "SBT V2.0"
     else:
-        # Unknown trigger, keep current selection
         new_value = model_selection
     
     return new_options, new_value
@@ -1424,6 +1408,13 @@ def switch_tab_on_model_change(model, current_tab):
 )
 def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
     trigger_id = ctx.triggered_id if ctx.triggered else None
+    
+    if trigger_id in ["btn-nclicks-1", "btn-nclicks-3"]:
+        if fluid == "All" or fluid is None:
+            if fluid_store is None:
+                fluid_store = {"preferred": "All", "last_specific": "H2O"}
+            return "H2O", fluid_store
+    
     if trigger_id not in ["tabs", None]:
         raise PreventUpdate
     
@@ -1885,16 +1876,10 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
                 "border-bottom": "solid 3px #c4752f",
                 "border-left": "solid 3px #c4752f"
             }
-            check_visual_style = {
-                "display": "inline-block",
-                "border-top": "solid 2px #c4752f",
-                "margin-top": "10px",
-                "clear": "both"
-            }
             return (
                 sCO2_card_style,
                 {"display": "none"},
-                check_visual_style,
+                {"display": "none"},
             )
         else:
             sCO2_card_style = {
@@ -2245,16 +2230,12 @@ def update_slider_ranges(model, case, store_data):
         diameter_vertical_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
         diameter_lateral_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
 
-        # Set defaults for coaxial SBT models to ensure valid results
+        # Set defaults for coaxial SBT models to match database defaults
         if case == "coaxial":
-            # Use parameters that work for both H2O and CO2:
-            # - Lower mass flow rate (20 kg/s): works for CO2 (avoids high velocities) and H2O
-            # - Moderate injection temperature: avoids extreme fluid properties
-            # - Standard gradient and thermal conductivity: keep defaults
-            coaxial_default_mdot = 20.0  # kg/s - lower flow rate works for CO2 (avoids high velocities) and H2O
-            coaxial_default_tinj = 50.0  # °C - moderate temperature for better stability
-            coaxial_default_grad = start_vals_d["grad"]  # Keep default gradient
-            coaxial_default_k = start_vals_d["k"]  # Keep default thermal conductivity
+            coaxial_default_mdot = 30.0
+            coaxial_default_tinj = 55.0
+            coaxial_default_grad = start_vals_d["grad"]
+            coaxial_default_k = start_vals_d["k"]
         else:
             # Use normal defaults for U-tube
             coaxial_default_mdot = None
@@ -2294,7 +2275,7 @@ def update_slider_ranges(model, case, store_data):
             max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else (saved_values.get("Tinj", coaxial_default_tinj if coaxial_default_tinj is not None else 55.0)),
+            start_v=saved_values.get("Tinj", coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else start_vals_d["Tinj"]),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -2307,7 +2288,7 @@ def update_slider_ranges(model, case, store_data):
             max_v=300,
             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else (saved_values.get("mdot", coaxial_default_mdot if coaxial_default_mdot is not None else start_vals_d["mdot"])),
+            start_v=saved_values.get("mdot", coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else start_vals_d["mdot"]),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
             step_i=mdot_step,
