@@ -1501,7 +1501,11 @@ def generate_econ_lineplots(TandP_dict,
                       plot_bgcolor='rgba(255,255,255,0)')
     
     import time
-    fig.update_layout(uirevision=f"model-{time.time()}")
+    # Include checkbox state in uirevision and set datarevision to force recalculation
+    fig.update_layout(
+        uirevision=f"model-ts={int(is_plot_ts_check)}-{time.time()}",
+        datarevision=time.time()
+    )
 
     # print(error_messages_dict)
 

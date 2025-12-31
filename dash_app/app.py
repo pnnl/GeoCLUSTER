@@ -740,7 +740,7 @@ economics_time_tab = dcc.Tab(
                 html.Div(
                     id="graphics-container-econ",
                     children=[
-                        dcc.Graph(id="econ_plots", config=plotly_config),
+                        dcc.Graph(id="econ_plots", config={**plotly_config, "responsive": True}),
                         dbc.RadioItems(
                             options=[
                                 {"label": "Auto Scale", "value": 1},
@@ -802,6 +802,7 @@ app.layout = html.Div(
         dcc.Store(id="see-all-params-state", data={"expanded": False}),
         dcc.Store(id="calculation-request-id", data=0),
         dcc.Store(id="clipboard-init", data=0),
+        dcc.Store(id="econ-resize-ping", data=0),
         dcc.Store(id="mass-mode-select", data="Constant"),
         dcc.Store(id="temp-mode-select", data="Constant"),
         # Left column
@@ -2023,17 +2024,13 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
     ],
 )
 def show_hide_detailed_card(tab, fluid, end_use, checklist):
-    # print("show_hide_detailed_card, tab: ", tab, end_use)
-
     if tab == "energy-time-tab" or tab == "energy-tab":
-        # print("white 1")
         return {"border": "solid 0px white"}, {"display": "none"}, {"display": "none"}
 
     if tab == "economics-time-tab" or tab == "about-tab" or tab == "summary-tab":
-        if fluid == "H2O" and end_use == "Electricity":
-            # print("white 2")
+        if fluid == "H2O":
             return (
-                {"border": "solid 0px white"},
+                {"border": "solid 0px white", "display": "none"},
                 {"display": "none"},
                 {"display": "none"},
             )
@@ -2060,9 +2057,6 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
                 check_visual_style,
             )
         else:
-            # print("orange")
-            # Always return consistent styles to prevent layout crowding/overlapping
-            # Ensure all properties are explicitly set to match CSS defaults
             sCO2_card_style = {
                 "border": "solid 3px #c4752f",
                 "display": "block",
@@ -2087,6 +2081,8 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
                 {"display": "block"},
                 check_visual_style,
             )
+    
+    return {"border": "solid 0px white", "display": "none"}, {"display": "none"}, {"display": "none"}
 
 
 @app.callback(
@@ -4040,7 +4036,9 @@ def update_plot_title(fluid, end_use, checklist):
         return {"display": "none"}
 
     if end_use == "Electricity":
-        return {"display": "block", "marginTop": "-620px"}
+        # For Electricity, the T-S title is now handled as an annotation in plots_support.py
+        # So we can hide this HTML element
+        return {"display": "none"}
 
 
 @app.callback(
@@ -4666,3 +4664,57 @@ if __name__ == "__main__":
 #  Output(component_id='n-laterals-select-div', component_property='style'),
 #  Output(component_id='lateral-flow-select-div', component_property='style'),
 #  Output(component_id='lateral-multiplier-select-div', component_property='style'),
+
+# Clientside callback: resize econ plot when tab becomes active
+app.clientside_callback(
+    """
+    function(tabValue, currentPing) {
+      if (tabValue !== "economics-time-tab") {
+        return currentPing || 0;
+      }
+      // Wait a tick so the tab is actually visible / laid out
+      setTimeout(function() {
+        try {
+          const graphDiv = document.getElementById("econ_plots");
+          if (!graphDiv) return;
+          // The actual plotly graph is inside the dcc.Graph container
+          const gd = graphDiv.querySelector(".js-plotly-plot");
+          if (gd && typeof Plotly !== 'undefined' && Plotly && Plotly.Plots && Plotly.Plots.resize) {
+            Plotly.Plots.resize(gd);
+          }
+        } catch(e) {
+          console.log("econ resize error", e);
+        }
+      }, 80);
+      return Date.now();
+    }
+    """,
+    Output("econ-resize-ping", "data"),
+    Input("tabs", "value"),
+    State("econ-resize-ping", "data"),
+)
+
+# Clientside callback: resize econ plot when T-S diagram checkbox changes
+app.clientside_callback(
+    """
+    function(val, currentPing) {
+      setTimeout(function() {
+        try {
+          const graphDiv = document.getElementById("econ_plots");
+          const gd = graphDiv && graphDiv.querySelector(".js-plotly-plot");
+          if (gd && typeof Plotly !== 'undefined' && Plotly && Plotly.Plots && Plotly.Plots.resize) {
+            Plotly.Plots.resize(gd);
+          }
+        } catch(e) {
+          console.log("econ resize error (checkbox)", e);
+        }
+      }, 80);
+      return currentPing || 0;
+    }
+    """,
+    Output("econ-resize-ping", "data", allow_duplicate=True),
+    Input("checklist", "value"),
+    State("econ-resize-ping", "data"),
+    prevent_initial_call=True,
+)
+

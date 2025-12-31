@@ -45,24 +45,12 @@ def _get_cached_result(cache_key):
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
-    # prif"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
     cache_size_before = len(_sbt_cache)
-    cache_keys_before = list(_sbt_cache.keys())[:5]  # First 5 keys
     if len(_sbt_cache) >= _cache_max_size:
         # Remove oldest entry (simple FIFO)
         oldest_key = next(iter(_sbt_cache))
-        # prif"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
         del _sbt_cache[oldest_key]
     _sbt_cache[cache_key] = result
-    cache_size_after = len(_sbt_cache)
-    cache_keys_after = list(_sbt_cache.keys())[:5]  # First 5 keys
-    # prif"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
-    # prif"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
-    # Verify the key is actually in the cache
-    # if cache_key in _sbt_cache:
-    #     print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
-    # else:
-    #     print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -333,7 +321,6 @@ class data:
 
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
-                tout_max_cached = np.max(cached_result[1]) - 273.15
                 times, Tout, Pout = cached_result
             else:
                 start = time.time()
@@ -381,11 +368,8 @@ class data:
 
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
-                        tout_max_before_cache = np.max(Tout) - 273.15
                         final_cache_key = str(cache_key_saved)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
-                        cached_verify = _get_cached_result(final_cache_key)
-                        end = time.time()
                 except Exception as e:
                     # Re-raise the exception so the calling code knows it failed
                     raise
