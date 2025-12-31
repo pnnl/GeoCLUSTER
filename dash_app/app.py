@@ -1487,15 +1487,17 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     [
         State(component_id="fluid-selection-store", component_property="data"),
         State(component_id="fluid-select", component_property="value"),
+        State(component_id="tabs", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def update_working_fluid(model, fluid_store, current_fluid):
-    # Allow all fluid options for all models
+def update_working_fluid(model, fluid_store, current_fluid, current_tab):
     if model in ("HDF5", "SBT V2.0", "SBT V1.0"):
-        fluid_list = ["All", "H2O", "sCO2"]
+        if current_tab == "energy-tab":
+            fluid_list = ["H2O", "sCO2"]
+        else:
+            fluid_list = ["All", "H2O", "sCO2"]
         if ctx.triggered_id == "model-select":
-            # Preserve previously selected fluid if it's valid
             if fluid_store is None:
                 fluid_store = {"preferred": "All", "last_specific": "H2O"}
             preferred = fluid_store.get("preferred", "All")
@@ -1507,7 +1509,7 @@ def update_working_fluid(model, fluid_store, current_fluid):
             elif last_specific in fluid_list:
                 selected_fluid = last_specific
             else:
-                selected_fluid = "All"
+                selected_fluid = fluid_list[0] if fluid_list else "H2O"
             
             return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
         else:
@@ -1997,9 +1999,10 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
         Input(component_id="tabs", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="end-use-select", component_property="value"),
+        Input(component_id="checklist", component_property="value"),
     ],
 )
-def show_hide_detailed_card(tab, fluid, end_use):
+def show_hide_detailed_card(tab, fluid, end_use, checklist):
     # print("show_hide_detailed_card, tab: ", tab, end_use)
 
     if tab == "energy-time-tab" or tab == "energy-tab":
@@ -2016,10 +2019,31 @@ def show_hide_detailed_card(tab, fluid, end_use):
             )
         else:
             # print("orange")
+            # Always return consistent styles to prevent layout crowding/overlapping
+            # Ensure all properties are explicitly set to match CSS defaults
+            sCO2_card_style = {
+                "border": "solid 3px #c4752f",
+                "display": "block",
+                "margin-top": "-8px",
+                "border-radius": "0px 0px 10px 10px",
+                "border-top": "none",
+                "border-right": "solid 3px #c4752f",
+                "border-bottom": "solid 3px #c4752f",
+                "border-left": "solid 3px #c4752f"
+            }
+            check_visual_style = {
+                "display": "inline-block",
+                "border-top": "solid 2px #c4752f",
+                "margin-top": "10px",
+                "width": "auto",
+                "height": "auto",
+                "overflow": "visible",
+                "clear": "both"
+            }
             return (
-                {"border": "solid 3px #c4752f", "display": "block"},
+                sCO2_card_style,
                 {"display": "block"},
-                {"display": "inline-block"},
+                check_visual_style,
             )
 
 
@@ -3980,7 +4004,6 @@ def update_econ_plots(
             is_plot_ts = True
         else:
             is_plot_ts = False
-        
         # For SBT V2.0: HyperParam1 = Inlet Pressure (in MPa), HyperParam3 = Pipe Roughness
         # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
         if model == "SBT V2.0":
