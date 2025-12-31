@@ -2148,9 +2148,10 @@ def run_sbt(
                                        f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
                             print(f"[ERROR] {error_msg}", flush=True)
                             raise ValueError(error_msg)
-                        elif cond_num > 8e7:  # Warning threshold (only warn when close to error threshold to reduce noise)
-                            print(f"[WARNING] Coaxial solver: Matrix condition number high ({cond_num:.2e}), may indicate numerical instability. "
-                                  f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
+                        # TODO AB: !!!! Could bring back 
+                        # elif cond_num > 8e7:  # Warning threshold (only warn when close to error threshold to reduce noise)
+                        #     print(f"[WARNING] Coaxial solver: Matrix condition number high ({cond_num:.2e}), may indicate numerical instability. "
+                        #           f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
                     except ValueError:
                         raise  # Re-raise ValueError from ill-conditioned check
                     except Exception as e:
