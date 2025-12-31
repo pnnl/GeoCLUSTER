@@ -1949,6 +1949,19 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
         "padding-bottom": "5px",
     }
 
+    econ_parms_div_style_heating = {
+        "display": "block",
+        "border": "solid 3px #c4752f",
+        "border-top": "solid 3px #c4752f",
+        "border-left": "solid 3px #c4752f",
+        "border-right": "solid 3px #c4752f",
+        "border-bottom": "none",
+        "border-radius": "10px 10px 0px 0px",
+        "margin-bottom": "0px",
+        "margin-right": "5px",
+        "padding-bottom": "5px",
+    }
+
     econ_parms_div_style_2 = {
         "display": "block",
         "border": "solid 3px #c4752f",
@@ -1970,19 +1983,19 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
         if fluid == "All" and end_use == "All":
             return econ_parms_div_style_2, b, b
         if fluid == "All" and end_use == "Heating":
-            return econ_parms_div_style, b, n
+            return econ_parms_div_style_heating, b, n
         if fluid == "All" and end_use == "Electricity":
             return econ_parms_div_style_2, n, b
         elif fluid == "H2O" and end_use == "All":
             return econ_parms_div_style, b, b
         elif fluid == "H2O" and end_use == "Heating":
-            return econ_parms_div_style, b, n
+            return econ_parms_div_style_heating, b, n
         elif fluid == "H2O" and end_use == "Electricity":
             return econ_parms_div_style, n, b
         elif fluid == "sCO2" and end_use == "All":
             return econ_parms_div_style_2, b, b
         elif fluid == "sCO2" and end_use == "Heating":
-            return econ_parms_div_style, b, n
+            return econ_parms_div_style_heating, b, n
         elif fluid == "sCO2" and end_use == "Electricity":
             return econ_parms_div_style_2, n, b
         else:
@@ -2016,6 +2029,28 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
                 {"border": "solid 0px white"},
                 {"display": "none"},
                 {"display": "none"},
+            )
+        elif end_use == "Heating":
+            sCO2_card_style = {
+                "border": "solid 3px #c4752f",
+                "display": "block",
+                "margin-top": "0px",
+                "border-radius": "0px 0px 10px 10px",
+                "border-top": "none",
+                "border-right": "solid 3px #c4752f",
+                "border-bottom": "solid 3px #c4752f",
+                "border-left": "solid 3px #c4752f"
+            }
+            check_visual_style = {
+                "display": "inline-block",
+                "border-top": "solid 2px #c4752f",
+                "margin-top": "10px",
+                "clear": "both"
+            }
+            return (
+                sCO2_card_style,
+                {"display": "none"},
+                check_visual_style,
             )
         else:
             # print("orange")
