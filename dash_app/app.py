@@ -1836,10 +1836,8 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
     }
 
     if tab == "energy-time-tab" or tab == "energy-tab":
-        # print("bye econ!")
         return n, n, n
-    else:  #
-        # print("hi econ!") # how should econ look under different conditions?
+    else:
         if fluid == "All" and end_use == "All":
             return econ_parms_div_style_2, b, b
         if fluid == "All" and end_use == "Heating":
@@ -1849,7 +1847,7 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
         elif fluid == "H2O" and end_use == "All":
             return econ_parms_div_style, b, b
         elif fluid == "H2O" and end_use == "Heating":
-            return econ_parms_div_style_heating, b, n
+            return econ_parms_div_style, b, n
         elif fluid == "H2O" and end_use == "Electricity":
             return econ_parms_div_style, n, b
         elif fluid == "sCO2" and end_use == "All":
