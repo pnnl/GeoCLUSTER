@@ -493,7 +493,7 @@ hr {
     width: 60px !important;
     height: 60px !important;
     position: absolute !important;
-    top: 30% !important;
+    top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) !important;
     z-index: 1001 !important;
