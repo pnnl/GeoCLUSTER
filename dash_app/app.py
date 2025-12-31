@@ -2250,16 +2250,12 @@ def update_slider_ranges(model, case, store_data):
         diameter_vertical_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
         diameter_lateral_dict = {0.2159: "0.2159", 0.4445: "0.4445"}
 
-        # Set defaults for coaxial SBT models to ensure valid results
+        # Set defaults for coaxial SBT models to match database defaults
         if case == "coaxial":
-            # Use parameters that work for both H2O and CO2:
-            # - Lower mass flow rate (20 kg/s): works for CO2 (avoids high velocities) and H2O
-            # - Moderate injection temperature: avoids extreme fluid properties
-            # - Standard gradient and thermal conductivity: keep defaults
-            coaxial_default_mdot = 20.0  # kg/s - lower flow rate works for CO2 (avoids high velocities) and H2O
-            coaxial_default_tinj = 50.0  # °C - moderate temperature for better stability
-            coaxial_default_grad = start_vals_d["grad"]  # Keep default gradient
-            coaxial_default_k = start_vals_d["k"]  # Keep default thermal conductivity
+            coaxial_default_mdot = 30.0
+            coaxial_default_tinj = 55.0
+            coaxial_default_grad = start_vals_d["grad"]
+            coaxial_default_k = start_vals_d["k"]
         else:
             # Use normal defaults for U-tube
             coaxial_default_mdot = None
@@ -2299,7 +2295,7 @@ def update_slider_ranges(model, case, store_data):
             max_v=100.0,
             # min_v=20.0, max_v=200.0,
             mark_dict=Tinj_dict,
-            start_v=coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else (saved_values.get("Tinj", coaxial_default_tinj if coaxial_default_tinj is not None else 55.0)),
+            start_v=saved_values.get("Tinj", coaxial_default_tinj if (case == "coaxial" and coaxial_default_tinj is not None) else start_vals_d["Tinj"]),
             div_style=div_block_style,
             parameter_name="Injection Temperature (˚C)",
         )
@@ -2312,7 +2308,7 @@ def update_slider_ranges(model, case, store_data):
             max_v=300,
             # min_v=u_sCO2.mdot[0], max_v=u_sCO2.mdot[-1],
             mark_dict=mdot_dict,
-            start_v=coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else (saved_values.get("mdot", coaxial_default_mdot if coaxial_default_mdot is not None else start_vals_d["mdot"])),
+            start_v=saved_values.get("mdot", coaxial_default_mdot if (case == "coaxial" and coaxial_default_mdot is not None) else start_vals_d["mdot"]),
             div_style=div_block_style,
             parameter_name="Mass Flow Rate (kg/s)",
             step_i=mdot_step,
