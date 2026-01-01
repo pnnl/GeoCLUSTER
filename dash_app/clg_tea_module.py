@@ -324,6 +324,28 @@ class TEA:
                 self.InterpolatedPressureArray = np.array([])
                 return
             
+            # Handle None Pout for H2O (SBT V1.0 doesn't calculate pressure)
+            if TandP_dict.get("H2O_Pout") is None:
+                time_arr = np.array(TandP_dict["time"])
+                Tout_arr = np.array(TandP_dict["H2O_Tout"])
+                if len(time_arr) == 0 or len(Tout_arr) == 0:
+                    self.Pout = np.array([])
+                    self.Tout = np.array([])
+                    self.InterpolatedTemperatureArray = np.array([])
+                    self.InterpolatedPressureArray = np.array([])
+                    return
+                hdf5_times_array = np.array(hdf5_times)
+                if len(time_arr) == len(hdf5_times_array) and np.allclose(time_arr, hdf5_times_array, rtol=1e-5):
+                    self.Tout = Tout_arr
+                    self.Pout = np.array([])
+                else:
+                    f_T = interp1d(time_arr, Tout_arr, fill_value="extrapolate", bounds_error=False)
+                    self.Tout = f_T(hdf5_times_array)
+                    self.Pout = np.array([])
+                self.InterpolatedTemperatureArray = self.Tout
+                self.InterpolatedPressureArray = self.Pout
+                return
+            
             time_arr = np.array(TandP_dict["time"])
             Tout_arr = np.array(TandP_dict["H2O_Tout"])
             Pout_arr = np.array(TandP_dict["H2O_Pout"])

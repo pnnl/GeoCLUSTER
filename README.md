@@ -53,80 +53,80 @@ Users can explore scenarios on *GeoCLUSTER* through several methods: 1) toggling
 
 To better view all possible parameters a user can edit, a full list of editable and fixed parameters is annotated below. For easier readability, parameters are binned into 8 higher-level categories: model fine-tuning, geologic properties, wellbore operations, tube geometry, component performance, power-cycle operations, thermodynamic references, and economics. In total, **32 parameters are editable in GeoCLUSTER**. Parameters annotated with "(fixed)" are not editable but are instead assumptions. Note that more editable parameters are available when a user selects "Simulator" as their model rather than "Database". 
 
-| Model Fine-tuning | Database Options | Simulator Options |
-|-----------------|------------------|-------------------|
-| Model           | HDF5 Database    | SBT Simulator     |
-| Accuracy        | —                | 1 (coarse) to 5 (fine) |
-| Mesh Fineness   | —                | 0 (coarse) to 2 (fine) |
+| Model Fine-tuning | Database Options | Simulator Options | Default |
+|-----------------|------------------|-------------------|---------|
+| Model           | HDF5 Database    | SBT Simulator     | HDF5 Database |
+| Accuracy        | —                | 1 (coarse) to 5 (fine) | 1 (coarse) |
+| Mesh Fineness   | —                | 0 (coarse) to 2 (fine) | 0 (coarse) |
 
-| Geologic Properties | Database Options | Simulator Options |
-|--------------------|------------------|-------------------|
-| Ambient Temperature | 26.85 °C (fixed) | 26.85 °C (fixed) |
-| Surface Temperature | 25 °C (fixed) | 0 °C to 40 °C |
-| Geothermal Gradient | 0.03 °C/m to 0.07 °C/m | 0.015 °C/m to 0.20 °C/m |
-| Rock Thermal Conductivity | 1.5 W/m·°C to 4.5 W/m·°C | 0.4 W/m·°C to 5 W/m·°C |
-| Rock Specific Heat Capacity | 790 J/kg·°C (fixed) | 500 J/kg·°C to 2,000 J/kg·°C |
-| Rock Density | 2,750 kg/m³ (fixed) | 1,000 kg/m³ to 3,500 kg/m³ |
+| Geologic Properties | Database Options | Simulator Options | Default |
+|--------------------|------------------|-------------------|---------|
+| Ambient Temperature | 26.85 °C (fixed) | 26.85 °C (fixed) | 26.85 °C |
+| Surface Temperature | 25 °C (fixed) | 0 °C to 40 °C | 25 °C |
+| Geothermal Gradient | 0.03 °C/m to 0.07 °C/m | 0.015 °C/m to 0.20 °C/m | 0.065 °C/m |
+| Rock Thermal Conductivity | 1.5 W/m·°C to 4.5 W/m·°C | 0.4 W/m·°C to 5 W/m·°C | 3 W/m·°C |
+| Rock Specific Heat Capacity | 790 J/kg·°C (fixed) | 500 J/kg·°C to 2,000 J/kg·°C | 790 J/kg·°C |
+| Rock Density | 2,750 kg/m³ (fixed) | 1,000 kg/m³ to 3,500 kg/m³ | 2,800 kg/m³ |
 
-| Wellbore Operation Parameters | Database Options | Simulator Options |
-|------------------------------|------------------|-------------------|
-| Working Fluid | H₂O, sCO₂ | H₂O, sCO₂ |
-| Mass Flow Rate | 5 kg/s to 100 kg/s | 5 kg/s to 300 kg/s |
-| Injection Temperature | 30 °C to 59 °C | 30 °C to 100 °C |
-| Inlet Pressure | 200 bar (fixed) | 5 MPa to 20 MPa |
-| Mass Flow Rate Mode | — | Constant, Variable |
-| Injection Temperature Mode | — | Constant, Variable |
-| Fluid Properties Mode | — | Constant, Temperature-Pressure Dependent |
-| Fluid Specific Heat Capacity | — | 4,200 J/kg·°C (fixed) |
-| Fluid Density | — | 1,000 kg/m³ (fixed) |
-| Fluid Thermal Conductivity | — | 0.68 W/m·°C (fixed) |
-| Fluid Dynamic Viscosity | — | 600×10⁻⁶ Pa·s (fixed) |
-| Flow Type (coaxial) | — | Inject in Annulus, Inject in Center Pipe |
+| Wellbore Operation Parameters | Database Options | Simulator Options | Default |
+|------------------------------|------------------|-------------------|---------|
+| Working Fluid | H₂O, sCO₂ | H₂O, sCO₂ | All |
+| Mass Flow Rate | 5 kg/s to 100 kg/s | 5 kg/s to 300 kg/s | 31 kg/s |
+| Injection Temperature | 30 °C to 59 °C | 30 °C to 100 °C | 55 °C |
+| Inlet Pressure | 200 bar (fixed) | 5 MPa to 20 MPa | 20 MPa |
+| Mass Flow Rate Mode | — | Constant, Variable | Constant |
+| Injection Temperature Mode | — | Constant, Variable | Constant |
+| Fluid Properties Mode | — | Constant, Temperature-Pressure Dependent | Constant |
+| Fluid Specific Heat Capacity | — | 4,200 J/kg·°C (fixed) | 4,200 J/kg·°C |
+| Fluid Density | — | 1,000 kg/m³ (fixed) | 1,000 kg/m³ |
+| Fluid Thermal Conductivity | — | 0.68 W/m·°C (fixed) | 0.68 W/m·°C |
+| Fluid Dynamic Viscosity | — | 600×10⁻⁶ Pa·s (fixed) | 600×10⁻⁶ Pa·s |
+| Flow Type (coaxial) | — | Inject in Annulus, Inject in Center Pipe | Inject in Annulus |
 
-| Tube Geometry Parameters | Database Options | Simulator Options |
-|--------------------------|------------------|-------------------|
-| Heat-Exchanger Design | U-Loop, Co-axial | U-Loop, Co-axial |
-| Borehole Diameter | 0.2159 m to 0.4445 m | — |
-| Wellbore Diameter Vertical (U-tube) | — | 0.2159 m to 0.4445 m |
-| Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m |
-| Center Pipe Radius (coaxial) | — | 0.06350 m to 0.1740 m |
-| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m |
-| Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m |
-| Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m |
-| Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m |
-| Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m |
-| Number of Laterals (U-tube) | 1 (fixed) | 0 to 30 |
+| Tube Geometry Parameters | Database Options | Simulator Options | Default |
+|--------------------------|------------------|-------------------|---------|
+| Heat-Exchanger Design | U-Loop, Co-axial | U-Loop, Co-axial | U-Loop |
+| Borehole Diameter | 0.2159 m to 0.4445 m | — | 0.35 m |
+| Wellbore Diameter Vertical (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
+| Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
+| Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
+| Center Pipe Diameter (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
+| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.013 m |
+| Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m | 1×10⁻⁶ |
+| Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m | 10,000 m |
+| Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m | 3,500 m |
+| Number of Laterals (U-tube) | 1 (fixed) | 0 to 30 | 1 |
 
-| Component Performance | Database Options | Simulator Options |
-|----------------------|------------------|-------------------|
-| Insulation Thermal Conductivity | 0.06 W/m·°C | 0.025 W/m·°C to 0.50 W/m·°C |
-| Pump Efficiency (Circulation Pump) | 80% (fixed) | 80% (fixed) |
-| Turbine Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) |
-| Compressor Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) |
-| Generator Conversion Efficiency (sCO₂ electricity) | 98% (fixed) | 98% (fixed) |
+| Component Performance | Database Options | Simulator Options | Default |
+|----------------------|------------------|-------------------|---------|
+| Insulation Thermal Conductivity (coaxial) | 0.06 W/m·°C | 0.025 W/m·°C to 0.50 W/m·°C | 0.025 W/m·°C  |
+| Pump Efficiency (Circulation Pump) | 80% (fixed) | 80% (fixed) | 80% |
+| Turbine Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) | 90% |
+| Compressor Isentropic Efficiency (sCO₂ electricity) | 90% (fixed) | 90% (fixed) | 90% |
+| Generator Conversion Efficiency (sCO₂ electricity) | 98% (fixed) | 98% (fixed) | 98% |
 
-| Power-Cycle Operating Parameters | Database / Simulator Options |
-|----------------------------------|------------------------------|
-| Pre-cooling | 0 °C to 40 °C |
-| Pre-cooling Temperature Decline (sCO₂ electricity) | 5 °C (fixed) |
-| Turbine Outlet Pressure | 75 bar to 200 bar |
-| Turbine Outlet Pressure (sCO₂ electricity) | 79 bar (fixed) |
+| Power-Cycle Operating Parameters | Database / Simulator Options | Default |
+|----------------------------------|------------------------------|---------|
+| Pre-cooling | 0 °C to 40 °C | 13 °C |
+| Pre-cooling Temperature Decline (sCO₂ electricity) | 5 °C (fixed) | 5 °C  |
+| Turbine Outlet Pressure | 75 bar to 200 bar | 80 bar |
+| Turbine Outlet Pressure (sCO₂ electricity) | 79 bar (fixed) | 79 bar |
 
-| Thermodynamic Reference Assumptions | Database / Simulator Options |
-|-----------------------------------|------------------------------|
-| Dead-State Temperature | 20 °C (fixed) |
-| Dead-State Pressure | 1 bar (fixed) |
+| Thermodynamic Reference Assumptions | Database / Simulator Options | Default |
+|-----------------------------------|------------------------------|---------|
+| Dead-State Temperature | 20 °C (fixed) |  20 °C |
+| Dead-State Pressure | 1 bar (fixed) | 1 bar |
 
-| Economic Parameters | Database / Simulator Options |
-|--------------------|------------------------------|
-| End-Use | Heating, Electricity |
-| Drilling Cost | 0 &#36; / m to 4,000 &#36; / m |
-| Discount Rate | 0% to 20% |
-| System Lifetime | 0 years to 40 years |
-| Direct-Use Heat Plant CAPEX | 0 &#36; / $kWₜ$ to 1,000 &#36; / $kWₜ$ |
-| Power Plant CAPEX (electricity) | 0 &#36; / $kWₑ$ to 10,000 &#36; / $kWₑ$ |
-| Operation and Maintenance Cost (Plant % of Capital Cost) | 1.5% (fixed) |
-| Electricity Rate in Direct-Use | 10% (fixed) |
+| Economic Parameters | Database / Simulator Options | Default |
+|--------------------|------------------------------|---------|
+| End-Use | Heating, Electricity | All |
+| Drilling Cost | 0 &#36; / m to 4,000 &#36; / m | 1,000 &#36; / m |
+| Discount Rate | 0% to 20% | 7% |
+| System Lifetime | 0 years to 40 years | 40 years |
+| Direct-Use Heat Plant CAPEX | 0 &#36; / $kWₜ$ to 1,000 &#36; / $kWₜ$ | 100 &#36; / $kWₜ |
+| Power Plant CAPEX (electricity) | 0 &#36; / $kWₑ$ to 10,000 &#36; / $kWₑ$ | 3,000 &#36; / $kWₑ$ |
+| Operation and Maintenance Cost (Plant % of Capital Cost) | 1.5% (fixed) | 1.5%  |
+| Electricity Rate in Direct-Use | 10% (fixed) | 10% |
 
 ## Python Requirements <a name="requirements"></a>
 
@@ -138,24 +138,24 @@ Also, *GeoCLUSTER* requires **Dash version >=2.9.x**. Dash >=2.9.x supports [adv
 
 The `requirements.txt` in `dash_app` lists Python packages and their versions needed to run *GeoCLUSTER* following Python installation. Here are those packages listed below:
   
-![](https://img.shields.io/badge/boto3-1.34.34-darkgrey)  
-![](https://img.shields.io/badge/botocore-1.34.34-darkgrey)  
-![](https://img.shields.io/badge/CoolProp-6.6.0-darkgrey)  
-![](https://img.shields.io/badge/cryptography-42.0.5-darkgrey)  
-![](https://img.shields.io/badge/dash-2.14.2-darkgrey)  
-![](https://img.shields.io/badge/dash_bootstrap_components-1.5.0-darkgrey)  
-![](https://img.shields.io/badge/dash_daq-0.5.0-darkgrey)  
-![](https://img.shields.io/badge/flask-3.0.0-darkgrey)  
-![](https://img.shields.io/badge/flask--compress-1.14-darkgrey)  
-![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)  
-![](https://img.shields.io/badge/h5py-3.10.0-darkgrey)  
-![](https://img.shields.io/badge/matplotlib-3.8.2-darkgrey)  
-![](https://img.shields.io/badge/numpy-1.24.4-darkgrey)  
-![](https://img.shields.io/badge/pandas-2.0.3-darkgrey)  
-![](https://img.shields.io/badge/plotly-5.24.1-darkgrey)  
-![](https://img.shields.io/badge/python--dotenv-1.0.0-darkgrey)  
-![](https://img.shields.io/badge/scipy-1.11.4-darkgrey)  
-![](https://img.shields.io/badge/xlsxwriter-3.1.9-darkgrey)  
+![](https://img.shields.io/badge/CoolProp-7.2.0-darkgrey)
+![](https://img.shields.io/badge/dash-3.3.0-darkgrey)
+![](https://img.shields.io/badge/dash_bootstrap_components-2.0.4-darkgrey)
+![](https://img.shields.io/badge/dash_daq-0.6.0-darkgrey)
+![](https://img.shields.io/badge/flask-3.1.2-darkgrey)
+![](https://img.shields.io/badge/flask--compress-1.23-darkgrey)
+![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)
+![](https://img.shields.io/badge/h5py-3.15.1-darkgrey)
+![](https://img.shields.io/badge/numpy-2.4.0-darkgrey)
+![](https://img.shields.io/badge/pandas-2.3.3-darkgrey)
+![](https://img.shields.io/badge/plotly-6.5.0-darkgrey)
+![](https://img.shields.io/badge/scipy-1.16.3-darkgrey)
+![](https://img.shields.io/badge/matplotlib-3.10.8-darkgrey)
+![](https://img.shields.io/badge/boto3-1.42.16-darkgrey)
+![](https://img.shields.io/badge/botocore-1.42.16-darkgrey)
+![](https://img.shields.io/badge/python--dotenv-1.2.1-darkgrey)
+![](https://img.shields.io/badge/cryptography-46.0.3-darkgrey)
+![](https://img.shields.io/badge/xlsxwriter-3.2.9-darkgrey)
 
 We suggest your environment reflects these package versions.
 
@@ -186,9 +186,9 @@ After launching the application, you should see and be able to interact with *Ge
 
 A Dash app is a web framework, but without a web server, Dash apps can only run on localhost where only you can access them on your own machine ([see Running *GeoCLUSTER* Locally](#local)). To deploy and share *GeoCLUSTER* with a public IP or domain name, it needs a virtual web server, like Apache. **Apache** is an open-source HTTP server for modern operating systems, and it can communicate over networks from client to server using the TCP/IP protocol. The TCP/IP protocol specifies how devices exchange data over the internet to one another via channels of communication (TCP) and routes and addresses (IP). Apache can be used for various protocols, but the most common is HTTP/S.
 
-Apache version 2.4.56 is recommended.
+Apache version 2.4.62 is recommended.
 
-![](https://img.shields.io/badge/Apache-2.4.56-darkgrey)  
+![](https://img.shields.io/badge/Apache-2.4.62-darkgrey)  
 
 ### WSGI for Forwarding Requests
 

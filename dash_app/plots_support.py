@@ -226,11 +226,18 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale, is
     if is_simulator:
         fig.update_layout(
             legend_title_text='Working Fluid',
-            legend=dict(y=1.05, yanchor='top'),
+            legend=dict(y=1.05, yanchor='top', tracegroupgap=0),
             template='none', margin=dict(l=70, r=70, t=50, b=70),
             title_text=f'<b>Output Over Time</b>', title_x=0.5, title_y=0.99,
             font=dict(size=10)
         )
+        # Remove duplicate legend entries by keeping only unique names
+        seen_names = set()
+        for trace in fig.data:
+            if trace.showlegend and trace.name in seen_names:
+                trace.showlegend = False
+            elif trace.showlegend:
+                seen_names.add(trace.name)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=1)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=2)
         fig.update_yaxes(domain=[0.25, 0.75], row=2, col=3)
@@ -239,6 +246,13 @@ def update_layout_properties_subsurface_results(fig, m_dot, time, plot_scale, is
                           template='none', margin=dict(l=70, r=70, t=35, b=70),)
         fig.update_layout(title_text=f'<b>Output Over Mass Flow Rate</b>', title_x=0.35, title_y=0.99,
                             font=dict(size=10))
+        # Remove duplicate legend entries by keeping only unique names
+        seen_names = set()
+        for trace in fig.data:
+            if trace.showlegend and trace.name in seen_names:
+                trace.showlegend = False
+            elif trace.showlegend:
+                seen_names.add(trace.name)
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>Output Over Time</b>',
                                         x=0.35,  y=0.44, xref='paper', yref='paper',
@@ -281,12 +295,80 @@ def update_layout_properties_subsurface_contours(fig, param):
 
 
 
-def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_check=False):
+def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_check=False, fluid=None):
 
     if end_use == "Electricity":
         row_num = 1
     else:
         row_num = 2
+
+    def _norm(s: str) -> str:
+        """Normalize text for comparison (strip HTML, normalize dashes, lowercase, etc.)."""
+        s = s or ""
+        s = re.sub(r"<[^>]+>", "", s)
+        s = s.replace("–", "-")
+        s = s.lower().strip()
+        s = re.sub(r"\s+", " ", s)
+        return s
+
+    def _remove_ts_titles(fig):
+        """Remove all T-S diagram title annotations (including auto-generated subplot_titles)."""
+        anns = list(fig.layout.annotations) if fig.layout.annotations else []
+        kept = []
+        for a in anns:
+            txt = _norm(getattr(a, "text", ""))
+            if ("temperature-entropy" in txt) or ("t-s" in txt) or ("t s" in txt):
+                continue
+            kept.append(a)
+        fig.update_layout(annotations=kept)
+        return fig
+
+    def _add_or_move_ts_title(fig, xaxis_name="x5", text="<b>Temperature-entropy (T-S) Diagram</b>"):
+        """
+        Add a single T-S title anchored to a specific subplot x-axis domain (e.g., x5 for row3 col1).
+        Anchoring to x-domain is much more stable than paper coords when domains change.
+        """
+        idx = 1 if xaxis_name == "x" else int(xaxis_name[1:])
+        xaxis_layout_name = "xaxis" if idx == 1 else f"xaxis{idx}"
+        xa = getattr(fig.layout, xaxis_layout_name, None)
+
+        if xa is None or not hasattr(xa, "domain") or xa.domain is None:
+            return fig
+
+        x0, x1 = xa.domain
+        x = x0 + 0.02
+        y = 1.0
+
+        yaxis_layout_name = "yaxis" if idx == 1 else f"yaxis{idx}"
+        ya = getattr(fig.layout, yaxis_layout_name, None)
+        if ya is not None and hasattr(ya, "domain") and ya.domain is not None:
+            y0, y1 = ya.domain
+            y = y1
+        else:
+            y = 0.95
+
+        ann = go.layout.Annotation(
+            text=text,
+            showarrow=False,
+            x=x,
+            y=y,
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom",
+            font=dict(size=14),
+            yshift=10,
+        )
+
+        anns = list(fig.layout.annotations) if fig.layout.annotations else []
+        anns.append(ann)
+        fig.update_layout(annotations=anns)
+        return fig
+
+    if is_plot_ts_check:
+        title_text = (getattr(fig.layout.title, "text", "") or "")
+        if any(s in title_text for s in ["Temperature-entropy", "T-S", "T-s", "CO2 Temperature"]):
+            fig.update_layout(title_text="")
 
     # Sync Axes
     fig.update_layout(hovermode="x unified", hoverlabel=dict(font_size=12))
@@ -301,13 +383,13 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
     fig.update_xaxes(title_text="Time (year)", showgrid=True, range=[0, 40], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
 
-    fig.update_yaxes(title_text="Heat Production (MWt)", # range=[0, 55], 
+    fig.update_yaxes(title_text="Heat Production (MWt)", 
                         row=1, col=1, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Annual Heat Production (GWh)", # range=[0, 500], 
+    fig.update_yaxes(title_text="Annual Heat Production (GWh)", 
                     row=1, col=3, tickfont = dict(size=12), title_font=dict(size=14))
-    fig.update_yaxes(title_text="Electricity Production (MWe)", # range=[-1.25, 7], 
-                        row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
-    fig.update_yaxes(title_text="Annual Electricity Production (GWe)", #range=[-10, 55], 
+    fig.update_yaxes(title_text="Electricity Production (MWe)", 
+                        row=row_num, col=1, tickfont = dict(size=12), title_font=dict(size=14))
+    fig.update_yaxes(title_text="Annual Electricity Production (GWe)", 
                         row=row_num, col=3, tickfont = dict(size=12), title_font=dict(size=14))
 
     if plot_scale == 2:
@@ -317,23 +399,32 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_yaxes(title_text="Annual Heat Production (GWh)", range=[0, 500], row=1, col=3,
                         tickfont = dict(size=12), title_font=dict(size=14))
         fig.update_yaxes(title_text="Electricity Production (MWe)", range=[-1.25, 7], row=row_num, col=1,
-                            tickfont = dict(size=12), title_font=dict(size=14)) # max(teaobj.Inst_Net_Electricity_production/1e3)+1
+                            tickfont = dict(size=12), title_font=dict(size=14))
         fig.update_yaxes(title_text="Annual Electricity Production (GWe)", range=[-10, 55], row=row_num, col=3,
                             tickfont = dict(size=12), title_font=dict(size=14))
-    # Legend
-    top_margin = 30 if is_plot_ts_check else 50
-    figure_height = None if is_plot_ts_check else 800
+    rows = 3
+    if end_use == "Heating":
+        top_margin = 50
+        figure_height = 350 * rows + 100
+    elif end_use == "Electricity":
+        top_margin = 30
+        figure_height = 900
+    else:
+        top_margin = 30
+        figure_height = 1150
+    
     layout_dict = {
         'legend_title_text': 'Working Fluid',
         'template': 'none',
         'margin': dict(l=70, r=70, t=top_margin, b=70),
+        'height': figure_height,
+        'width': None,
+        'autosize': True,
         'legend': dict(
             y=0.98,
             yanchor='top'
         )
     }
-    if figure_height is not None:
-        layout_dict['height'] = figure_height
     fig.update_layout(**layout_dict)
 
     # Subtitles
@@ -341,7 +432,15 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
         fig.update_layout(title_text=f'<b>End-Use: Heating</b>', title_x=0.35, title_y=1,
                             font=dict(size=10)
                             )
-        electricity_title_y = 0.673 if is_plot_ts_check else 0.52
+        
+        fig.update_yaxes(domain=[0.72, 1.00], row=1, col=1)
+        fig.update_yaxes(domain=[0.72, 1.00], row=1, col=3)
+        fig.update_yaxes(domain=[0.40, 0.66], row=2, col=1)
+        fig.update_yaxes(domain=[0.40, 0.66], row=2, col=3)
+        if is_plot_ts_check:
+            fig.update_yaxes(domain=[0.08, 0.30], row=3, col=1)
+        electricity_title_y = 0.66
+        
         fig.update_layout(annotations=[go.layout.Annotation(
                                         showarrow=False, text=f'<b>End-Use: Electricity</b>',
                                         x=0.35, y=electricity_title_y, xref='paper', yref='paper',
@@ -353,9 +452,28 @@ def update_layout_properties_econ_results(fig, end_use, plot_scale, is_plot_ts_c
                             )
 
     if end_use == "Electricity":
-        fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=1,
+        fig.update_layout(title_text=f'<b>End-Use: Electricity</b>', title_x=0.35, title_y=0.99,
                             font=dict(size=10)
                             )
+        fig.update_yaxes(domain=[0.62, 1.00], row=1, col=1)
+        fig.update_yaxes(domain=[0.62, 1.00], row=1, col=3)
+        if is_plot_ts_check:
+            fig.update_yaxes(domain=[0.10, 0.45], row=2, col=1)
+
+    # Remove duplicate legend entries by keeping only unique names
+    seen_names = set()
+    for trace in fig.data:
+        if trace.showlegend and trace.name in seen_names:
+            trace.showlegend = False
+        elif trace.showlegend:
+            seen_names.add(trace.name)
+    
+    if is_plot_ts_check and end_use != "Heating" and fluid != "H2O":
+        fig = _remove_ts_titles(fig)
+        xaxis_name = "x5" if end_use == "All" else "x3"
+        fig = _add_or_move_ts_title(fig, xaxis_name=xaxis_name)
+    elif is_plot_ts_check and (end_use == "Heating" or fluid == "H2O"):
+        fig = _remove_ts_titles(fig)
 
     return fig
 

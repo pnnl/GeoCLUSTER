@@ -45,24 +45,12 @@ def _get_cached_result(cache_key):
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
-    # prif"[_set_cached_result] Called with cache_key: {cache_key}, type: {type(cache_key)}", flush=True)
     cache_size_before = len(_sbt_cache)
-    cache_keys_before = list(_sbt_cache.keys())[:5]  # First 5 keys
     if len(_sbt_cache) >= _cache_max_size:
         # Remove oldest entry (simple FIFO)
         oldest_key = next(iter(_sbt_cache))
-        # prif"[CACHE EVICT] Cache full ({cache_size_before} entries), removing oldest key: {oldest_key}", flush=True)
         del _sbt_cache[oldest_key]
     _sbt_cache[cache_key] = result
-    cache_size_after = len(_sbt_cache)
-    cache_keys_after = list(_sbt_cache.keys())[:5]  # First 5 keys
-    # prif"[_set_cached_result] Stored cache key: {cache_key}, cache size: {cache_size_before} -> {cache_size_after}", flush=True)
-    # prif"[_set_cached_result] Cache keys before: {cache_keys_before}, after: {cache_keys_after}", flush=True)
-    # Verify the key is actually in the cache
-    # if cache_key in _sbt_cache:
-    #     print(f"[_set_cached_result] ✅ Verified: cache key {cache_key} is now in cache", flush=True)
-    # else:
-    #     print(f"[_set_cached_result] ❌ ERROR: cache key {cache_key} was NOT stored in cache!", flush=True)
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -105,12 +93,8 @@ class data:
 
         self.GWhr = 1e6 * 3600000.0
 
-        self.kWe_avg = (
-            We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
-        self.kWt_avg = (
-            Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0)
-        )
+        self.kWe_avg = (We * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
+        self.kWt_avg = (Wt * self.GWhr / (1000.0 * self.time[-1] * 86400.0 * 365.0))
 
         # dim = Mdot x L2 x L1 x grad x D x Tinj x k x time
         self.shape = (
@@ -157,7 +141,6 @@ class data:
             else:
                 # Value is slightly outside range, might be interpolation - warn
                 lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
-                # print(lineprint)
             # raise Exception(
             #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
             # )
@@ -196,9 +179,31 @@ class data:
         )
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
-        ]  # the grid is the values of the parameters at the points we're interpolating between
+        ]
 
-        interpolated_points = interpn(grid, values_around_point, points)
+        points_array = np.array(points, dtype=float)
+        if points_array.ndim == 1:
+            points_array = points_array.reshape(1, -1)
+        
+        for i, g in enumerate(grid):
+            if len(g) > 0:
+                lo = float(np.min(g))
+                hi = float(np.max(g))
+                points_array[:, i] = np.clip(points_array[:, i], lo, hi)
+        
+        if isinstance(points, list):
+            points_clamped = points_array.tolist()
+        else:
+            points_clamped = points_array
+
+        interpolated_points = interpn(
+            grid, 
+            values_around_point, 
+            points_clamped,
+            method="linear",
+            bounds_error=False,
+            fill_value=None
+        )
 
         return interpolated_points
 
@@ -250,10 +255,23 @@ class data:
                 if "out of bounds" in str(e):
                     raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
                 raise
+            except Exception as e:
+                raise ValueError(f"Error during HDF5 database interpolation: {e}")
             times = self.time
+
+            mdot, L2, L1, grad, D , Tinj, k = point
+            print(mdot, L2, L1, grad, D , Tinj, k)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
+            
+            # Debug: print raw inputs before conversion
+            print(
+                f"[RAW INPUTS] mdot={mdot} kg/s, L2={L2} m, L1={L1} m, grad={grad} °C/m, "
+                f"D={D} m, Tinj={Tinj} K, k={k} W/m-K, "
+                f"Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam5={PipeParam5}",
+                flush=True,
+            )
 
             L2 = L2/1000
             L1 = L1/1000
@@ -271,11 +289,13 @@ class data:
                 mass_mode = HyperParam1
                 temp_mode = HyperParam3
 
+                mass_mode_b = 0
                 if mass_mode == "Constant":
                     mass_mode_b = 0
                 elif mass_mode == "Variable":
                     mass_mode_b = 1
 
+                temp_mode_b = 0
                 if temp_mode == "Constant":
                     temp_mode_b = 0
                 elif temp_mode == "Variable":
@@ -306,12 +326,30 @@ class data:
 
             if self.case == "coaxial":
                 case = 1
-                if PipeParam5 == "Inject in Annulus":
-                    PipeParam5 = 1
-                if PipeParam5 == "Inject in Center Pipe":
-                    PipeParam5 = 2
                 
-                # TODO: THIS FUNCTION is NON-FUNCTIONING: check_coaxial_diameters() -- and should likely be called elsewhere
+                # Fix PipeParam5 string→integer mapping with proper error handling
+                flow_map = {
+                    "Inject in Annulus": 1,
+                    "Inject in Center Pipe": 2,
+                }
+                if isinstance(PipeParam5, str):
+                    if PipeParam5 in flow_map:
+                        PipeParam5 = flow_map[PipeParam5]
+                    else:
+                        raise ValueError(f"Unknown coaxial flow option: {PipeParam5!r}. Expected one of: {list(flow_map.keys())}")
+                elif PipeParam5 not in [1, 2]:
+                    raise ValueError(f"Invalid coaxial flow option: {PipeParam5}. Must be 1 (Inject in Annulus) or 2 (Inject in Center Pipe)")
+                
+                # Validate coaxial geometry before running SBT
+                if Diameter1 is None or Diameter2 is None:
+                    raise ValueError("Coaxial requires Diameter1 and Diameter2 to be specified.")
+                
+                d1 = float(Diameter1)
+                d2 = float(Diameter2)
+                
+                if d2 >= d1:
+                    raise ValueError(f"Invalid coaxial geometry: Diameter2 ({d2:.6f} m) must be < Diameter1 ({d1:.6f} m). "
+                                   f"Center pipe diameter must be smaller than wellbore diameter.")
 
             if self.case == "utube":
                 case = 2
@@ -328,22 +366,26 @@ class data:
                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
-            cache_key_saved = str(cache_key) 
-            
-            if isinstance(cache_key, tuple):
-                cache_key_str = str(cache_key)[:200]  # First 200 chars
-                print(f"[DEBUG] Cache key (first 200 chars): {cache_key_str}...", flush=True)
-            else:
-                print(f"[DEBUG] Cache key type: {type(cache_key)}, value: {cache_key}, saved as: {cache_key_saved}", flush=True)
+            cache_key_saved = str(cache_key)
 
             cached_result = _get_cached_result(cache_key_saved)
             if cached_result is not None:
-                tout_max_cached = np.max(cached_result[1]) - 273.15
                 times, Tout, Pout = cached_result
             else:
                 start = time.time()
 
                 try:
+                    # Minimal, high-signal debug: log resolved SBT inputs for this run
+                    print(
+                        f"[RUN SBT] case={'coaxial' if case == 1 else 'utube'} "
+                        f"fluid={fluid} (1=H2O, 2=sCO2) sbt_version={sbt_version} "
+                        f"mdot={mdot} kg/s Tinj={Tinj} °C "
+                        f"L1={L1} km L2={L2} km grad={grad} °C/m "
+                        f"Diameter1={Diameter1} m Diameter2={Diameter2} m "
+                        f"PipeParam3={PipeParam3} PipeParam4={PipeParam4} PipeParam5={PipeParam5}",
+                        flush=True,
+                    )
+
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -380,17 +422,14 @@ class data:
                     # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
                     # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
                     # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-                    print(times)
-                    print(Tout)
+                    print(len(times))
+                    print(Tout[-1])
                     print(Pout)
 
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
-                        tout_max_before_cache = np.max(Tout) - 273.15
                         final_cache_key = str(cache_key_saved)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
-                        cached_verify = _get_cached_result(final_cache_key)
-                        end = time.time()
                 except Exception as e:
                     # Re-raise the exception so the calling code knows it failed
                     raise
@@ -400,9 +439,9 @@ class data:
                 Tout_arr = np.array(Tout)
                 if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
                     np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                    # Remove invalid result from cache
-                    if cache_key in _sbt_cache:
-                        del _sbt_cache[cache_key]
+                    # Remove invalid result from cache (use cache_key_saved, not cache_key)
+                    if cache_key_saved in _sbt_cache:
+                        del _sbt_cache[cache_key_saved]
                     # Return empty arrays to signal failure
                     return np.array([]), np.array([]), np.array([])
             

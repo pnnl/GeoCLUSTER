@@ -75,7 +75,7 @@ L2_dict = create_steps(arg_arr=u_sCO2.L2, str_round_place='{:.0f}', val_round_pl
 L1_dict = create_steps(arg_arr=u_sCO2.L1, str_round_place='{:.0f}', val_round_place=0)
 grad_dict = create_steps(arg_arr=u_sCO2.grad, str_round_place='{:.2f}', val_round_place=2)
 D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place='{:.4f}', val_round_place=4)
-Tinj_dict = {30: "30", 59: "59"}
+Tinj_dict = {30: "30", 45: "", 59: "59"}
 k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place='{:.1f}', val_round_place=1)
 
 # slider labels for economic paramters
@@ -89,7 +89,7 @@ turb_pout_dict = create_steps(arg_arr=np.arange(start=75, stop=201, step=10), st
 
 discount_dict = {0: '0', 1: '', 2: '', 3: '', 4: '', 5: '', 6: '', 7: '', 8: '', 9: '', 10: '', 
                     11: '', 12: '', 13: '', 14: '', 15: '', 16: '', 17: '', 18: '', 19: '', 20: '20'}
-precool_dict = {0: '0', 5: '', 10: '', 15: '', 20: '', 25: '', 30: '', 35: '', 40: '40'}
+precool_dict = {0: '0', 5: '', 10: '', 15: '15'}
 
 fineness_dict = {0: '0 (coarse)', 1: '', 2: '2 (fine)'} #, 3: '', 4: '', 5: '5 (fine)'}
 accuracy_dict = {1: '1 (coarse)', 2: '', 3: '', 4: '', 5: '5 (fine)'}
@@ -116,7 +116,7 @@ pipe_roughness_um_dict = {1: '1', 3: '3'}
 
 # TODO: need to make it general across parameters 
 start_vals_hdf5 = {"Tsurf": 25, "c": 790.0, "rho": 2800, "n-laterals": 1, "lateral-flow": 1, "lateral-multiplier": 1}
-start_vals_d = {"mdot": 30.0, "L2": 10000, "L1": 3500 , "Tinj": 60.0, "grad": 0.065, "D": 0.3500, "k": 3.0}
+start_vals_d = {"mdot": 30.0, "L2": 10000, "L1": 3500 , "Tinj": 55.0, "grad": 0.065, "D": 0.3500, "k": 3.0}
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "radius-vertical": 0.3500, "radius-lateral": 0.3500,
@@ -189,7 +189,8 @@ def slider2(DivID, ID, ptitle, min_v, max_v, mark_dict, start_v, div_style, para
         "max": max_v,
         "marks": mark_dict,
         "value": start_v,
-        "tooltip": {"placement": "bottom", "always_visible": True}
+        "tooltip": {"placement": "bottom", "always_visible": True},
+        "updatemode": "drag"  
     }
     
     if step_i is not None:
@@ -511,7 +512,7 @@ def slider_card():
                                                     className="params-div",
                                                     children=[
                                                         html.P("ⓘ Multiple LCOE minima exist. Dial here to explore:", id="sCO2-text"),  # Run the optimizer 
-                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=40, 
+                                                        slider2(DivID="precool-div", ID="precool-select", ptitle="Pre-cooling (˚C)", min_v=0, max_v=15, 
                                                                 mark_dict=precool_dict, start_v=start_vals_econ["precool"], div_style=div_block_style, parameter_name="Pre-cooling (˚C)"),
                                                         slider2(DivID="turb-pout-div", ID="turb-pout-select", ptitle="Turbine Outlet Pressure (bar)", min_v=75, max_v=200, 
                                                                 mark_dict=turb_pout_dict, start_v=start_vals_econ["turb-pout"], div_style=div_block_style, parameter_name="Turbine Outlet Pressure (bar)"),
@@ -557,16 +558,12 @@ def slider_card():
                                                                 mark_dict=fineness_dict, step_i=1, start_v=start_vals_sbt["mesh"], div_style=div_none_style, parameter_name="Mesh Fineness"),
                                                     html.Div(
                                                             id="hyperparam1-container",
-                                                            children=[
-                                                                dropdown_box(DivID="mass-flow-mode-div", ID="mass-mode-select", ptitle="Mass Flow Rate Mode", 
-                                                                                                options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-                                                        ]),
+                                                            children=[]
+                                                        ),
                                                     html.Div(
                                                             id="hyperparam3-container",
-                                                            children=[
-                                                                dropdown_box(DivID="temp-flow-mode-div", ID="temp-mode-select", ptitle="Injection Temperature Mode", 
-                                                                                        options=["Constant", "Variable"], disabled=True, div_style=div_block_style)
-                                                        ]),
+                                                            children=[]
+                                                        ),
                                                 ]
 
                                             ),

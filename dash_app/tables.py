@@ -36,7 +36,6 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     # Creates Plotly a plotly table. Then, returns the figure and data as a dictionary of lits for data downloading.
     # -----------------------------------------------------------------------------------------------------------------
 
-    # Format fluid value: if "All", show specific fluids
     if fluid == "All":
         fluid_display = "H2O, sCO2"
     else:
@@ -45,6 +44,9 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
     variable_input_values = [mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, Discount_rate, Lifetime, 
                              Direct_use_heat_cost_per_kWth, Power_plant_cost_per_kWe, Pre_Cooling_Delta_T, Turbine_outlet_pressure, 
                              interp_time, case, fluid_display]
+
+    result_names = summary_tbl['Result'].to_list()
+    num_rows = len(result_names)
 
     # Handle different data structures for HDF5 vs SBT models
     if model == "HDF5" or model == "CovHDF5":
@@ -64,38 +66,32 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
         if model != "HDF5" and tandp_data:
             # Calculate mean values from arrays for SBT models
             if 'H2O_Tout' in tandp_data and tandp_data['H2O_Tout'] is not None:
-                try:
-                    h2o_tout_array = np.array(tandp_data['H2O_Tout'])
-                    # Check if array is not empty and has valid data
-                    if len(h2o_tout_array) > 0 and not (h2o_tout_array == None).all():
-                        try:
-                            if units == "imperial":
-                                mean_h2o_tout = round((np.mean(h2o_tout_array - 273.15) * 9.0/5.0) + 32.0, 4)  # Convert from K to °F
-                            else:
-                                mean_h2o_tout = round(np.mean(h2o_tout_array - 273.15), 4)  # Convert from K to °C
-                        except Exception as e:
-                            mean_h2o_tout = '-'
-                    else:
+                h2o_tout_array = np.array(tandp_data['H2O_Tout'])
+                # Check if array is not empty and has valid data
+                if len(h2o_tout_array) > 0 and not (h2o_tout_array == None).all():
+                    try:
+                        if units == "imperial":
+                            mean_h2o_tout = round((np.mean(h2o_tout_array - 273.15) * 9.0/5.0) + 32.0, 4)  # Convert from K to °F
+                        else:
+                            mean_h2o_tout = round(np.mean(h2o_tout_array - 273.15), 4)  # Convert from K to °C
+                    except Exception as e:
                         mean_h2o_tout = '-'
-                except Exception as e:
+                else:
                     mean_h2o_tout = '-'
             else:
                 mean_h2o_tout = '-'
 
             if 'H2O_Pout' in tandp_data and tandp_data['H2O_Pout'] is not None:
-                try:
-                    h2o_pout_array = np.array(tandp_data['H2O_Pout'])
-                    if len(h2o_pout_array) > 0 and not (h2o_pout_array == None).all():
-                        try:
-                            if units == "imperial":
-                                mean_h2o_pout = round(np.mean(h2o_pout_array) * 0.145038, 4)  # Convert from Pa to psi
-                            else:
-                                mean_h2o_pout = round(np.mean(h2o_pout_array / 1e6), 4)  # Convert from Pa to MPa
-                        except Exception as e:
-                            mean_h2o_pout = '-'
-                    else:
+                h2o_pout_array = np.array(tandp_data['H2O_Pout'])
+                if len(h2o_pout_array) > 0 and not (h2o_pout_array == None).all():
+                    try:
+                        if units == "imperial":
+                            mean_h2o_pout = round(np.mean(h2o_pout_array) * 0.145038, 4)  # Convert from Pa to psi
+                        else:
+                            mean_h2o_pout = round(np.mean(h2o_pout_array / 1e6), 4)  # Convert from Pa to MPa
+                    except Exception as e:
                         mean_h2o_pout = '-'
-                except Exception as e:
+                else:
                     mean_h2o_pout = '-'
             else:
                 # SBT V1.0 doesn't provide pressure data, so set to '-'
@@ -104,37 +100,31 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
             # For SBT V2.0, also calculate sCO2 values
             if model == "SBT V2.0":
                 if 'sCO2_Tout' in tandp_data and tandp_data['sCO2_Tout'] is not None:
-                    try:
-                        sco2_tout_array = np.array(tandp_data['sCO2_Tout'])
-                        if len(sco2_tout_array) > 0 and not (sco2_tout_array == None).all():
-                            try:
-                                if units == "imperial":
-                                    mean_sco2_tout = round((np.mean(sco2_tout_array - 273.15) * 9.0/5.0) + 32.0, 4)  # Convert from K to °F
-                                else:
-                                    mean_sco2_tout = round(np.mean(sco2_tout_array - 273.15), 4)  # Convert from K to °C
-                            except Exception as e:
-                                mean_sco2_tout = '-'
-                        else:
+                    sco2_tout_array = np.array(tandp_data['sCO2_Tout'])
+                    if len(sco2_tout_array) > 0 and not (sco2_tout_array == None).all():
+                        try:
+                            if units == "imperial":
+                                mean_sco2_tout = round((np.mean(sco2_tout_array - 273.15) * 9.0/5.0) + 32.0, 4)  # Convert from K to °F
+                            else:
+                                mean_sco2_tout = round(np.mean(sco2_tout_array - 273.15), 4)  # Convert from K to °C
+                        except Exception as e:
                             mean_sco2_tout = '-'
-                    except Exception as e:
+                    else:
                         mean_sco2_tout = '-'
                 else:
                     mean_sco2_tout = '-'
 
                 if 'sCO2_Pout' in tandp_data and tandp_data['sCO2_Pout'] is not None:
-                    try:
-                        sco2_pout_array = np.array(tandp_data['sCO2_Pout'])
-                        if len(sco2_pout_array) > 0 and not (sco2_pout_array == None).all():
-                            try:
-                                if units == "imperial":
-                                    mean_sco2_pout = round(np.mean(sco2_pout_array) * 0.145038, 4)  # Convert from Pa to psi
-                                else:
-                                    mean_sco2_pout = round(np.mean(sco2_pout_array / 1e6), 4)  # Convert from Pa to MPa
-                            except Exception as e:
-                                mean_sco2_pout = '-'
-                        else:
+                    sco2_pout_array = np.array(tandp_data['sCO2_Pout'])
+                    if len(sco2_pout_array) > 0 and not (sco2_pout_array == None).all():
+                        try:
+                            if units == "imperial":
+                                mean_sco2_pout = round(np.mean(sco2_pout_array) * 0.145038, 4)  # Convert from Pa to psi
+                            else:
+                                mean_sco2_pout = round(np.mean(sco2_pout_array / 1e6), 4)  # Convert from Pa to MPa
+                        except Exception as e:
                             mean_sco2_pout = '-'
-                    except Exception as e:
+                    else:
                         mean_sco2_pout = '-'
                 else:
                     mean_sco2_pout = '-'
@@ -209,8 +199,10 @@ def generate_summary_table(mdot, L2, L1, grad, D, Tinj, k, Drilling_cost_per_m, 
                    mean_h2o_net_hprod, mean_h2o_net_eprod,
                    lcoh_sco2, lcoe_sco2, mean_sco2_tout, mean_sco2_pout,
                    mean_sco2_net_hprod, mean_sco2_net_eprod]
-
-    result_names = summary_tbl['Result'].to_list()
+    
+    while len(results) < num_rows:
+        results.append('-')
+    
     result_names = [name.replace('X', str(Lifetime)) for name in result_names]
 
     list_of_lists = [summary_tbl['Variable Parameter'].to_list(), 
