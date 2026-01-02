@@ -90,6 +90,7 @@ times, Tout, Pout = run_sbt_final(
 print("Time Steps: ", len(times)) # 175 time steps (in seconds)
 print("Tout: ", Tout[-1]-272.15) # last value (in Kelvin converted to Celcius)
 print("Pout: ", Pout[-1]/1e6) # should be PRESENT, later in clgs.py set to 20 MPa constant in Pa
+print("Pout: ", Pout/1e6)
 end = time.time()
 print("TOTAL TIME: ", end - start) # runs in 0.62 seconds 
 print('\n') 
