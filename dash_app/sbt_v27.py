@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import time
-#import tensorflow as tf
 import scipy.special as sp
 from scipy.special import erf, erfc, jv, yv, exp1
 from scipy.sparse import csc_matrix
@@ -67,153 +65,39 @@ def run_sbt(
         HorizontalExtent_L2 = HorizontalExtent_L2*1000 # convert km to m
         DrillingDepth_L1 = DrillingDepth_L1*1000 # convert km to m
 
-    # print(" ***!!!!!!**** ")
-    # print(clg_configuration)
     tube_geometry_dict = set_tube_geometry(sbt_version=sbt_version, 
                                                 clg_configuration=clg_configuration, 
                                                 Diameter1=Diameter1, Diameter2=Diameter2, 
                                                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                                 )
-    # print(" ***!!!!!!**** ")
-    # print(tube_geometry_dict)
     
-    # Extract autoadjustlateralflowrates from tube_geometry_dict (set by set_tube_geometry)
-    autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates", None)
-    
-    # Early validation for coaxial geometry to prevent numerical instability
-    if clg_configuration == 1:  # Coaxial
-        radius = tube_geometry_dict.get('radius', None)
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        
-        if radius is not None and radiuscenterpipe is not None and thicknesscenterpipe is not None:
-            outerradiuscenterpipe = radiuscenterpipe + thicknesscenterpipe
-            
-            # Validate annulus geometry early
-            if outerradiuscenterpipe >= radius:
-                error_msg = (f"Error: Invalid coaxial geometry detected early. "
-                           f"outerradiuscenterpipe ({outerradiuscenterpipe:.6f} m) >= radius ({radius:.6f} m). "
-                           f"This will cause zero or negative annulus flow area. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m. "
-                           f"Please ensure center pipe outer diameter is significantly smaller than wellbore diameter. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-            
-            # Check for very thin annulus (may cause numerical instability)
-            annulus_thickness = radius - outerradiuscenterpipe
-            min_annulus_thickness_ratio = 0.05  # At least 5% of wellbore radius
-            min_annulus_thickness = radius * min_annulus_thickness_ratio
-            
-            if annulus_thickness < min_annulus_thickness:
-                warning_msg = (f"[WARNING] Very thin annulus detected: annulus_thickness={annulus_thickness:.6f} m "
-                             f"< recommended minimum={min_annulus_thickness:.6f} m ({min_annulus_thickness_ratio*100:.1f}% of radius). "
-                             f"This may cause numerical instability. "
-                             f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m.")
-                print(warning_msg, flush=True)
-            
-            # Validate flow areas will be reasonable
-            A_flow_annulus_est = np.pi * (radius**2 - outerradiuscenterpipe**2)
-            A_flow_centerpipe_est = np.pi * radiuscenterpipe**2
-            
-            # CO2 requires larger flow areas due to lower density (~200-800 kg/m³ vs ~1000 kg/m³ for H2O)
-            if fluid == 2:  # CO2
-                A_flow_min = 5e-3  # Minimum flow area for CO2 [m²] = 5000 cm² (5x larger than H2O)
-                A_flow_min_reason = "CO2 has much lower density than H2O (~200-800 kg/m³ vs ~1000 kg/m³), requiring larger flow areas"
-            else:  # H2O
-                A_flow_min = 1e-4  # Minimum flow area for H2O [m²] = 100 cm²
-                A_flow_min_reason = "standard minimum for H2O"
-            
-            fluid_name = "CO2" if fluid == 2 else "H2O"
-            
-            if A_flow_annulus_est < A_flow_min:
-                error_msg = (f"Error: Estimated annulus flow area ({A_flow_annulus_est:.6e} m²) is too small "
-                           f"(< {A_flow_min:.6e} m² for {fluid_name}). This will cause numerical instability. "
-                           f"{A_flow_min_reason}. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m, PipeParam3={PipeParam3} m. "
-                           f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-            
-            if A_flow_centerpipe_est < A_flow_min:
-                error_msg = (f"Error: Estimated center pipe flow area ({A_flow_centerpipe_est:.6e} m²) is too small "
-                           f"(< {A_flow_min:.6e} m² for {fluid_name}). This will cause numerical instability. "
-                           f"{A_flow_min_reason}. "
-                           f"Diameter1={Diameter1} m, Diameter2={Diameter2} m. "
-                           f"Consider: (1) increasing wellbore diameter, (2) reducing center pipe diameter, or (3) reducing mass flow rate. "
-                           f"Simulation terminated.")
-                print(f"[ERROR] {error_msg}", flush=True)
-                raise ValueError(error_msg)
-        elif radius is None:
-            raise ValueError(f"radius is None after set_tube_geometry for coaxial. This should have been calculated from Diameter1={Diameter1}.")
-    elif clg_configuration == 2:  # U-tube
-        # For U-tube, radius is not used in the same way, but we set it to radiusvertical for consistency
-        # (radius is only used in CPCP calculation which is coaxial-specific)
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        if radiusvertical is None:
-            raise ValueError(f"radiusvertical is None after set_tube_geometry for U-tube. This should have been calculated from Diameter1={Diameter1}.")
-        radius = radiusvertical  # Set radius for U-tube to avoid None errors
-    else:
-        raise ValueError(f"Invalid clg_configuration: {clg_configuration}. Must be 1 (coaxial) or 2 (U-tube).")
-    
-    # Extract configuration-specific parameters directly from tube_geometry_dict (not globals)
-    # These are needed for compute_tube_geometry call below
-    if clg_configuration == 1:  # Coaxial
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        k_center_pipe = tube_geometry_dict.get('k_center_pipe', None)
-        if radiuscenterpipe is None:
-            raise ValueError(f"radiuscenterpipe is None for coaxial configuration. Diameter2={Diameter2}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
-        if thicknesscenterpipe is None:
-            raise ValueError(f"thicknesscenterpipe is None for coaxial configuration. PipeParam3={PipeParam3}")
-        if k_center_pipe is None:
-            raise ValueError(f"k_center_pipe is None for coaxial configuration. PipeParam4={PipeParam4}, tube_geometry_dict keys: {list(tube_geometry_dict.keys())}")
-        numberoflaterals = None  # Not used for coaxial
-        lateralflowmultiplier = None  # Not used for coaxial
-        radiuslateral = None  # Not used for coaxial
-        radiusvertical = None  # Not used for coaxial
-        lateralflowallocation = None  # Not used for coaxial
-    elif clg_configuration == 2:  # U-loop
-        # Ensure numberoflaterals is an integer >= 1 for U-loop geometry
-        num_lat = tube_geometry_dict.get('numberoflaterals', None)
-        if num_lat is None or not isinstance(num_lat, (int, np.integer)):
-            num_lat = int(num_lat) if num_lat is not None else 1
-        numberoflaterals = max(1, int(num_lat))
-        globals()['numberoflaterals'] = numberoflaterals
-        
-        # Ensure lateralflowmultiplier is set
-        lateralflowmultiplier = tube_geometry_dict.get('lateralflowmultiplier', 1)
-        if lateralflowmultiplier is None:
-            lateralflowmultiplier = 1
-        globals()['lateralflowmultiplier'] = lateralflowmultiplier
-        
-        # Retrieve U-tube specific geometry parameters
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        radiuslateral = tube_geometry_dict.get('radiuslateral', None)
-        lateralflowallocation = tube_geometry_dict.get('lateralflowallocation', None)
-        if radiusvertical is None:
-            raise ValueError(f"radiusvertical is None for U-tube configuration. Diameter1={Diameter1}")
-        if radiuslateral is None:
-            raise ValueError(f"radiuslateral is None for U-tube configuration. Diameter2={Diameter2}")
-        
-        radiuscenterpipe = None  # Not used for U-loop
-        thicknesscenterpipe = None  # Not used for U-loop
-        k_center_pipe = None  # Not used for U-loop
-    else:
-        # Default/fallback
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        numberoflaterals = tube_geometry_dict.get('numberoflaterals', None)
-        lateralflowmultiplier = tube_geometry_dict.get('lateralflowmultiplier', None)
-        radiuslateral = tube_geometry_dict.get('radiuslateral', None)
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        lateralflowallocation = tube_geometry_dict.get('lateralflowallocation', None)
+    # globals().update(tube_geometry_dict)
+    autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates")
+    radius = tube_geometry_dict.get("radius")
+    radiuscenterpipe = tube_geometry_dict.get("radiuscenterpipe")
+    thicknesscenterpipe = tube_geometry_dict.get("thicknesscenterpipe")
+    radiusvertical = tube_geometry_dict.get("radiusvertical")
+    radiuscenterpipe = tube_geometry_dict.get("radiuscenterpipe")
+    thicknesscenterpipe = tube_geometry_dict.get("thicknesscenterpipe")
+    k_center_pipe = tube_geometry_dict.get("k_center_pipe")
+    numberoflaterals = tube_geometry_dict.get("numberoflaterals")
+    lateralflowmultiplier = tube_geometry_dict.get("lateralflowmultiplier")
+    radiusvertical = tube_geometry_dict.get("radiusvertical")
+    radiuslateral = tube_geometry_dict.get("radiuslateral")
+    lateralflowallocation = tube_geometry_dict.get("lateralflowallocation")
+    radiuscenterpipe = tube_geometry_dict.get("radiuscenterpipe")
+    thicknesscenterpipe = tube_geometry_dict.get("thicknesscenterpipe")
+    numberoflaterals = tube_geometry_dict.get("numberoflaterals")
+    lateralflowmultiplier = tube_geometry_dict.get("lateralflowmultiplier")
+    radiuslateral = tube_geometry_dict.get("radiuslateral")
+    radiusvertical = tube_geometry_dict.get("radiusvertical")
+    lateralflowallocation = tube_geometry_dict.get("lateralflowallocation")
 
     wellbore_geometry_dict = set_wellbore_geometry(clg_configuration=clg_configuration, 
                                                         DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
                                                         numberoflaterals=numberoflaterals
                                                         )
+    # globals().update(wellbore_geometry_dict) 
     xinj = wellbore_geometry_dict.get("xinj")
     xprod = wellbore_geometry_dict.get("xprod")
     xlat = wellbore_geometry_dict.get("xlat")
@@ -226,15 +110,6 @@ def run_sbt(
     x = wellbore_geometry_dict.get("x")
     y = wellbore_geometry_dict.get("y")
     z = wellbore_geometry_dict.get("z")
-    
-    # Validate that required coordinates are set for U-loop geometry
-    if clg_configuration == 2:  # U-loop geometry
-        if xinj is None or xprod is None:
-            error_msg = (f"Error: xinj or xprod is None for U-loop geometry. "
-                       f"xinj={xinj}, xprod={xprod}. This indicates wellbore geometry was not set correctly. "
-                       f"DrillingDepth_L1={DrillingDepth_L1}, HorizontalExtent_L2={HorizontalExtent_L2}, numberoflaterals={numberoflaterals}")
-            print(f"[ERROR] {error_msg}", flush=True)
-            raise ValueError(error_msg)
 
     if is_plot:
         plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
@@ -246,37 +121,33 @@ def run_sbt(
                                                     mesh_fineness=mesh_fineness, fluid=fluid, 
                                                     HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
                                                     HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
-    
-    # Extract SBT hyperparameters directly from sbt_hyperparams_dict for use in compute_tube_geometry
-    # This ensures the linter recognizes these variables as defined
-    times = sbt_hyperparams_dict.get("times", None)
-    piperoughness = sbt_hyperparams_dict.get("piperoughness", None)
-    variablefluidproperties = sbt_hyperparams_dict.get("variablefluidproperties", None)
-    variableflowrate = sbt_hyperparams_dict.get("variableflowrate", None)
-    flowratefilename = sbt_hyperparams_dict.get("flowratefilename", None)
-    variableinjectiontemperature = sbt_hyperparams_dict.get("variableinjectiontemperature", None)
-    injectiontemperaturefilename = sbt_hyperparams_dict.get("injectiontemperaturefilename", None)
-    Pin = sbt_hyperparams_dict.get("Pin", None)
-    reltolerance = sbt_hyperparams_dict.get("reltolerance", None)
-    maxnumberofiterations = sbt_hyperparams_dict.get("maxnumberofiterations", None)
-    fullyimplicit = sbt_hyperparams_dict.get("fullyimplicit", None)
-    FMM = sbt_hyperparams_dict.get("FMM", None)
-    FMMtriggertime = sbt_hyperparams_dict.get("FMMtriggertime", None)
-    NoArgumentsFinitePipeCorrection = sbt_hyperparams_dict.get("NoArgumentsFinitePipeCorrection", None)
-    NoDiscrFinitePipeCorrection = sbt_hyperparams_dict.get("NoDiscrFinitePipeCorrection", None)
-    NoDiscrInfCylIntegration = sbt_hyperparams_dict.get("NoDiscrInfCylIntegration", None)
-    NoArgumentsInfCylIntegration = sbt_hyperparams_dict.get("NoArgumentsInfCylIntegration", None)
-    LimitPointSourceModel = sbt_hyperparams_dict.get("LimitPointSourceModel", None)
-    LimitCylinderModelRequired = sbt_hyperparams_dict.get("LimitCylinderModelRequired", None)
-    LimitInfiniteModel = sbt_hyperparams_dict.get("LimitInfiniteModel", None)
-    LimitNPSpacingTime = sbt_hyperparams_dict.get("LimitNPSpacingTime", None)
-    LimitSoverL = sbt_hyperparams_dict.get("LimitSoverL", None)
-    M = sbt_hyperparams_dict.get("M", None)
+    # globals().update(sbt_hyperparams_dict)
+    times = sbt_hyperparams_dict.get("times")
+    piperoughness = sbt_hyperparams_dict.get("piperoughness")
+    variablefluidproperties = sbt_hyperparams_dict.get("variablefluidproperties")
+    variableflowrate = sbt_hyperparams_dict.get("variableflowrate")
+    flowratefilename = sbt_hyperparams_dict.get("flowratefilename")
+    variableinjectiontemperature = sbt_hyperparams_dict.get("variableinjectiontemperature")
+    injectiontemperaturefilename = sbt_hyperparams_dict.get("injectiontemperaturefilename")
+    Pin = sbt_hyperparams_dict.get("Pin")
+    reltolerance = sbt_hyperparams_dict.get("reltolerance")
+    maxnumberofiterations = sbt_hyperparams_dict.get("maxnumberofiterations")
+    fullyimplicit = sbt_hyperparams_dict.get("fullyimplicit")
+    FMM = sbt_hyperparams_dict.get("FMM")
+    FMMtriggertime = sbt_hyperparams_dict.get("FMMtriggertime")
+    NoArgumentsFinitePipeCorrection = sbt_hyperparams_dict.get("NoArgumentsFinitePipeCorrection")
+    NoDiscrFinitePipeCorrection = sbt_hyperparams_dict.get("NoDiscrFinitePipeCorrection")
+    NoDiscrInfCylIntegration = sbt_hyperparams_dict.get("NoDiscrInfCylIntegration")
+    NoArgumentsInfCylIntegration = sbt_hyperparams_dict.get("NoArgumentsInfCylIntegration")
+    LimitPointSourceModel = sbt_hyperparams_dict.get("LimitPointSourceModel")
+    LimitCylinderModelRequired = sbt_hyperparams_dict.get("LimitCylinderModelRequired")
+    LimitInfiniteModel = sbt_hyperparams_dict.get("LimitInfiniteModel")
+    LimitNPSpacingTime = sbt_hyperparams_dict.get("LimitNPSpacingTime")
+    LimitSoverL = sbt_hyperparams_dict.get("LimitSoverL")
+    M = sbt_hyperparams_dict.get("M")
 
     fluid_properties = admin_fluid_properties()
-    
-    # Extract fluid properties directly from fluid_properties dict for use in prepare_interpolators
-    # This ensures the linter recognizes these variables as defined
+    # globals().update(fluid_properties)
     cp_f = fluid_properties["cp_f"]
     rho_f = fluid_properties["rho_f"]
     k_f = fluid_properties["k_f"]
@@ -305,20 +176,21 @@ def run_sbt(
                                                 radiuslateral=radiuslateral, radiusvertical=radiusvertical,
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
-    interconnections = tube_geometry_dict2.get("interconnections", None)
-    Deltaz = tube_geometry_dict2.get("Deltaz", None)
-    radiusvector = tube_geometry_dict2.get("radiusvector", None)
-    Dvector = tube_geometry_dict2.get("Dvector", None)
-    Area = tube_geometry_dict2.get("Area", None)
-    AreaNodes = tube_geometry_dict2.get("AreaNodes", None)
-    mvector = tube_geometry_dict2.get("mvector", None)
-    mnodalvector = tube_geometry_dict2.get("mnodalvector", None)
-    lateralflowallocation_norm = tube_geometry_dict2.get("lateralflowallocation_norm", None)
-    eps = tube_geometry_dict2.get("eps", None)
-    eps_annulus = tube_geometry_dict2.get("eps_annulus", None)
-    eps_centerpipe = tube_geometry_dict2.get("eps_centerpipe", None)
-    signofcorrection = tube_geometry_dict2.get("signofcorrection", None)
-    secondaverageabslateralflowcorrection = tube_geometry_dict2.get("secondaverageabslateralflowcorrection", None)
+    # globals().update(tube_geometry_dict2)
+    interconnections = tube_geometry_dict2.get("interconnections")
+    Deltaz = tube_geometry_dict2.get("Deltaz")
+    radiusvector = tube_geometry_dict2.get("radiusvector")
+    Dvector = tube_geometry_dict2.get("Dvector")
+    Area = tube_geometry_dict2.get("Area")
+    AreaNodes = tube_geometry_dict2.get("AreaNodes")
+    mvector = tube_geometry_dict2.get("mvector")
+    mnodalvector = tube_geometry_dict2.get("mnodalvector")
+    lateralflowallocation_norm = tube_geometry_dict2.get("lateralflowallocation_norm")
+    eps = tube_geometry_dict2.get("eps")
+    eps_annulus = tube_geometry_dict2.get("eps_annulus")
+    eps_centerpipe = tube_geometry_dict2.get("eps_centerpipe")
+    signofcorrection = tube_geometry_dict2.get("signofcorrection")
+    secondaverageabslateralflowcorrection = tube_geometry_dict2.get("secondaverageabslateralflowcorrection")
     
     if clg_configuration == 1:
         outerradiuscenterpipe = tube_geometry_dict2.get("outerradiuscenterpipe")
@@ -326,16 +198,7 @@ def run_sbt(
         Dh_annulus = tube_geometry_dict2.get("Dh_annulus")
         A_flow_annulus = tube_geometry_dict2.get("A_flow_annulus")
         A_flow_centerpipe = tube_geometry_dict2.get("A_flow_centerpipe")
-        if outerradiuscenterpipe is None:
-            raise ValueError(f"outerradiuscenterpipe is None after compute_tube_geometry. This should have been calculated as radiuscenterpipe + thicknesscenterpipe.")
-        if k_center_pipe is None:
-            raise ValueError(f"k_center_pipe is None after compute_tube_geometry. This should have been set from PipeParam4.")
-        if Dh_annulus is None:
-            raise ValueError(f"Dh_annulus is None after compute_tube_geometry. This should have been calculated as 2*(radius - outerradiuscenterpipe).")
-        if A_flow_annulus is None:
-            raise ValueError(f"A_flow_annulus is None after compute_tube_geometry. This should have been calculated.")
-        if A_flow_centerpipe is None:
-            raise ValueError(f"A_flow_centerpipe is None after compute_tube_geometry. This should have been calculated.")
+   
     
     mlateral = tube_geometry_dict2.get("mlateral")
     mlateralold = tube_geometry_dict2.get("mlateralold")
@@ -355,9 +218,6 @@ def run_sbt(
     Tw_up_previous = None
     Tfluidupnodes = None
     Poutput = None
-    # print(globals().keys())
-    # raise SystemExit
-
 
 
     ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
@@ -382,8 +242,7 @@ def run_sbt(
     Tintemperaturearray = None
     mtimearray = None
     mflowratearray = None
-    Tin = Tinj  # Default injection temperature
-    m = mdot  # Default mass flow rate
+    Tin = Tinj  # Default injection temperature # TODO ! 
 
     ######################################################### ___ ################################################################
 
@@ -844,7 +703,7 @@ def run_sbt(
 
         # If the user has provided a flow rate profile, current value of m is calculated (only allowed in sbt version 1)
         if variableflowrate == 1 and sbt_version == 1:
-            m = np.interp(times[i], mtimearray, mflowratearray)
+            mdot = np.interp(times[i], mtimearray, mflowratearray)
         mstore[i] = mdot # Value that is used for m at each time step gets stored for postprocessing purposes
 
 
@@ -1990,21 +1849,21 @@ def run_sbt(
                         R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()  
         
                         #Populate L and R for downflowing energy balance for first element (which has the injection temperature specified) 
-                        L[3,3] = m*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
+                        L[3,3] = mdot*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
                         L[3,0] = -1/R_cp[0]*Deltaz[0]/2
                         L[3,4] = -1/R_cp[0]*Deltaz[0]/2
                         R[3,0] = mdot*heatcapacityfluiddownmidpoints[0]*Tin - 1/R_cp[0]*Deltaz[0]/2*Tin - mdot*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - mdot*g*verticalchange[0]-mdot*Deltahstardown[0]           
                         
                         for iiii in range(2, N+1): #Populate L and R for remaining elements (1:Tup; 2:Tr; 3:Q; 4:Tdown)
                             #Energy balance equation for upflowing fluid
-                            L[(iiii-1)*4,(iiii-1)*4] = m*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
+                            L[(iiii-1)*4,(iiii-1)*4] = mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             L[(iiii-1)*4,2+(iiii-1)*4] = -1*Deltaz[iiii-1]
                             L[(iiii-1)*4,3+(iiii-1)*4-4] = -1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             if iiii<N:
-                                L[(iiii-1)*4,(iiii-1)*4+4] = -m*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
+                                L[(iiii-1)*4,(iiii-1)*4+4] = -mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                                 L[(iiii-1)*4,3+(iiii-1)*4] = -1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             else: #The bottom element has the downflowing fluid becoming the upflowing fluid
-                                L[(iiii-1)*4,3+(iiii-1)*4] = -m*heatcapacityfluidupmidpoints[iiii-1]
+                                L[(iiii-1)*4,3+(iiii-1)*4] = -mdot*heatcapacityfluidupmidpoints[iiii-1]
                             R[(iiii-1)*4,0] = -mdot*0.5*(velocityfluidupnodes[iiii-1]**2-velocityfluidupnodes[iiii]**2)+mdot*g*verticalchange[iiii-1]-mdot*Deltahstarup[iiii-1]
                             
                             #Rock temperature equation
