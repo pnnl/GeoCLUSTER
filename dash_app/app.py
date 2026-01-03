@@ -3178,11 +3178,11 @@ def update_sliders_hyperparms(model, store_data):
         
         fluid_mode_options = ["Constant", "Temperature–Pressure Dependent"]
         if saved_fluid_mode == "Variable":
-            default_fluid_mode = "Constant"
+            default_fluid_mode = "Temperature–Pressure Dependent"
         elif saved_fluid_mode in fluid_mode_options:
             default_fluid_mode = saved_fluid_mode
         else:
-            default_fluid_mode = "Constant"
+            default_fluid_mode = "Temperature–Pressure Dependent"
         
         hyperparam5 = html.Div(
             id="fluid-mode-div",

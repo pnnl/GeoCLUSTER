@@ -249,12 +249,7 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
         radiuscenterpipe = Diameter2/2
         thicknesscenterpipe = PipeParam3
         k_center_pipe = PipeParam4
-        if PipeParam5 == "Inject in Annulus":
-            coaxialflowtype = 1
-        if PipeParam5 == "Inject in Center Pipe":
-            coaxialflowtype = 2
-
-        ### NOT STORING e.g. coaxialflowtype
+        coaxialflowtype = PipeParam5
         return locals()
 
     elif clg_configuration == 2: # U-loop geometry (2)
@@ -265,17 +260,15 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
         numberoflaterals = int(PipeParam3) if PipeParam3 is not None else 1  # Number of laterals (must be integer) [-]
         numberoflaterals = max(1, numberoflaterals)  # Ensure at least 1 lateral
         lateralflowallocation = PipeParam4 # [1/3, 1/3, 1/3]                         # Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
-        lateralflowmultiplier = PipeParam5 # 1                                       # Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
-
         # PipeParam5 is only for coaxial geometry (flow direction). For U-tube, lateralflowmultiplier should come from HyperParam5 or default to 1.
         # If PipeParam5 is a string (like "Inject in Annulus"), it's from coaxial UI and should be ignored for U-tube.
-        # if PipeParam5 is not None and isinstance(PipeParam5, (int, float)):
-        #     try:
-        #         lateralflowmultiplier = float(PipeParam5)
-        #     except (ValueError, TypeError):
-        #         lateralflowmultiplier = 1
-        # else:
-        #     lateralflowmultiplier = 1  # Default for U-tube when PipeParam5 is None or a string 
+        if PipeParam5 is not None and isinstance(PipeParam5, (int, float)):
+            try:
+                lateralflowmultiplier = float(PipeParam5)
+            except (ValueError, TypeError):
+                lateralflowmultiplier = 1
+        else:
+            lateralflowmultiplier = 1  # Default for U-tube when PipeParam5 is None or a string 
 
         # TODO: ADD NEW PARAMETER (required if clg_configuration is 2)
         # USER EDITABLE? (v27)

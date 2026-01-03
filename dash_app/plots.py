@@ -360,14 +360,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                             mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
                     
-                    # Validate sCO2_Tout contains reasonable values (should be in Kelvin, roughly 200-1000K)
-                    if sCO2_Tout is not None and hasattr(sCO2_Tout, '__len__') and len(sCO2_Tout) > 0:
-                        sCO2_Tout_arr = np.array(sCO2_Tout)
-                        if (np.any(np.isnan(sCO2_Tout_arr)) or np.any(np.isinf(sCO2_Tout_arr)) or 
-                            np.any(sCO2_Tout_arr < 200) or np.any(sCO2_Tout_arr > 1000)):
-                            print(f"[ERROR] Coaxial sCO2_Tout contains invalid values. Min={np.min(sCO2_Tout_arr):.2f}K, Max={np.max(sCO2_Tout_arr):.2f}K. Setting to blank.", flush=True)
-                            raise ValueError(f"Invalid temperature values in sCO2_Tout: min={np.min(sCO2_Tout_arr):.2f}K, max={np.max(sCO2_Tout_arr):.2f}K")
-                    
                     # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
                     # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
                     if sbt_version_sco2 == 2 and HyperParam1 is not None:

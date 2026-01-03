@@ -264,6 +264,14 @@ class data:
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
+            
+            # Debug: print raw inputs before conversion
+            print(
+                f"[RAW INPUTS] mdot={mdot} kg/s, L2={L2} m, L1={L1} m, grad={grad} °C/m, "
+                f"D={D} m, Tinj={Tinj} K, k={k} W/m-K, "
+                f"Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam5={PipeParam5}",
+                flush=True,
+            )
 
             L2 = L2/1000
             L1 = L1/1000
@@ -310,21 +318,38 @@ class data:
                 elif fluid_mode == "Variable" or fluid_mode == "Temperature–Pressure Dependent":
                     fluid_mode_b = 1
                 
-                # Ensure HyperParam1 and HyperParam3 are floats 
-                hyperparam1 = float(HyperParam1)*10 # Pin (convert MPa to bar) | (Inlet Pressure in MPa)
-                hyperparam2 = float(HyperParam3) # pipe roughness, default is 1e-6
+                hyperparam1 = HyperParam1*10 # Pin (convert MPa to bar)
+                hyperparam2 = HyperParam3 # pipe roughness
                 hyperparam3 = fluid_mode_b # fluid mode
                 hyperparam4 = reltolerance
                 hyperparam5 = maxnumberofiterations
 
             if self.case == "coaxial":
                 case = 1
-                if PipeParam5 == "Inject in Annulus":
-                    PipeParam5 = 1
-                if PipeParam5 == "Inject in Center Pipe":
-                    PipeParam5 = 2
                 
-                # TODO: THIS FUNCTION is NON-FUNCTIONING: check_coaxial_diameters() -- and should likely be called elsewhere
+                # Fix PipeParam5 string→integer mapping with proper error handling
+                flow_map = {
+                    "Inject in Annulus": 1,
+                    "Inject in Center Pipe": 2,
+                }
+                if isinstance(PipeParam5, str):
+                    if PipeParam5 in flow_map:
+                        PipeParam5 = flow_map[PipeParam5]
+                    else:
+                        raise ValueError(f"Unknown coaxial flow option: {PipeParam5!r}. Expected one of: {list(flow_map.keys())}")
+                elif PipeParam5 not in [1, 2]:
+                    raise ValueError(f"Invalid coaxial flow option: {PipeParam5}. Must be 1 (Inject in Annulus) or 2 (Inject in Center Pipe)")
+                
+                # Validate coaxial geometry before running SBT
+                if Diameter1 is None or Diameter2 is None:
+                    raise ValueError("Coaxial requires Diameter1 and Diameter2 to be specified.")
+                
+                d1 = float(Diameter1)
+                d2 = float(Diameter2)
+                
+                if d2 >= d1:
+                    raise ValueError(f"Invalid coaxial geometry: Diameter2 ({d2:.6f} m) must be < Diameter1 ({d1:.6f} m). "
+                                   f"Center pipe diameter must be smaller than wellbore diameter.")
 
             if self.case == "utube":
                 case = 2
@@ -350,7 +375,17 @@ class data:
                 start = time.time()
 
                 try:
-                    print(sbt_version)
+                    # Minimal, high-signal debug: log resolved SBT inputs for this run
+                    print(
+                        f"[RUN SBT] case={'coaxial' if case == 1 else 'utube'} "
+                        f"fluid={fluid} (1=H2O, 2=sCO2) sbt_version={sbt_version} "
+                        f"mdot={mdot} kg/s Tinj={Tinj} °C "
+                        f"L1={L1} km L2={L2} km grad={grad} °C/m "
+                        f"Diameter1={Diameter1} m Diameter2={Diameter2} m "
+                        f"PipeParam3={PipeParam3} PipeParam4={PipeParam4} PipeParam5={PipeParam5}",
+                        flush=True,
+                    )
+
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -404,9 +439,9 @@ class data:
                 Tout_arr = np.array(Tout)
                 if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
                     np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                    # Remove invalid result from cache
-                    if cache_key in _sbt_cache:
-                        del _sbt_cache[cache_key]
+                    # Remove invalid result from cache (use cache_key_saved, not cache_key)
+                    if cache_key_saved in _sbt_cache:
+                        del _sbt_cache[cache_key_saved]
                     # Return empty arrays to signal failure
                     return np.array([]), np.array([]), np.array([])
             
