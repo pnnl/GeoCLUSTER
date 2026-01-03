@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import time
+#import tensorflow as tf
 import scipy.special as sp
 from scipy.special import erf, erfc, jv, yv, exp1
 from scipy.sparse import csc_matrix
@@ -71,68 +73,12 @@ def run_sbt(
                                                 PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5
                                                 )
     globals().update(tube_geometry_dict)
-    
-    # Extract configuration-specific parameters directly from tube_geometry_dict (not globals)
-    # These are needed for compute_tube_geometry call below
-    autoadjustlateralflowrates = tube_geometry_dict.get("autoadjustlateralflowrates")
-    if clg_configuration == 1:  # Coaxial
-        radius = tube_geometry_dict.get('radius', None)
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        k_center_pipe = tube_geometry_dict.get('k_center_pipe', None)
-        numberoflaterals = None  # Not used for coaxial
-        lateralflowmultiplier = None  # Not used for coaxial
-        radiuslateral = None  # Not used for coaxial
-        radiusvertical = None  # Not used for coaxial
-        lateralflowallocation = None  # Not used for coaxial
-    elif clg_configuration == 2:  # U-loop
-        num_lat = tube_geometry_dict.get('numberoflaterals', None)
-        if num_lat is None or not isinstance(num_lat, (int, np.integer)):
-            num_lat = int(num_lat) if num_lat is not None else 1
-        numberoflaterals = max(1, int(num_lat))
-        globals()['numberoflaterals'] = numberoflaterals
-        
-        lateralflowmultiplier = tube_geometry_dict.get('lateralflowmultiplier', 1)
-        if lateralflowmultiplier is None:
-            lateralflowmultiplier = 1
-        globals()['lateralflowmultiplier'] = lateralflowmultiplier
-        
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        radiuslateral = tube_geometry_dict.get('radiuslateral', None)
-        lateralflowallocation = tube_geometry_dict.get('lateralflowallocation', None)
-        radius = radiusvertical  # Set radius for U-tube to avoid None errors
-        
-        radiuscenterpipe = None  # Not used for U-loop
-        thicknesscenterpipe = None  # Not used for U-loop
-        k_center_pipe = None  # Not used for U-loop
-    else:
-        # Default/fallback
-        radius = tube_geometry_dict.get('radius', None)
-        radiuscenterpipe = tube_geometry_dict.get('radiuscenterpipe', None)
-        thicknesscenterpipe = tube_geometry_dict.get('thicknesscenterpipe', None)
-        numberoflaterals = tube_geometry_dict.get('numberoflaterals', None)
-        lateralflowmultiplier = tube_geometry_dict.get('lateralflowmultiplier', None)
-        radiuslateral = tube_geometry_dict.get('radiuslateral', None)
-        radiusvertical = tube_geometry_dict.get('radiusvertical', None)
-        lateralflowallocation = tube_geometry_dict.get('lateralflowallocation', None)
 
     wellbore_geometry_dict = set_wellbore_geometry(clg_configuration=clg_configuration, 
                                                         DrillingDepth_L1=DrillingDepth_L1, HorizontalExtent_L2=HorizontalExtent_L2,
                                                         numberoflaterals=numberoflaterals
                                                         )
-    # globals().update(wellbore_geometry_dict) 
-    xinj = wellbore_geometry_dict.get("xinj")
-    xprod = wellbore_geometry_dict.get("xprod")
-    xlat = wellbore_geometry_dict.get("xlat")
-    yinj = wellbore_geometry_dict.get("yinj")
-    yprod = wellbore_geometry_dict.get("yprod")
-    ylat = wellbore_geometry_dict.get("ylat")
-    zinj = wellbore_geometry_dict.get("zinj")
-    zprod = wellbore_geometry_dict.get("zprod")
-    zlat = wellbore_geometry_dict.get("zlat")
-    x = wellbore_geometry_dict.get("x")
-    y = wellbore_geometry_dict.get("y")
-    z = wellbore_geometry_dict.get("z")
+    globals().update(wellbore_geometry_dict)    
 
     if is_plot:
         plot_borehole_geometry(clg_configuration=clg_configuration, numberoflaterals=numberoflaterals, 
@@ -144,41 +90,10 @@ def run_sbt(
                                                     mesh_fineness=mesh_fineness, fluid=fluid, 
                                                     HYPERPARAM1=HYPERPARAM1, HYPERPARAM2=HYPERPARAM2, 
                                                     HYPERPARAM3=HYPERPARAM3, HYPERPARAM4=HYPERPARAM4, HYPERPARAM5=HYPERPARAM5)
-    # globals().update(sbt_hyperparams_dict)
-    times = sbt_hyperparams_dict.get("times")
-    piperoughness = sbt_hyperparams_dict.get("piperoughness")
-    variablefluidproperties = sbt_hyperparams_dict.get("variablefluidproperties")
-    variableflowrate = sbt_hyperparams_dict.get("variableflowrate")
-    flowratefilename = sbt_hyperparams_dict.get("flowratefilename")
-    variableinjectiontemperature = sbt_hyperparams_dict.get("variableinjectiontemperature")
-    injectiontemperaturefilename = sbt_hyperparams_dict.get("injectiontemperaturefilename")
-    Pin = sbt_hyperparams_dict.get("Pin")
-    reltolerance = sbt_hyperparams_dict.get("reltolerance")
-    maxnumberofiterations = sbt_hyperparams_dict.get("maxnumberofiterations")
-    fullyimplicit = sbt_hyperparams_dict.get("fullyimplicit")
-    FMM = sbt_hyperparams_dict.get("FMM")
-    FMMtriggertime = sbt_hyperparams_dict.get("FMMtriggertime")
-    NoArgumentsFinitePipeCorrection = sbt_hyperparams_dict.get("NoArgumentsFinitePipeCorrection")
-    NoDiscrFinitePipeCorrection = sbt_hyperparams_dict.get("NoDiscrFinitePipeCorrection")
-    NoDiscrInfCylIntegration = sbt_hyperparams_dict.get("NoDiscrInfCylIntegration")
-    NoArgumentsInfCylIntegration = sbt_hyperparams_dict.get("NoArgumentsInfCylIntegration")
-    LimitPointSourceModel = sbt_hyperparams_dict.get("LimitPointSourceModel")
-    LimitCylinderModelRequired = sbt_hyperparams_dict.get("LimitCylinderModelRequired")
-    LimitInfiniteModel = sbt_hyperparams_dict.get("LimitInfiniteModel")
-    LimitNPSpacingTime = sbt_hyperparams_dict.get("LimitNPSpacingTime")
-    LimitSoverL = sbt_hyperparams_dict.get("LimitSoverL")
-    M = sbt_hyperparams_dict.get("M")
+    globals().update(sbt_hyperparams_dict)
 
-    fluid_properties = admin_fluid_properties()
-    # globals().update(fluid_properties)
-    cp_f = fluid_properties["cp_f"]
-    rho_f = fluid_properties["rho_f"]
-    k_f = fluid_properties["k_f"]
-    mu_f = fluid_properties["mu_f"]
-    Pr_f = fluid_properties["Pr_f"]
-    alpha_f = fluid_properties["alpha_f"]
-    g = fluid_properties["g"]
-    gamma = fluid_properties["gamma"]
+    fluid_properties = admin_fluid_properties() 
+    globals().update(fluid_properties)
 
 
     ######################################################### COMPUTE ################################################################
@@ -188,7 +103,6 @@ def run_sbt(
     tube_geometry_dict2 = compute_tube_geometry(sbt_version=sbt_version, clg_configuration=clg_configuration, fluid=fluid,
                                                 radius=radius,
                                                 radiuscenterpipe=radiuscenterpipe, thicknesscenterpipe=thicknesscenterpipe,
-                                                k_center_pipe=k_center_pipe if clg_configuration == 1 else None,
                                                 x=x, y=y, z=z, 
                                                 xinj=xinj, yinj=yinj, zinj=zinj, 
                                                 xprod=xprod, yprod=yprod, zprod=zprod, 
@@ -199,34 +113,13 @@ def run_sbt(
                                                 radiuslateral=radiuslateral, radiusvertical=radiusvertical,
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
-    # globals().update(tube_geometry_dict2)
-    interconnections = tube_geometry_dict2.get("interconnections")
-    Deltaz = tube_geometry_dict2.get("Deltaz")
-    radiusvector = tube_geometry_dict2.get("radiusvector")
-    Dvector = tube_geometry_dict2.get("Dvector")
-    Area = tube_geometry_dict2.get("Area")
-    AreaNodes = tube_geometry_dict2.get("AreaNodes")
-    mvector = tube_geometry_dict2.get("mvector")
-    mnodalvector = tube_geometry_dict2.get("mnodalvector")
-    lateralflowallocation_norm = tube_geometry_dict2.get("lateralflowallocation_norm")
-    eps = tube_geometry_dict2.get("eps")
-    eps_annulus = tube_geometry_dict2.get("eps_annulus")
-    eps_centerpipe = tube_geometry_dict2.get("eps_centerpipe")
-    signofcorrection = tube_geometry_dict2.get("signofcorrection")
-    secondaverageabslateralflowcorrection = tube_geometry_dict2.get("secondaverageabslateralflowcorrection")
+    globals().update(tube_geometry_dict2)
     
-    if clg_configuration == 1:
-        outerradiuscenterpipe = tube_geometry_dict2.get("outerradiuscenterpipe")
-        k_center_pipe = tube_geometry_dict2.get("k_center_pipe")
-        Dh_annulus = tube_geometry_dict2.get("Dh_annulus")
-        A_flow_annulus = tube_geometry_dict2.get("A_flow_annulus")
-        A_flow_centerpipe = tube_geometry_dict2.get("A_flow_centerpipe")
-    
-    mlateral = tube_geometry_dict2.get("mlateral")
-    mlateralold = tube_geometry_dict2.get("mlateralold")
-    Tw_down_previous = tube_geometry_dict2.get("Tw_down_previous")
-    Tfluiddownnodes = tube_geometry_dict2.get("Tfluiddownnodes")
-    TwMatrix = tube_geometry_dict2.get("TwMatrix")
+    mlateral = globals().get("mlateral") 
+    mlateralold = globals().get("mlateralold")
+    Tw_down_previous = globals().get("Tw_down_previous") 
+    Tfluiddownnodes = globals().get("Tfluiddownnodes")
+    TwMatrix =  globals().get("TwMatrix")
     coaxialflowtype = globals().get("coaxialflowtype")
     Tfluidnodes = None
     Pfluidnodes = None
@@ -240,6 +133,9 @@ def run_sbt(
     Tw_up_previous = None
     Tfluidupnodes = None
     Poutput = None
+    # print(globals().keys())
+    # raise SystemExit
+
 
 
     ### PREPARE TEMPERATURE AND PRESSURE INTERPOLATORS 
@@ -247,25 +143,15 @@ def run_sbt(
                 interpolator_entropy, interpolator_heatcapacity, interpolator_heatcapacity, \
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity = \
                     prepare_interpolators(sbt_version=sbt_version, variablefluidproperties=variablefluidproperties, 
-                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f, variableflowrate=variableflowrate)
+                                fluid=fluid, rho_f=rho_f, cp_f=cp_f, k_f=k_f, mu_f=mu_f)
 
     ### GET INJECTION TEMPERATURE as an array AND MASS FLOW RATE PROFILES as an array
     # e.g. [30.  0.  0.  0.  0. ....] or similar
     Tinstore, mstore = get_profiles(sbt_version=sbt_version, times=times,
                                     variableinjectiontemperature=variableinjectiontemperature,
                                     variableflowrate=variableflowrate, flowratefilename=flowratefilename, 
-                                    Tinj=Tinj, mdot=mdot,
-                                    injectiontemperaturefilename=injectiontemperaturefilename
+                                    Tinj=Tinj, mdot=mdot
                                     )
-    
-    # print(" !!!!!! ", coaxialflowtype)
-    # Initialize variables that are only set conditionally in get_profiles
-    # These are only used when variableinjectiontemperature == 1 or variableflowrate == 1
-    Tintimearray = None
-    Tintemperaturearray = None
-    mtimearray = None
-    mflowratearray = None
-    Tin = Tinj  # Default injection temperature # TODO ! 
 
     ######################################################### ___ ################################################################
 
@@ -311,7 +197,6 @@ def run_sbt(
     midpointsy = elementcenters[:, 1]  # y-coordinate of center of each element [m]
     midpointsz = elementcenters[:, 2]  # z-coordinate of center of each element [m]
     BBinitial = Tsurf - GeoGradient * midpointsz  # Initial temperature at center of each element [degC]
-    BBinitial = np.asarray(BBinitial).reshape(-1)
     if sbt_version == 2:
         verticalchange = z[1:]-z[:-1]        #Vertical change between nodes to calculate impact of gravity on pressure [m]
         if clg_configuration == 2:
@@ -426,12 +311,8 @@ def run_sbt(
                 if is_print:
                     print(f"Calculating initial pressure field ... | Iteration = {kk} | Max. Rel. change = {maxrelativechange}")
             
-            # Calculate initial density distribution with bounds checking
-            P_min, P_max = interpolator_density.grid[0][0], interpolator_density.grid[0][-1]
-            T_min, T_max = interpolator_density.grid[1][0], interpolator_density.grid[1][-1]
-            P_down_init_clip = np.clip(Pfluiddownnodes, P_min, P_max)
-            T_down_init_clip = np.clip(Tfluiddownnodes + 273.15, T_min, T_max)
-            densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_down_init_clip, T_down_init_clip)])) #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
+            # Calculate initial density distribution
+            densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)])) #After initial pressure distribution converged, calculate initial density distribution [kg/m3]
             densityfluidupnodes = np.copy(densityfluiddownnodes) #Upflowing and downflowing fluid have the same initial density distribution at time 0
             
             if is_print:
@@ -679,7 +560,7 @@ def run_sbt(
 
         # If the user has provided a flow rate profile, current value of m is calculated (only allowed in sbt version 1)
         if variableflowrate == 1 and sbt_version == 1:
-            mdot = np.interp(times[i], mtimearray, mflowratearray)
+            m = np.interp(times[i], mtimearray, mflowratearray)
         mstore[i] = mdot # Value that is used for m at each time step gets stored for postprocessing purposes
 
 
@@ -924,7 +805,6 @@ def run_sbt(
             BBPSindicestotake = np.arange(N).reshape((N, 1)) + N * np.arange(int(lastneighbourtoconsider[i])+1).reshape((1, int(lastneighbourtoconsider[i])+1))
             BBPSMatrix = BBPS[BBPSindicestotake]
             BB = np.sum(BBPSMatrix, axis=1)
-            BB = np.asarray(BB).reshape(-1)
             
 
         if i > 1:
@@ -932,7 +812,6 @@ def run_sbt(
             BBCPOP = np.sum(CPOP * QFMM[:,1:], axis=1)
         else:
             BBCPOP = np.zeros(N)
-        BBCPOP = np.asarray(BBCPOP).reshape(-1)
 
         if sbt_version == 1: #constant fluid properties and no convergence needed
             # Velocities and thermal resistances are calculated each time step as the flow rate is allowed to vary each time step
@@ -1070,7 +949,7 @@ def run_sbt(
                     #Populate L and R for SBT algorithm for first element
                     L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()
+                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]
                     
                     #Populate L and R for upflowing fluid heat balance for first element
                     L[3,3] = 1 / Deltat + u_up/Deltaz[0] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -1095,7 +974,7 @@ def run_sbt(
                         #SBT equation              
                         L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                        R[2 + (iiii - 1) * 4, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()                
+                        R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]                
                         
                         #Heat balance for upflowing fluid
                         L[3+(iiii-1)*4,3+(iiii-1)*4] = 1/Deltat + u_up/Deltaz[iiii-1] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f)
@@ -1125,7 +1004,7 @@ def run_sbt(
                     #Populate L and R for SBT algorithm for first element
                     L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()
+                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]
                     
                     #Populate L and R for heat balance fluid down for first element
                     L[3,3] = 1/Deltat + u_down/Deltaz[0]*2 + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -1152,7 +1031,7 @@ def run_sbt(
                         #SBT equation              
                         L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                        R[2 + (iiii - 1) * 4, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()  
+                        R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]  
         
                         #Heat balance downflowing fluid
                         L[3+(iiii-1)*4,3+(iiii-1)*4] = 1/Deltat + u_down/Deltaz[iiii-1] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -1174,7 +1053,7 @@ def run_sbt(
                 # Populate L and R for SBT algorithm for first element
                 L[2, np.arange(2,3*N,3)] = NPCP[0,0:N]
                 L[2,1] = 1
-                R[2, 0] = -np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()
+                R[2, 0] = -BBCPOP[0] - BB[0] + BBinitial[0]
             
                 for iiii in range(2, N+1):  
                     # Heat balance equation
@@ -1202,7 +1081,7 @@ def run_sbt(
                     # SBT equation 
                     L[2 + (iiii - 1) * 3, np.arange(2,3*N,3)] = NPCP[iiii-1, :N]
                     L[2 + (iiii - 1) * 3, 1 + (iiii - 1) * 3] = 1
-                    R[2 + (iiii - 1) * 3, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()
+                    R[2 + (iiii - 1) * 3, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]
             
             
             # Solving the linear system of equations
@@ -1220,71 +1099,33 @@ def run_sbt(
                 TfluidnodesOld = np.zeros(len(xinj) + len(xprod) + numberoflaterals * (xlat.shape[0] - 2))
             
             while kk <= maxnumberofiterations and maxrelativechange > reltolerance: #While loop iterates till either maximum number of iterations is reached or maximum relative change is less than user-defined target relative tolerance
-                # Calculate frictional pressure drop (supports both laminar and turbulent flow) [Pa]
+                # Calculate frictional pressure drop (only turbulent flow is considered) [Pa]
                 if clg_configuration == 1: #co-axial geometry 
-                    # Use |Re| in flow regime determination; sign indicates direction only.
-                    Re_up_abs = np.abs(Refluidupmidpoints)
-                    Re_down_abs = np.abs(Refluiddownmidpoints)
-                    
-                    # Check for laminar flow and warn if present
-                    is_laminar_up = Re_up_abs < 2300
-                    is_laminar_down = Re_down_abs < 2300
-                    if np.any(is_laminar_up) or np.any(is_laminar_down):
-                        min_re_up = np.min(Re_up_abs) if len(Re_up_abs) > 0 else 0
-                        min_re_down = np.min(Re_down_abs) if len(Re_down_abs) > 0 else 0
-                        print(f"[WARNING] Laminar flow detected in coaxial geometry. Min |Re| (up) = {min_re_up:.2f}, Min |Re| (down) = {min_re_down:.2f}. "
-                              f"Using laminar friction factor. mdot = {mdot} kg/s, radius = {radius} m, radiuscenterpipe = {radiuscenterpipe} m", flush=True)
-                    
-                    # Initialize friction factors
-                    fup = np.zeros(len(Refluidupmidpoints))
-                    fdown = np.zeros(len(Refluiddownmidpoints))
-                    
-                    # Calculate friction factors based on flow regime
-                    if coaxialflowtype == 1:  # CXA (injection in annulus; production from center pipe)
-                        # Upflowing in center pipe (circular)
-                        if np.any(is_laminar_up):
-                            fup[is_laminar_up] = 64.0 / Re_up_abs[is_laminar_up]  # Hagen-Poiseuille for circular pipe
-                        # Turbulent upflowing: use Colebrook equation
-                        if np.any(~is_laminar_up):
-                            fup_turb = 1E-5 * np.ones(np.sum(~is_laminar_up))
-                            Re_up_turb = Re_up_abs[~is_laminar_up]
-                            for dd in range(1, 6):
-                                fup_turb = 1 / (-2 * np.log10(eps_centerpipe / 3.7 / (2 * radiuscenterpipe) + 2.51 / Re_up_turb / np.sqrt(fup_turb))) ** 2
-                            fup[~is_laminar_up] = fup_turb
-                        
-                        # Downflowing in annulus
-                        # Laminar annulus: f ≈ 96/Re (approximation for typical annulus geometries)
-                        if np.any(is_laminar_down):
-                            fdown[is_laminar_down] = 96.0 / Re_down_abs[is_laminar_down]  # Approximation for annulus
-                        # Turbulent downflowing: use Colebrook equation
-                        if np.any(~is_laminar_down):
-                            fdown_turb = 1E-5 * np.ones(np.sum(~is_laminar_down))
-                            Re_down_turb = Re_down_abs[~is_laminar_down]
-                            for dd in range(1, 6):
-                                fdown_turb = 1 / (-2 * np.log10(eps_annulus / 3.7 / Dh_annulus + 2.51 / Re_down_turb / np.sqrt(fdown_turb))) ** 2
-                            fdown[~is_laminar_down] = fdown_turb
-                    else:  # CXC (injection in center pipe; production from annulus)
-                        # Upflowing in annulus
-                        if np.any(is_laminar_up):
-                            fup[is_laminar_up] = 96.0 / Re_up_abs[is_laminar_up]  # Approximation for annulus
-                        # Turbulent upflowing
-                        if np.any(~is_laminar_up):
-                            fup_turb = 1E-5 * np.ones(np.sum(~is_laminar_up))
-                            Re_up_turb = Re_up_abs[~is_laminar_up]
-                            for dd in range(1, 6):
-                                fup_turb = 1 / (-2 * np.log10(eps_annulus / 3.7 / Dh_annulus + 2.51 / Re_up_turb / np.sqrt(fup_turb))) ** 2
-                            fup[~is_laminar_up] = fup_turb
-                        
-                        # Downflowing in center pipe (circular)
-                        if np.any(is_laminar_down):
-                            fdown[is_laminar_down] = 64.0 / Re_down_abs[is_laminar_down]  # Hagen-Poiseuille for circular pipe
-                        # Turbulent downflowing
-                        if np.any(~is_laminar_down):
-                            fdown_turb = 1E-5 * np.ones(np.sum(~is_laminar_down))
-                            Re_down_turb = Re_down_abs[~is_laminar_down]
-                            for dd in range(1, 6):
-                                fdown_turb = 1 / (-2 * np.log10(eps_centerpipe / 3.7 / (2 * radiuscenterpipe) + 2.51 / Re_down_turb / np.sqrt(fdown_turb))) ** 2
-                            fdown[~is_laminar_down] = fdown_turb
+                    if np.any(Refluidupmidpoints < 2300):
+                        print('Error: laminar flow in pipes; only turbulent flow models built-in for frictional pressure drop calculation')
+                        print('Simulation terminated')
+                        exit()
+            
+                    if np.any(Refluiddownmidpoints < 2300):
+                        print('Error: laminar flow in pipes; only turbulent flow models built-in for frictional pressure drop calculation')
+                        print('Simulation terminated')
+                        exit()
+                elif clg_configuration == 2: #u-loop geometry 
+                    if np.any(Refluidmidpoints < 2300):
+                        print('Error: laminar flow in pipes; only turbulent flow models built-in for frictional pressure drop calculation')
+                        print('Simulation terminated')
+                        exit()
+            
+                if clg_configuration == 1: #co-axial geometry 
+                    fup = 1E-5 * np.ones(len(Refluidupmidpoints))  # Initial guess for upflowing turbulent flow friction factor
+                    fdown = 1E-5 * np.ones(len(Refluiddownmidpoints))  # Initial guess for downflowing turbulent flow friction factor
+                    for dd in range(1, 6):  # We assume 5 iterations are sufficient to converge turbulent friction factor
+                        if coaxialflowtype == 1:  # CXA (injection in annulus; production from center pipe)
+                            fup = 1 / (-2 * np.log10(eps_centerpipe / 3.7 / (2 * radiuscenterpipe) + 2.51 / Refluidupmidpoints / np.sqrt(fup))) ** 2
+                            fdown = 1 / (-2 * np.log10(eps_annulus / 3.7 / Dh_annulus + 2.51 / Refluiddownmidpoints / np.sqrt(fdown))) ** 2
+                        else:  # CXC (injection in center pipe; production from annulus)
+                            fup = 1 / (-2 * np.log10(eps_annulus / 3.7 / Dh_annulus + 2.51 / Refluidupmidpoints / np.sqrt(fup))) ** 2
+                            fdown = 1 / (-2 * np.log10(eps_centerpipe / 3.7 / (2 * radiuscenterpipe) + 2.51 / Refluiddownmidpoints / np.sqrt(fdown))) ** 2
             
                     if coaxialflowtype == 1: #CXA (injection in annulus; production from center pipe)
                         DeltaP_frictionpipeup = fup*1/2*densityfluidupmidpoints*velocityfluidupmidpoints**2/(2*radiuscenterpipe)*Deltaz #Upflowing frictional pressure drop in pipe segments [Pa]
@@ -1294,30 +1135,9 @@ def run_sbt(
                         DeltaP_frictionpipedown = fdown*1/2*densityfluiddownmidpoints*velocityfluiddownmidpoints**2/(2*radiuscenterpipe)*Deltaz #Downflowing frictional pressure drop in pipe segments [Pa]
                 
                 elif clg_configuration == 2: #u-loop geometry    
-                    Re_mid_abs = np.abs(Refluidmidpoints)
-                    is_laminar = Re_mid_abs < 2300
-                    
-                    # Check for laminar flow and warn if present
-                    if np.any(is_laminar):
-                        min_re = np.min(Re_mid_abs)
-                        print(f"[WARNING] Laminar flow detected in U-loop geometry. Min |Re| = {min_re:.2f}. "
-                              f"Using laminar friction factor. mdot = {mdot} kg/s", flush=True)
-                    
-                    # Initialize friction factors
-                    f = np.zeros(len(Refluidmidpoints))
-                    
-                    # Laminar flow: f = 64/Re (Hagen-Poiseuille for circular pipe)
-                    if np.any(is_laminar):
-                        f[is_laminar] = 64.0 / Re_mid_abs[is_laminar]
-                    
-                    # Turbulent flow: use Colebrook equation
-                    if np.any(~is_laminar):
-                        f_turb = 1E-5 * np.ones(np.sum(~is_laminar))
-                        Re_turb = Re_mid_abs[~is_laminar]
-                        for dd in range(1, 6):
-                            f_turb = 1 / (-2 * np.log10(eps / 3.7 / Dvector[~is_laminar] + 2.51 / Re_turb / np.sqrt(f_turb))) ** 2
-                        f[~is_laminar] = f_turb
-                    
+                    f = 1E-5 * np.ones(len(Refluidmidpoints))     #Initial guess for turbulent flow friction factor
+                    for dd in range(1, 6):  # We assume 5 iterations are sufficient to converge turbulent friction factor
+                        f = 1 / (-2 * np.log10(eps / 3.7 / Dvector + 2.51 / Refluidmidpoints / np.sqrt(f))) ** 2
                     DeltaP_frictionpipe = f*1/2*densityfluidmidpoints*velocityfluidmidpoints**2/(Dvector)*Deltaz #Frictional pressure drop in pipe segments [Pa]
                         
                 #calculate all pressure drops
@@ -1389,9 +1209,8 @@ def run_sbt(
                 #Calculate thermal resistance (assuming turbulent flow)                
                 if clg_configuration == 1: #co-axial geometry 
                     # Calculate thermal resistance in annulus and center pipe (assuming turbulent flow)
-                    # Turbulent Nusselt correlations depend on |Re| (direction irrelevant)
-                    Numidpointsup = 0.023 * (np.abs(Refluidupmidpoints) ** (4 / 5)) * (Prandtlfluidupmidpoints ** 0.4)  # Nusselt Number [-]
-                    Numidpointsdown = 0.023 * (np.abs(Refluiddownmidpoints) ** (4 / 5)) * (Prandtlfluiddownmidpoints ** 0.4)  # Nusselt Number [-]
+                    Numidpointsup = 0.023 * (Refluidupmidpoints ** (4 / 5)) * (Prandtlfluidupmidpoints ** 0.4)  # Nusselt Number [-]
+                    Numidpointsdown = 0.023 * (Refluiddownmidpoints ** (4 / 5)) * (Prandtlfluiddownmidpoints ** 0.4)  # Nusselt Number [-]
         
                     if coaxialflowtype == 1:  # CXA (injection in annulus; production from center pipe)
                         # Thermal resistance in annulus (downflowing)
@@ -1404,7 +1223,6 @@ def run_sbt(
                         # Thermal resistance in center pipe (upflowing)
                         Nu_up = Numidpointsup
                         hmidpointsup = Nu_up * thermalconductivityfluidupmidpoints / (2 * radiuscenterpipe)
-                        
                         R_cp = (
                             1 / (np.pi * hmidpointsup * 2 * radiuscenterpipe) +
                             np.log((2 * outerradiuscenterpipe) / (2 * radiuscenterpipe)) / (2 * np.pi * k_center_pipe) +
@@ -1422,14 +1240,13 @@ def run_sbt(
                         # Thermal resistance in center pipe (downflowing)
                         Nu_down = Numidpointsdown
                         hmidpointsdown = Nu_down * thermalconductivityfluiddownmidpoints / (2 * radiuscenterpipe)
-                        
                         R_cp = (
                             1 / (np.pi * hmidpointsdown * 2 * radiuscenterpipe) +
                             np.log((2 * outerradiuscenterpipe) / (2 * radiuscenterpipe)) / (2 * np.pi * k_center_pipe) +
                             1 / (np.pi * hmidpointsup_i * 2 * outerradiuscenterpipe)
                         )  # Thermal resistance between annulus flow and center pipe flow
                 elif clg_configuration == 2: #u-loop geometry  
-                    Numidpoints = 0.023*np.abs(Refluidmidpoints)**(4/5)*Prandtlfluidmidpoints**(0.4) #Nusselt Number [-]
+                    Numidpoints = 0.023*Refluidmidpoints**(4/5)*Prandtlfluidmidpoints**(0.4) #Nusselt Number [-]
                     hmidpoints = Numidpoints*thermalconductivityfluidmidpoints/Dvector
                     Rt = 1/(math.pi*hmidpoints*Dvector) #We assume open hole                  
 
@@ -1437,26 +1254,15 @@ def run_sbt(
                 if clg_configuration == 1: #co-axial geometry 
                     if variablefluidproperties == 1: #The most accurate method uses the enthalpy property tables and is used when no constant fluid properties are specified.
                     
-                        # Get bounds from interpolator grid
-                        P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
-                        T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
-                        
-                        # Calculate Deltahstar for downward flow with bounds checking
-                        P_down_1 = np.clip(Pfluiddownnodes[1:], P_min, P_max)
-                        T_down_1 = np.clip(Tfluiddownnodes[:-1] + 273.15, T_min, T_max)
-                        P_down_0 = np.clip(Pfluiddownnodes[:-1], P_min, P_max)
-                        T_down_0 = np.clip(Tfluiddownnodes[:-1] + 273.15, T_min, T_max)
+                        # Calculate Deltahstar for downward flow
                         Deltahstardown = (
-                            interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_down_1, T_down_1)]))
-                            - interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_down_0, T_down_0)]))
+                            interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodes[1:], Tfluiddownnodes[:-1] + 273.15)]))
+                            - interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodes[:-1], Tfluiddownnodes[:-1] + 273.15)]))
                         )
-                        # Calculate Deltahstar for upward flow with bounds checking
-                        P_up_0 = np.clip(Pfluidupnodes[:-1], P_min, P_max)
-                        T_up_1 = np.clip(Tfluidupnodes[1:] + 273.15, T_min, T_max)
-                        P_up_1 = np.clip(Pfluidupnodes[1:], P_min, P_max)
+                        # Calculate Deltahstar for upward flow
                         Deltahstarup = (
-                            interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_up_0, T_up_1)]))
-                            - interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_up_1, T_up_1)]))
+                            interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodes[:-1], Tfluidupnodes[1:] + 273.15)]))
+                            - interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodes[1:], Tfluidupnodes[1:] + 273.15)]))
                         )
                     else: #If constant fluid properties are specified, then Deltahstar simplifies to 1/rho*(deltaP) (because the thermal expansion coefficient is zero) (the equations below show the full equation including the thermal expansion coefficient, so that it could also be used when fluid properties are not constant and the fluid is compressible)
                         Deltahstardown = (
@@ -1534,7 +1340,7 @@ def run_sbt(
                         #Populate L and R for SBT algorithm for first element
                         L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                         L[2,1] = 1
-                        R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()                
+                        R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]                
                         
                         #Populate L and R for upflowing energy heat balance for first element
                         L[3,3] = mdot*heatcapacityfluidupmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
@@ -1565,7 +1371,7 @@ def run_sbt(
                             #SBT equation              
                             L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                             L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                            R[2 + (iiii - 1) * 4, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()  
+                            R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]  
                             
                             #Energy balance for upflowing fluid
                             L[3+(iiii-1)*4,3+(iiii-1)*4] = mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
@@ -1594,24 +1400,24 @@ def run_sbt(
                         #Populate L and R for SBT algorithm for first element               
                         L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                         L[2,1] = 1
-                        R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item()  
+                        R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]  
         
                         #Populate L and R for downflowing energy balance for first element (which has the injection temperature specified) 
-                        L[3,3] = mdot*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
+                        L[3,3] = m*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
                         L[3,0] = -1/R_cp[0]*Deltaz[0]/2
                         L[3,4] = -1/R_cp[0]*Deltaz[0]/2
                         R[3,0] = mdot*heatcapacityfluiddownmidpoints[0]*Tin - 1/R_cp[0]*Deltaz[0]/2*Tin - mdot*0.5*(velocityfluiddownnodes[1]**2-velocityfluiddownnodes[0]**2) - mdot*g*verticalchange[0]-mdot*Deltahstardown[0]           
                         
                         for iiii in range(2, N+1): #Populate L and R for remaining elements (1:Tup; 2:Tr; 3:Q; 4:Tdown)
                             #Energy balance equation for upflowing fluid
-                            L[(iiii-1)*4,(iiii-1)*4] = mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
+                            L[(iiii-1)*4,(iiii-1)*4] = m*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             L[(iiii-1)*4,2+(iiii-1)*4] = -1*Deltaz[iiii-1]
                             L[(iiii-1)*4,3+(iiii-1)*4-4] = -1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             if iiii<N:
-                                L[(iiii-1)*4,(iiii-1)*4+4] = -mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
+                                L[(iiii-1)*4,(iiii-1)*4+4] = -m*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                                 L[(iiii-1)*4,3+(iiii-1)*4] = -1/R_cp[iiii-1]*Deltaz[iiii-1]/2
                             else: #The bottom element has the downflowing fluid becoming the upflowing fluid
-                                L[(iiii-1)*4,3+(iiii-1)*4] = -mdot*heatcapacityfluidupmidpoints[iiii-1]
+                                L[(iiii-1)*4,3+(iiii-1)*4] = -m*heatcapacityfluidupmidpoints[iiii-1]
                             R[(iiii-1)*4,0] = -mdot*0.5*(velocityfluidupnodes[iiii-1]**2-velocityfluidupnodes[iiii]**2)+mdot*g*verticalchange[iiii-1]-mdot*Deltahstarup[iiii-1]
                             
                             #Rock temperature equation
@@ -1627,7 +1433,7 @@ def run_sbt(
                             #SBT equation              
                             L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                             L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                            R[2 + (iiii - 1) * 4, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()   
+                            R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]   
                             
                             #Energy balance for downflowing fluid
                             L[3+(iiii-1)*4,3+(iiii-2)*4] = -mdot*heatcapacityfluiddownmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
@@ -1654,7 +1460,7 @@ def run_sbt(
                     #SBT equation for first element                
                     L[2,np.arange(2,3*N,3)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BBinitial[0]).item() 
+                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0] 
                     
                     for iiii in range(2, N+1):  #Populate L and R for remaining elements
                         #Fluid energy balance
@@ -1666,7 +1472,7 @@ def run_sbt(
                             L[(iiii-1)*3,(interconnections_new[0]-1)*3] = -mvector[iiii-1]*heatcapacityfluidmidpoints[iiii-1]
                         else: #All other elements
                             L[(iiii-1)*3,(iiii-2)*3] = -mvector[iiii-1]*heatcapacityfluidmidpoints[iiii-1]                          
-                             
+                            
                         if iiii < len(xinj): #injection well
                             R[(iiii-1)*3,0]  = -mvector[iiii-1]*0.5*(velocityfluidnodes[iiii]**2-velocityfluidnodes[iiii-1]**2) - mvector[iiii-1]*g*verticalchange[iiii-1] - mvector[iiii-1]*Deltahstar[iiii-1]
                         elif iiii < (len(xinj)+len(xprod)-1): #production well
@@ -1698,124 +1504,14 @@ def run_sbt(
                         #SBT equation
                         L[2 + (iiii - 1) * 3, np.arange(2,3*N,3)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 3, 1 + (iiii - 1) * 3] = 1
-                        R[2 + (iiii - 1) * 3, 0] = -np.asarray(BBCPOP[iiii-1]).item() - np.asarray(BB[iiii-1]).item() + np.asarray(BBinitial[iiii-1]).item()             
+                        R[2 + (iiii - 1) * 3, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]             
                 
                 
                 if clg_configuration == 1: #co-axial geometry 
                     # Solving the linear system of equations
                     # Sol = np.linalg.solve(L, R)
                     L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
-                    
-                    # Validate thermal resistance before solving (prevents division by very small numbers)
-                    # R_cp is an array (one value per midpoint), check all elements
-                    min_R_cp = 1e-6  # Minimum thermal resistance [K/W] to prevent numerical instability
-                    R_cp_arr = np.asarray(R_cp)
-                    if np.any(R_cp_arr < min_R_cp):
-                        min_R_cp_val = np.min(R_cp_arr)
-                        error_msg = (f"Error: Thermal resistance R_cp too small (min={min_R_cp_val:.2e} K/W < {min_R_cp:.2e} K/W) "
-                                   f"for coaxial geometry. This causes numerical instability in the solver matrix. "
-                                   f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Validate flow areas are positive (should be caught earlier, but double-check)
-                    # A_flow_annulus and A_flow_centerpipe are scalars
-                    A_flow_annulus_val = float(A_flow_annulus) if not isinstance(A_flow_annulus, np.ndarray) else A_flow_annulus[0]
-                    A_flow_centerpipe_val = float(A_flow_centerpipe) if not isinstance(A_flow_centerpipe, np.ndarray) else A_flow_centerpipe[0]
-                    if A_flow_annulus_val <= 0 or A_flow_centerpipe_val <= 0:
-                        error_msg = (f"Error: Invalid flow areas detected. A_flow_annulus={A_flow_annulus_val:.6f} m², "
-                                   f"A_flow_centerpipe={A_flow_centerpipe_val:.6f} m². This indicates invalid geometry. "
-                                   f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Debug: Check matrix condition before solving
-                    cond_num = None
-                    try:
-                        cond_num = np.linalg.cond(L)
-                        # Threshold lowered to 5e7 based on observed failures:
-                        # - Cases with cond_num 6.54e7-8.85e7: producing large residuals (~33x threshold) and failing
-                        # - Cases with cond_num ~1.05e8-1.19e8: still producing invalid results (negative temps, -1800°C)
-                        # - Cases with cond_num ~1.21e8: valid results (244-252°C) - borderline
-                        # - Cases with cond_num 3.23e8-7.26e8: invalid results (600-1500°C or negative temps)
-                        # - Cases with cond_num >1e9: very unstable, caught by previous threshold
-                        # Lowered threshold to 5e7 to catch intermediate instabilities that cause large residuals
-                        if cond_num > 1.3e8:  # Threshold for ill-conditioned matrix (increased to allow borderline cases)
-                            error_msg = (f"Error: Solver matrix is ill-conditioned (condition number = {cond_num:.2e}) for coaxial geometry. "
-                                       f"This indicates numerical instability. Simulation terminated. "
-                                       f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        # TODO AB: !!!! Could bring back 
-                        # elif cond_num > 8e7:  # Warning threshold (only warn when close to error threshold to reduce noise)
-                        #     print(f"[WARNING] Coaxial solver: Matrix condition number high ({cond_num:.2e}), may indicate numerical instability. "
-                        #           f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
-                    except ValueError:
-                        raise  # Re-raise ValueError from ill-conditioned check
-                    except Exception as e:
-                        print(f"[WARNING] Could not calculate condition number for L: {e}", flush=True)
-                    
-                    # Try solving with iterative refinement for better numerical stability
-                    # First attempt: direct solve
-                    try:
-                        Sol = spsolve(L_sparse, R)
-                    except Exception as e:
-                        # If direct solve fails, try with better tolerance or different method
-                        print(f"[WARNING] Direct solve failed: {e}. Attempting alternative approach...", flush=True)
-                        # Fallback: use dense solve (slower but more robust for small systems)
-                        try:
-                            Sol = np.linalg.solve(L, R)
-                        except Exception as e2:
-                            error_msg = (f"Error: Both sparse and dense solvers failed for coaxial geometry. "
-                                       f"Sparse solver error: {e}, Dense solver error: {e2}. Simulation terminated.")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                    
-                    # Validate Sol contains reasonable values before using
-                    Sol_arr = Sol.ravel() if hasattr(Sol, 'ravel') else np.array(Sol).ravel()
-                    if (np.any(np.isnan(Sol_arr)) or np.any(np.isinf(Sol_arr)) or 
-                        np.any(np.abs(Sol_arr) > 1e10)):
-                        error_msg = (f"Error: Solver returned invalid values for coaxial geometry. "
-                                   f"Min={np.min(Sol_arr):.2e}, Max={np.max(Sol_arr):.2e}, "
-                                   f"NaN count={np.sum(np.isnan(Sol_arr))}, Inf count={np.sum(np.isinf(Sol_arr))}. "
-                                   f"Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
-                    
-                    # Check residual to detect when solution doesn't satisfy equations well
-                    # This catches cases where condition number is "acceptable" but solution is still invalid
-                    try:
-                        residual = L_sparse @ Sol - R
-                        residual_norm = np.linalg.norm(residual)
-                        R_norm = np.linalg.norm(R)
-                        relative_residual = residual_norm / (R_norm + 1e-10)  # Add small value to avoid division by zero
-                        
-                        # Note: A constant relative residual of ~32.8 has been observed across iterations.
-                        # This appears to be a characteristic of the coaxial solver matrix structure rather than a convergence issue,
-                        # as H2O simulations still produce reasonable results despite this large residual.
-                                # The residual is symmetric (min ≈ -max), suggesting it may be related to specific equation types in the 4×N system.
-                        
-                        # If relative residual is too large, the solution is likely invalid
-                        # Typical good solutions have relative residual < 1e-6
-                        # Relaxed threshold to 100 to allow borderline cases that still produce valid plots
-                        # Note: Relative residual of ~32.8 is expected for coaxial solver and doesn't indicate a problem
-                        if relative_residual > 100:
-                            error_msg = (f"Error: Solver solution has large residual (relative residual = {relative_residual:.2e} > 1e-3) "
-                                       f"for coaxial geometry. This indicates the solution does not satisfy the equations well. "
-                                       f"Residual norm={residual_norm:.2e}, R norm={R_norm:.2e}. "
-                                       f"Simulation terminated. fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}")
-                            print(f"[ERROR] {error_msg}", flush=True)
-                            raise ValueError(error_msg)
-                        elif relative_residual > 50:  # Only warn when close to error threshold (100) to reduce noise
-                            print(f"[WARNING] Coaxial solver: Large relative residual ({relative_residual:.2e}) indicates potential numerical issues. "
-                                  f"fluid={fluid}, mdot={mdot}, Diameter1={Diameter1}, Diameter2={Diameter2}, Tinj={Tinj}, iteration={kk}", flush=True)
-                    except ValueError:
-                        # Re-raise ValueError (our intentional error for large residual)
-                        raise
-                    except Exception as e:
-                        # If residual calculation itself fails (e.g., matrix multiplication error), continue but log warning
-                        print(f"[WARNING] Could not check solver residual: {e}", flush=True)
-                    
+                    Sol = spsolve(L_sparse, R)  
                     if coaxialflowtype == 1: #CXA
                         Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[0::4]))
                         Tfluidupnodes =  np.concatenate((Sol.ravel()[3::4],[Tfluiddownnodes[-1]]))
@@ -1836,9 +1532,6 @@ def run_sbt(
                     #Populate Tfluidnodes
                     Tfluidnodes[0] = Tinj
                     Tfluidnodes[1:interconnections_new[0]+1] = AllEndPointsTemp[:interconnections_new[0]] #Injection well nodes
-                    # Ensure lateralflowmultiplier is not None
-                    if lateralflowmultiplier is None or lateralflowmultiplier == 0:
-                        lateralflowmultiplier = 1.0
                     Tfluidnodes[interconnections_new[0]+1] = sum(mvector[lateralmidendpoints]/lateralflowmultiplier*AllEndPointsTemp[lateralmidendpoints])/mdot #Bottom node of production well
                     Tfluidnodes[interconnections_new[0]+2:interconnections_new[1]+1] = AllEndPointsTemp[interconnections_new[0]:interconnections_new[1]-1] #Production well nodes (except bottom node)
                     for dd in range(numberoflaterals): #Lateral nodes
@@ -1853,34 +1546,20 @@ def run_sbt(
                                         
                 #Update fluid properties
                 if clg_configuration == 1: #co-axial geometry 
-                    # Get bounds from interpolator grid
-                    P_min, P_max = interpolator_density.grid[0][0], interpolator_density.grid[0][-1]
-                    T_min, T_max = interpolator_density.grid[1][0], interpolator_density.grid[1][-1]
-                    
-                    # Clip values to bounds before interpolation
-                    P_down_clip = np.clip(Pfluiddownnodes, P_min, P_max)
-                    T_down_clip = np.clip(Tfluiddownnodes + 273.15, T_min, T_max)
-                    P_up_clip = np.clip(Pfluidupnodes, P_min, P_max)
-                    T_up_clip = np.clip(Tfluidupnodes + 273.15, T_min, T_max)
-                    P_down_mid_clip = np.clip(Pfluiddownmidpoints, P_min, P_max)
-                    T_down_mid_clip = np.clip(Tfluiddownmidpoints + 273.15, T_min, T_max)
-                    P_up_mid_clip = np.clip(Pfluidupmidpoints, P_min, P_max)
-                    T_up_mid_clip = np.clip(Tfluidupmidpoints + 273.15, T_min, T_max)
-                    
-                    densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)]))
-                    densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)]))
-                    densityfluiddownmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    densityfluidupmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    viscosityfluidupmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    heatcapacityfluiddownmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    heatcapacityfluidupmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    thermalconductivityfluiddownmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    thermalconductivityfluidupmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)]))
+                    densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidupnodes, Tfluidupnodes + 273.15)]))
+                    densityfluiddownmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    densityfluidupmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    viscosityfluidupmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    heatcapacityfluiddownmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    heatcapacityfluidupmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    thermalconductivityfluiddownmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    thermalconductivityfluidupmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
                     alphafluiddownmidpoints = thermalconductivityfluiddownmidpoints/densityfluiddownmidpoints/heatcapacityfluiddownmidpoints
                     alphafluidupmidpoints = thermalconductivityfluidupmidpoints/densityfluidupmidpoints/heatcapacityfluidupmidpoints
-                    thermalexpansionfluiddownmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    thermalexpansionfluiddownmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
                     Prandtlfluiddownmidpoints = viscosityfluiddownmidpoints/densityfluiddownmidpoints/alphafluiddownmidpoints
                     Prandtlfluidupmidpoints = viscosityfluidupmidpoints/densityfluidupmidpoints/alphafluidupmidpoints
         
@@ -2100,33 +1779,14 @@ def run_sbt(
     elif sbt_version == 2:
         if clg_configuration == 1: #co-axial geometry:
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
-                # Match basic Python model exactly (sbt.py line 1867)
-                # Property table Pvector is in Pascal, so pass pressure directly without conversion
-                # Get bounds from interpolator grid
-                P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
-                T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
-                # Clip values to bounds before interpolation
-                P_up_clip = np.clip(Pfluidupnodesstore[0,:], P_min, P_max)
-                T_up_clip = np.clip(Tfluidupnodesstore[0,:] + 273.15, T_min, T_max)
-                P_down_clip = np.clip(Pfluiddownnodesstore[0,:], P_min, P_max)
-                T_down_clip = np.clip(Tfluiddownnodesstore[0,:] + 273.15, T_min, T_max)
-                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)])) - 
-                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)])))/1e6
+                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodesstore[0,:], Tfluidupnodesstore[0,:] + 273.15)])) - 
+                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodesstore[0,:], Tfluiddownnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
         elif clg_configuration == 2: #u-loop geometry:           
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
-                # Match basic Python model exactly - property table Pvector is in Pascal, so pass pressure directly
-                # Get bounds from interpolator grid
-                P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
-                T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
-                # Clip values to bounds before interpolation
-                P_prod_clip = np.clip(Pfluidnodesstore[interconnections_new[1],:], P_min, P_max)
-                T_prod_clip = np.clip(Tfluidnodesstore[interconnections_new[1],:] + 273.15, T_min, T_max)
-                P_inj_clip = np.clip(Pfluidnodesstore[0,:], P_min, P_max)
-                T_inj_clip = np.clip(Tfluidnodesstore[0,:] + 273.15, T_min, T_max)
-                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_prod_clip, T_prod_clip)])) - 
-                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_inj_clip, T_inj_clip)])))/1e6
+                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[interconnections_new[1],:], Tfluidnodesstore[interconnections_new[1],:] + 273.15)])) - 
+                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[0,:], Tfluidnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
             
