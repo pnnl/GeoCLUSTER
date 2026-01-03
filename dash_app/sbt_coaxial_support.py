@@ -157,4 +157,6 @@ def check_coaxial_diameters(Diameter1, Diameter2, PipeParam3, A_flow_min):
         #     print(f"[WARNING] Annulus flow area is very small ({A_flow_annulus:.6f} m² < {min_annulus_area:.6f} m²). "
         #           f"This may cause numerical instability in the solver. "
         #           f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m", flush=True)
-        
+
+# investigate these, these are new ... probably because of the update? 
+#  R[2,0] =  - np.asarray(BBCPOP[0]).item() - np.asarray(BB[0]).item() + np.asarray(BB

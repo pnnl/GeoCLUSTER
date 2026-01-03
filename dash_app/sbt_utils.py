@@ -578,6 +578,9 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
 
 def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot, injectiontemperaturefilename=None):
 
+    # These are only used when variableinjectiontemperature == 1 or variableflowrate == 1
+    mflowratearray = mtimearray = Tintimearray = Tintemperaturearray = None
+
     # Read injection temperature profile if provided
     Tinstore = np.zeros(len(times))
     # print(variableinjectiontemperature)
@@ -626,7 +629,7 @@ def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowr
     else:
         mstore[0] = mdot
     
-    return Tinstore, mstore
+    return Tinstore, mstore, mflowratearray, mtimearray, Tintimearray, Tintemperaturearray
 
 def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times, 
                     NoArgumentsFinitePipeCorrection, NoDiscrFinitePipeCorrection, NoDiscrInfCylIntegration,
