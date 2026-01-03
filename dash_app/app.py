@@ -2517,9 +2517,6 @@ def restore_slider_values(model, store_data, case, current_mdot, current_L2, cur
     Tinj, Tinj_found = get_value("Tinj")
     k, k_found = get_value("k")
     
-    # Debug output for coaxial
-    # Only restore if we found at least one saved value
-    # Otherwise, let update_slider_ranges set defaults via PreventUpdate
     if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
         raise PreventUpdate
     
@@ -2709,33 +2706,20 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_block_style,
             )
             coaxialflowtype = dropdown_box(
-                DivID="coaxial-flow-type-wrapper",
-                ID="coaxial-flow-type-select",
+                DivID="lat-flow-mul-div",
+                ID="lateral-multiplier-select",
                 ptitle="Coaxial Flow Type",
-                options=[{"label": "Inject in Annulus", "value": "Inject in Annulus"}, {"label": "Inject in Center Pipe", "value": "Inject in Center Pipe"}],
+                options=["Inject in Annulus", "Inject in Center Pipe"],
                 disabled=False,
                 div_style=div_block_style,
             )
-            # Keep lateral-multiplier-select in the layout even for coaxial (hidden)
-            # This ensures callbacks can always access it
-            lateral_multiplier = input_box(
-                DivID="lat-flow-mul-div",
-                ID="lateral-multiplier-select",
-                ptitle="Lateral Flow Multiplier",
-                min_v=0,
-                max_v=1,
-                start_v=1.0,
-                step_i=0.05,
-                div_style=div_none_style,
-            )
 
-            # For coaxial, lat-allo-container should be empty (lateral flow allocation not used)
             return (
                 radius,
                 radiuscenterpipe,
                 thicknesscenterpipe,
-                lateral_flow_placeholder(style=div_none_style),  # Keep hidden input in layout
-                lateral_multiplier,
+                k_center_pipe,
+                coaxialflowtype,
             )
 
     elif model == "HDF5":
@@ -2883,12 +2867,15 @@ def restore_sbt_sliders(model, store_data, case, current_radius_vertical, curren
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
     lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
     
-    # Calculate lateral multiplier based on number of laterals: 1/n_laterals
-    # This ensures consistency: 1 lateral = 1, 2 laterals = 0.5, 3 laterals = 1/3, etc.
-    if n_laterals is not None and n_laterals > 0:
-        lateral_multiplier = 1.0 / n_laterals
+    if case == "coaxial":
+        lateral_multiplier = current_lateral_multiplier if current_lateral_multiplier is not None else "Inject in Annulus"
     else:
-        lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+        # Calculate lateral multiplier based on number of laterals: 1/n_laterals
+        # This ensures consistency: 1 lateral = 1, 2 laterals = 0.5, 3 laterals = 1/3, etc.
+        if n_laterals is not None and n_laterals > 0:
+            lateral_multiplier = 1.0 / n_laterals
+        else:
+            lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
     
     # Only update if values have changed to prevent unnecessary cascading updates
     if (current_radius_vertical == radius_vertical and current_radius_lateral == radius_lateral and 
@@ -2902,18 +2889,26 @@ def restore_sbt_sliders(model, store_data, case, current_radius_vertical, curren
 @app.callback(
     Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
     Input(component_id="n-laterals-select", component_property="value"),
-    State(component_id="model-select", component_property="value"),
+    [
+        State(component_id="model-select", component_property="value"),
+        State(component_id="case-select", component_property="value"),
+    ],
     prevent_initial_call=True,
 )
-def update_lateral_multiplier(n_laterals, model):
+def update_lateral_multiplier(n_laterals, model, case):
     """Automatically update lateral flow multiplier based on number of laterals.
     
     The multiplier should be 1/n_laterals:
     - 1 lateral: multiplier = 1
     - 2 laterals: multiplier = 1/2 = 0.5
     - 3 laterals: multiplier = 1/3 ≈ 0.333
+    
+    For coaxial, this component is used for the flow type dropdown, so don't update it.
     """
     if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    if case == "coaxial":
         raise PreventUpdate
     
     if n_laterals is None or n_laterals <= 0:
@@ -3257,17 +3252,13 @@ def update_sliders_hyperparms(model, store_data):
         ),  # PipeParam4 (for U-tube lateral flow allocation, or coaxial insulation thermal conductivity)
         Input(
             component_id="lateral-multiplier-select", component_property="value"
-        ),  # PipeParam5 (for U-tube)
-        Input(
-            component_id="coaxial-flow-type-select", component_property="value"
-        ),  # PipeParam5 (for coaxial)
+        ),  # PipeParam5 (for U-tube lateral multiplier, or coaxial flow type)
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
-        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
     [
         State(component_id="plot-inputs-cache", component_property="data"),
@@ -3296,8 +3287,7 @@ def update_subsurface_results_plots(
     Diameter2,
     PipeParam3,
     PipeParam4,
-    PipeParam5,
-    coaxial_flow_type,
+    PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
     mesh,
     accuracy,
     # mass_mode, temp_mode
@@ -3305,7 +3295,6 @@ def update_subsurface_results_plots(
     HyperParam3,
     pipe_roughness,
     HyperParam5,
-    insulation_thermal_conductivity,
     plot_inputs_cache,
     current_request_id,
 ):
@@ -3352,14 +3341,13 @@ def update_subsurface_results_plots(
             "PipeParam3": PipeParam3,
             "PipeParam4": PipeParam4,
             "PipeParam5": PipeParam5,
-            "coaxial_flow_type": coaxial_flow_type,
+            "coaxial_flow_type": PipeParam5 if (case == "coaxial" and PipeParam5 is not None) else None,
             "mesh": mesh,
             "accuracy": accuracy,
             "HyperParam1": HyperParam1,
             "HyperParam3": HyperParam3,
             "pipe_roughness": pipe_roughness,
             "HyperParam5": HyperParam5,
-            "insulation_thermal_conductivity": insulation_thermal_conductivity,
         }
         current_inputs = {k: canon(v) for k, v in current_inputs_raw.items()}
         
@@ -3447,27 +3435,6 @@ def update_subsurface_results_plots(
             hyperparam1_value = HyperParam1
             hyperparam3_value = HyperParam3
         
-        if case == "coaxial":
-            actual_PipeParam3 = PipeParam3
-            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
-            
-            if coaxial_flow_type is not None:
-                if isinstance(coaxial_flow_type, str):
-                    if coaxial_flow_type == "Inject in Annulus":
-                        actual_PipeParam5 = 1
-                    elif coaxial_flow_type == "Inject in Center Pipe":
-                        actual_PipeParam5 = 2
-                    else:
-                        actual_PipeParam5 = 1
-                else:
-                    actual_PipeParam5 = int(coaxial_flow_type) if coaxial_flow_type in [1, 2] else 1
-            else:
-                actual_PipeParam5 = PipeParam5 if PipeParam5 is not None else 1
-        else:
-            actual_PipeParam3 = PipeParam3
-            actual_PipeParam4 = PipeParam4
-            actual_PipeParam5 = PipeParam5
-        
         (
             subplots,
             forty_yr_TPmeans_dict,
@@ -3494,9 +3461,9 @@ def update_subsurface_results_plots(
             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1,
             Diameter2,
-            actual_PipeParam3,
-            actual_PipeParam4,
-            actual_PipeParam5,
+            PipeParam3,
+            PipeParam4,
+            PipeParam5,
             mesh,
             accuracy,
             hyperparam1_value,
@@ -3644,14 +3611,12 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
-        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_econ_plots(
@@ -3684,15 +3649,13 @@ def update_econ_plots(
     Diameter2,
     PipeParam3,
     PipeParam4,
-    PipeParam5,
-    coaxial_flow_type,
+    PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
     mesh,
     accuracy,
     HyperParam1,
     HyperParam3,
     pipe_roughness,
     HyperParam5,
-    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
@@ -3833,14 +3796,12 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
-        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
-        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
     ],
 )
 def update_table(
@@ -3872,15 +3833,13 @@ def update_table(
     Diameter2,
     PipeParam3,
     PipeParam4,
-    PipeParam5,
-    coaxial_flow_type,
+    PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
     mesh,
     accuracy,
     HyperParam1,
     HyperParam3,
     pipe_roughness,
     HyperParam5,
-    insulation_thermal_conductivity,
 ):
     try:
         # Handle None values
@@ -3933,7 +3892,7 @@ def update_table(
                 "lateral_multiplier": PipeParam5 if (case == "utube" and PipeParam5 is not None) else "-",
                 "center_pipe_thickness": PipeParam3 if (case == "coaxial" and PipeParam3 is not None) else "-",
                 "insulation_thermal_conductivity": PipeParam4 if (case == "coaxial" and PipeParam4 is not None) else "-",
-                "coaxial_flow_type": coaxial_flow_type if (case == "coaxial" and coaxial_flow_type is not None) else "-",
+                "coaxial_flow_type": PipeParam5 if (case == "coaxial" and PipeParam5 is not None) else "-",
                 "mesh": mesh if mesh is not None else "-",
                 "accuracy": accuracy if accuracy is not None else "-",
                 "pipe_roughness": pipe_roughness if pipe_roughness is not None else "-",
