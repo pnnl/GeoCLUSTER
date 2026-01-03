@@ -61,7 +61,7 @@ times, Tout, Pout = run_sbt_final(
 
         HYPERPARAM1=20*10, # Fluid input pressure [bar] -- done
         HYPERPARAM2=1e-6, # Pipe/borehole roughness --done     
-        HYPERPARAM3=0, # variablefluidproperties -- constant fluid properties or 1 variable -- done -- ONLY mode that can be varied and it's across both fluids!!!
+        HYPERPARAM3=1, # variablefluidproperties -- constant fluid properties or 1 variable -- done -- ONLY mode that can be varied and it's across both fluids!!!
         HYPERPARAM4=1e-5 , # reltolerance | Target maximum acceptable relative tolerance -- done
         HYPERPARAM5=15, # maxnumberofiterations |Maximum number of iterations each time step [-]
         
@@ -90,7 +90,7 @@ times, Tout, Pout = run_sbt_final(
 print("Time Steps: ", len(times)) # 175 time steps (in seconds)
 print("Tout: ", Tout[-1]-272.15) # last value (in Kelvin converted to Celcius)
 print("Pout: ", Pout[-1]/1e6) # should be PRESENT, later in clgs.py set to 20 MPa constant in Pa
-print("Pout: ", Pout/1e6)
+# print("Pout: ", Pout/1e6)
 end = time.time()
 print("TOTAL TIME: ", end - start) # runs in 0.62 seconds 
 print('\n') 
