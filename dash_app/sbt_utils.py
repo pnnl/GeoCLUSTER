@@ -10,6 +10,17 @@ from scipy.special import erfc, jv, yv
 from scipy.interpolate import RegularGridInterpolator
 from paths import inpath_dict
 
+# NumPy 2.0 removed np.trapz in favor of np.trapezoid.
+_TRAPEZOID_INTEGRATOR = getattr(np, "trapezoid", None)
+if _TRAPEZOID_INTEGRATOR is None:
+    _TRAPEZOID_INTEGRATOR = getattr(np, "trapz", None)
+if _TRAPEZOID_INTEGRATOR is None:
+    raise AttributeError("NumPy missing trapezoidal integration routine required by SBT utils.")
+
+
+def _trapz(y, x):
+    return _TRAPEZOID_INTEGRATOR(y, x)
+
 def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_fineness, fluid, HYPERPARAM1, HYPERPARAM2, HYPERPARAM3, HYPERPARAM4, HYPERPARAM5):
 
     """ 
@@ -120,7 +131,6 @@ def set_sbt_hyperparameters(sbt_version, clg_configuration, accuracy, mesh_finen
         piperoughness = HYPERPARAM2 # 1e-6                  # Pipe/borehole roughness to calculate friction pressure drop [m]
         variablefluidproperties = HYPERPARAM3 # 1           # Must be 0 or 1. "0" means the fluid properties remain constant and are specified by cp_f, rho_f, k_f and mu_f. "1" means that the fluid properties (e.g., density) are calculated internally each time step and are a function of temperature and pressure. 
         
-        # AB: should these be editable to the user?
         # converge parameters
         reltolerance = HYPERPARAM4 # 1e-5                   # Target maximum acceptable relative tolerance each time step [-]. Lower tolerance will result in more accurate results but requires longer computational time
         maxnumberofiterations = HYPERPARAM5 # 15            # Maximum number of iterations each time step [-]. Each time step, solution converges until relative tolerance criteria is met or maximum number of time steps is reached.
@@ -209,7 +219,7 @@ def set_wellbore_geometry(clg_configuration, DrillingDepth_L1, HorizontalExtent_
         y = np.concatenate((yinj, yprod))
         z = np.concatenate((zinj, zprod))
 
-        for i in range(numberoflaterals):
+        for i in range(int(numberoflaterals)):
             x = np.concatenate((x, xlat[:, i].reshape(-1,1)))
             y = np.concatenate((y, ylat[:, i].reshape(-1,1)))
             z = np.concatenate((z, zlat[:, i].reshape(-1,1)))
@@ -234,23 +244,26 @@ def set_tube_geometry(sbt_version, clg_configuration, Diameter1, Diameter2, Pipe
     numberoflaterals = radiusvertical = radiuslateral = lateralflowmultiplier = lateralflowallocation =  None # uloop 
     
     if clg_configuration == 1:  # co-axial geometry (1)
-        radius = Diameter1/2  # 0.2286/2                # Wellbore radius [m] (everything is assumed open-hole)
-        radiuscenterpipe = Diameter2/2  # 0.127/2       # Inner radius of inner pipe [m]
-        thicknesscenterpipe = PipeParam3 # 0.0127       # Thickness of inner pipe [m]
-        k_center_pipe = PipeParam4 # 0.006                                           # Thermal conductivity of insulation of center pipe wall [W/m/K]
-        coaxialflowtype = PipeParam5 # 1                                             # 1 = CXA (fluid injection in annulus); 2 = CXC (fluid injection in center pipe)
+        radius = Diameter1/2
+        radiuscenterpipe = Diameter2/2
+        thicknesscenterpipe = PipeParam3
+        k_center_pipe = PipeParam4
+        if PipeParam5 == "Inject in Annulus":
+            coaxialflowtype = 1
+        if PipeParam5 == "Inject in Center Pipe":
+            coaxialflowtype = 2
 
     elif clg_configuration == 2: # U-loop geometry (2)
 
         radiusvertical = Diameter1/2 # 0.15                         # Radius of "vertical" injection and production well (open hole assumed for heat transfer) [m] (it is labeled here as vertical but it is allowed to be deviated)
         radiuslateral = Diameter2/2 # 0.30                          # Radius of laterals (open hole assumed for heat transfer) [m]
         
-        numberoflaterals = PipeParam3 # 3                                            # Number of laterals (must be integer) [-]
+        numberoflaterals = int(PipeParam3) if PipeParam3 is not None else 1  # Number of laterals (must be integer) [-]
+        numberoflaterals = max(1, numberoflaterals)  # Ensure at least 1 lateral
         lateralflowallocation = PipeParam4 # [1/3, 1/3, 1/3]                         # Distribution of flow accross laterals, must add up to 1 (it will get normalized below if sum does not equal to 1). Length of array must match number of laterals.
         lateralflowmultiplier = PipeParam5 # 1                                       # Multiplier to allow decreasing the lateral flow rate to account for other laterals not simulated. 
-
-        # TODO: ADD NEW PARAMETER (required if clg_configuration is 2)
-        # USER EDITABLE? (v27)
+        
+         # not user editable right now
         if sbt_version == 2:
             autoadjustlateralflowrates = 0               # Only used in SBT v2 U-loop. Must be 0 or 1. "0" means the flow rate in each lateral remains constant with a distribution as specified in lateralflowallocation. "1" means that the flow rate in each lateral is adjusted over time to ensure matching fluid pressures at the exit of each lateral. Sometimes this can cause convergence issues.
 
@@ -281,6 +294,7 @@ def admin_fluid_properties():
 
 def compute_tube_geometry(sbt_version, clg_configuration, fluid,
                                 radius, radiuscenterpipe, thicknesscenterpipe,
+                                k_center_pipe,
                                 x, y, z, xinj, yinj, zinj, xprod, yprod, zprod, xlat, ylat, zlat,
                                 mdot,
                                 piperoughness,
@@ -296,7 +310,8 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         outerradiuscenterpipe = radiuscenterpipe+thicknesscenterpipe    # Outer radius of inner pipe [m]
         A_flow_annulus = math.pi*(radius**2-outerradiuscenterpipe**2)   # Flow area of annulus pipe [m^2]
         A_flow_centerpipe = math.pi*radiuscenterpipe**2                 # Flow area of center pipe [m^2]
-        Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]    
+        Dh_annulus = 2*(radius-outerradiuscenterpipe)                   # Hydraulic diameter of annulus [m]
+        
         if sbt_version == 2:
             eps_annulus = Dh_annulus*piperoughness                      # Relative roughness annulus [-]
             eps_centerpipe = 2*radiuscenterpipe*piperoughness           # Relative roughness inner pipe [-]
@@ -309,7 +324,7 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
         interconnections = np.cumsum(interconnections)  # lists the indices of interconnections between inj, prod, and laterals (this will used to take care of the duplicate coordinates of the start and end points of the laterals)
         radiusvector = np.concatenate([np.ones(len(xinj) + len(xprod) - 2) * radiusvertical, np.ones(numberoflaterals * len(xlat) - numberoflaterals) * radiuslateral])  # Stores radius of each element in a vector [m]
         Dvector = radiusvector * 2  # Diameter of each element [m]
-        lateralflowallocation_norm = lateralflowallocation / np.sum(lateralflowallocation)  # Ensure the sum equals 1   
+        lateralflowallocation_norm = lateralflowallocation / np.sum(lateralflowallocation)  # Ensure the sum equals 1
         
         if sbt_version == 2:
             radiusvectornodes = np.concatenate([np.full(len(xinj) + len(xprod), radiusvertical),np.full(numberoflaterals * xlat.shape[0] - 2 * numberoflaterals, radiuslateral)]) #Stores the element radius at each node [m] (The bottom nodes of the injector and producer are assume to have the radius of the injector and producer)
@@ -317,6 +332,16 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
             FlowDistributionMidPoints = np.ones(len(xinj) + len(xprod) - 2)
             FlowDistributionNodes = np.ones(len(xinj)+len(xprod))
             for dd in range(numberoflaterals):
+                # TODO: remove check
+                # Ensure lateralflowallocation_norm[dd] is a scalar, not an array
+                # allocation_val = lateralflowallocation_norm[dd]
+                # if hasattr(allocation_val, '__len__') and not isinstance(allocation_val, str):
+                #     allocation_scalar = float(np.asarray(allocation_val).item())
+                # else:
+                #     allocation_scalar = float(allocation_val)
+                # multiplier_val = float(lateralflowmultiplier) if lateralflowmultiplier is not None else 1.0
+                # FlowDistributionMidPoints = np.concatenate([FlowDistributionMidPoints, multiplier_val * allocation_scalar * np.ones(xlat.shape[0] - 1)])
+                # FlowDistributionNodes = np.concatenate([FlowDistributionNodes, multiplier_val * allocation_scalar * np.ones(xlat.shape[0] - 2)])
                 FlowDistributionMidPoints = np.concatenate([FlowDistributionMidPoints,lateralflowmultiplier * lateralflowallocation_norm[dd] * np.ones(xlat.shape[0] - 1)])
                 FlowDistributionNodes = np.concatenate([FlowDistributionNodes,lateralflowmultiplier * lateralflowallocation_norm[dd] * np.ones(xlat.shape[0] - 2)])
             Area = math.pi*Dvector**2/4              #Vector with cross sectional flow area of each element at the element midpoints (all elements are assumed open hole) [m2]
@@ -330,6 +355,18 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
             mlateralold = mlateral.copy()
 
         Deltaz = np.delete(Deltaz, interconnections - 1)  # Removes the phantom elements due to duplicate coordinates
+        # radiusvector is already created with the correct length (matching Deltaz after deletion), so no deletion needed
+        # Dvector = radiusvector * 2  # Diameter of each element [m]
+        
+        # Verify Dvector and Deltaz have matching lengths
+        if len(Dvector) != len(Deltaz):
+            raise ValueError(f"Dvector length ({len(Dvector)}) does not match Deltaz length ({len(Deltaz)}) after deletion. radiusvector length: {len(radiusvector)}")
+        
+        # Update Area and eps for SBT v2 after Dvector is modified
+        # if sbt_version == 2:
+        #     Area = math.pi*Dvector**2/4              #Vector with cross sectional flow area of each element at the element midpoints (all elements are assumed open hole) [m2]
+        #     eps = Dvector*piperoughness       #Vector with relative roughness at midpoint of each element [-]
+        
         LoverR = Deltaz / radiusvector  # Ratio of pipe segment length to radius along the wellbore [-]
         if numberoflaterals > 1:
             DeltazOrdered = np.concatenate((Deltaz[0:(interconnections[0]-1)], Deltaz[(interconnections[1]-2):(interconnections[2]-3)], Deltaz[(interconnections[0]-1):(interconnections[1]-2)]))
@@ -349,7 +386,7 @@ def compute_tube_geometry(sbt_version, clg_configuration, fluid,
     TotalLength = np.sum(Deltaz)  # Total length of all elements (for informational purposes only) [m]
     smallestLoverR = np.min(LoverR)  # Smallest ratio of pipe segment length to pipe radius. This ratio should be larger than 10. [-]
     
-    # QUALITY CONTROL # AB: bring back later on UI
+    # QUALITY CONTROL # TODO AB: bring back later on UI
     # if smallestLoverR < 10:
     #     print('Warning: smallest ratio of segment length over radius is less than 10. Good practice is to keep this ratio larger than 10.')
     # if max(abs(RelativeLengthChanges)) > 0.5:
@@ -373,25 +410,112 @@ def calc_tube_min_time_steps(clg_configuration, radius, radiusvector, alpha_m, D
     return timeforpointssource, timeforlinesource, timeforfinitelinesource,
 
 
-def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f):
+def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp_f, k_f, mu_f, variableflowrate=None):
 
     interpolator_density = interpolator_enthalpy = interpolator_entropy = None
     interpolator_heatcapacity = interpolator_heatcapacity = interpolator_phase = None 
     interpolator_thermalconductivity = interpolator_thermalexpansion = interpolator_viscosity = None
 
+    # TODO: Why was this added?
+    # if sbt_version == 1:
+    #     print("REVIEW THIS IN SBT_UTILS.py this is NEW!")
+    #     if fluid == 2:  # CO2
+    #         if variableflowrate == 1:  # Variable Mass Flow Rate Mode
+    #             try:
+    #                 mat1 = scipy.io.loadmat(inpath_dict["properties_CO2_pathname_sbtv2"])
+    #                 mat2 = scipy.io.loadmat(inpath_dict["properties_CO2v2_pathname"])
+    #                 Pvector = mat1['Pvector']
+    #                 Tvector = mat1['Tvector']
+    #                 density = mat1['density']
+    #                 enthalpy = mat1['enthalpy']
+    #                 entropy = mat1['entropy']
+    #                 heatcapacity = mat1['heatcapacity']
+    #                 phase = mat1['phase']
+    #                 thermalconductivity = mat1['thermalconductivity']
+    #                 thermalexpansion = mat1['thermalexpansion']
+    #                 viscosity = mat1['viscosity']
+    #                 Pvector_1d = Pvector.ravel()
+    #                 Tvector_1d = Tvector.ravel()
+    #                 interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
+    #                 interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
+    #                 interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
+    #                 interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
+    #                 interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
+    #                 interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
+    #                 interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
+    #                 interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
+    #             except Exception as e:
+    #                 print(f"Error loading CO2 properties files for SBT v1 (Variable Mass Flow Rate Mode): {e}")
+    #                 raise
+    #         else:  # Constant Mass Flow Rate Mode
+    #             try:
+    #                 mat = scipy.io.loadmat(inpath_dict["properties_CO2_pathname_sbtv2"])
+    #                 Pvector = mat['Pvector']
+    #                 Tvector = mat['Tvector']
+    #                 density = mat['density']
+    #                 enthalpy = mat['enthalpy']
+    #                 entropy = mat['entropy']
+    #                 heatcapacity = mat['heatcapacity']
+    #                 phase = mat['phase']
+    #                 thermalconductivity = mat['thermalconductivity']
+    #                 thermalexpansion = mat['thermalexpansion']
+    #                 viscosity = mat['viscosity']
+    #                 Pvector_1d = Pvector.ravel()
+    #                 Tvector_1d = Tvector.ravel()
+    #                 interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
+    #                 interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
+    #                 interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
+    #                 interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
+    #                 interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
+    #                 interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
+    #                 interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
+    #                 interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
+    #             except Exception as e:
+    #                 print(f"Error loading CO2 properties file for SBT v1 (Constant Mass Flow Rate Mode): {e}")
+    #                 raise
+    #     elif fluid == 1:  # H2O
+    #         try:
+    #             mat = scipy.io.loadmat(inpath_dict["properties_H2O_pathname_sbtv2"])
+    #             Pvector = mat['Pvector']
+    #             Tvector = mat['Tvector']
+    #             density = mat['density']
+    #             enthalpy = mat['enthalpy']
+    #             entropy = mat['entropy']
+    #             heatcapacity = mat['heatcapacity']
+    #             phase = mat['phase']
+    #             thermalconductivity = mat['thermalconductivity']
+    #             thermalexpansion = mat['thermalexpansion']
+    #             viscosity = mat['viscosity']
+    #             Pvector_1d = Pvector.ravel()
+    #             Tvector_1d = Tvector.ravel()
+    #             interpolator_density = RegularGridInterpolator((Pvector_1d, Tvector_1d), density)
+    #             interpolator_enthalpy = RegularGridInterpolator((Pvector_1d, Tvector_1d), enthalpy)
+    #             interpolator_entropy = RegularGridInterpolator((Pvector_1d, Tvector_1d), entropy)
+    #             interpolator_heatcapacity = RegularGridInterpolator((Pvector_1d, Tvector_1d), heatcapacity)
+    #             interpolator_phase = RegularGridInterpolator((Pvector_1d, Tvector_1d), phase)
+    #             interpolator_thermalconductivity = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalconductivity)
+    #             interpolator_thermalexpansion = RegularGridInterpolator((Pvector_1d, Tvector_1d), thermalexpansion)
+    #             interpolator_viscosity = RegularGridInterpolator((Pvector_1d, Tvector_1d), viscosity)
+    #         except Exception as e:
+    #             print(f"Error loading H2O properties file for SBT v1: {e}")
+    #             raise
+
     if sbt_version == 2:
 
         if variablefluidproperties == 0:  # For computational purposes, use constant fluid property tables
-            # Define vectors for pressure and temperature
-            Pvector = [1, 1e9]
-            Tvector = [1, 1e4]
+            # Define vectors for pressure and temperature (convert to numpy arrays)
+            Pvector = np.array([1, 1e9])
+            Tvector = np.array([1, 1e4])
         
             # Create 2x2 arrays with constant fluid properties
-            density = [[rho_f] * 2] * 2
-            heatcapacity = [[cp_f] * 2] * 2
-            thermalconductivity = [[k_f] * 2] * 2
-            viscosity = [[mu_f] * 2] * 2
-            thermalexpansion = [[0] * 2] * 2  # Incompressible fluid has zero thermal expansion coefficient
+            density = np.array([[rho_f] * 2] * 2)
+            enthalpy = np.array([[0] * 2] * 2)  # Enthalpy difference not used in constant mode
+            entropy = np.array([[0] * 2] * 2)  # Entropy difference not used in constant mode
+            heatcapacity = np.array([[cp_f] * 2] * 2)
+            phase = np.array([[1] * 2] * 2)  # Assume liquid phase (1) for constant properties
+            thermalconductivity = np.array([[k_f] * 2] * 2)
+            viscosity = np.array([[mu_f] * 2] * 2)
+            thermalexpansion = np.array([[0] * 2] * 2)  # Incompressible fluid has zero thermal expansion coefficient
         else:  # If variable fluid properties, import pre-generated tables
             # print('Loading fluid properties...')
             if fluid == 1:  # H2O
@@ -426,8 +550,8 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     phase = mat['phase']
                     thermalconductivity = mat['thermalconductivity']
                     thermalexpansion = mat['thermalexpansion']
-                    viscosity = mat['viscosity']                
-                    # print('Fluid properties for CO2 loaded successfully')
+                    viscosity = mat['viscosity']
+                    
                 except Exception as e:
                     print(f"Error loading properties for CO2: {e}")
                     raise
@@ -452,7 +576,7 @@ def prepare_interpolators(sbt_version, variablefluidproperties, fluid, rho_f, cp
                     interpolator_phase, interpolator_thermalconductivity, interpolator_thermalexpansion, interpolator_viscosity
 
 
-def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot):
+def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowrate, flowratefilename, Tinj, mdot, injectiontemperaturefilename=None):
 
     # These are only used when variableinjectiontemperature == 1 or variableflowrate == 1
     mflowratearray = mtimearray = Tintimearray = Tintemperaturearray = None
@@ -461,7 +585,6 @@ def get_profiles(sbt_version, times, variableinjectiontemperature, variableflowr
     Tinstore = np.zeros(len(times))
     # print(variableinjectiontemperature)
     if variableinjectiontemperature == 1 and sbt_version == 1:
-        # User has provided injection temperature in an Excel spreadsheet. (can currently only be used with sbt version 1)
         num = pd.read_excel(injectiontemperaturefilename)
         Tintimearray = np.array(num.iloc[:, 0])
         Tintemperaturearray = np.array(num.iloc[:, 1])
@@ -528,7 +651,7 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times,
         if Amin1 > Amax1:
             Amax1 = 10 * Amin1
         Adomain1 = np.logspace(np.log10(Amin1), np.log10(Amax1), NoDiscrFinitePipeCorrection)
-        finitecorrectiony[i] = np.trapezoid(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
+        finitecorrectiony[i] = _trapz(-1 / (Adomain1 * 4 * np.pi * k_m) * erfc(1/2 * np.power(Adomain1, 1/2)), Adomain1)
 
     #precalculate besselintegration for infinite cylinder
     if clg_configuration == 1: # co-axial geometry (1)
@@ -547,7 +670,7 @@ def precalculations(clg_configuration, Deltaz, alpha_m, k_m, times,
     besselcylinderresult = np.zeros(NoArgumentsInfCylIntegration)
 
     for i, argumentbessel in enumerate(argumentbesselvec):
-        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * np.trapezoid((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
+        besselcylinderresult[i] = 2 / (k_m * np.pi**3) * _trapz((1 - np.exp(-deltazbessel**2 * argumentbessel)) / (deltazbessel**3 * (jv(1, deltazbessel)**2 + yv(1, deltazbessel)**2)), deltazbessel)
 
     N = len(Deltaz)  # Number of elements
     elementcenters = 0.5 * np.column_stack((x[1:], y[1:], z[1:])) + 0.5 * np.column_stack((x[:-1], y[:-1], z[:-1]))  # Matrix that stores the mid point coordinates of each element
