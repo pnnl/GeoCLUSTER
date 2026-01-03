@@ -17,11 +17,11 @@ import pickle
 
 # Global cache for SBT calculations and database interpolations
 _sbt_cache = {}
-_db_cache = {}  # Cache for HDF5 database interpolations
-_cache_max_size = 50  # Limit cache size to prevent memory issues
-_computations_in_progress = {}  # Track computations in progress to prevent duplicate runs
+_db_cache = {}
+_cache_max_size = 50
+_computations_in_progress = {}
 import threading
-_computation_lock = threading.Lock()  # Lock for thread-safe cache operations
+_computation_lock = threading.Lock()
 
 def _make_cache_key(*args, **kwargs):
     """Create a hash key from function arguments for caching"""
@@ -32,7 +32,7 @@ def _make_cache_key(*args, **kwargs):
         if isinstance(v, bool):
             return v
         if isinstance(v, (int, float)):
-            return round(float(v), 6)  # Round floats to 6 decimal places
+            return round(float(v), 6)
         if isinstance(v, (list, tuple)):
             return tuple(normalize_value(x) for x in v)
         if isinstance(v, np.ndarray):
@@ -56,23 +56,19 @@ def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
     with _computation_lock:
         if len(_sbt_cache) >= _cache_max_size:
-            # Remove oldest entry (simple FIFO)
             oldest_key = next(iter(_sbt_cache))
             del _sbt_cache[oldest_key]
         _sbt_cache[cache_key] = result
-        # Remove from in-progress tracking
         _computations_in_progress.pop(cache_key, None)
 
 def _wait_for_computation(cache_key, timeout=60):
     """Wait for an in-progress computation to complete, with timeout
     Note: In Dash's single-threaded callback environment, we can't block.
     This just checks once and returns None if not ready."""
-    # In Dash, callbacks are synchronous, so we can't block with sleep
-    # Just check once - if computation is done, return cached result
     with _computation_lock:
         if cache_key not in _computations_in_progress:
             return _sbt_cache.get(cache_key)
-    return None  # Still in progress, caller should compute
+    return None
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -251,13 +247,10 @@ class data:
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
         if sbt_version == 0:
-            # Create cache key for database interpolation
             db_cache_key = _make_cache_key(
                 model="HDF5", point=point, fluid=self.fluid, case=self.case
             )
             db_cache_key_str = str(db_cache_key)
-            
-            # Check cache for database interpolation
             with _computation_lock:
                 cached_db_result = _db_cache.get(db_cache_key_str)
                 if cached_db_result is not None:
@@ -282,7 +275,7 @@ class data:
                 point_to_read_around = (
                     *point,
                     "all",
-                )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
+                )
                 try:
                     Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
                     Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
@@ -300,7 +293,6 @@ class data:
 
                 mdot, L2, L1, grad, D , Tinj, k = point
                 
-                # Cache the result
                 with _computation_lock:
                     if len(_db_cache) >= _cache_max_size:
                         oldest_key = next(iter(_db_cache))
@@ -356,24 +348,19 @@ class data:
                 elif fluid_mode == "Variable" or fluid_mode == "Temperature–Pressure Dependent":
                     fluid_mode_b = 1
                 else:
-                    # Default to variable fluid properties if unknown
                     fluid_mode_b = 1
                 
-                # Handle HyperParam1 (inlet pressure in MPa) - convert to bar
-                # If it's a string like "Constant", use default 20 MPa
                 if isinstance(HyperParam1, str):
-                    hyperparam1 = 20.0 * 10  # Default 20 MPa = 200 bar
+                    hyperparam1 = 20.0 * 10
                 else:
                     try:
-                        hyperparam1 = float(HyperParam1) * 10  # Pin (convert MPa to bar)
+                        hyperparam1 = float(HyperParam1) * 10
                     except (ValueError, TypeError):
-                        hyperparam1 = 20.0 * 10  # Default 20 MPa = 200 bar
+                        hyperparam1 = 20.0 * 10
                 
-                # Ensure hyperparam2 (pipe roughness) is a scalar float, not a list/array or string
                 if isinstance(HyperParam3, (list, tuple, np.ndarray)):
                     hyperparam2 = float(HyperParam3[0]) if len(HyperParam3) > 0 else 1e-6
                 elif isinstance(HyperParam3, str):
-                    # If it's a string like "Constant", use default pipe roughness
                     hyperparam2 = 1e-6
                 else:
                     try:
@@ -387,25 +374,18 @@ class data:
             if self.case == "coaxial":
                 case = 1
                 
-                # Match master's conversion logic: convert string to integer for validation
-                # But keep as string for set_tube_geometry (repo-review version expects strings)
                 if isinstance(PipeParam5, str):
                     if PipeParam5 == "Inject in Annulus":
-                        # Keep as string for set_tube_geometry, but validate it's correct
                         pass
                     elif PipeParam5 == "Inject in Center Pipe":
-                        # Keep as string for set_tube_geometry, but validate it's correct
                         pass
                     else:
                         raise ValueError(f"Unknown coaxial flow option: {PipeParam5!r}. Expected 'Inject in Annulus' or 'Inject in Center Pipe'")
                 elif isinstance(PipeParam5, (int, float)) and int(PipeParam5) in [1, 2]:
-                    # Convert integer back to string for set_tube_geometry (repo-review expects strings)
                     reverse_map = {1: "Inject in Annulus", 2: "Inject in Center Pipe"}
                     PipeParam5 = reverse_map[int(PipeParam5)]
                 else:
                     raise ValueError(f"Invalid coaxial flow option: {PipeParam5}. Must be 1 (Inject in Annulus) or 2 (Inject in Center Pipe)")
-                
-                # Validate coaxial geometry before running SBT
                 if Diameter1 is None or Diameter2 is None:
                     raise ValueError("Coaxial requires Diameter1 and Diameter2 to be specified.")
                 
@@ -433,7 +413,6 @@ class data:
             )
             cache_key_saved = str(cache_key)
 
-            # Check cache with lock
             with _computation_lock:
                 cached_result = _sbt_cache.get(cache_key_saved)
                 if cached_result is not None:
@@ -466,33 +445,26 @@ class data:
                     )
 
 
-                    # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
                         final_cache_key = str(cache_key_saved)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
                 except UnboundLocalError as e:
-                    # Handle model bugs where variables aren't defined in certain code paths
                     if 'Refluidupmidpoints' in str(e) or 'Refluiddownmidpoints' in str(e):
                         raise ValueError(f"SBT model error: Reynolds number variables not initialized. This may indicate invalid parameter combinations for coaxial geometry. Original error: {e}")
                     raise
                 except Exception as e:
-                    # Re-raise the exception so the calling code knows it failed
                     raise
             
-            # Validate Tout immediately after simulation (for both cached and new results)
             if Tout is not None and len(Tout) > 0:
                 Tout_arr = np.array(Tout)
                 if (np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or 
                     np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
-                    # Remove invalid result from cache (use cache_key_saved, not cache_key)
                     if cache_key_saved in _sbt_cache:
                         del _sbt_cache[cache_key_saved]
-                    # Return empty arrays to signal failure
                     return np.array([]), np.array([]), np.array([])
             
             if Pout is None:
-                constant_pressure = 2e7 # 200 Bar in pascal || 2.09e7 
-                # constant_pressure = 22228604.37405011
+                constant_pressure = 2e7
                 Pout = constant_pressure * np.ones_like(Tout)
             
             end = time.time()
@@ -500,11 +472,6 @@ class data:
             times = times[14:]
             Tout = Tout[14:]
             Pout = Pout[14:]
-            
-            # Note: SBT model already returns times in years (converted from seconds)
-            # Debug: Check time range for SBT2
-            if sbt_version == 2 and len(times) > 0:
-                pass
 
         return Tout, Pout, times
 

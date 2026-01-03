@@ -3457,8 +3457,6 @@ def update_subsurface_results_plots(
             hyperparam3_value = HyperParam3
         
         if case == "coaxial":
-            # For coaxial, use defaults if Diameter1 or Diameter2 are None (e.g., on initial load)
-            # Defaults match those set in update_sliders_heat_exchanger: 0.4445 m wellbore, 0.2 m center pipe
             if Diameter1 is None:
                 Diameter1 = 0.4445
             if Diameter2 is None:

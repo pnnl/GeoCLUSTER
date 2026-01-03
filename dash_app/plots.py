@@ -228,7 +228,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
 
     is_blank_data = False
     
-    # Initialize success flags for all cases (HDF5 always succeeds, SBT may fail)
     sCO2_success = True
     H2O_success = True
 
@@ -399,12 +398,12 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
             
             if fluid == "H2O" or fluid == "All":
-                # Compare geometry values if both fluids are being run
                 if fluid == "All" and 'geometry_before_sCO2' in locals():
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
-                        print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
+                        # print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
+                        pass
                 try:
-                    print(f"[DEBUG] Attempting H2O calculation for coaxial SBT (sbt_version={sbt_version_h2o}, Diameter1={Diameter1}, Diameter2={Diameter2})", flush=True)
+                    # print(f"[DEBUG] Attempting H2O calculation for coaxial SBT (sbt_version={sbt_version_h2o}, Diameter1={Diameter1}, Diameter2={Diameter2})", flush=True)
                     H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version_h2o,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
@@ -422,31 +421,25 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         Pinj_h2o = None
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
-                    print(f"[DEBUG] H2O calculation succeeded for coaxial SBT", flush=True)
-                    # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
                     if not sCO2_success and H2O_time is not None:
                         time = H2O_time
                 except Exception as e:
                     _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
                     error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
                     error_messages_dict['Err SubRes4'] = error_message
-                    print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, H2O): {e}", flush=True)
-                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
-                    import traceback
-                    traceback.print_exc()
+                    # print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, H2O): {e}", flush=True)
+                    # print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
+                    # import traceback
+                    # traceback.print_exc()
             
-            # Set is_blank_data only if all selected fluids failed
             if (fluid == "sCO2" and not sCO2_success) or \
                (fluid == "H2O" and not H2O_success) or \
                (fluid == "All" and not sCO2_success and not H2O_success):
                 is_blank_data = True
-                # Only set time to empty if no fluid succeeded
                 if not sCO2_success and not H2O_success:
                     time = pd.Series(dtype=object)
             else:
-                # At least one fluid succeeded, ensure time is set
                 if time is None or (hasattr(time, '__len__') and len(time) == 0):
-                    # Fallback to HDF5 time if SBT simulation didn't return time
                     time = c_sCO2.time if hasattr(c_sCO2, 'time') else u_sCO2.time
             
                 
