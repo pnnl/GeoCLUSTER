@@ -375,17 +375,6 @@ class data:
                 start = time.time()
 
                 try:
-                    # Minimal, high-signal debug: log resolved SBT inputs for this run
-                    print(
-                        f"[RUN SBT] case={'coaxial' if case == 1 else 'utube'} "
-                        f"fluid={fluid} (1=H2O, 2=sCO2) sbt_version={sbt_version} "
-                        f"mdot={mdot} kg/s Tinj={Tinj} °C "
-                        f"L1={L1} km L2={L2} km grad={grad} °C/m "
-                        f"Diameter1={Diameter1} m Diameter2={Diameter2} m "
-                        f"PipeParam3={PipeParam3} PipeParam4={PipeParam4} PipeParam5={PipeParam5}",
-                        flush=True,
-                    )
-
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
