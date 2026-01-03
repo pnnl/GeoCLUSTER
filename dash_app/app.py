@@ -1484,8 +1484,6 @@ def update_working_fluid(model, fluid_store, current_fluid, current_tab, case):
             last_specific = fluid_store.get("last_specific", "H2O")
             
             fluid_list = ["All", "H2O", "sCO2"]
-            if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-                fluid_list = ["H2O", "sCO2"]
             
             if preferred in fluid_list:
                 selected_fluid = preferred
@@ -1493,10 +1491,6 @@ def update_working_fluid(model, fluid_store, current_fluid, current_tab, case):
                 selected_fluid = last_specific
             else:
                 selected_fluid = fluid_list[0] if fluid_list else "H2O"
-            
-            if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-                if selected_fluid == "All" or selected_fluid not in fluid_list:
-                    selected_fluid = "H2O"
             
             return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
         else:
@@ -1556,19 +1550,12 @@ def change_dropdown(at, fluid, model, case, fluid_store):
         last_specific = new_store["last_specific"]
 
     fluid_list = ["All", "H2O", "sCO2"]
-    if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-        fluid_list = ["H2O", "sCO2"]
 
     interpol_list = ["True"]
     selected_fluid = fluid if fluid is not None else preferred
 
     if preferred in fluid_list:
         selected_fluid = preferred
-    if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
-        if selected_fluid == "All" or selected_fluid not in fluid_list:
-            selected_fluid = "H2O"
-            new_store["preferred"] = "H2O"
-            new_store["last_specific"] = "H2O"
 
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
     
@@ -3470,6 +3457,13 @@ def update_subsurface_results_plots(
             hyperparam3_value = HyperParam3
         
         if case == "coaxial":
+            # For coaxial, use defaults if Diameter1 or Diameter2 are None (e.g., on initial load)
+            # Defaults match those set in update_sliders_heat_exchanger: 0.4445 m wellbore, 0.2 m center pipe
+            if Diameter1 is None:
+                Diameter1 = 0.4445
+            if Diameter2 is None:
+                Diameter2 = 0.2
+            
             if insulation_thermal_conductivity is not None:
                 actual_PipeParam4 = insulation_thermal_conductivity
             else:

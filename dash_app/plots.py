@@ -41,12 +41,12 @@ lw = 1.4 # line width
 
 def fluids_to_run(model, case, fluid):
     """
-    Expand "All" fluid selection to concrete fluids for simulator+utube.
-    For simulator+utube+fluid="All", returns ["H2O", "sCO2"].
+    Expand "All" fluid selection to concrete fluids for simulator.
+    For simulator+fluid="All", returns ["H2O", "sCO2"].
     Otherwise returns [fluid].
     """
     is_sim = model in ("SBT V1.0", "SBT V2.0")
-    if is_sim and case == "utube" and fluid == "All":
+    if is_sim and fluid == "All":
         return ["H2O", "sCO2"]
     return [fluid]
 
@@ -227,6 +227,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     # print(sCO2_kWe_avg, sCO2_kWt_avg, H2O_kWe_avg, H2O_kWt_avg)
 
     is_blank_data = False
+    
+    # Initialize success flags for all cases (HDF5 always succeeds, SBT may fail)
+    sCO2_success = True
+    H2O_success = True
 
     if interp_time == "False":
 
@@ -400,6 +404,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
                         print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
                 try:
+                    print(f"[DEBUG] Attempting H2O calculation for coaxial SBT (sbt_version={sbt_version_h2o}, Diameter1={Diameter1}, Diameter2={Diameter2})", flush=True)
                     H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version_h2o,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
@@ -417,6 +422,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                         Pinj_h2o = None
                     H2O_kWe, H2O_kWt = c_H2O.interp_kW(point, H2O_Tout, H2O_Pout, Pinj=Pinj_h2o)
                     H2O_success = True
+                    print(f"[DEBUG] H2O calculation succeeded for coaxial SBT", flush=True)
                     # Use H2O time if sCO2 didn't succeed, otherwise keep sCO2 time
                     if not sCO2_success and H2O_time is not None:
                         time = H2O_time
@@ -442,6 +448,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 if time is None or (hasattr(time, '__len__') and len(time) == 0):
                     # Fallback to HDF5 time if SBT simulation didn't return time
                     time = c_sCO2.time if hasattr(c_sCO2, 'time') else u_sCO2.time
+            
                 
 
 
@@ -464,7 +471,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             vertical_spacing = 0.21
                             )
 
-    if fluid == "sCO2" or fluid == "All":
+    if (fluid == "sCO2" or fluid == "All") and sCO2_success:
 
         if not is_simulator:
             if sCO2_kWe_avg is not None and sCO2_kWt_avg is not None:
@@ -521,7 +528,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     blank_canvas(fig=fig, row_n=1, col_n=1)
                     blank_canvas(fig=fig, row_n=1, col_n=2)
         
-        if is_blank_data:
+        if is_blank_data or not sCO2_success:
             mean_sCO2_Tout = "-"
             mean_sCO2_Pout = "-"
         else:
@@ -537,8 +544,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
         if str(mean_sCO2_Pout) == "nan":
             mean_sCO2_Pout = "-"
 
-        # Only add to dicts if data is not blank
-        if not is_blank_data:
+        # Only add to dicts if data is not blank and sCO2 succeeded
+        if not is_blank_data and sCO2_success:
             if sCO2_kWe_avg is not None:
                 mass_flow_rates_dict["sCO2 40-Year Average of Exergy (kWe)"] = sCO2_kWe_avg
             if sCO2_kWt_avg is not None:
@@ -551,7 +558,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             except (ValueError, TypeError):
                 pass  # Skip if data is empty
 
-    if fluid == "H2O" or fluid == "All":
+    if (fluid == "H2O" or fluid == "All") and H2O_success:
 
         if not is_blank_data:
             if not is_simulator:
