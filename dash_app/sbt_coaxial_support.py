@@ -133,3 +133,28 @@ def check_coaxial_diameters(Diameter1, Diameter2, PipeParam3, A_flow_min):
             # If parsing fails, let SBT handle validation downstream.
             print(f"[WARNING] Could not validate coaxial geometry: {e}", flush=True)
             pass
+    
+
+# code from sbt_utils that could integrate around line 314:
+
+        # # Validate geometry to prevent numerical instability
+        # if A_flow_annulus <= 0:
+        #     raise ValueError(f"Invalid annulus flow area: {A_flow_annulus:.6f} m². "
+        #                    f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m. "
+        #                    f"This indicates invalid coaxial geometry (center pipe outer radius >= wellbore radius).")
+        # if Dh_annulus <= 0:
+        #     raise ValueError(f"Invalid annulus hydraulic diameter: {Dh_annulus:.6f} m. "
+        #                    f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m. "
+        #                    f"This indicates invalid coaxial geometry (center pipe outer radius >= wellbore radius).")
+        # if A_flow_centerpipe <= 0:
+        #     raise ValueError(f"Invalid center pipe flow area: {A_flow_centerpipe:.6f} m². "
+        #                    f"radiuscenterpipe={radiuscenterpipe:.6f} m. "
+        #                    f"This indicates invalid center pipe geometry.")
+        # # Warn if annulus is very thin (may cause numerical instability)
+        # min_annulus_area_ratio = 0.01  # 1% of wellbore area
+        # min_annulus_area = min_annulus_area_ratio * math.pi * radius**2
+        # if A_flow_annulus < min_annulus_area:
+        #     print(f"[WARNING] Annulus flow area is very small ({A_flow_annulus:.6f} m² < {min_annulus_area:.6f} m²). "
+        #           f"This may cause numerical instability in the solver. "
+        #           f"radius={radius:.6f} m, outerradiuscenterpipe={outerradiuscenterpipe:.6f} m", flush=True)
+        

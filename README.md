@@ -91,7 +91,7 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
 | Center Pipe Diameter (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
-| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.013 m |
+| Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.0192 m |
 | Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m | 1×10⁻⁶ |
 | Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m | 10,000 m |
 | Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m | 3,500 m |
@@ -138,24 +138,24 @@ Also, *GeoCLUSTER* requires **Dash version >=2.9.x**. Dash >=2.9.x supports [adv
 
 The `requirements.txt` in `dash_app` lists Python packages and their versions needed to run *GeoCLUSTER* following Python installation. Here are those packages listed below:
   
-![](https://img.shields.io/badge/CoolProp-7.2.0-darkgrey)
-![](https://img.shields.io/badge/dash-3.3.0-darkgrey)
-![](https://img.shields.io/badge/dash_bootstrap_components-2.0.4-darkgrey)
-![](https://img.shields.io/badge/dash_daq-0.6.0-darkgrey)
-![](https://img.shields.io/badge/flask-3.1.2-darkgrey)
-![](https://img.shields.io/badge/flask--compress-1.23-darkgrey)
-![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)
-![](https://img.shields.io/badge/h5py-3.15.1-darkgrey)
-![](https://img.shields.io/badge/numpy-2.4.0-darkgrey)
-![](https://img.shields.io/badge/pandas-2.3.3-darkgrey)
-![](https://img.shields.io/badge/plotly-6.5.0-darkgrey)
-![](https://img.shields.io/badge/scipy-1.16.3-darkgrey)
-![](https://img.shields.io/badge/matplotlib-3.10.8-darkgrey)
-![](https://img.shields.io/badge/boto3-1.42.16-darkgrey)
-![](https://img.shields.io/badge/botocore-1.42.16-darkgrey)
-![](https://img.shields.io/badge/python--dotenv-1.2.1-darkgrey)
-![](https://img.shields.io/badge/cryptography-46.0.3-darkgrey)
-![](https://img.shields.io/badge/xlsxwriter-3.2.9-darkgrey)
+![](https://img.shields.io/badge/CoolProp-7.2.0-darkgrey)  
+![](https://img.shields.io/badge/dash-3.3.0-darkgrey)  
+![](https://img.shields.io/badge/dash_bootstrap_components-2.0.4-darkgrey)  
+![](https://img.shields.io/badge/dash_daq-0.6.0-darkgrey)  
+![](https://img.shields.io/badge/flask-3.1.2-darkgrey)  
+![](https://img.shields.io/badge/flask--compress-1.23-darkgrey)  
+![](https://img.shields.io/badge/flask--talisman-1.1.0-darkgrey)  
+![](https://img.shields.io/badge/h5py-3.15.1-darkgrey)  
+![](https://img.shields.io/badge/numpy-2.4.0-darkgrey)  
+![](https://img.shields.io/badge/pandas-2.3.3-darkgrey)  
+![](https://img.shields.io/badge/plotly-6.5.0-darkgrey)  
+![](https://img.shields.io/badge/scipy-1.16.3-darkgrey)  
+![](https://img.shields.io/badge/matplotlib-3.10.8-darkgrey)  
+![](https://img.shields.io/badge/boto3-1.42.16-darkgrey)  
+![](https://img.shields.io/badge/botocore-1.42.16-darkgrey)  
+![](https://img.shields.io/badge/python--dotenv-1.2.1-darkgrey)  
+![](https://img.shields.io/badge/cryptography-46.0.3-darkgrey)  
+![](https://img.shields.io/badge/xlsxwriter-3.2.9-darkgrey)  
 
 We suggest your environment reflects these package versions.
 
