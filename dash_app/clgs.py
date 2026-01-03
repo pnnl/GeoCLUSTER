@@ -266,12 +266,12 @@ class data:
             mdot, L2, L1, grad, D , Tinj, k = point
             
             # Debug: print raw inputs before conversion
-            print(
-                f"[RAW INPUTS] mdot={mdot} kg/s, L2={L2} m, L1={L1} m, grad={grad} °C/m, "
-                f"D={D} m, Tinj={Tinj} K, k={k} W/m-K, "
-                f"Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam5={PipeParam5}",
-                flush=True,
-            )
+            # print(
+            #     f"[RAW INPUTS] mdot={mdot} kg/s, L2={L2} m, L1={L1} m, grad={grad} °C/m, "
+            #     f"D={D} m, Tinj={Tinj} K, k={k} W/m-K, "
+            #     f"Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam5={PipeParam5}",
+            #     flush=True,
+            # )
 
             L2 = L2/1000
             L1 = L1/1000
@@ -375,6 +375,7 @@ class data:
                 start = time.time()
 
                 try:
+                    print('run sbt')
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -411,9 +412,9 @@ class data:
                     # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
                     # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
                     # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-                    print(len(times))
-                    print(Tout[-1])
-                    print(Pout)
+                    # print(len(times))
+                    # print(Tout[-1])
+                    # print(Pout)
 
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:

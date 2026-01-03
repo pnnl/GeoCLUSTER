@@ -258,6 +258,7 @@ def run_sbt(
                                     injectiontemperaturefilename=injectiontemperaturefilename
                                     )
     
+    # print(" !!!!!! ", coaxialflowtype)
     # Initialize variables that are only set conditionally in get_profiles
     # These are only used when variableinjectiontemperature == 1 or variableflowrate == 1
     Tintimearray = None

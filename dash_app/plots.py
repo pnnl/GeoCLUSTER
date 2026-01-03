@@ -168,14 +168,14 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     if model in ("SBT V1.0", "SBT V2.0"):
         if fluid == "H2O":
             sbt_version_h2o = 1
-            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
+            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
         elif fluid == "sCO2":
             sbt_version_sco2 = 2
-            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
+            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
         elif fluid == "All":
             sbt_version_h2o = 1
             sbt_version_sco2 = 2
-            print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
+            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
     
     # sCO2 is supported if using SBT V2.0 or HDF5 database
     sCO2_supported = (sbt_version_sco2 == 2) or (model == "HDF5")
@@ -1079,14 +1079,14 @@ def generate_econ_lineplots(TandP_dict,
     if model in ("SBT V1.0", "SBT V2.0"):
         if fluid == "H2O":
             sbt_version_h2o = 1
-            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
+            # print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
         elif fluid == "sCO2":
             sbt_version_sco2 = 2
-            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
+            # print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
         elif fluid == "All":
             sbt_version_h2o = 1
             sbt_version_sco2 = 2
-            print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
+            # print(f"[DEBUG generate_econ_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
     
     # Convert numeric versions to model strings for create_teaobject
     model_sco2 = "HDF5" if sbt_version_sco2 == 0 else (f"SBT V{sbt_version_sco2}.0" if sbt_version_sco2 > 0 else model)
