@@ -16,10 +16,6 @@
 # import pkg_resources
 
 # installed_packages = pkg_resources.working_set
-# installed_packages_list = sorted(["%s==%s" % (i.key, i.version)
-#    for i in installed_packages])
-# print(installed_packages_list)
-# print(help("modules"))
 
 import time
 
@@ -1746,8 +1742,6 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     prevent_initial_call='initial_duplicate',
 )
 def show_model_params(model, case):
-    # print("show_model_params: ", model)
-
     b = {"display": "block"}
     n = {"display": "none"}
 
@@ -3342,6 +3336,12 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
 
     try:
+        # Detect if multiple slider inputs changed at once (batch update from restore_slider_values)
+        # If so, check cache first to avoid multiple runs
+        triggered = ctx.triggered if ctx.triggered else []
+        slider_inputs = ["mdot-select", "L2-select", "L1-select", "grad-select", "diameter-select", "Tinj-select", "k-select"]
+        triggered_sliders = [t["prop_id"] for t in triggered if any(slider in t["prop_id"] for slider in slider_inputs)]
+        
         # Canonicalization function to normalize numeric types
         def canon(v, nd=6):
             if v is None:
@@ -3385,11 +3385,40 @@ def update_subsurface_results_plots(
         }
         current_inputs = {k: canon(v) for k, v in current_inputs_raw.items()}
         
+        # Always check cache first (not just for batch updates) to prevent duplicate runs
+        if plot_inputs_cache and plot_inputs_cache.get("inputs"):
+            cached_inputs_raw = plot_inputs_cache.get("inputs", {})
+            cached_inputs = {k: canon(v) for k, v in cached_inputs_raw.items()}
+            # Ensure model matches - don't return cache from different model
+            if current_inputs == cached_inputs and cached_inputs.get("model") == model:
+                cached_pack = plot_inputs_cache.get("outputs")
+                if cached_pack and len(cached_pack) == 6:
+                    cached_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp = cached_pack
+                    if cached_fig_dict and isinstance(cached_fig_dict, dict):
+                        figure_data = cached_fig_dict.get("data", [])
+                        if figure_data and len(figure_data) > 0:
+                            import plotly.graph_objects as go
+                            import time
+                            fig = go.Figure(cached_fig_dict)
+                            uirev = f"{L1}-{grad}-{Tinj}-{mdot}-{scale}-{model}-{case}-{fluid}-{current_request_id}"
+                            fig.update_layout(
+                                uirevision=uirev,
+                                datarevision=current_request_id if current_request_id is not None else time.time()
+                            )
+                            new_fig_dict = fig.to_dict()
+                            outputs6 = (new_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp)
+                            new_cache = {"inputs": current_inputs, "outputs": outputs6}
+                            request_id = current_request_id if current_request_id is not None else 0
+                            return (*outputs6, request_id, new_cache)
+        
+        # Check cache first - if inputs match, return cached results immediately
+        # This prevents duplicate SBT/database calls when callback is triggered multiple times
         if plot_inputs_cache and plot_inputs_cache.get("inputs"):
             cached_inputs_raw = plot_inputs_cache.get("inputs", {})
             cached_inputs = {k: canon(v) for k, v in cached_inputs_raw.items()}
             
-            cache_equal = current_inputs == cached_inputs
+            # Only use cache if model matches (to prevent returning HDF5 cache for SBT models)
+            cache_equal = current_inputs == cached_inputs and cached_inputs.get("model") == model
             
             if cache_equal:
                 # Inputs haven't changed, return cached outputs to avoid clearing/regenerating plots
@@ -3469,7 +3498,6 @@ def update_subsurface_results_plots(
                         actual_PipeParam3 = thickness_val
                     else:
                         actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
-                        # print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} out of range, clamped to {actual_PipeParam3} m", flush=True)
                 except (TypeError, ValueError):
                     actual_PipeParam3 = 0.0127
             else:
@@ -3566,9 +3594,6 @@ def update_subsurface_results_plots(
             hyperparam3_value,
             HyperParam5,
         )
-        # if SBT:
-        # end = time.time()
-        # print("run generate_subsurface_lineplots:", end - start)
 
         # Build outputs6 explicitly: (figure, thermal_memory, mass, time, errors, TandP)
         outputs6 = (
@@ -3613,7 +3638,6 @@ def update_subsurface_results_plots(
         # Re-raise PreventUpdate - it's not an error, it's a signal to skip updating
         raise
     except Exception as e:
-        print(f"[ERROR] Error in update_subsurface_results_plots: {e}")
         import traceback
         traceback.print_exc()
         # Return empty/default values on error
@@ -3664,8 +3688,6 @@ def update_subsurface_contours_plots(
     # Check for None values on initial load
     if fluid is None or case is None or param is None or mdot is None or L2 is None or L1 is None or Tinj is None or D is None or grad is None or k_m is None:
         raise PreventUpdate
-
-    # print('contours')
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
     )
@@ -3779,8 +3801,6 @@ def update_econ_plots(
         # -----------------------------------------------------------------------------
         # Creates and displays Plotly subplots of the economic results.
         # -----------------------------------------------------------------------------
-
-        # print('economics')
         
         if checklist == [" "]:
             is_plot_ts = True
@@ -3834,7 +3854,6 @@ def update_econ_plots(
 
         return economics_fig, econ_data_dict, econ_values_dict, err_econ_dict
     except Exception as e:
-        print(f"[ERROR] Error in update_econ_plots: {e}")
         import traceback
         traceback.print_exc()
         # Return empty figure and empty data on error

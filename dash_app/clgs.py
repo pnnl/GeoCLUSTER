@@ -15,42 +15,64 @@ import hashlib
 import pickle
 # import uuid
 
-# Global cache for SBT calculations
+# Global cache for SBT calculations and database interpolations
 _sbt_cache = {}
+_db_cache = {}  # Cache for HDF5 database interpolations
 _cache_max_size = 50  # Limit cache size to prevent memory issues
+_computations_in_progress = {}  # Track computations in progress to prevent duplicate runs
+import threading
+_computation_lock = threading.Lock()  # Lock for thread-safe cache operations
 
 def _make_cache_key(*args, **kwargs):
     """Create a hash key from function arguments for caching"""
+    def normalize_value(v):
+        """Normalize values for consistent cache keys"""
+        if v is None:
+            return None
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, (int, float)):
+            return round(float(v), 6)  # Round floats to 6 decimal places
+        if isinstance(v, (list, tuple)):
+            return tuple(normalize_value(x) for x in v)
+        if isinstance(v, np.ndarray):
+            return tuple(round(float(x), 6) for x in v.flatten()[:10])
+        return str(v)
+    
     # Convert all arguments to a tuple of hashable values
     key_data = []
     for arg in args:
-        if isinstance(arg, (int, float, str, bool, type(None))):
-            key_data.append(arg)
-        elif isinstance(arg, np.ndarray):
-            key_data.append(tuple(arg.flatten()[:10]))  # Use first 10 elements for arrays
-        else:
-            key_data.append(str(arg))
+        key_data.append(normalize_value(arg))
     for k, v in sorted(kwargs.items()):
-        if isinstance(v, (int, float, str, bool, type(None))):
-            key_data.append((k, v))
-        elif isinstance(v, np.ndarray):
-            key_data.append((k, tuple(v.flatten()[:10])))
-        else:
-            key_data.append((k, str(v)))
+        key_data.append((k, normalize_value(v)))
     return hashlib.md5(pickle.dumps(tuple(key_data))).hexdigest()
 
 def _get_cached_result(cache_key):
     """Get cached result if available"""
-    return _sbt_cache.get(cache_key)
+    with _computation_lock:
+        return _sbt_cache.get(cache_key)
 
 def _set_cached_result(cache_key, result):
     """Store result in cache, with size limit"""
-    cache_size_before = len(_sbt_cache)
-    if len(_sbt_cache) >= _cache_max_size:
-        # Remove oldest entry (simple FIFO)
-        oldest_key = next(iter(_sbt_cache))
-        del _sbt_cache[oldest_key]
-    _sbt_cache[cache_key] = result
+    with _computation_lock:
+        if len(_sbt_cache) >= _cache_max_size:
+            # Remove oldest entry (simple FIFO)
+            oldest_key = next(iter(_sbt_cache))
+            del _sbt_cache[oldest_key]
+        _sbt_cache[cache_key] = result
+        # Remove from in-progress tracking
+        _computations_in_progress.pop(cache_key, None)
+
+def _wait_for_computation(cache_key, timeout=60):
+    """Wait for an in-progress computation to complete, with timeout
+    Note: In Dash's single-threaded callback environment, we can't block.
+    This just checks once and returns None if not ready."""
+    # In Dash, callbacks are synchronous, so we can't block with sleep
+    # Just check once - if computation is done, return cached result
+    with _computation_lock:
+        if cache_key not in _computations_in_progress:
+            return _sbt_cache.get(cache_key)
+    return None  # Still in progress, caller should compute
 
 class data:
     def __init__(self, fname, case, fluid):
@@ -225,54 +247,70 @@ class data:
                     # mass_mode, temp_mode
                     ): # needs to be a callback option
         
-        # call_id = str(uuid.uuid4())[:8]  # Unique ID for this call
-        # print(f"[CALL START] {call_id} - interp_outlet_states called: fluid={self.fluid}, case={self.case}, Tinj={point[5] if len(point) > 5 else 'N/A'}K", flush=True)
         """
         :param sbt_version: 0 if not using SBT, 1 if using SBT v1, 2 if using SBT v2 
         """
         if sbt_version == 0:
-            points = list(
-                itertools.product(
-                    (point[0],),
-                    (point[1],),
-                    (point[2],),
-                    (point[3],),
-                    (point[4],),
-                    (point[5],),
-                    (point[6],),
-                    self.time,
-                )
+            # Create cache key for database interpolation
+            db_cache_key = _make_cache_key(
+                model="HDF5", point=point, fluid=self.fluid, case=self.case
             )
+            db_cache_key_str = str(db_cache_key)
+            
+            # Check cache for database interpolation
+            with _computation_lock:
+                cached_db_result = _db_cache.get(db_cache_key_str)
+                if cached_db_result is not None:
+                    times, Tout, Pout = cached_db_result
+                else:
+                    _computations_in_progress[db_cache_key_str] = True
+            
+            if cached_db_result is None:
+                points = list(
+                    itertools.product(
+                        (point[0],),
+                        (point[1],),
+                        (point[2],),
+                        (point[3],),
+                        (point[4],),
+                        (point[5],),
+                        (point[6],),
+                        self.time,
+                    )
+                )
 
-            point_to_read_around = (
-                *point,
-                "all",
-            )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
-            try:
-                Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
-                Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
-            except ValueError as e:
-                if "out of bounds" in str(e):
-                    raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
-                raise
-            except Exception as e:
-                raise ValueError(f"Error during HDF5 database interpolation: {e}")
-            times = self.time
+                point_to_read_around = (
+                    *point,
+                    "all",
+                )  # unpacking point and adding "all" to the end of it. This tells interpolate_points to read in all of the time dimension
+                try:
+                    Tout = self.interpolate_points(self.Tout, point_to_read_around, points)
+                    Pout = self.interpolate_points(self.Pout, point_to_read_around, points)
+                except ValueError as e:
+                    with _computation_lock:
+                        _computations_in_progress.pop(db_cache_key_str, None)
+                    if "out of bounds" in str(e):
+                        raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
+                    raise
+                except Exception as e:
+                    with _computation_lock:
+                        _computations_in_progress.pop(db_cache_key_str, None)
+                    raise ValueError(f"Error during HDF5 database interpolation: {e}")
+                times = self.time
 
-            mdot, L2, L1, grad, D , Tinj, k = point
-            print(mdot, L2, L1, grad, D , Tinj, k)
+                mdot, L2, L1, grad, D , Tinj, k = point
+                
+                # Cache the result
+                with _computation_lock:
+                    if len(_db_cache) >= _cache_max_size:
+                        oldest_key = next(iter(_db_cache))
+                        del _db_cache[oldest_key]
+                    _db_cache[db_cache_key_str] = (times, Tout, Pout)
+                    _computations_in_progress.pop(db_cache_key_str, None)
 
         else:
             mdot, L2, L1, grad, D , Tinj, k = point
             
-            # Debug: print raw inputs before conversion
-            # print(
-            #     f"[RAW INPUTS] mdot={mdot} kg/s, L2={L2} m, L1={L1} m, grad={grad} °C/m, "
-            #     f"D={D} m, Tinj={Tinj} K, k={k} W/m-K, "
-            #     f"Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam5={PipeParam5}",
-            #     flush=True,
-            # )
-
             L2 = L2/1000
             L1 = L1/1000
             Tinj = Tinj-273.15
@@ -368,14 +406,19 @@ class data:
             )
             cache_key_saved = str(cache_key)
 
-            cached_result = _get_cached_result(cache_key_saved)
-            if cached_result is not None:
-                times, Tout, Pout = cached_result
-            else:
+            # Check cache with lock
+            with _computation_lock:
+                cached_result = _sbt_cache.get(cache_key_saved)
+                if cached_result is not None:
+                    times, Tout, Pout = cached_result
+                else:
+                    _computations_in_progress[cache_key_saved] = True
+                    cached_result = None
+            
+            if cached_result is None:
                 start = time.time()
 
                 try:
-                    print('run sbt')
                     times, Tout, Pout = run_sbt_final(
                         ## Model Specifications 
                         sbt_version=sbt_version, mesh_fineness=mesh, HYPERPARAM1=hyperparam1, HYPERPARAM2=hyperparam2, 
@@ -395,26 +438,6 @@ class data:
                         # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                     )
 
-                    # if case == 1:
-                    #     if fluid == 1:
-                            # print(" ************* ")
-                            # print(f"[run-sbt-params] {call_id} - All parameters for SBT:", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   sbt_version={sbt_version}, mesh_fineness={mesh}, accuracy={accuracy}", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   variableflowrate={hyperparam1}, flowratefilename={hyperparam2}, variableinjectiontemperature={hyperparam3}, injectiontemperaturefilename={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   clg_configuration={case}, mdot={mdot}, Tinj={Tinj}, fluid={fluid}", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   DrillingDepth_L1={L1}, HorizontalExtent_L2={L2}", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   Diameter1(Annulus)={Diameter1}, Diameter2 (Center Pipe Radius)={Diameter2}, PipeParam3 (thicknesscenterpipe)={PipeParam3}, PipeParam4 (k_center_pipe)={PipeParam4}, PipeParam5(coaxialflowtype)={PipeParam5}", flush=True)
-                            # print(f"[run-sbt-params] {call_id} -   Tsurf={Tsurf}, GeoGradient={grad}, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-
-                    # print(f"[DEBUG] Calling SBT with: sbt_version={sbt_version}, mesh={mesh}, accuracy={accuracy}", flush=True)
-                    # print(f"[DEBUG]   HYPERPARAM1={hyperparam1}, HYPERPARAM2={hyperparam2}, HYPERPARAM3={hyperparam3}, HYPERPARAM4={hyperparam4}, HYPERPARAM5={hyperparam5}", flush=True)
-                    # print(f"[DEBUG]   mdot={mdot}, Tinj={Tinj:.1f}°C (already converted from K to °C), fluid={fluid} (1=H2O, 2=sCO2), case={case} (utube/coaxial)", flush=True)
-                    # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
-                    # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
-                    # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-                    # print(len(times))
-                    # print(Tout[-1])
-                    # print(Pout)
 
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
@@ -570,7 +593,6 @@ class data:
                 np.reshape(Pout, (len(self.mdot), len(self.ivars[var_index])))
             )
         except Exception:
-            print("Flag: Check if SBT model selected")
             # AB: Dummy data for the contours:
             Tout = np.full((20, 26), 365)
             Pout = np.full((20, 26), 22228604)

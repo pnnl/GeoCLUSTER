@@ -260,40 +260,7 @@ class TEA:
 
 
 
-    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict, HyperParam1=None):
-        
-        # Set inlet pressure based on model type:
-        # - HDF5: Use Pinj from database (stored in data objects)
-        # - SBT V2.0: Use HyperParam1 (inlet pressure in MPa) from simulation
-        # - SBT V1.0: Keep default 200 bar (2e7 Pa) - SBT V1.0 doesn't use HyperParam1 as inlet pressure
-        if model == "HDF5":
-            # For HDF5, use the actual Pinj from the database
-            if self.Fluid == 1:  # H2O
-                if self.Configuration == 1:  # U-tube
-                    self.P_in = u_H2O.Pinj if u_H2O is not None and hasattr(u_H2O, 'Pinj') else 2e7
-                else:  # Coaxial
-                    self.P_in = c_H2O.Pinj if c_H2O is not None and hasattr(c_H2O, 'Pinj') else 2e7
-            elif self.Fluid == 2:  # sCO2
-                if self.Configuration == 1:  # U-tube
-                    self.P_in = u_sCO2.Pinj if u_sCO2 is not None and hasattr(u_sCO2, 'Pinj') else 2e7
-                else:  # Coaxial
-                    self.P_in = c_sCO2.Pinj if c_sCO2 is not None and hasattr(c_sCO2, 'Pinj') else 2e7
-        elif model == "SBT V2.0" or model == 2:
-            # For SBT V2.0, use the actual HyperParam1 value (inlet pressure in MPa) from the simulation
-            # Convert from MPa to Pa: HyperParam1 is in MPa, so multiply by 1e6 to get Pa
-            # Default to 20 MPa (200 bar = 2e7 Pa) if not provided
-            if HyperParam1 is not None:
-                try:
-                    # HyperParam1 is in MPa, convert to Pa (1 MPa = 1e6 Pa)
-                    inlet_pressure_mpa = float(HyperParam1)
-                    self.P_in = inlet_pressure_mpa * 1e6  # Convert MPa to Pa
-                except (TypeError, ValueError):
-                    # Default to 20 MPa = 200 bar = 2e7 Pa if conversion fails
-                    self.P_in = 2e7
-            else:
-                # Default to 20 MPa = 200 bar = 2e7 Pa if not provided
-                self.P_in = 2e7
-        # For SBT V1.0, keep the default 200 bar (2e7 Pa) - no change needed
+    def getTandP(self, u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict):
         
         hdf5_times = [0, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.25, 
                         2.5, 2.75, 3, 3.25, 3.5, 3.75, 4, 4.25, 4.5, 4.75,
@@ -316,195 +283,37 @@ class TEA:
         if self.Fluid == 1:
             # self.Tout, self.Pout, times = self.u_H2O.interp_outlet_states(self.point, sbt_version)
             # self.Tout = np.array(TandP_dict["H2O_Tout"])
-            if "H2O_Pout" not in TandP_dict or "H2O_Tout" not in TandP_dict or "time" not in TandP_dict:
-                # Return empty/default values if TandP_dict is missing required keys
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            # Handle None Pout for H2O (SBT V1.0 doesn't calculate pressure)
-            if TandP_dict.get("H2O_Pout") is None:
-                time_arr = np.array(TandP_dict["time"])
-                Tout_arr = np.array(TandP_dict["H2O_Tout"])
-                if len(time_arr) == 0 or len(Tout_arr) == 0:
-                    self.Pout = np.array([])
-                    self.Tout = np.array([])
-                    self.InterpolatedTemperatureArray = np.array([])
-                    self.InterpolatedPressureArray = np.array([])
-                    return
-                hdf5_times_array = np.array(hdf5_times)
-                if len(time_arr) == len(hdf5_times_array) and np.allclose(time_arr, hdf5_times_array, rtol=1e-5):
-                    self.Tout = Tout_arr
-                    self.Pout = np.array([])
-                else:
-                    f_T = interp1d(time_arr, Tout_arr, fill_value="extrapolate", bounds_error=False)
-                    self.Tout = f_T(hdf5_times_array)
-                    self.Pout = np.array([])
-                self.InterpolatedTemperatureArray = self.Tout
-                self.InterpolatedPressureArray = self.Pout
-                return
-            
-            time_arr = np.array(TandP_dict["time"])
-            Tout_arr = np.array(TandP_dict["H2O_Tout"])
-            Pout_arr = np.array(TandP_dict["H2O_Pout"])
-            
-            # Validate array lengths match
-            if len(time_arr) != len(Tout_arr) or len(time_arr) != len(Pout_arr):
-                print(f"[ERROR] Array length mismatch in getTandP (H2O): time={len(time_arr)}, Tout={len(Tout_arr)}, Pout={len(Pout_arr)}", flush=True)
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            # Validate input arrays before interpolation
-            if np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)):
-                print(f"[ERROR] getTandP (H2O): Tout_arr contains NaN or Inf values. Min={np.nanmin(Tout_arr):.2f}K, Max={np.nanmax(Tout_arr):.2f}K", flush=True)
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            # Check if time_arr already matches hdf5_times (no interpolation needed)
-            hdf5_times_array = np.array(hdf5_times)
-            if len(time_arr) == len(hdf5_times_array) and np.allclose(time_arr, hdf5_times_array, rtol=1e-5):
-                # Already on the correct time grid, use directly
-                self.Tout = Tout_arr
-                self.Pout = Pout_arr
-            else:
-                # Need to interpolate onto hdf5_times
-                f_T = interp1d(time_arr, Tout_arr, fill_value="extrapolate", bounds_error=False) # sbt
-                f_P = interp1d(time_arr, Pout_arr, fill_value="extrapolate", bounds_error=False) # sbt
-                try:
-                    self.Tout = f_T(hdf5_times_array)
-                    self.Pout = f_P(hdf5_times_array)
-                except Exception as e:
-                    print(f"[ERROR] Interpolation failed in getTandP (H2O): {e}", flush=True)
-                    self.Tout = Tout_arr
-                    self.Pout = Pout_arr
+            self.Pout = np.array(TandP_dict["H2O_Pout"])
+            f = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["H2O_Tout"]), fill_value="extrapolate") # sbt
+            try:
+                self.Tout = f(np.array(hdf5_times))
+            except Exception as e:
+                print(e)
             # times = TandP_dict["time"]
 
         elif self.Fluid == 2:
             # self.Tout = np.array(TandP_dict["sCO2_Tout"])
-            if "sCO2_Pout" not in TandP_dict or "sCO2_Tout" not in TandP_dict or "time" not in TandP_dict:
-                # Return empty/default values if TandP_dict is missing required keys
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            time_arr = np.array(TandP_dict["time"])
-            Tout_arr = np.array(TandP_dict["sCO2_Tout"])
-            Pout_arr = np.array(TandP_dict["sCO2_Pout"])
-            
-            # Validate array lengths match
-            if len(time_arr) != len(Tout_arr) or len(time_arr) != len(Pout_arr):
-                print(f"[ERROR] Array length mismatch in getTandP (CO2): time={len(time_arr)}, Tout={len(Tout_arr)}, Pout={len(Pout_arr)}", flush=True)
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            # Validate input arrays before interpolation
-            if np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)):
-                print(f"[ERROR] getTandP (CO2): Tout_arr contains NaN or Inf values. Min={np.nanmin(Tout_arr):.2f}K, Max={np.nanmax(Tout_arr):.2f}K", flush=True)
-                self.Pout = np.array([])
-                self.Tout = np.array([])
-                self.InterpolatedTemperatureArray = np.array([])
-                self.InterpolatedPressureArray = np.array([])
-                return
-            
-            # Check if time_arr already matches hdf5_times (no interpolation needed)
-            hdf5_times_array = np.array(hdf5_times)
-            # Use more lenient tolerance for comparison, and also check if arrays are same length and have same min/max
-            time_arr_matches = (len(time_arr) == len(hdf5_times_array) and 
-                               np.allclose(time_arr, hdf5_times_array, rtol=1e-3, atol=1e-3) and
-                               abs(np.min(time_arr) - np.min(hdf5_times_array)) < 0.01 and
-                               abs(np.max(time_arr) - np.max(hdf5_times_array)) < 0.01)
-            
-            if time_arr_matches:
-                # Already on the correct time grid, use directly
-                self.Tout = Tout_arr
-                self.Pout = Pout_arr
-            else:
-                # Need to interpolate onto hdf5_times
-                # Check if Tout_arr contains valid values before interpolation
-                if np.any(np.isnan(Tout_arr)) or np.any(np.isinf(Tout_arr)) or np.any(Tout_arr < 200) or np.any(Tout_arr > 1000):
-                    print(f"[ERROR] getTandP (CO2): Tout_arr contains invalid values before interpolation. Skipping interpolation.", flush=True)
-                    self.Pout = np.array([])
-                    self.Tout = np.array([])
-                    self.InterpolatedTemperatureArray = np.array([])
-                    self.InterpolatedPressureArray = np.array([])
-                    return
-                
-                f_T = interp1d(time_arr, Tout_arr, fill_value="extrapolate", bounds_error=False) # sbt
-                f_P = interp1d(time_arr, Pout_arr, fill_value="extrapolate", bounds_error=False) # sbt
-                try:
-                    self.Tout = f_T(hdf5_times_array)
-                    self.Pout = f_P(hdf5_times_array)
-                except Exception as e:
-                    print(f"[ERROR] Interpolation failed in getTandP (CO2): {e}", flush=True)
-                    self.Tout = Tout_arr
-                    self.Pout = Pout_arr
+            f_T = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Tout"]), fill_value="extrapolate") # sbt
+            f_P = interp1d(np.array(TandP_dict["time"]), np.array(TandP_dict["sCO2_Pout"]), fill_value="extrapolate") # sbt
+            try:
+                self.Tout = f_T(np.array(hdf5_times))
+                self.Pout = f_P(np.array(hdf5_times))
+            except Exception as e:
+                self.Tout = np.array(TandP_dict["sCO2_Tout"])
+                self.Pout = np.array(TandP_dict["sCO2_Pout"])
             # times = TandP_dict["time"]
             # self.timearray = TandP_dict["time"]
             # self.Tout, self.Pout, times = self.u_sCO2.interp_outlet_states(self.point, sbt_version)
 
-        # Check if Tout and Pout are empty (shouldn't happen, but safety check)
-        if len(self.Tout) == 0 or len(self.Pout) == 0:
-            self.InterpolatedTemperatureArray = np.array([])
-            self.InterpolatedPressureArray = np.array([])
-            return
-        
-        # Validate Tout contains valid values (not NaN, not inf, reasonable temperature range)
-        if np.any(np.isnan(self.Tout)) or np.any(np.isinf(self.Tout)):
-            print(f"[ERROR] getTandP: Tout contains NaN or Inf values. Setting empty arrays.", flush=True)
-            self.InterpolatedTemperatureArray = np.array([])
-            self.InterpolatedPressureArray = np.array([])
-            return
-        
-        # Check for unreasonable temperature values (should be between -50°C and 500°C in Kelvin, so 223K to 773K)
-        if np.any(self.Tout < 223) or np.any(self.Tout > 773):
-            print(f"[ERROR] getTandP: Tout contains unreasonable values. Min={np.min(self.Tout):.2f}K, Max={np.max(self.Tout):.2f}K. Setting empty arrays.", flush=True)
-            self.InterpolatedTemperatureArray = np.array([])
-            self.InterpolatedPressureArray = np.array([])
-            return
-        
         #Initial time correction (Correct production temperature and pressure at time 0 (the value at time 0 [=initial condition] is not a good representation for the first few months)
-        if len(self.Tout) > 1:
-            self.Tout[0] = self.Tout[1]
-            self.Pout[0] = self.Pout[1]
-        
-        # For SBT models, Tout and Pout are interpolated onto hdf5_times (161 elements)
-        # Calculate indexclosestlifetime based on hdf5_times, not self.timearray
-        hdf5_times_array = np.array(hdf5_times)
-        closestlifetime_hdf5 = hdf5_times_array.flat[np.abs(hdf5_times_array - self.Lifetime).argmin()]
-        indexclosestlifetime_hdf5 = np.where(hdf5_times_array == closestlifetime_hdf5)[0][0]
-        
-        # Ensure index doesn't exceed array bounds
-        max_index = min(indexclosestlifetime_hdf5 + 1, len(self.Tout))
+        self.Tout[0] = self.Tout[1]
+        self.Pout[0] = self.Pout[1]
         
         #Extract Tout and Pout over lifetime
-        self.InterpolatedTemperatureArray = self.Tout[0:max_index]-273.15
-        self.InterpolatedPressureArray = self.Pout[0:max_index]
-        
-        # Final validation of InterpolatedTemperatureArray
-        if np.any(np.isnan(self.InterpolatedTemperatureArray)) or np.any(np.isinf(self.InterpolatedTemperatureArray)):
-            print(f"[ERROR] getTandP: InterpolatedTemperatureArray contains NaN or Inf values after conversion. Setting empty arrays.", flush=True)
-            self.InterpolatedTemperatureArray = np.array([])
-            self.InterpolatedPressureArray = np.array([])
-            return
+        self.InterpolatedTemperatureArray = self.Tout[0:self.indexclosestlifetime+1]-273.15
+        self.InterpolatedPressureArray = self.Pout[0:self.indexclosestlifetime+1]
         
     def calculateLC(self):
-        # Check if InterpolatedTemperatureArray exists and is not empty
-        if not hasattr(self, 'InterpolatedTemperatureArray') or len(self.InterpolatedTemperatureArray) == 0:
-            self.error_codes = np.append(self.error_codes, 8000)  # Missing temperature/pressure data
-            return
         self.Linear_production_temperature = self.InterpolatedTemperatureArray
         self.Linear_production_pressure = self.InterpolatedPressureArray
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
@@ -536,8 +345,7 @@ class TEA:
         self.AveProductionPressure = np.average(self.Linear_production_pressure)/1e5  #[bar]
         self.Flow_rate = self.Flow_user #Total flow rate [kg/s]
         self.calculatedrillinglength()
-        min_prod_temp = min(self.Linear_production_temperature)
-        if min_prod_temp > self.T_in:
+        if min(self.Linear_production_temperature) > self.T_in:
             self.calculateheatproduction()
             if self.End_use == 2:
                 self.calculateelectricityproduction()
@@ -566,10 +374,6 @@ class TEA:
             
         else:  #Production temperature went below injection temperature # AB HERE *****
             self.error_codes = np.append(self.error_codes,1000)
-            if self.End_use == 1:
-                self.LCOH = 9999
-            elif self.End_use == 2:
-                self.LCOE = 9999
     
  
     def calculatedrillinglength(self):
@@ -618,8 +422,6 @@ class TEA:
             
         if self.Fluid == 1:
             
-            # Relaxed condition: Allow production temps that reach 100°C at some point
-            # The interpolation will handle values below 100°C (returns 0 via left=0 parameter)
             if self.T_in >= 50 and min(self.Linear_production_temperature) >= 100 and max(self.Linear_production_temperature) <= 385:
                 self.Instantaneous_utilization_efficiency_method_1 = np.interp(self.Linear_production_temperature,self.Utilization_efficiency_correlation_temperatures,self.Utilization_efficiency_correlation_conversion,left = 0) #Utilization efficiency based on conversion of produced exergy to electricity
                 self.Instantaneous_electricity_production_method_1 = self.Instantaneous_exergy_production*self.Instantaneous_utilization_efficiency_method_1 #[kW]
@@ -629,10 +431,8 @@ class TEA:
             else: #Water injection temperature and/or production tempeature fall outside the range used in the correlations
                 if self.T_in < 50: 
                     self.error_codes = np.append(self.error_codes,2000)
-                if max(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
+                if min(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
                     self.error_codes = np.append(self.error_codes,2001)
-                elif min(self.Linear_production_temperature) < 100:
-                    pass
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_themal_efficiency = np.zeros(len(self.Time_array))
@@ -661,15 +461,18 @@ class TEA:
                 Pre_cooling = self.Flow_rate*(h_turbine_out_actual - Pre_compressor_h)/1e3 #Pre-compressor cooling [kWth]
                 Pre_compressor_s = interpn((self.Pvector,self.Tvector),self.entropy,np.array([self.Turbine_outlet_pressure*1e5,self.Pre_cooling_temperature+273.15])) 
                     
+                    
                 Post_compressor_h_ideal = interpn((self.Pvector_ap,self.svector_ap),self.hPs,np.array([self.P_in,Pre_compressor_s[0]])) 
                 Post_compressor_h_actual = Pre_compressor_h + (Post_compressor_h_ideal-Pre_compressor_h)/self.Compressor_isentropic_efficiency #Actual fluid enthalpy at compressor outlet [J/kg]
                 self.Post_compressor_T_actual = interpn((self.Pvector_ap,self.hvector_ap),self.TPh,np.array([self.P_in,Post_compressor_h_actual[0]])) - 273.15
                 Compressor_Work = self.Flow_rate*(Post_compressor_h_actual - Pre_compressor_h)/1e3 #[kWe]
                 Post_cooling = self.Flow_rate*(Post_compressor_h_actual - self.h_inj)/1e3 #Fluid cooling after compression [kWth]
                     
-                # Handle array conditionals element-wise
-                ResistiveHeating = np.where(Post_cooling < 0, -Post_cooling, 0)
-                Post_cooling = np.where(Post_cooling < 0, 0, Post_cooling)
+                if Post_cooling<0:
+                    ResistiveHeating = -Post_cooling
+                    Post_cooling = 0
+                else:
+                    ResistiveHeating = 0
                    
                 Total_cooling = Pre_cooling + Post_cooling #Total CO2 cooling requirements [kWth]
                 
