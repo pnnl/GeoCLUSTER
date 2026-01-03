@@ -3358,6 +3358,7 @@ def update_sliders_hyperparms(model, store_data):
     [
         State(component_id="plot-inputs-cache", component_property="data"),
         State(component_id="calculation-request-id", component_property="data"),
+        State(component_id="slider-values-store", component_property="data"),
     ],
     prevent_initial_call=True,
 )
@@ -3392,10 +3393,26 @@ def update_subsurface_results_plots(
     HyperParam5,
     plot_inputs_cache,
     current_request_id,
+    store_data,
 ):
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
+
+    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+        if PipeParam4 is not None and isinstance(PipeParam4, (int, float)):
+            if (PipeParam4 < 0.025) or (PipeParam4 > 0.5):
+                if store_data and model in store_data and case in store_data[model]:
+                    saved_insulation_k = store_data[model][case].get("coaxial-insulation-k")
+                    if saved_insulation_k is not None:
+                        PipeParam4 = saved_insulation_k
+                elif store_data:
+                    for other_model in ["SBT V2.0", "SBT V1.0"]:
+                        if other_model in store_data and case in store_data[other_model]:
+                            saved_insulation_k = store_data[other_model][case].get("coaxial-insulation-k")
+                            if saved_insulation_k is not None:
+                                PipeParam4 = saved_insulation_k
+                                break
 
     try:
         # Detect if multiple slider inputs changed at once (batch update from restore_slider_values)
