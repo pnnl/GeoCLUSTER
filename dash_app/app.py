@@ -1708,8 +1708,8 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         Output(component_id="Tsurf-select-div", component_property="style"),
         Output(component_id="c-select-div", component_property="style"),
         Output(component_id="rho-select-div", component_property="style"),
-        Output(component_id="radius-vertical-select-div", component_property="style"),
-        Output(component_id="radius-lateral-select-div", component_property="style"),
+        Output(component_id="diameter-vertical-select-div", component_property="style"),
+        Output(component_id="diameter-lateral-select-div", component_property="style"),
         Output(
             component_id="diameter-select-div", component_property="style"
         ),  # show HDF5, hide SBT
@@ -2096,10 +2096,9 @@ def update_slider_ranges(model, case, store_data):
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place="{:.1f}", val_round_place=1)
     D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place="{:.4f}", val_round_place=4)
 
-    # Get saved values for this model from store
     if store_data is None:
         store_data = {}
-    saved_values = store_data.get(model, {})
+    saved_values = store_data.get(model, {}).get(case, {})
 
     if model == "HDF5":  # hide the other params (happens in the next callback)
         Tinj_dict = {30: "30", 45: "", 59: "59"}
@@ -2343,8 +2342,8 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
-        Input(component_id="radius-vertical-select", component_property="value"),
-        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="diameter-vertical-select", component_property="value"),
+        Input(component_id="diameter-lateral-select", component_property="value"),
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
@@ -2353,19 +2352,22 @@ def update_slider_ranges(model, case, store_data):
     [
         State(component_id="model-select", component_property="value"),
         State(component_id="slider-values-store", component_property="data"),
+        State(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, store_data):
-    """Save slider values to store, keyed by model"""
-    if model is None:
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, store_data, case):
+    """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
+    if model is None or case is None:
         raise PreventUpdate
     
     if store_data is None:
         store_data = {}
-    
-    # Save current slider values for this model
-    store_data[model] = {
+
+    model_bucket = store_data.get(model, {})
+    case_bucket = model_bucket.get(case, {}).copy()
+
+    case_bucket.update({
         "mdot": mdot,
         "L2": L2,
         "L1": L1,
@@ -2376,13 +2378,24 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, radius_ver
         "Tsurf": Tsurf,
         "c": c,
         "rho": rho,
-        "radius-vertical": radius_vertical,
-        "radius-lateral": radius_lateral,
+        "diameter-vertical": diameter_vertical,
+        "diameter-lateral": diameter_lateral,
         "n-laterals": n_laterals,
         "lateral-flow": lateral_flow,
         "lateral-multiplier": lateral_multiplier,
         "inlet-pressure": mass_mode,  # For SBT V2.0, this is Inlet Pressure (MPa); for others it's a dropdown value
-    }
+    })
+
+    if case == "coaxial":
+        if n_laterals is not None:
+            case_bucket["thicknesscenterpipe"] = n_laterals
+        if lateral_flow is not None and isinstance(lateral_flow, (int, float)):
+            case_bucket["coaxial-insulation-k"] = lateral_flow
+        if lateral_multiplier is not None and isinstance(lateral_multiplier, str):
+            case_bucket["coaxial-flow-type"] = lateral_multiplier
+
+    model_bucket[case] = case_bucket
+    store_data[model] = model_bucket
     
     return store_data
 
@@ -2565,46 +2578,43 @@ def restore_slider_values(model, store_data, case, current_mdot, current_L2, cur
     prevent_initial_call=True,
 )
 def update_sliders_heat_exchanger(model, case, store_data):
-    # Get saved values for this model from store
     if store_data is None:
         store_data = {}
-    saved_values = store_data.get(model, {})
+    saved_values = store_data.get(model, {}).get(case, {})
     
-    # Helper function to get saved value or use default
     def get_saved_value(key, default_dict, default_key):
         if key in saved_values and saved_values[key] is not None:
             return saved_values[key]
-        # Check other SBT models
         for other_model in ["SBT V2.0", "SBT V1.0"]:
-            if other_model in store_data and key in store_data[other_model]:
-                val = store_data[other_model][key]
+            if other_model in store_data and case in store_data[other_model] and key in store_data[other_model][case]:
+                val = store_data[other_model][case][key]
                 if val is not None:
                     return val
         return default_dict.get(default_key)
     
     if model == "SBT V1.0" or model == "SBT V2.0":
         if case == "utube":
-            radius_vertical = slider1(
-                DivID="radius-vertical-select-div",
-                ID="radius-vertical-select",
+            diameter_vertical = slider1(
+                DivID="diameter-vertical-select-div",
+                ID="diameter-vertical-select",
                 ptitle="Wellbore Diameter Vertical (m)",
                 min_v=0.2159,
                 max_v=0.4445,
                 mark_dict=diameter_vertical_dict,
                 step_i=0.002,
-                start_v=get_saved_value("radius-vertical", start_vals_sbt, "radius-vertical"),
+                start_v=get_saved_value("diameter-vertical", start_vals_sbt, "diameter-vertical"),
                 div_style=div_block_style,
                 parameter_name="Wellbore Diameter Vertical (m)",
             )
-            radius_lateral = slider1(
-                DivID="radius-lateral-select-div",
-                ID="radius-lateral-select",
+            diameter_lateral = slider1(
+                DivID="diameter-lateral-select-div",
+                ID="diameter-lateral-select",
                 ptitle="Wellbore Diameter Lateral (m)",
                 min_v=0.2159,
                 max_v=0.4445,
                 mark_dict=diameter_lateral_dict,
                 step_i=0.002,
-                start_v=get_saved_value("radius-lateral", start_vals_sbt, "radius-lateral"),
+                start_v=get_saved_value("diameter-lateral", start_vals_sbt, "diameter-lateral"),
                 div_style=div_block_style,
                 parameter_name="Wellbore Diameter Lateral (m)",
             )
@@ -2642,8 +2652,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
             )
 
             return (
-                radius_vertical,
-                radius_lateral,
+                diameter_vertical,
+                diameter_lateral,
                 n_laterals,
                 lateral_flow,
                 lateral_multiplier,
@@ -2652,13 +2662,21 @@ def update_sliders_heat_exchanger(model, case, store_data):
         elif case == "coaxial":
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
 
-            coaxial_defaults = {"radius-vertical": 0.4445, "radius-lateral": 0.2}
-            wellbore_diameter = get_saved_value("radius-vertical", coaxial_defaults, "radius-vertical")
-            centerpipe_diameter = get_saved_value("radius-lateral", coaxial_defaults, "radius-lateral")
+            coaxial_defaults = {"diameter-vertical": 0.4445, "diameter-lateral": 0.2}
+            # Get both values first - filtering will handle invalid values
+            wellbore_diameter = get_saved_value("diameter-vertical", coaxial_defaults, "diameter-vertical")
+            centerpipe_diameter = get_saved_value("diameter-lateral", coaxial_defaults, "diameter-lateral")
+            
+            # Only use defaults if we truly have no valid values (filtered out)
+            # Otherwise use the slider values, even if they need adjustment
+            if wellbore_diameter is None:
+                wellbore_diameter = coaxial_defaults["diameter-vertical"]
+            if centerpipe_diameter is None:
+                centerpipe_diameter = coaxial_defaults["diameter-lateral"]
 
             radius = slider1(
-                DivID="radius-vertical-select-div",
-                ID="radius-vertical-select",
+                DivID="diameter-vertical-select-div",
+                ID="diameter-vertical-select",
                 ptitle="Wellbore Diameter (m)",
                 min_v=0.2159,
                 max_v=0.4445,
@@ -2670,8 +2688,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
             )
 
             radiuscenterpipe = slider1(
-                DivID="radius-lateral-select-div",
-                ID="radius-lateral-select",
+                DivID="diameter-lateral-select-div",
+                ID="diameter-lateral-select",
                 ptitle="Center Pipe Diameter (m)",
                 min_v=0.127,
                 max_v=0.348,
@@ -2690,10 +2708,14 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.025,
                 mark_dict=thickness_centerpipe_dict,
                 step_i=0.001,
-                start_v=get_saved_value("n-laterals", start_vals_sbt, "thicknesscenterpipe"),
+                start_v=get_saved_value("thicknesscenterpipe", start_vals_sbt, "thicknesscenterpipe"),
                 div_style=div_block_style,
             )
 
+            saved_insulation_k = get_saved_value("coaxial-insulation-k", start_vals_sbt, "k_center_pipe")
+            if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
+                saved_insulation_k = start_vals_sbt["k_center_pipe"]
+            
             k_center_pipe = slider1(
                 DivID="lateral-flow-select-div",
                 ID="lateral-flow-select",
@@ -2702,17 +2724,32 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.5,
                 mark_dict=insulation_thermal_k_dict,
                 step_i=0.001,
-                start_v=start_vals_sbt["k_center_pipe"],
+                start_v=saved_insulation_k,
                 div_style=div_block_style,
             )
-            coaxialflowtype = dropdown_box(
-                DivID="lat-flow-mul-div",
-                ID="lateral-multiplier-select",
-                ptitle="Coaxial Flow Type",
-                options=["Inject in Annulus", "Inject in Center Pipe"],
-                disabled=False,
-                div_style=div_block_style,
-            )
+            
+            saved_flow_type = get_saved_value("coaxial-flow-type", {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
+            if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+                saved_flow_type = "Inject in Annulus"
+            
+            # Create dropdown with explicit value
+            flow_type_options = ["Inject in Annulus", "Inject in Center Pipe"]
+            coaxialflowtype = html.Div(
+                id="lat-flow-mul-div",
+                className="name-input-container-dd",
+                style=div_block_style,
+                children=[
+                    html.P("Coaxial Flow Type", className="input-title"),
+                    dcc.Dropdown(
+                        id="lateral-multiplier-select",
+                        options=flow_type_options,
+                        value=saved_flow_type,
+                        clearable=False,
+                        searchable=False,
+                        disabled=False,
+                        className="select-dropdown"
+                    ),
+                ])
 
             return (
                 radius,
@@ -2724,27 +2761,27 @@ def update_sliders_heat_exchanger(model, case, store_data):
 
     elif model == "HDF5":
         # HDF5 doesn't support laterals - but components must exist for callbacks
-        radius_vertical = slider1(
-            DivID="radius-vertical-select-div",
-            ID="radius-vertical-select",
+        diameter_vertical = slider1(
+            DivID="diameter-vertical-select-div",
+            ID="diameter-vertical-select",
             ptitle="Wellbore Diameter Vertical (m)",
             min_v=0.4,
             max_v=1.2,
             mark_dict=diameter_vertical_dict,
             step_i=0.002,
-            start_v=start_vals_sbt["radius-vertical"],
+            start_v=start_vals_sbt["diameter-vertical"],
             div_style=div_none_style,
             parameter_name="Wellbore Diameter Vertical (m)",
         )
-        radius_lateral = slider1(
-            DivID="radius-lateral-select-div",
-            ID="radius-lateral-select",
+        diameter_lateral = slider1(
+            DivID="diameter-lateral-select-div",
+            ID="diameter-lateral-select",
             ptitle="Wellbore Diameter Lateral (m)",
             min_v=0.4,
             max_v=1.2,
             mark_dict=diameter_lateral_dict,
             step_i=0.002,
-            start_v=start_vals_sbt["radius-lateral"],
+            start_v=start_vals_sbt["diameter-lateral"],
             div_style=div_none_style,
             parameter_name="Wellbore Diameter Lateral (m)",
         )
@@ -2786,8 +2823,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
         )
 
         return (
-            radius_vertical,
-            radius_lateral,
+            diameter_vertical,
+            diameter_lateral,
             n_laterals,
             lateral_flow,
             lateral_multiplier,
@@ -2799,8 +2836,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
 
 @app.callback(
     [
-        Output(component_id="radius-vertical-select", component_property="value", allow_duplicate=True),
-        Output(component_id="radius-lateral-select", component_property="value", allow_duplicate=True),
+        Output(component_id="diameter-vertical-select", component_property="value", allow_duplicate=True),
+        Output(component_id="diameter-lateral-select", component_property="value", allow_duplicate=True),
         Output(component_id="n-laterals-select", component_property="value", allow_duplicate=True),
         Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
         Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
@@ -2811,15 +2848,15 @@ def update_sliders_heat_exchanger(model, case, store_data):
     [
         State(component_id="slider-values-store", component_property="data"),
         State(component_id="case-select", component_property="value"),
-        State(component_id="radius-vertical-select", component_property="value"),
-        State(component_id="radius-lateral-select", component_property="value"),
+        State(component_id="diameter-vertical-select", component_property="value"),
+        State(component_id="diameter-lateral-select", component_property="value"),
         State(component_id="n-laterals-select", component_property="value"),
         State(component_id="lateral-flow-select", component_property="value"),
         State(component_id="lateral-multiplier-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def restore_sbt_sliders(model, store_data, case, current_radius_vertical, current_radius_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+def restore_sbt_sliders(model, store_data, case, current_diameter_vertical, current_diameter_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
     """Restore SBT-specific slider values when model switches (not on initial load)"""
     if model is None:
         raise PreventUpdate
@@ -2835,55 +2872,54 @@ def restore_sbt_sliders(model, store_data, case, current_radius_vertical, curren
     if store_data is None:
         store_data = {}
     
-    # Helper function to get value from current model or fall back to other models
+    saved_values = store_data.get(model, {}).get(case, {})
+    
     def get_value(key, current_value, default_dict, default_key):
-        # First check current model
-        if model in store_data and key in store_data[model]:
-            val = store_data[model][key]
-            if val is not None:
-                return val
-        
-        # If not found, check other SBT models
+        if key in saved_values and saved_values[key] is not None:
+            return saved_values[key]
         for other_model in ["SBT V2.0", "SBT V1.0"]:
-            if other_model in store_data and key in store_data[other_model]:
-                val = store_data[other_model][key]
+            if other_model in store_data and case in store_data[other_model] and key in store_data[other_model][case]:
+                val = store_data[other_model][case][key]
                 if val is not None:
                     return val
-        
-        # If no saved value found, preserve current value if it exists, otherwise use default
         if current_value is not None:
             return current_value
         return default_dict.get(default_key)
     
-    # Restore values, checking current model first, then other models
     if case == "coaxial":
-        coaxial_defaults = {"radius-vertical": 0.4445, "radius-lateral": 0.2}
-        radius_vertical = get_value("radius-vertical", current_radius_vertical, coaxial_defaults, "radius-vertical")
-        radius_lateral = get_value("radius-lateral", current_radius_lateral, coaxial_defaults, "radius-lateral")
+        coaxial_defaults = {"diameter-vertical": 0.4445, "diameter-lateral": 0.2}
+        diameter_vertical = get_value("diameter-vertical", current_diameter_vertical, coaxial_defaults, "diameter-vertical")
+        diameter_lateral = get_value("diameter-lateral", current_diameter_lateral, coaxial_defaults, "diameter-lateral")
     else:
-        radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
-        radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
+        diameter_vertical = get_value("diameter-vertical", current_diameter_vertical, start_vals_sbt, "diameter-vertical")
+        diameter_lateral = get_value("diameter-lateral", current_diameter_lateral, start_vals_sbt, "diameter-lateral")
     
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
-    lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
     
     if case == "coaxial":
-        lateral_multiplier = current_lateral_multiplier if current_lateral_multiplier is not None else "Inject in Annulus"
+        saved_insulation_k = get_value("coaxial-insulation-k", None, start_vals_sbt, "k_center_pipe")
+        if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
+            saved_insulation_k = start_vals_sbt["k_center_pipe"]
+        lateral_flow = saved_insulation_k
+        
+        saved_flow_type = get_value("coaxial-flow-type", None, {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
+        if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+            saved_flow_type = "Inject in Annulus"
+        lateral_multiplier = saved_flow_type
     else:
-        # Calculate lateral multiplier based on number of laterals: 1/n_laterals
-        # This ensures consistency: 1 lateral = 1, 2 laterals = 0.5, 3 laterals = 1/3, etc.
+        lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
         if n_laterals is not None and n_laterals > 0:
             lateral_multiplier = 1.0 / n_laterals
         else:
             lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
     
     # Only update if values have changed to prevent unnecessary cascading updates
-    if (current_radius_vertical == radius_vertical and current_radius_lateral == radius_lateral and 
+    if (current_diameter_vertical == diameter_vertical and current_diameter_lateral == diameter_lateral and 
         current_n_laterals == n_laterals and current_lateral_flow == lateral_flow and 
         current_lateral_multiplier == lateral_multiplier):
         raise PreventUpdate
     
-    return radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier
+    return diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier
 
 
 @app.callback(
@@ -2917,6 +2953,66 @@ def update_lateral_multiplier(n_laterals, model, case):
     multiplier = 1.0 / n_laterals
     
     return multiplier
+
+
+@app.callback(
+    Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
+    Input(component_id="case-select", component_property="value"),
+    State(component_id="model-select", component_property="value"),
+    State(component_id="slider-values-store", component_property="data"),
+    prevent_initial_call=True,
+)
+def set_default_coaxial_flow_type(case, model, store_data):
+    """Set correct value for coaxial flow type dropdown when switching to coaxial"""
+    if model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    if case != "coaxial":
+        raise PreventUpdate
+    
+    saved_values = store_data.get(model, {}).get(case, {}) if store_data else {}
+    saved_flow_type = saved_values.get("coaxial-flow-type")
+    
+    if saved_flow_type is None and store_data:
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and case in store_data[other_model] and "coaxial-flow-type" in store_data[other_model][case]:
+                saved_flow_type = store_data[other_model][case]["coaxial-flow-type"]
+                if saved_flow_type is not None:
+                    break
+    
+    if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+        saved_flow_type = "Inject in Annulus"
+    
+    return saved_flow_type
+
+
+@app.callback(
+    Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
+    Input(component_id="case-select", component_property="value"),
+    State(component_id="model-select", component_property="value"),
+    State(component_id="slider-values-store", component_property="data"),
+    prevent_initial_call=True,
+)
+def set_default_coaxial_insulation_k(case, model, store_data):
+    """Set correct value for coaxial insulation thermal conductivity when switching to coaxial"""
+    if model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    if case != "coaxial":
+        raise PreventUpdate
+    
+    saved_values = store_data.get(model, {}).get(case, {}) if store_data else {}
+    saved_insulation_k = saved_values.get("coaxial-insulation-k")
+    
+    if saved_insulation_k is None and store_data:
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and case in store_data[other_model] and "coaxial-insulation-k" in store_data[other_model][case]:
+                saved_insulation_k = store_data[other_model][case]["coaxial-insulation-k"]
+                if saved_insulation_k is not None:
+                    break
+    
+    if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
+        saved_insulation_k = start_vals_sbt["k_center_pipe"]
+    
+    return saved_insulation_k
 
 
 @app.callback(
@@ -2997,10 +3093,9 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
     allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
     
-    # Get saved values if available
     saved_values = None
-    if store_data and model in store_data and "lateral-flow" in store_data[model]:
-        saved_values = store_data[model]["lateral-flow"]
+    if store_data and model in store_data and case in store_data[model] and "lateral-flow" in store_data[model][case]:
+        saved_values = store_data[model][case]["lateral-flow"]
     
     lateral_flow_inputs = []
     for i in range(num_laterals):
@@ -3239,10 +3334,10 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
         Input(
-            component_id="radius-vertical-select", component_property="value"
+            component_id="diameter-vertical-select", component_property="value"
         ),  # diameter1
         Input(
-            component_id="radius-lateral-select", component_property="value"
+            component_id="diameter-lateral-select", component_property="value"
         ),  # diameter2
         Input(
             component_id="n-laterals-select", component_property="value"
@@ -3282,7 +3377,7 @@ def update_subsurface_results_plots(
     Tsurf,
     c_m,
     rho_m,
-    # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+    # diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier,
     Diameter1,
     Diameter2,
     PipeParam3,
@@ -3458,7 +3553,7 @@ def update_subsurface_results_plots(
             Tsurf,
             c_m,
             rho_m,
-            # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+            # diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier,
             Diameter1,
             Diameter2,
             PipeParam3,
@@ -3606,8 +3701,8 @@ def update_subsurface_contours_plots(
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
-        Input(component_id="radius-vertical-select", component_property="value"),
-        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="diameter-vertical-select", component_property="value"),
+        Input(component_id="diameter-lateral-select", component_property="value"),
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
@@ -3791,8 +3886,8 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
-        Input(component_id="radius-vertical-select", component_property="value"),
-        Input(component_id="radius-lateral-select", component_property="value"),
+        Input(component_id="diameter-vertical-select", component_property="value"),
+        Input(component_id="diameter-lateral-select", component_property="value"),
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
@@ -4371,8 +4466,8 @@ if __name__ == "__main__":
 #  Output(component_id='Tsurf-select-div', component_property='style'),
 #  Output(component_id='c-select-div', component_property='style'),
 #  Output(component_id='rho-select-div', component_property='style'),
-#  Output(component_id='radius-vertical-select-div', component_property='style'),
-#  Output(component_id='radius-lateral-select-div', component_property='style'),
+#  Output(component_id='diameter-vertical-select-div', component_property='style'),
+#  Output(component_id='diameter-lateral-select-div', component_property='style'),
 #  Output(component_id='n-laterals-select-div', component_property='style'),
 #  Output(component_id='lateral-flow-select-div', component_property='style'),
 #  Output(component_id='lateral-multiplier-select-div', component_property='style'),
