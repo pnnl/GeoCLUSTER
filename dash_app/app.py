@@ -2843,11 +2843,11 @@ def update_sliders_heat_exchanger(model, case, store_data):
         Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
     ],
     [
-        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="case-select", component_property="value"),
         State(component_id="diameter-vertical-select", component_property="value"),
         State(component_id="diameter-lateral-select", component_property="value"),
         State(component_id="n-laterals-select", component_property="value"),
@@ -2856,17 +2856,55 @@ def update_sliders_heat_exchanger(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def restore_sbt_sliders(model, store_data, case, current_diameter_vertical, current_diameter_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
-    """Restore SBT-specific slider values when model switches (not on initial load)"""
+def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, current_diameter_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
+    """Restore SBT-specific slider values when model or case switches"""
     if model is None:
-        raise PreventUpdate
-    
-    # Only restore when model-select actually changed (not on initial load)
-    if not ctx.triggered or ctx.triggered_id != "model-select":
         raise PreventUpdate
     
     # Only restore for SBT models
     if model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    # Check what triggered this callback
+    triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
+    
+    # If case-select triggered and we're switching to coaxial, only update lateral-flow and lateral-multiplier
+    if triggered_id == "case-select" and case == "coaxial":
+        if store_data is None:
+            store_data = {}
+        
+        saved_values = store_data.get(model, {}).get(case, {})
+        
+        def get_value(key, current_value, default_dict, default_key):
+            if key in saved_values and saved_values[key] is not None:
+                return saved_values[key]
+            for other_model in ["SBT V2.0", "SBT V1.0"]:
+                if other_model in store_data and case in store_data[other_model] and key in store_data[other_model][case]:
+                    val = store_data[other_model][case][key]
+                    if val is not None:
+                        return val
+            if current_value is not None:
+                return current_value
+            return default_dict.get(default_key)
+        
+        saved_insulation_k = get_value("coaxial-insulation-k", None, start_vals_sbt, "k_center_pipe")
+        if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
+            saved_insulation_k = start_vals_sbt["k_center_pipe"]
+        lateral_flow = saved_insulation_k
+        
+        saved_flow_type = get_value("coaxial-flow-type", None, {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
+        if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+            saved_flow_type = "Inject in Annulus"
+        lateral_multiplier = saved_flow_type
+        
+        # Only update lateral-flow and lateral-multiplier, keep others unchanged
+        if current_lateral_flow == lateral_flow and current_lateral_multiplier == lateral_multiplier:
+            raise PreventUpdate
+        
+        return current_diameter_vertical, current_diameter_lateral, current_n_laterals, lateral_flow, lateral_multiplier
+    
+    # For model-select changes, restore all sliders (existing behavior)
+    if triggered_id != "model-select":
         raise PreventUpdate
     
     if store_data is None:
@@ -2953,66 +2991,6 @@ def update_lateral_multiplier(n_laterals, model, case):
     multiplier = 1.0 / n_laterals
     
     return multiplier
-
-
-@app.callback(
-    Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
-    Input(component_id="case-select", component_property="value"),
-    State(component_id="model-select", component_property="value"),
-    State(component_id="slider-values-store", component_property="data"),
-    prevent_initial_call=True,
-)
-def set_default_coaxial_flow_type(case, model, store_data):
-    """Set correct value for coaxial flow type dropdown when switching to coaxial"""
-    if model not in ["SBT V1.0", "SBT V2.0"]:
-        raise PreventUpdate
-    if case != "coaxial":
-        raise PreventUpdate
-    
-    saved_values = store_data.get(model, {}).get(case, {}) if store_data else {}
-    saved_flow_type = saved_values.get("coaxial-flow-type")
-    
-    if saved_flow_type is None and store_data:
-        for other_model in ["SBT V2.0", "SBT V1.0"]:
-            if other_model in store_data and case in store_data[other_model] and "coaxial-flow-type" in store_data[other_model][case]:
-                saved_flow_type = store_data[other_model][case]["coaxial-flow-type"]
-                if saved_flow_type is not None:
-                    break
-    
-    if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
-        saved_flow_type = "Inject in Annulus"
-    
-    return saved_flow_type
-
-
-@app.callback(
-    Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
-    Input(component_id="case-select", component_property="value"),
-    State(component_id="model-select", component_property="value"),
-    State(component_id="slider-values-store", component_property="data"),
-    prevent_initial_call=True,
-)
-def set_default_coaxial_insulation_k(case, model, store_data):
-    """Set correct value for coaxial insulation thermal conductivity when switching to coaxial"""
-    if model not in ["SBT V1.0", "SBT V2.0"]:
-        raise PreventUpdate
-    if case != "coaxial":
-        raise PreventUpdate
-    
-    saved_values = store_data.get(model, {}).get(case, {}) if store_data else {}
-    saved_insulation_k = saved_values.get("coaxial-insulation-k")
-    
-    if saved_insulation_k is None and store_data:
-        for other_model in ["SBT V2.0", "SBT V1.0"]:
-            if other_model in store_data and case in store_data[other_model] and "coaxial-insulation-k" in store_data[other_model][case]:
-                saved_insulation_k = store_data[other_model][case]["coaxial-insulation-k"]
-                if saved_insulation_k is not None:
-                    break
-    
-    if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
-        saved_insulation_k = start_vals_sbt["k_center_pipe"]
-    
-    return saved_insulation_k
 
 
 @app.callback(
