@@ -480,9 +480,10 @@ class TEA:
         
     def calculateLC(self):
         # Check if InterpolatedTemperatureArray exists and is not empty
-        if not hasattr(self, 'InterpolatedTemperatureArray') or len(self.InterpolatedTemperatureArray) == 0:
-            self.error_codes = np.append(self.error_codes, 8000)  # Missing temperature/pressure data
-            return
+        # Andrea's code
+        # if not hasattr(self, 'InterpolatedTemperatureArray') or len(self.InterpolatedTemperatureArray) == 0:
+        #     self.error_codes = np.append(self.error_codes, 8000)  # Missing temperature/pressure data
+        #     return
         self.Linear_production_temperature = self.InterpolatedTemperatureArray
         self.Linear_production_pressure = self.InterpolatedPressureArray
         self.AveProductionTemperature = np.average(self.Linear_production_temperature)
@@ -544,10 +545,11 @@ class TEA:
             
         else:  #Production temperature went below injection temperature # AB HERE *****
             self.error_codes = np.append(self.error_codes,1000)
-            if self.End_use == 1:
-                self.LCOH = 9999
-            elif self.End_use == 2:
-                self.LCOE = 9999
+            # Andrea's code TODO: check
+            # if self.End_use == 1:
+            #     self.LCOH = 9999
+            # elif self.End_use == 2:
+            #     self.LCOE = 9999
     
  
     def calculatedrillinglength(self):
@@ -609,8 +611,9 @@ class TEA:
                     self.error_codes = np.append(self.error_codes,2000)
                 if max(self.Linear_production_temperature) < 100 or max(self.Linear_production_temperature) > 385:
                     self.error_codes = np.append(self.error_codes,2001)
-                elif min(self.Linear_production_temperature) < 100:
-                    pass
+                # Andrea's code
+                # elif min(self.Linear_production_temperature) < 100:
+                #     pass
                 self.Instantaneous_utilization_efficiency_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_electricity_production_method_1 = np.zeros(len(self.Time_array))
                 self.Instantaneous_themal_efficiency = np.zeros(len(self.Time_array))
@@ -644,10 +647,16 @@ class TEA:
                 self.Post_compressor_T_actual = interpn((self.Pvector_ap,self.hvector_ap),self.TPh,np.array([self.P_in,Post_compressor_h_actual[0]])) - 273.15
                 Compressor_Work = self.Flow_rate*(Post_compressor_h_actual - Pre_compressor_h)/1e3 #[kWe]
                 Post_cooling = self.Flow_rate*(Post_compressor_h_actual - self.h_inj)/1e3 #Fluid cooling after compression [kWth]
-                    
+                
+                # Andrea's code
                 # Handle array conditionals element-wise
-                ResistiveHeating = np.where(Post_cooling < 0, -Post_cooling, 0)
-                Post_cooling = np.where(Post_cooling < 0, 0, Post_cooling)
+                # ResistiveHeating = np.where(Post_cooling < 0, -Post_cooling, 0)
+                # Post_cooling = np.where(Post_cooling < 0, 0, Post_cooling)
+                if Post_cooling<0:
+                    ResistiveHeating = -Post_cooling
+                    Post_cooling = 0
+                else:
+                    ResistiveHeating = 0
                    
                 Total_cooling = Pre_cooling + Post_cooling #Total CO2 cooling requirements [kWth]
                 

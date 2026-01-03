@@ -379,9 +379,9 @@ class data:
                     # print(f"[DEBUG]   L1={L1} km, L2={L2} km, grad={grad}°C/m", flush=True)
                     # print(f"[DEBUG]   Diameter1={Diameter1}, Diameter2={Diameter2}, PipeParam3={PipeParam3}, PipeParam4={PipeParam4}, PipeParam5={PipeParam5}", flush=True)
                     # print(f"[DEBUG]   Tsurf={Tsurf}°C, k_m={k}, c_m={c_m}, rho_m={rho_m}", flush=True)
-                    print(len(times))
-                    print(Tout[-1])
-                    print(Pout)
+                    # print(len(times))
+                    # print(Tout[-1])
+                    # print(Pout)
 
                     # Cache the result if valid (before validation)
                     if Tout is not None and len(Tout) > 0:
