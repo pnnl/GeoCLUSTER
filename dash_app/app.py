@@ -1472,10 +1472,11 @@ def flip_to_tab(tab, btn1, btn3, end_use):
         State(component_id="fluid-selection-store", component_property="data"),
         State(component_id="fluid-select", component_property="value"),
         State(component_id="tabs", component_property="value"),
+        State(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def update_working_fluid(model, fluid_store, current_fluid, current_tab):
+def update_working_fluid(model, fluid_store, current_fluid, current_tab, case):
     if current_tab == "energy-tab":
         raise PreventUpdate
     
@@ -1487,6 +1488,8 @@ def update_working_fluid(model, fluid_store, current_fluid, current_tab):
             last_specific = fluid_store.get("last_specific", "H2O")
             
             fluid_list = ["All", "H2O", "sCO2"]
+            if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
+                fluid_list = ["H2O", "sCO2"]
             
             if preferred in fluid_list:
                 selected_fluid = preferred
@@ -1494,6 +1497,10 @@ def update_working_fluid(model, fluid_store, current_fluid, current_tab):
                 selected_fluid = last_specific
             else:
                 selected_fluid = fluid_list[0] if fluid_list else "H2O"
+            
+            if model in ("SBT V1.0", "SBT V2.0") and case and case == "coaxial":
+                if selected_fluid == "All" or selected_fluid not in fluid_list:
+                    selected_fluid = "H2O"
             
             return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
         else:
