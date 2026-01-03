@@ -2153,16 +2153,17 @@ def run_sbt(
                         Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[3::4]))
                         Tfluidupnodes = np.concatenate((Sol.ravel()[0::4],[Tfluiddownnodes[-1]]))
                     
+                    # Andrea's code
                     # Validate Tfluidupnodes contains reasonable temperature values (should be in degC, roughly -50 to 500)
                     # Note: For geothermal applications, outlet temps typically range from injection temp (~30-100°C) to ~200-300°C
                     # Using a more lenient upper bound of 500°C to allow for edge cases, but catching clearly invalid values
-                    if (np.any(np.isnan(Tfluidupnodes)) or np.any(np.isinf(Tfluidupnodes)) or 
-                        np.any(Tfluidupnodes < -100) or np.any(Tfluidupnodes > 500)):
-                        error_msg = (f"Error: Invalid upflowing fluid temperatures calculated for coaxial geometry. "
-                                   f"Min={np.min(Tfluidupnodes):.2f}°C, Max={np.max(Tfluidupnodes):.2f}°C. "
-                                   f"Tinj={Tinj}°C, fluid={fluid}. Simulation terminated.")
-                        print(f"[ERROR] {error_msg}", flush=True)
-                        raise ValueError(error_msg)
+                    # if (np.any(np.isnan(Tfluidupnodes)) or np.any(np.isinf(Tfluidupnodes)) or 
+                    #     np.any(Tfluidupnodes < -100) or np.any(Tfluidupnodes > 500)):
+                    #     error_msg = (f"Error: Invalid upflowing fluid temperatures calculated for coaxial geometry. "
+                    #                f"Min={np.min(Tfluidupnodes):.2f}°C, Max={np.max(Tfluidupnodes):.2f}°C. "
+                    #                f"Tinj={Tinj}°C, fluid={fluid}. Simulation terminated.")
+                    #     print(f"[ERROR] {error_msg}", flush=True)
+                    #     raise ValueError(error_msg)
                     
                     Tfluiddownmidpoints = 0.5*Tfluiddownnodes[1:]+0.5*Tfluiddownnodes[:-1]
                     Tfluidupmidpoints = 0.5*Tfluidupnodes[1:]+0.5*Tfluidupnodes[:-1]
@@ -2177,9 +2178,10 @@ def run_sbt(
                     #Populate Tfluidnodes
                     Tfluidnodes[0] = Tinj
                     Tfluidnodes[1:interconnections_new[0]+1] = AllEndPointsTemp[:interconnections_new[0]] #Injection well nodes
+                    # Andrea's code
                     # Ensure lateralflowmultiplier is not None
-                    if lateralflowmultiplier is None or lateralflowmultiplier == 0:
-                        lateralflowmultiplier = 1.0
+                    # if lateralflowmultiplier is None or lateralflowmultiplier == 0:
+                    #     lateralflowmultiplier = 1.0
                     Tfluidnodes[interconnections_new[0]+1] = sum(mvector[lateralmidendpoints]/lateralflowmultiplier*AllEndPointsTemp[lateralmidendpoints])/mdot #Bottom node of production well
                     Tfluidnodes[interconnections_new[0]+2:interconnections_new[1]+1] = AllEndPointsTemp[interconnections_new[0]:interconnections_new[1]-1] #Production well nodes (except bottom node)
                     for dd in range(numberoflaterals): #Lateral nodes
@@ -2194,47 +2196,68 @@ def run_sbt(
                                         
                 #Update fluid properties
                 if clg_configuration == 1: #co-axial geometry 
-                    # Get bounds from interpolator grid
-                    P_min, P_max = interpolator_density.grid[0][0], interpolator_density.grid[0][-1]
-                    T_min, T_max = interpolator_density.grid[1][0], interpolator_density.grid[1][-1]
+                    # Andrea's code
+                    # # Get bounds from interpolator grid
+                    # P_min, P_max = interpolator_density.grid[0][0], interpolator_density.grid[0][-1]
+                    # T_min, T_max = interpolator_density.grid[1][0], interpolator_density.grid[1][-1]
                     
-                    # Clip values to bounds before interpolation
-                    P_down_clip = np.clip(Pfluiddownnodes, P_min, P_max)
-                    T_down_clip = np.clip(Tfluiddownnodes + 273.15, T_min, T_max)
-                    P_up_clip = np.clip(Pfluidupnodes, P_min, P_max)
-                    T_up_clip = np.clip(Tfluidupnodes + 273.15, T_min, T_max)
-                    P_down_mid_clip = np.clip(Pfluiddownmidpoints, P_min, P_max)
-                    T_down_mid_clip = np.clip(Tfluiddownmidpoints + 273.15, T_min, T_max)
-                    P_up_mid_clip = np.clip(Pfluidupmidpoints, P_min, P_max)
-                    T_up_mid_clip = np.clip(Tfluidupmidpoints + 273.15, T_min, T_max)
+                    # # Clip values to bounds before interpolation
+                    # P_down_clip = np.clip(Pfluiddownnodes, P_min, P_max)
+                    # T_down_clip = np.clip(Tfluiddownnodes + 273.15, T_min, T_max)
+                    # P_up_clip = np.clip(Pfluidupnodes, P_min, P_max)
+                    # T_up_clip = np.clip(Tfluidupnodes + 273.15, T_min, T_max)
+                    # P_down_mid_clip = np.clip(Pfluiddownmidpoints, P_min, P_max)
+                    # T_down_mid_clip = np.clip(Tfluiddownmidpoints + 273.15, T_min, T_max)
+                    # P_up_mid_clip = np.clip(Pfluidupmidpoints, P_min, P_max)
+                    # T_up_mid_clip = np.clip(Tfluidupmidpoints + 273.15, T_min, T_max)
                     
-                    densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)]))
-                    densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)]))
-                    densityfluiddownmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    densityfluidupmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    viscosityfluidupmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    heatcapacityfluiddownmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    heatcapacityfluidupmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
-                    thermalconductivityfluiddownmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    thermalconductivityfluidupmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)]))
+                    # densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)]))
+                    # densityfluiddownmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
+                    # densityfluidupmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
+                    # viscosityfluidupmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # heatcapacityfluiddownmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
+                    # heatcapacityfluidupmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # thermalconductivityfluiddownmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
+                    # thermalconductivityfluidupmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # alphafluiddownmidpoints = thermalconductivityfluiddownmidpoints/densityfluiddownmidpoints/heatcapacityfluiddownmidpoints
+                    # alphafluidupmidpoints = thermalconductivityfluidupmidpoints/densityfluidupmidpoints/heatcapacityfluidupmidpoints
+                    # thermalexpansionfluiddownmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
+                    # thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    # Prandtlfluiddownmidpoints = viscosityfluiddownmidpoints/densityfluiddownmidpoints/alphafluiddownmidpoints
+                    # Prandtlfluidupmidpoints = viscosityfluidupmidpoints/densityfluidupmidpoints/alphafluidupmidpoints
+        
+                    densityfluiddownnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownnodes, Tfluiddownnodes + 273.15)]))
+                    densityfluidupnodes = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidupnodes, Tfluidupnodes + 273.15)]))
+                    densityfluiddownmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    densityfluidupmidpoints = interpolator_density(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    viscosityfluiddownmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    viscosityfluidupmidpoints = interpolator_viscosity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    heatcapacityfluiddownmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    heatcapacityfluidupmidpoints = interpolator_heatcapacity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
+                    thermalconductivityfluiddownmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    thermalconductivityfluidupmidpoints = interpolator_thermalconductivity(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
                     alphafluiddownmidpoints = thermalconductivityfluiddownmidpoints/densityfluiddownmidpoints/heatcapacityfluiddownmidpoints
                     alphafluidupmidpoints = thermalconductivityfluidupmidpoints/densityfluidupmidpoints/heatcapacityfluidupmidpoints
-                    thermalexpansionfluiddownmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_down_mid_clip, T_down_mid_clip)]))
-                    thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(P_up_mid_clip, T_up_mid_clip)]))
+                    thermalexpansionfluiddownmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(Pfluiddownmidpoints, Tfluiddownmidpoints + 273.15)]))
+                    thermalexpansionfluidupmidpoints = interpolator_thermalexpansion(np.array([[x, y] for x, y in zip(Pfluidupmidpoints, Tfluidupmidpoints + 273.15)]))
                     Prandtlfluiddownmidpoints = viscosityfluiddownmidpoints/densityfluiddownmidpoints/alphafluiddownmidpoints
                     Prandtlfluidupmidpoints = viscosityfluidupmidpoints/densityfluidupmidpoints/alphafluidupmidpoints
-        
+
+
                     if coaxialflowtype == 1: #CXA
                         Refluiddownmidpoints = densityfluiddownmidpoints*velocityfluiddownmidpoints*(Dh_annulus)/viscosityfluiddownmidpoints
+                        # Andrea's code
                         # Ensure radiuscenterpipe is not None
-                        if radiuscenterpipe is None:
-                            raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
+                        # if radiuscenterpipe is None:
+                        #     raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
                         Refluidupmidpoints = densityfluidupmidpoints*velocityfluidupmidpoints*(2*radiuscenterpipe)/viscosityfluidupmidpoints
                     elif coaxialflowtype == 2: #CXC
+                        # Andrea's code
                         # Ensure radiuscenterpipe is not None
-                        if radiuscenterpipe is None:
-                            raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
+                        # if radiuscenterpipe is None:
+                        #     raise ValueError("radiuscenterpipe is None for coaxial configuration. This should be set from tube_geometry_dict.")
                         Refluiddownmidpoints = densityfluiddownmidpoints*velocityfluiddownmidpoints*(2*radiuscenterpipe)/viscosityfluiddownmidpoints
                         Refluidupmidpoints = densityfluidupmidpoints*velocityfluidupmidpoints*(Dh_annulus)/viscosityfluidupmidpoints
                         
@@ -2436,44 +2459,52 @@ def run_sbt(
         if numberoflaterals > 1:
             for dd in range(1, numberoflaterals + 1):
                 line_to_print = f"Final flow in lateral {dd} is {mlateral[dd-1]} kg/s \n"
-                print(line_to_print, end='')
+                if is_print:
+                    print(line_to_print, end='')
         
             for dd in range(1, numberoflaterals + 1):
                 line_to_print = f"Final fluid exit pressure in lateral {dd} is {round(Pfluidlateralexit[dd-1])} Pa \n"
-                print(line_to_print, end='')    
+                if is_print:
+                    print(line_to_print, end='')    
         
     if sbt_version == 1:    
         HeatProduction = mstore * cp_f * (Toutput - Tinstore) / 1e6  # Calculates the heat production [MW]
     elif sbt_version == 2:
         if clg_configuration == 1: #co-axial geometry:
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
-                # Match basic Python model exactly (sbt.py line 1867)
-                # Property table Pvector is in Pascal, so pass pressure directly without conversion
-                # Get bounds from interpolator grid
-                P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
-                T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
-                # Clip values to bounds before interpolation
-                P_up_clip = np.clip(Pfluidupnodesstore[0,:], P_min, P_max)
-                T_up_clip = np.clip(Tfluidupnodesstore[0,:] + 273.15, T_min, T_max)
-                P_down_clip = np.clip(Pfluiddownnodesstore[0,:], P_min, P_max)
-                T_down_clip = np.clip(Tfluiddownnodesstore[0,:] + 273.15, T_min, T_max)
-                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)])) - 
-                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)])))/1e6
+                # Andrea's code
+                # # Match basic Python model exactly (sbt.py line 1867)
+                # # Property table Pvector is in Pascal, so pass pressure directly without conversion
+                # # Get bounds from interpolator grid
+                # P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
+                # T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
+                # # Clip values to bounds before interpolation
+                # P_up_clip = np.clip(Pfluidupnodesstore[0,:], P_min, P_max)
+                # T_up_clip = np.clip(Tfluidupnodesstore[0,:] + 273.15, T_min, T_max)
+                # P_down_clip = np.clip(Pfluiddownnodesstore[0,:], P_min, P_max)
+                # T_down_clip = np.clip(Tfluiddownnodesstore[0,:] + 273.15, T_min, T_max)
+                # HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_up_clip, T_up_clip)])) - 
+                #                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_down_clip, T_down_clip)])))/1e6
+                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidupnodesstore[0,:], Tfluidupnodesstore[0,:] + 273.15)])) - 
+                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluiddownnodesstore[0,:], Tfluiddownnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
         elif clg_configuration == 2: #u-loop geometry:           
             if variablefluidproperties == 1: #Calculates the heat production as produced enthalpy minus injected enthalpy [MWth]
-                # Match basic Python model exactly - property table Pvector is in Pascal, so pass pressure directly
-                # Get bounds from interpolator grid
-                P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
-                T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
-                # Clip values to bounds before interpolation
-                P_prod_clip = np.clip(Pfluidnodesstore[interconnections_new[1],:], P_min, P_max)
-                T_prod_clip = np.clip(Tfluidnodesstore[interconnections_new[1],:] + 273.15, T_min, T_max)
-                P_inj_clip = np.clip(Pfluidnodesstore[0,:], P_min, P_max)
-                T_inj_clip = np.clip(Tfluidnodesstore[0,:] + 273.15, T_min, T_max)
-                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_prod_clip, T_prod_clip)])) - 
-                                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_inj_clip, T_inj_clip)])))/1e6
+                # # Andrea's code
+                # # Match basic Python model exactly - property table Pvector is in Pascal, so pass pressure directly
+                # # Get bounds from interpolator grid
+                # P_min, P_max = interpolator_enthalpy.grid[0][0], interpolator_enthalpy.grid[0][-1]
+                # T_min, T_max = interpolator_enthalpy.grid[1][0], interpolator_enthalpy.grid[1][-1]
+                # # Clip values to bounds before interpolation
+                # P_prod_clip = np.clip(Pfluidnodesstore[interconnections_new[1],:], P_min, P_max)
+                # T_prod_clip = np.clip(Tfluidnodesstore[interconnections_new[1],:] + 273.15, T_min, T_max)
+                # P_inj_clip = np.clip(Pfluidnodesstore[0,:], P_min, P_max)
+                # T_inj_clip = np.clip(Tfluidnodesstore[0,:] + 273.15, T_min, T_max)
+                # HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_prod_clip, T_prod_clip)])) - 
+                #                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(P_inj_clip, T_inj_clip)])))/1e6
+                HeatProduction = mdot*(interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[interconnections[1],:], Tfluidnodesstore[interconnections[1],:] + 273.15)])) - 
+                    interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[0,:], Tfluidnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
             
