@@ -4097,53 +4097,32 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
     if err_sub_dict != {}:
         try:
             error_message = next(iter(err_sub_dict.values()))
-            error_key = next(iter(err_sub_dict.keys())) if err_sub_dict else None
             if error_message is None:
                 error_message = "Unknown error occurred"
         except (StopIteration, TypeError):
             error_message = "Unknown error occurred"
-            error_key = None
 
         if "No outputs" in error_message:
-            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider adjusting parameter values, particularly: Geothermal Gradient, Depth (L1), Horizontal Extent (L2), Injection Temperature, or Mass Flow Rate."
+            error_message = "No outputs were able to be calculated because there are not enough data at these limits. Consider changing parameter value(s)."
 
-        # Provide guidance based on error type
-        guidance = ""
-        if "out of bounds" in error_message.lower():
-            guidance = "Try adjusting the parameter slider to a value within the recommended range."
-        elif "not enough data" in error_message.lower() or "no outputs" in error_message.lower():
-            guidance = "Try adjusting: Geothermal Gradient, Depth (L1), Horizontal Extent (L2), Injection Temperature, or Mass Flow Rate."
-        elif "cannot calculate" in error_message.lower():
-            guidance = "For SBT models, try increasing Geothermal Gradient or Depth (L1), or reducing Mass Flow Rate if convergence issues occur."
-        elif error_key and "SubRes3" in error_key:
-            guidance = "U-tube simulation error. Check that Number of Laterals is valid and Lateral Flow Allocation values sum to 1.0."
-        elif error_key and "SubRes4" in error_key:
-            guidance = "Coaxial simulation error. Check that Flow direction is properly set and Center Pipe Diameter is smaller than Outer Diameter."
-
-        children_list = [
-            html.Img(id="error-img1", src=app.get_asset_url("error.png")),
-            dcc.Markdown(
-                "**Did not plot visual(s).**", style={"display": "inline-block"}
-            ),
-            html.P(error_message),
-        ]
-        if guidance:
-            children_list.append(html.P(guidance))
-        
         err_div1 = html.Div(  # id="error_block_div1",
             style=error_style,
-            children=children_list,
+            children=[
+                html.Img(id="error-img1", src=app.get_asset_url("error.png")),
+                dcc.Markdown(
+                    "**Did not plot visual(s).**", style={"display": "inline-block"}
+                ),
+                html.P(error_message),
+            ],
         )
 
     if err_contour_dict != {}:
         try:
             error_message = next(iter(err_contour_dict.values()))
-            error_key = next(iter(err_contour_dict.keys())) if err_contour_dict else None
             if error_message is None:
                 error_message = "Unknown error occurred"
         except (StopIteration, TypeError):
             error_message = "Unknown error occurred"
-            error_key = None
 
         err_div2 = html.Div(  # id="error_block_div2",
             style=error_style,
@@ -4180,7 +4159,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
                 error_message = next(iter(err_econ_dict.values()))
                 if error_message and error_message.strip():
                     if "object has no attribute" in error_message:
-                        error_message = "No outputs could be calculated because there is not enough data at these limits. Consider adjusting parameter values, particularly: Geothermal Gradient, Depth (L1), Horizontal Extent (L2), Injection Temperature, or Mass Flow Rate."
+                        error_message = "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
                     err_div3 = html.Div(  # id="error_block_div3",
                         style=error_style,
                         children=[
@@ -4192,7 +4171,7 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
                                 style={"display": "inline-block"},
                             ),
                             html.P(
-                                "No outputs could be calculated because there is not enough data at these limits. Consider adjusting parameter values, particularly: Geothermal Gradient, Depth (L1), Horizontal Extent (L2), Injection Temperature, or Mass Flow Rate."
+                                "No outputs could be calculated because there is not enough data at these limits. Consider changing parameter value(s)."
                             ),
                         ],
                     )
