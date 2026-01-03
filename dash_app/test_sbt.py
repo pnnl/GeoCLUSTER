@@ -156,7 +156,7 @@ times, Tout, Pout = run_sbt_final(
 
         HYPERPARAM1=20*10, # Fluid input pressure [bar] -- done
         HYPERPARAM2=1e-6, # Pipe/borehole roughness --done     
-        HYPERPARAM3=0, # variablefluidproperties -- constant fluid properties or 1 variable -- done -- ONLY mode that can be varied and it's across both fluids!!!
+        HYPERPARAM3=1, # variablefluidproperties -- constant fluid properties or 1 variable -- done -- ONLY mode that can be varied and it's across both fluids!!!
         HYPERPARAM4=1e-5 , # reltolerance | Target maximum acceptable relative tolerance -- done
         HYPERPARAM5=15, # maxnumberofiterations |Maximum number of iterations each time step [-]
         
