@@ -54,10 +54,10 @@ def fluids_to_run(model, case, fluid):
 def model_for_fluid(model, case, fluid):
     """
     Get the correct model version for a specific fluid.
-    For simulator+utube: H2O uses SBT V1.0, sCO2 uses SBT V2.0.
+    For simulator (utube or coaxial): H2O uses SBT V1.0, sCO2 uses SBT V2.0.
     Otherwise returns the original model.
     """
-    if model in ("SBT V1.0", "SBT V2.0") and case == "utube":
+    if model in ("SBT V1.0", "SBT V2.0") and case in ("utube", "coaxial"):
         if fluid == "H2O":
             return "SBT V1.0"
         if fluid == "sCO2":
@@ -160,22 +160,21 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     else:
         sbt_version = 0
     
-    sbt_version_sco2 = sbt_version
-    sbt_version_h2o = sbt_version
+    model_h2o = model_for_fluid(model, case, "H2O")
+    model_sco2 = model_for_fluid(model, case, "sCO2")
+    if model_h2o == "SBT V1.0":
+        sbt_version_h2o = 1
+    elif model_h2o == "SBT V2.0":
+        sbt_version_h2o = 2
+    else:
+        sbt_version_h2o = 0
     
-    # For simulator (SBT models) only, not database (HDF5)
-    # Override sbt_version for each fluid based on fluid selection
-    if model in ("SBT V1.0", "SBT V2.0"):
-        if fluid == "H2O":
-            sbt_version_h2o = 1
-            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O only with SBT V{sbt_version_h2o}.0", flush=True)
-        elif fluid == "sCO2":
-            sbt_version_sco2 = 2
-            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running sCO2 only with SBT V{sbt_version_sco2}.0", flush=True)
-        elif fluid == "All":
-            sbt_version_h2o = 1
-            sbt_version_sco2 = 2
-            # print(f"[DEBUG generate_subsurface_lineplots] model={model}, case={case}, fluid={fluid} -> Running H2O: SBT V{sbt_version_h2o}.0, sCO2: SBT V{sbt_version_sco2}.0", flush=True)
+    if model_sco2 == "SBT V1.0":
+        sbt_version_sco2 = 1
+    elif model_sco2 == "SBT V2.0":
+        sbt_version_sco2 = 2
+    else:
+        sbt_version_sco2 = 0
     
     # sCO2 is supported if using SBT V2.0 or HDF5 database
     sCO2_supported = (sbt_version_sco2 == 2) or (model == "HDF5")
@@ -291,15 +290,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
                     error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
                     error_messages_dict['Err SubRes3'] = error_message
-                    print(f"[ERROR] Exception in generate_subsurface_lineplots (utube, SBT{sbt_version}, sCO2): {e}")
-                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}")
-                    import traceback
-                    traceback.print_exc()
             elif (fluid == "sCO2" or fluid == "All") and not sCO2_supported:
                 # SBT V1.0 doesn't support sCO2 - skip calculation and set to blank
                 sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
                 sCO2_success = False
-                print(f"[INFO] Skipping sCO2 calculation: SBT V1.0 doesn't support sCO2. Only H2O calculations will be performed.", flush=True)
             
             if fluid == "H2O" or fluid == "All":
                 try:
@@ -324,10 +318,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
                     error_message = parse_error_message(e=e, e_name='Err SubRes3', model=model)
                     error_messages_dict['Err SubRes3'] = error_message
-                    print(f"[ERROR] Exception in generate_subsurface_lineplots (utube, SBT{sbt_version}, H2O): {e}")
-                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}")
-                    import traceback
-                    traceback.print_exc()
             
             # Set is_blank_data only if all selected fluids failed
             if (fluid == "sCO2" and not sCO2_success) or \
@@ -384,15 +374,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     sCO2_success = False
                     error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
                     error_messages_dict['Err SubRes4'] = error_message
-                    print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, sCO2): {type(e).__name__}: {e}", flush=True)
-                    print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
-                    import traceback
-                    traceback.print_exc()
             elif (fluid == "sCO2" or fluid == "All") and not sCO2_supported:
                 # SBT V1.0 doesn't support sCO2 - skip calculation and set to blank
                 sCO2_Tout, sCO2_Pout, _, _, sCO2_kWe, sCO2_kWt, _, _ = blank_data()
                 sCO2_success = False
-                print(f"[INFO] Skipping sCO2 calculation: SBT V1.0 doesn't support sCO2. Only H2O calculations will be performed.", flush=True)
             
             # Store geometry values for comparison
             geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
@@ -400,10 +385,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             if fluid == "H2O" or fluid == "All":
                 if fluid == "All" and 'geometry_before_sCO2' in locals():
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
-                        # print(f"[WARNING] Geometry values differ between sCO2 and H2O!", flush=True)
                         pass
                 try:
-                    # print(f"[DEBUG] Attempting H2O calculation for coaxial SBT (sbt_version={sbt_version_h2o}, Diameter1={Diameter1}, Diameter2={Diameter2})", flush=True)
                     H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version_h2o,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
@@ -427,10 +410,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                     _, _, H2O_Tout, H2O_Pout, _, _, H2O_kWe, H2O_kWt = blank_data()
                     error_message = parse_error_message(e=e, e_name='Err SubRes4', model=model)
                     error_messages_dict['Err SubRes4'] = error_message
-                    # print(f"[ERROR] Exception in generate_subsurface_lineplots (coaxial, SBT{sbt_version}, H2O): {e}", flush=True)
-                    # print(f"  Parameters: case={case}, fluid={fluid}, PipeParam5={PipeParam5}, Diameter1={Diameter1}, Diameter2={Diameter2}, mdot={arg_mdot}", flush=True)
-                    # import traceback
-                    # traceback.print_exc()
             
             if (fluid == "sCO2" and not sCO2_success) or \
                (fluid == "H2O" and not H2O_success) or \
@@ -481,7 +460,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                   legendgroup=labels_cat[1], name=labels[1], showlegend=False),
                                   row=1, col=2)
                 except (ValueError, TypeError) as e:
-                    print(f"[WARNING] Could not plot sCO2 averages: {e}", flush=True)
+                    pass
 
         # Plot time-series data only if calculation succeeded
         if not is_blank_data:
@@ -1149,7 +1128,6 @@ def generate_econ_lineplots(TandP_dict,
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
                         teaobj_sCO2 = None
                     else:
-                        print(f"[DEBUG generate_econ_lineplots] Creating sCO2 TEA object with model={model_sco2}", flush=True)
                         teaobj_sCO2 = create_teaobject(TandP_dict,
                                                         u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                         case, end_use, "sCO2", model_sco2,
@@ -1210,7 +1188,6 @@ def generate_econ_lineplots(TandP_dict,
                                      "sCO2 Annual Heat Production (GWh)": teaobj_sCO2.Annual_heat_production/1e6}
                         econ_values_dict.update(time_dict)
                     except Exception as e:
-                        print(f"[ERROR] Economic plots (sCO2): Exception when creating plots: {type(e).__name__}: {e}", flush=True)
                         import traceback
                         traceback.print_exc()
                         lcoh_sCO2 = "Insufficient Inputs"
@@ -1246,7 +1223,6 @@ def generate_econ_lineplots(TandP_dict,
                         teaobj_H2O = None
                     else:
                         # TODO: update D ... based on radial
-                        print(f"[DEBUG generate_econ_lineplots] Creating H2O TEA object with model={model_h2o}", flush=True)
                         teaobj_H2O = create_teaobject(TandP_dict,
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, "H2O", model_h2o,
@@ -1331,7 +1307,6 @@ def generate_econ_lineplots(TandP_dict,
                         len(time_arr) != len(tout_arr) or len(time_arr) != len(pout_arr)):
                         teaobj_sCO2_electricity = None
                     else:
-                        print(f"[DEBUG generate_econ_lineplots] Creating sCO2 electricity TEA object with model={model_sco2}", flush=True)
                         teaobj_sCO2_electricity = create_teaobject(TandP_dict, 
                                                     u_sCO2, u_H2O, c_sCO2, c_H2O,
                                                     case, end_use, "sCO2", model_sco2,
@@ -1407,13 +1382,11 @@ def generate_econ_lineplots(TandP_dict,
                     try:
                         get_Ts_diagram(fig=fig, teaobj=ts_teaobj, nrow=2, ncol=1, tmatrix_pathname=tmatrix_pathname)
                     except Exception as e:
-                        print(f"[ERROR] Error drawing TS diagram (Electricity): {e}")
                         traceback.print_exc()
                 if end_use == "All":
                     try:
                         get_Ts_diagram(fig=fig, teaobj=ts_teaobj, nrow=3, ncol=1, tmatrix_pathname=tmatrix_pathname)
                     except Exception as e:
-                        print(f"[ERROR] Error drawing TS diagram (All): {e}")
                         traceback.print_exc()
 
                 # mean_sCO2_Net_HProd = round(np.mean(teaobj_sCO2.Instantaneous_heat_production/1e3),2)

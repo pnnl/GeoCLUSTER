@@ -3498,7 +3498,7 @@ def update_subsurface_results_plots(
                         thickness_val = float(PipeParam3)
                         if thickness_val >= 1.0:
                             actual_PipeParam3 = 0.0127
-                            print(f"[WARNING] SBT coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
+                            # print(f"[WARNING] SBT coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
                         elif 0.005 <= thickness_val <= 0.025:
                             actual_PipeParam3 = thickness_val
                         else:
