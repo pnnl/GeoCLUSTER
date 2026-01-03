@@ -949,7 +949,7 @@ def run_sbt(
                     #Populate L and R for SBT algorithm for first element
                     L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]
+                    R[2,0] =  - float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0])
                     
                     #Populate L and R for upflowing fluid heat balance for first element
                     L[3,3] = 1 / Deltat + u_up/Deltaz[0] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -974,7 +974,7 @@ def run_sbt(
                         #SBT equation              
                         L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                        R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]                
+                        R[2 + (iiii - 1) * 4, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])                
                         
                         #Heat balance for upflowing fluid
                         L[3+(iiii-1)*4,3+(iiii-1)*4] = 1/Deltat + u_up/Deltaz[iiii-1] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f)
@@ -1004,7 +1004,7 @@ def run_sbt(
                     #Populate L and R for SBT algorithm for first element
                     L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]
+                    R[2,0] =  - float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0])
                     
                     #Populate L and R for heat balance fluid down for first element
                     L[3,3] = 1/Deltat + u_down/Deltaz[0]*2 + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -1031,7 +1031,7 @@ def run_sbt(
                         #SBT equation              
                         L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                        R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]  
+                        R[2 + (iiii - 1) * 4, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])  
         
                         #Heat balance downflowing fluid
                         L[3+(iiii-1)*4,3+(iiii-1)*4] = 1/Deltat + u_down/Deltaz[iiii-1] + 1/R_cp/(A_flow_centerpipe*rho_f*cp_f);
@@ -1053,7 +1053,7 @@ def run_sbt(
                 # Populate L and R for SBT algorithm for first element
                 L[2, np.arange(2,3*N,3)] = NPCP[0,0:N]
                 L[2,1] = 1
-                R[2, 0] = -BBCPOP[0] - BB[0] + BBinitial[0]
+                R[2, 0] = -float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0])
             
                 for iiii in range(2, N+1):  
                     # Heat balance equation
@@ -1081,7 +1081,7 @@ def run_sbt(
                     # SBT equation 
                     L[2 + (iiii - 1) * 3, np.arange(2,3*N,3)] = NPCP[iiii-1, :N]
                     L[2 + (iiii - 1) * 3, 1 + (iiii - 1) * 3] = 1
-                    R[2 + (iiii - 1) * 3, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]
+                    R[2 + (iiii - 1) * 3, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])
             
             
             # Solving the linear system of equations
@@ -1340,7 +1340,7 @@ def run_sbt(
                         #Populate L and R for SBT algorithm for first element
                         L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                         L[2,1] = 1
-                        R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]                
+                        R[2,0] =  - float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0])                
                         
                         #Populate L and R for upflowing energy heat balance for first element
                         L[3,3] = mdot*heatcapacityfluidupmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
@@ -1371,7 +1371,7 @@ def run_sbt(
                             #SBT equation              
                             L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                             L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                            R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]  
+                            R[2 + (iiii - 1) * 4, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])  
                             
                             #Energy balance for upflowing fluid
                             L[3+(iiii-1)*4,3+(iiii-1)*4] = mdot*heatcapacityfluidupmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
@@ -1400,7 +1400,7 @@ def run_sbt(
                         #Populate L and R for SBT algorithm for first element               
                         L[2,np.arange(2,4*N,4)] = NPCP[0,0:N]
                         L[2,1] = 1
-                        R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0]  
+                        R[2,0] =  - float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0])  
         
                         #Populate L and R for downflowing energy balance for first element (which has the injection temperature specified) 
                         L[3,3] = m*heatcapacityfluiddownmidpoints[0] + 1/R_cp[0]*Deltaz[0]/2
@@ -1433,7 +1433,7 @@ def run_sbt(
                             #SBT equation              
                             L[2 + (iiii - 1) * 4, np.arange(2,4*N,4)] = NPCP[iiii-1, :N]
                             L[2 + (iiii - 1) * 4, 1 + (iiii - 1) * 4] = 1
-                            R[2 + (iiii - 1) * 4, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]   
+                            R[2 + (iiii - 1) * 4, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])   
                             
                             #Energy balance for downflowing fluid
                             L[3+(iiii-1)*4,3+(iiii-2)*4] = -mdot*heatcapacityfluiddownmidpoints[iiii-1]+1/R_cp[iiii-1]*Deltaz[iiii-1]/2
@@ -1460,7 +1460,7 @@ def run_sbt(
                     #SBT equation for first element                
                     L[2,np.arange(2,3*N,3)] = NPCP[0,0:N]
                     L[2,1] = 1
-                    R[2,0] =  - BBCPOP[0] - BB[0] + BBinitial[0] 
+                    R[2,0] =  - float(BBCPOP[0]) - float(BB.flat[0]) + float(BBinitial[0]) 
                     
                     for iiii in range(2, N+1):  #Populate L and R for remaining elements
                         #Fluid energy balance
@@ -1504,7 +1504,7 @@ def run_sbt(
                         #SBT equation
                         L[2 + (iiii - 1) * 3, np.arange(2,3*N,3)] = NPCP[iiii-1, :N]
                         L[2 + (iiii - 1) * 3, 1 + (iiii - 1) * 3] = 1
-                        R[2 + (iiii - 1) * 3, 0] = -BBCPOP[iiii-1] - BB[iiii-1] + BBinitial[iiii-1]             
+                        R[2 + (iiii - 1) * 3, 0] = -float(BBCPOP[iiii-1]) - float(BB.flat[iiii-1]) + float(BBinitial[iiii-1])             
                 
                 
                 if clg_configuration == 1: #co-axial geometry 

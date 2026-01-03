@@ -107,8 +107,16 @@ def create_teaobject(TandP_dict,
                                           additional_properties_CO2v2_pathname)
 
     # get interpolated temperature and pressure array
+    # Convert model to sbt_version format for getTandP
+    if model == "SBT V1.0":
+        sbt_version = 1
+    elif model == "SBT V2.0":
+        sbt_version = 2
+    else:
+        sbt_version = None  # HDF5
+    
     try:
-        teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, model, TandP_dict, HyperParam1=HyperParam1)
+        teaobject.getTandP(u_sCO2, u_H2O, c_sCO2, c_H2O, sbt_version, TandP_dict)
         teaobject.calculateLC() # ERROR STARTS HERE
     except Exception as e:
         print(f"[ERROR] TEA calculation failed for {fluid} {end_use}: {type(e).__name__}: {e}", flush=True)
