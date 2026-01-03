@@ -2655,11 +2655,9 @@ def update_sliders_heat_exchanger(model, case, store_data):
         elif case == "coaxial":
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
 
-            # For coaxial, use stable defaults to ensure valid results on initial load
-            # Use larger wellbore diameter (0.4445 m) to improve flow area and reduce velocities
-            # Smaller center pipe diameter (0.2 m) works for both H2O and CO2 (larger annulus = lower velocities)
-            coaxial_default_radius = 0.4445  # Maximum wellbore diameter for better flow area and stability
-            coaxial_default_radiuscenterpipe = 0.1  # Center pipe radius (0.1 m) = 0.2 m diameter works for CO2 (larger annulus = lower velocities)
+            coaxial_defaults = {"radius-vertical": 0.4445, "radius-lateral": 0.2}
+            wellbore_diameter = get_saved_value("radius-vertical", coaxial_defaults, "radius-vertical")
+            centerpipe_diameter = get_saved_value("radius-lateral", coaxial_defaults, "radius-lateral")
 
             radius = slider1(
                 DivID="radius-vertical-select-div",
@@ -2669,7 +2667,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.4445,
                 mark_dict=diameter_vertical_dict,
                 step_i=0.002,
-                start_v=coaxial_default_radius,  # Always use maximum for stability, ignore saved values
+                start_v=wellbore_diameter,
                 div_style=div_block_style,
                 parameter_name="Wellbore Diameter (m)",
             )
@@ -2682,7 +2680,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.348,
                 mark_dict=radius_centerpipe_dict,
                 step_i=0.002,
-                start_v=coaxial_default_radiuscenterpipe * 2,  # Convert default radius to diameter
+                start_v=centerpipe_diameter,
                 div_style=div_block_style,
                 parameter_name="Center Pipe Diameter (m)",
             )
@@ -2695,7 +2693,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 max_v=0.025,
                 mark_dict=thickness_centerpipe_dict,
                 step_i=0.001,
-                start_v=start_vals_sbt["thicknesscenterpipe"],
+                start_v=get_saved_value("n-laterals", start_vals_sbt, "thicknesscenterpipe"),
                 div_style=div_block_style,
             )
 
@@ -2874,14 +2872,11 @@ def restore_sbt_sliders(model, store_data, case, current_radius_vertical, curren
         return default_dict.get(default_key)
     
     # Restore values, checking current model first, then other models
-    # For coaxial, use stable defaults with larger wellbore
     if case == "coaxial":
-        # Use larger wellbore radius (0.4445 m) to improve flow area and reduce velocities
-        radius_vertical = 0.4445  # Maximum wellbore radius for better flow area and stability
-        # For coaxial, radius-lateral is actually center pipe radius - use smaller value for CO2 compatibility
-        radius_lateral = 0.1  # Smaller center pipe radius works for CO2 (larger annulus = lower velocities)
+        coaxial_defaults = {"radius-vertical": 0.4445, "radius-lateral": 0.2}
+        radius_vertical = get_value("radius-vertical", current_radius_vertical, coaxial_defaults, "radius-vertical")
+        radius_lateral = get_value("radius-lateral", current_radius_lateral, coaxial_defaults, "radius-lateral")
     else:
-        # For U-tube, use normal defaults
         radius_vertical = get_value("radius-vertical", current_radius_vertical, start_vals_sbt, "radius-vertical")
         radius_lateral = get_value("radius-lateral", current_radius_lateral, start_vals_sbt, "radius-lateral")
     
@@ -3005,7 +3000,6 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     
     info_button = create_info_button("Lateral Flow Allocation")
     num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
-    num_laterals = min(max(1, num_laterals), 30)  # Clamp between 1 and 30
     allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
     
     # Get saved values if available
@@ -3129,10 +3123,7 @@ def update_sliders_hyperparms(model, store_data):
                     if isinstance(val, (int, float)):
                         saved_inlet_pressure = val
                         break
-        # Use saved value if available and valid (numeric), otherwise use default
         inlet_pressure_start = saved_inlet_pressure if (saved_inlet_pressure is not None and isinstance(saved_inlet_pressure, (int, float))) else start_vals_sbt["inletpressure"]
-        # Clamp to valid range
-        inlet_pressure_start = max(5, min(20, inlet_pressure_start))
         
         inlet_pressure = slider1(
             DivID="inlet-pressure-div",
@@ -3457,15 +3448,8 @@ def update_subsurface_results_plots(
             hyperparam3_value = HyperParam3
         
         if case == "coaxial":
-            if Diameter1 is None:
-                Diameter1 = 0.4445
-            if Diameter2 is None:
-                Diameter2 = 0.2
-            
-            if insulation_thermal_conductivity is not None:
-                actual_PipeParam4 = insulation_thermal_conductivity
-            else:
-                actual_PipeParam4 = PipeParam4
+            actual_PipeParam3 = PipeParam3
+            actual_PipeParam4 = insulation_thermal_conductivity if insulation_thermal_conductivity is not None else PipeParam4
             
             if coaxial_flow_type is not None:
                 if isinstance(coaxial_flow_type, str):
@@ -3478,78 +3462,11 @@ def update_subsurface_results_plots(
                 else:
                     actual_PipeParam5 = int(coaxial_flow_type) if coaxial_flow_type in [1, 2] else 1
             else:
-                actual_PipeParam5 = 1
-            
-            if model == "HDF5" and PipeParam3 is not None:
-                try:
-                    thickness_val = float(PipeParam3)
-                    if thickness_val >= 1.0:
-                        actual_PipeParam3 = 0.0127
-                        # print(f"[WARNING] HDF5 coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
-                    elif 0.005 <= thickness_val <= 0.025:
-                        actual_PipeParam3 = thickness_val
-                    else:
-                        actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
-                except (TypeError, ValueError):
-                    actual_PipeParam3 = 0.0127
-            else:
-                if PipeParam3 is not None:
-                    try:
-                        thickness_val = float(PipeParam3)
-                        if thickness_val >= 1.0:
-                            actual_PipeParam3 = 0.0127
-                            # print(f"[WARNING] SBT coaxial: PipeParam3={PipeParam3} looks like number of laterals, using default thickness={actual_PipeParam3} m", flush=True)
-                        elif 0.005 <= thickness_val <= 0.025:
-                            actual_PipeParam3 = thickness_val
-                        else:
-                            actual_PipeParam3 = max(0.005, min(0.025, thickness_val))
-                    except (TypeError, ValueError):
-                        actual_PipeParam3 = 0.0127
-                else:
-                    actual_PipeParam3 = 0.0127
+                actual_PipeParam5 = PipeParam5 if PipeParam5 is not None else 1
         else:
-            if PipeParam3 is not None:
-                try:
-                    laterals_val = float(PipeParam3)
-                    if laterals_val < 1.0 or laterals_val != int(laterals_val):
-                        actual_PipeParam3 = 1
-                        print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid (expected integer >= 1 for number of laterals), using default={actual_PipeParam3}", flush=True)
-                    else:
-                        actual_PipeParam3 = int(laterals_val)
-                except (TypeError, ValueError):
-                    actual_PipeParam3 = 1
-                    print(f"[WARNING] U-tube PipeParam3={PipeParam3} invalid, using default={actual_PipeParam3}", flush=True)
-            else:
-                actual_PipeParam3 = 1
-            
-            if PipeParam4 is not None:
-                try:
-                    lateral_flow_val = float(PipeParam4)
-                    if isinstance(PipeParam4, (list, tuple)):
-                        actual_PipeParam4 = PipeParam4
-                    elif 0.0 <= lateral_flow_val <= 1.0:
-                        actual_PipeParam4 = PipeParam4
-                    else:
-                        actual_PipeParam4 = max(0.0, min(1.0, lateral_flow_val))
-                        print(f"[WARNING] U-tube PipeParam4={PipeParam4} out of range (expected 0-1 for lateral flow allocation), clamped to {actual_PipeParam4}", flush=True)
-                except (TypeError, ValueError):
-                    actual_PipeParam4 = PipeParam4
-            else:
-                actual_PipeParam4 = PipeParam4
-            
-            if PipeParam5 is not None:
-                try:
-                    multiplier_val = float(PipeParam5)
-                    if 0.0 <= multiplier_val <= 1.0:
-                        actual_PipeParam5 = PipeParam5
-                    else:
-                        actual_PipeParam5 = max(0.0, min(1.0, multiplier_val))
-                        print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid (expected 0-1 for lateral flow multiplier), clamped to {actual_PipeParam5}", flush=True)
-                except (TypeError, ValueError):
-                    actual_PipeParam5 = 1.0
-                    print(f"[WARNING] U-tube PipeParam5={PipeParam5} invalid, using default={actual_PipeParam5}", flush=True)
-            else:
-                actual_PipeParam5 = 1.0
+            actual_PipeParam3 = PipeParam3
+            actual_PipeParam4 = PipeParam4
+            actual_PipeParam5 = PipeParam5
         
         (
             subplots,
