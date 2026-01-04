@@ -1099,22 +1099,6 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
 
 
 @app.callback(
-    Output(component_id="see-all-params-button-container", component_property="style"),
-    [Input(component_id="model-select", component_property="value")],
-    prevent_initial_call=False,
-)
-def show_hide_see_all_button(model):
-    if model is None:
-        return {"display": "none"}
-    elif model == "HDF5":
-        # No hidden parameters for database mode, so hide the button
-        return {"display": "none"}
-    else:
-        # Show button for SBT simulator models (SBT V1.0 and SBT V2.0)
-        return {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
-
-
-@app.callback(
     [
         Output(component_id="mesh-div", component_property="style", allow_duplicate=True),
         Output(component_id="pipe-roughness-container", component_property="style", allow_duplicate=True),
@@ -1463,16 +1447,16 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     ],
     [
         Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [
         State(component_id="fluid-selection-store", component_property="data"),
         State(component_id="fluid-select", component_property="value"),
         State(component_id="tabs", component_property="value"),
-        State(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def update_working_fluid(model, fluid_store, current_fluid, current_tab, case):
+def update_working_fluid(model, case, fluid_store, current_fluid, current_tab):
     if current_tab == "energy-tab":
         raise PreventUpdate
     
@@ -1721,6 +1705,8 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
         # Output(component_id='lateral-flow-select-div', component_property='style'),
         Output(component_id="pipe-roughness-container", component_property="style"),
         Output(component_id="component-performance-div", component_property="style"),
+        Output(component_id="see-all-params-button-container", component_property="style"),
+        Output(component_id="coaxial-flow-type-wrapper", component_property="style"),
     ],
     [
         Input(component_id="model-select", component_property="value"),
@@ -1731,20 +1717,23 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
 def show_model_params(model, case):
     b = {"display": "block"}
     n = {"display": "none"}
+    see_all_button_style = {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
 
     # Component Performance (Insulation Thermal Conductivity) only relevant for coaxial
     component_perf_style = n if case == "utube" else n  # Hidden by default, shown via "See all parameters" for coaxial
     
+    coaxial_flow_type_style = b if (model in ["SBT V1.0", "SBT V2.0"] and case == "coaxial") else n
+    
     if model == "HDF5":
-        return n, n, n, n, n, n, b, n, n, n, n, n
+        return n, n, n, n, n, n, b, n, n, n, n, n, n, n
 
     if model == "SBT V1.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, n, b, n, n, component_perf_style
+        return b, b, b, b, b, b, n, n, b, n, n, component_perf_style, see_all_button_style, coaxial_flow_type_style
 
     if model == "SBT V2.0":
         # lat-allo (Lateral Flow Allocation) unavailable for simulator
-        return b, b, b, b, b, b, n, b, b, n, b, component_perf_style
+        return b, b, b, b, b, b, n, b, b, n, b, component_perf_style, see_all_button_style, coaxial_flow_type_style
 
 
 @app.callback(
@@ -2035,23 +2024,6 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
                 return b, b, b, b, b, b, b, b, b, b, b, b, b
     else:
         raise PreventUpdate
-
-
-@app.callback(
-    Output(component_id="coaxial-flow-type-wrapper", component_property="style"),
-    [
-        Input(component_id="model-select", component_property="value"),
-        Input(component_id="case-select", component_property="value"),
-    ],
-)
-def show_hide_coaxial_flow_type(model, case):
-    """Show Coaxial Flow Type dropdown when Simulator is selected and case is coaxial"""
-    if model is None or case is None:
-        return {"display": "none"}
-    if model in ["SBT V1.0", "SBT V2.0"] and case == "coaxial":
-        return {"display": "block"}
-    else:
-        return {"display": "none"}
 
 
 @app.callback(
@@ -2348,15 +2320,15 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     [
-        State(component_id="model-select", component_property="value"),
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, store_data, case):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, case, store_data):
     """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
     if model is None or case is None:
         raise PreventUpdate
@@ -2470,10 +2442,10 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     ],
     [
         Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
+        Input(component_id="case-select", component_property="value"),
     ],
     [
         State(component_id="slider-values-store", component_property="data"),
-        State(component_id="case-select", component_property="value"),
         State(component_id="mdot-select", component_property="value"),
         State(component_id="L2-select", component_property="value"),
         State(component_id="L1-select", component_property="value"),
@@ -2484,7 +2456,7 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     ],
     prevent_initial_call=True,
 )
-def restore_slider_values(model, store_data, case, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
+def restore_slider_values(model, case, store_data, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
     """Restore slider values from store when model switches (not on initial load)"""
     if model is None:
         raise PreventUpdate
@@ -2962,10 +2934,10 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
 
 @app.callback(
     Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
-    Input(component_id="n-laterals-select", component_property="value"),
     [
-        State(component_id="model-select", component_property="value"),
-        State(component_id="case-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
@@ -2995,9 +2967,11 @@ def update_lateral_multiplier(n_laterals, model, case):
 
 @app.callback(
     Output(component_id="lateral-flow-select", component_property="value", allow_duplicate=True),
-    Input({"type": "lateral-flow-input", "index": ALL}, component_property="value"),
-    State(component_id="model-select", component_property="value"),
-    State(component_id="case-select", component_property="value"),
+    [
+        Input({"type": "lateral-flow-input", "index": ALL}, component_property="value"),
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+    ],
     prevent_initial_call=True,
 )
 def aggregate_lateral_flow_inputs(input_values, model, case):
@@ -3466,44 +3440,6 @@ def update_subsurface_results_plots(
                             new_cache = {"inputs": current_inputs, "outputs": outputs6}
                             request_id = current_request_id if current_request_id is not None else 0
                             return (*outputs6, request_id, new_cache)
-        
-        # Check cache first - if inputs match, return cached results immediately
-        # This prevents duplicate SBT/database calls when callback is triggered multiple times
-        if plot_inputs_cache and plot_inputs_cache.get("inputs"):
-            cached_inputs_raw = plot_inputs_cache.get("inputs", {})
-            cached_inputs = {k: canon(v) for k, v in cached_inputs_raw.items()}
-            
-            # Only use cache if model matches (to prevent returning HDF5 cache for SBT models)
-            cache_equal = current_inputs == cached_inputs and cached_inputs.get("model") == model
-            
-            if cache_equal:
-                # Inputs haven't changed, return cached outputs to avoid clearing/regenerating plots
-                cached_pack = plot_inputs_cache.get("outputs")
-                # cached_pack must be exactly 6-tuple: (figure, thermal_memory, mass, time, errors, TandP)
-                if cached_pack and len(cached_pack) == 6:
-                    cached_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp = cached_pack
-                    if cached_fig_dict and isinstance(cached_fig_dict, dict):
-                        figure_data = cached_fig_dict.get("data", [])
-                        if figure_data and len(figure_data) > 0:
-                            # Rebuild figure from cached data with new uirevision to force Dash update
-                            import plotly.graph_objects as go
-                            import time
-                            fig = go.Figure(cached_fig_dict)
-                            uirev = f"{L1}-{grad}-{Tinj}-{mdot}-{scale}-{model}-{case}-{fluid}-{current_request_id}"
-                            fig.update_layout(
-                                uirevision=uirev,
-                                datarevision=current_request_id if current_request_id is not None else time.time()
-                            )
-                            new_fig_dict = fig.to_dict()
-                            # Build outputs6 explicitly: (figure, thermal_memory, mass, time, errors, TandP)
-                            outputs6 = (new_fig_dict, cached_mem, cached_mass, cached_time, cached_errs, cached_tandp)
-                            new_cache = {
-                                "inputs": current_inputs,
-                                "outputs": outputs6
-                            }
-                            request_id = current_request_id if current_request_id is not None else 0
-                            return (*outputs6, request_id, new_cache)
-                    # If cached figure is invalid, fall through to regenerate
         
         # Convert pipe roughness from µm (UI) to meters (model)
         # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
