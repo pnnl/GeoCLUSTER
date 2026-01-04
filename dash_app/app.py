@@ -24,7 +24,7 @@ from fractions import Fraction
 # web app and interactive graphics libraries
 import dash
 import dash_bootstrap_components as dbc  # Adds bootstrap components for more web themes and templates
-import dash._callback_context as ctx
+# import dash._callback_context as ctx
 import dash_daq as daq  # Adds more data acquisition (DAQ) and controls to dash callbacks
 from dash import Dash, ctx, dcc, html, no_update
 from dash.dependencies import Input, Output, State, ALL, MATCH
@@ -3275,7 +3275,7 @@ def build_plot_params(
 ):
     
     print("build_plot_params")
-    triggered = ctx.callback_context.triggered if ctx.callback_context.triggered else []
+    triggered = ctx.triggered if ctx.triggered else []
     triggered_ids = [t["prop_id"].split(".")[0] for t in triggered] if triggered else []
     
     if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
@@ -4364,7 +4364,7 @@ if __name__ == "__main__":
         # host="127.0.0.1",
         port=8060,
         debug=True,  # needs to be False in production
-        ssl_context="adhoc",
+        # ssl_context="adhoc",
     )
 
     """
