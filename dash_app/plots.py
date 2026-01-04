@@ -928,10 +928,12 @@ def generate_subsurface_contours(interp_time, fluid, case, param, arg_mdot, arg_
         return filled_data
     
     # Fill NaN values in all contour arrays
-    kWe_avg_flipped = fill_contour_nans(kWe_avg_flipped)
-    kWt_avg_flipped = fill_contour_nans(kWt_avg_flipped)
-    Tout_flipped = fill_contour_nans(Tout_flipped)
-    Pout_flipped = fill_contour_nans(Pout_flipped)
+    # For coaxial, NULLs should not be filled in
+    if case != "coaxial":
+        kWe_avg_flipped = fill_contour_nans(kWe_avg_flipped)
+        kWt_avg_flipped = fill_contour_nans(kWt_avg_flipped)
+        Tout_flipped = fill_contour_nans(Tout_flipped)
+        Pout_flipped = fill_contour_nans(Pout_flipped)
     
     # Final verification: ensure no NaN or Inf values remain
     for name, data in [("kWe_avg", kWe_avg_flipped), ("kWt_avg", kWt_avg_flipped), 

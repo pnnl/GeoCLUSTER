@@ -403,12 +403,13 @@ class data:
                 PipeParam4 = [allocation_per_lateral] * num_laterals # PipeParam4 is lateralflowallocation in this case | e.g., [1/3,1/3,1/3]
 
             # Create cache key from all parameters
+            # PipeParam4 excluded from cache key
             cache_key = _make_cache_key(
                 sbt_version=sbt_version, mesh=mesh, hyperparam1=hyperparam1, hyperparam2=hyperparam2,
                 hyperparam3=hyperparam3, hyperparam4=hyperparam4, hyperparam5=hyperparam5,
                 accuracy=accuracy, case=case, mdot=mdot, Tinj=Tinj, fluid=fluid,
                 L1=L1, L2=L2, Diameter1=Diameter1, Diameter2=Diameter2,
-                PipeParam3=PipeParam3, PipeParam4=PipeParam4, PipeParam5=PipeParam5,
+                PipeParam3=PipeParam3, PipeParam5=PipeParam5,
                 Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
             )
             cache_key_saved = str(cache_key)
