@@ -2066,6 +2066,7 @@ def update_slider_ranges(model, case, store_data):
     )
     k_dict = create_steps(arg_arr=u_sCO2.k, str_round_place="{:.1f}", val_round_place=1)
     D_dict = create_steps(arg_arr=u_sCO2.D, str_round_place="{:.4f}", val_round_place=4)
+    D_dict[0.444] = '0.444'
 
     if store_data is None:
         store_data = {}
