@@ -3239,9 +3239,7 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
-    ],
-    [
-        State(component_id="slider-values-store", component_property="data"),
+        Input(component_id="slider-values-store", component_property="data"),
     ],
 )
 def build_plot_params(
@@ -3539,6 +3537,7 @@ def update_subsurface_results_plots(
         Input(component_id="k-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
     ],
+    prevent_initial_call=True,
 )
 def update_subsurface_contours_plots(
     interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, model
@@ -3555,6 +3554,7 @@ def update_subsurface_contours_plots(
     # Check for None values on initial load
     if fluid is None or case is None or param is None or mdot is None or L2 is None or L1 is None or Tinj is None or D is None or grad is None or k_m is None:
         raise PreventUpdate
+    
     subplots, err_subcontour_dict = generate_subsurface_contours(
         interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m
     )
