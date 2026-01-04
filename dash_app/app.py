@@ -2321,6 +2321,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
+        Input(component_id="inlet-pressure-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
         Input(component_id="case-select", component_property="value"),
     ],
@@ -2329,7 +2330,7 @@ def update_slider_ranges(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, mass_mode, model, case, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, mass_mode, inlet_pressure, model, case, store_data):
     if is_print:
         print("save_slider_values")
     """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
@@ -2357,8 +2358,12 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_v
         "diameter-lateral": diameter_lateral,
         "n-laterals": n_laterals,
         "lateral-multiplier": lateral_multiplier,
-        "inlet-pressure": mass_mode,  # For SBT V2.0, this is Inlet Pressure (MPa); for others it's a dropdown value
     })
+    
+    if model == "SBT V2.0":
+        case_bucket["inlet-pressure"] = inlet_pressure
+    else:
+        case_bucket["inlet-pressure"] = mass_mode
     
     if case != "coaxial":
         case_bucket["lateral-flow"] = lateral_flow
@@ -2605,9 +2610,9 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 DivID="num-lat-div",
                 ID="n-laterals-select",
                 ptitle="Number of Laterals",
-                min_v=1,
-                max_v=30,
-                start_v=n_laterals_val if n_laterals_val and n_laterals_val > 0 else 1,
+                min_v=0,
+                max_v=3,
+                start_v=n_laterals_val if n_laterals_val is not None and n_laterals_val >= 0 else 0,
                 step_i=1,
                 div_style=div_block_style,
                 parameter_name="Number of Laterals",
@@ -3101,7 +3106,19 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_none_style,  # Hidden for SBT V1.0
             parameter_name="Pipe Roughness (µm)",
         )
-        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
+        inlet_pressure = slider1(
+            DivID="inlet-pressure-div",
+            ID="inlet-pressure-select",
+            ptitle="Inlet Pressure (MPa)",
+            min_v=5,
+            max_v=20,
+            mark_dict=inlet_pressure_dict,
+            step_i=0.1,
+            start_v=start_vals_sbt["inletpressure"],
+            div_style=div_none_style,  # Hidden for SBT V1.0
+            parameter_name="Inlet Pressure (MPa)",
+        )
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
 
     elif model == "SBT V2.0":
         # Get saved inlet pressure value from store, checking current model first, then other models
@@ -3199,7 +3216,19 @@ def update_sliders_hyperparms(model, store_data):
             div_style=div_none_style,  # Hidden for HDF5
             parameter_name="Pipe Roughness (µm)",
         )
-        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, []
+        inlet_pressure = slider1(
+            DivID="inlet-pressure-div",
+            ID="inlet-pressure-select",
+            ptitle="Inlet Pressure (MPa)",
+            min_v=5,
+            max_v=20,
+            mark_dict=inlet_pressure_dict,
+            step_i=0.1,
+            start_v=start_vals_sbt["inletpressure"],
+            div_style=div_none_style,  # Hidden for HDF5
+            parameter_name="Inlet Pressure (MPa)",
+        )
+        return hyperparam1, hyperparam3, hyperparam5, pipe_roughness, inlet_pressure
     else:
         raise PreventUpdate
 
@@ -3239,6 +3268,7 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="inlet-pressure-select", component_property="value"),
         Input(component_id="slider-values-store", component_property="data"),
     ],
 )
@@ -3246,7 +3276,7 @@ def build_plot_params(
     interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
     radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
     lateral_flow, insulation_k, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
-    pipe_roughness, fluid_mode, slider_store
+    pipe_roughness, fluid_mode, inlet_pressure, slider_store
 ):
     
     if is_print:
@@ -3264,7 +3294,7 @@ def build_plot_params(
             interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
             radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
             param4_value, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
-            pipe_roughness, fluid_mode,
+            pipe_roughness, fluid_mode, inlet_pressure,
         ),
         "slider_store": slider_store,
     }
@@ -3325,13 +3355,35 @@ def update_subsurface_results_plots(
         interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m,
         scale, model, Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3,
         PipeParam4, PipeParam5, mesh, accuracy, mass_mode, temp_mode,
-        pipe_roughness, fluid_mode,
+        pipe_roughness, fluid_mode, inlet_pressure,
     ) = vals
     
-    HyperParam1 = mass_mode
+    if model == "SBT V2.0":
+        HyperParam1 = inlet_pressure
+    else:
+        HyperParam1 = mass_mode
     HyperParam3 = temp_mode
     HyperParam5 = fluid_mode
 
+    # Convert pipe roughness from µm (UI) to meters (model)
+    # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
+    if pipe_roughness is None:
+        pipe_roughness = 1  # Default to 1 µm
+    pipe_roughness_m = pipe_roughness * 1e-6
+    
+    # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
+    # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
+    if model == "SBT V2.0":
+        # Ensure HyperParam1 (Inlet Pressure) is a float
+        try:
+            hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
+        except (TypeError, ValueError):
+            hyperparam1_value = 20.0
+        # Use converted pipe roughness value in meters
+        hyperparam3_value = pipe_roughness_m
+    else:
+        hyperparam1_value = HyperParam1
+        hyperparam3_value = HyperParam3
 
     try:
         # Detect if multiple slider inputs changed at once (batch update from restore_slider_values)
@@ -3376,8 +3428,8 @@ def update_subsurface_results_plots(
             "coaxial_flow_type": PipeParam5 if (case == "coaxial" and PipeParam5 is not None) else None,
             "mesh": mesh,
             "accuracy": accuracy,
-            "HyperParam1": HyperParam1,
-            "HyperParam3": HyperParam3,
+            "HyperParam1": hyperparam1_value,
+            "HyperParam3": hyperparam3_value,
             "pipe_roughness": pipe_roughness,
             "HyperParam5": HyperParam5,
         }
@@ -3407,26 +3459,6 @@ def update_subsurface_results_plots(
                             new_cache = {"inputs": current_inputs, "outputs": outputs6}
                             request_id = current_request_id if current_request_id is not None else 0
                             return (*outputs6, request_id, new_cache)
-        
-        # Convert pipe roughness from µm (UI) to meters (model)
-        # pipe_roughness slider is in µm for the UI (1-3), model expects meters (1e-6 to 3e-6)
-        if pipe_roughness is None:
-            pipe_roughness = 1  # Default to 1 µm
-        pipe_roughness_m = pipe_roughness * 1e-6
-        
-        # For SBT V2.0: HyperParam1 = Inlet Pressure, HyperParam3 = Pipe Roughness
-        # For SBT V1.0: HyperParam1 = Mass Flow Rate Mode, HyperParam3 = Injection Temperature Mode
-        if model == "SBT V2.0":
-            # Ensure HyperParam1 (Inlet Pressure) is a float
-            try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
-            except (TypeError, ValueError):
-                hyperparam1_value = 20.0
-            # Use converted pipe roughness value in meters
-            hyperparam3_value = pipe_roughness_m
-        else:
-            hyperparam1_value = HyperParam1
-            hyperparam3_value = HyperParam3
         
         (
             subplots,
@@ -3608,6 +3640,7 @@ def update_subsurface_contours_plots(
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="inlet-pressure-select", component_property="value"),
     ],
 )
 def update_econ_plots(
@@ -3643,10 +3676,11 @@ def update_econ_plots(
     PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
     mesh,
     accuracy,
-    HyperParam1,
-    HyperParam3,
+    mass_mode,
+    temp_mode,
     pipe_roughness,
-    HyperParam5,
+    fluid_mode,
+    inlet_pressure,
 ):
     if is_print:
         print("update_econ_plots")
@@ -3676,14 +3710,14 @@ def update_econ_plots(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float (in MPa)
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 10.0
+                hyperparam1_value = float(inlet_pressure) if inlet_pressure is not None else 10.0
             except (TypeError, ValueError):
                 hyperparam1_value = 10.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
             hyperparam1_value = None  # Not used for HDF5 or SBT V1.0
-            hyperparam3_value = HyperParam3
+            hyperparam3_value = temp_mode
         
         economics_fig, econ_data_dict, econ_values_dict, err_econ_dict = (
             generate_econ_lineplots(
@@ -3795,6 +3829,7 @@ def update_plot_title(fluid, end_use, checklist):
         Input(component_id="temp-mode-select", component_property="data"),
         Input(component_id="pipe-roughness-select", component_property="value"),
         Input(component_id="fluid-mode-select", component_property="value"),
+        Input(component_id="inlet-pressure-select", component_property="value"),
     ],
 )
 def update_table(
@@ -3829,10 +3864,11 @@ def update_table(
     PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
     mesh,
     accuracy,
-    HyperParam1,
-    HyperParam3,
+    mass_mode,
+    temp_mode,
     pipe_roughness,
-    HyperParam5,
+    fluid_mode,
+    inlet_pressure,
 ):
     if is_print:
         print("update_table")
@@ -3856,14 +3892,14 @@ def update_table(
         if model == "SBT V2.0":
             # Ensure HyperParam1 (Inlet Pressure) is a float
             try:
-                hyperparam1_value = float(HyperParam1) if HyperParam1 is not None else 20.0
+                hyperparam1_value = float(inlet_pressure) if inlet_pressure is not None else 20.0
             except (TypeError, ValueError):
                 hyperparam1_value = 20.0
             # Use converted pipe roughness value in meters
             hyperparam3_value = pipe_roughness_m
         else:
-            hyperparam1_value = HyperParam1
-            hyperparam3_value = HyperParam3
+            hyperparam1_value = mass_mode
+            hyperparam3_value = temp_mode
         
         # Add TandP data to thermal_dict for SBT models
         if model != "HDF5" and tandp_data:
@@ -3891,9 +3927,9 @@ def update_table(
                 "mesh": mesh if mesh is not None else "-",
                 "accuracy": accuracy if accuracy is not None else "-",
                 "pipe_roughness": pipe_roughness if pipe_roughness is not None else "-",
-                "HyperParam1": HyperParam1 if HyperParam1 is not None else "-",
-                "HyperParam3": HyperParam3 if HyperParam3 is not None else "-",
-                "HyperParam5": HyperParam5 if HyperParam5 is not None else "-",
+                "HyperParam1": hyperparam1_value if hyperparam1_value is not None else "-",
+                "HyperParam3": hyperparam3_value if hyperparam3_value is not None else "-",
+                "HyperParam5": fluid_mode if fluid_mode is not None else "-",
                 "case": case if case is not None else "-",
                 "fluid": fluid if fluid is not None else "-",
             }

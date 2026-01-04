@@ -527,15 +527,20 @@ class data:
                 PipeParam4 = [allocation_per_lateral] * num_laterals # PipeParam4 is lateralflowallocation in this case | e.g., [1/3,1/3,1/3]
 
             # Create cache key from all parameters
-            # PipeParam4 excluded from cache key
-            cache_key = _make_cache_key(
-                sbt_version=sbt_version, mesh=mesh, hyperparam1=hyperparam1, hyperparam2=hyperparam2,
-                hyperparam3=hyperparam3, hyperparam4=hyperparam4, hyperparam5=hyperparam5,
-                accuracy=accuracy, case=case, mdot=mdot, Tinj=Tinj, fluid=fluid,
-                L1=L1, L2=L2, Diameter1=Diameter1, Diameter2=Diameter2,
-                PipeParam3=PipeParam3, PipeParam5=PipeParam5,
-                Tsurf=Tsurf, grad=grad, k=k, c_m=c_m, rho_m=rho_m
-            )
+            # For coaxial (case == 1), PipeParam4 is insulation thermal conductivity and must be included in cache key
+            # For utube (case == 2), PipeParam4 is derived from PipeParam3, so it's excluded from cache key
+            cache_key_kwargs = {
+                "sbt_version": sbt_version, "mesh": mesh, "hyperparam1": hyperparam1, "hyperparam2": hyperparam2,
+                "hyperparam3": hyperparam3, "hyperparam4": hyperparam4, "hyperparam5": hyperparam5,
+                "accuracy": accuracy, "case": case, "mdot": mdot, "Tinj": Tinj, "fluid": fluid,
+                "L1": L1, "L2": L2, "Diameter1": Diameter1, "Diameter2": Diameter2,
+                "PipeParam3": PipeParam3, "PipeParam5": PipeParam5,
+                "Tsurf": Tsurf, "grad": grad, "k": k, "c_m": c_m, "rho_m": rho_m
+            }
+            # Include PipeParam4 in cache key for coaxial models (insulation thermal conductivity)
+            if case == 1:  # coaxial
+                cache_key_kwargs["PipeParam4"] = PipeParam4
+            cache_key = _make_cache_key(**cache_key_kwargs)
             cache_key_saved = str(cache_key)
 
             with _computation_lock:

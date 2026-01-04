@@ -358,7 +358,10 @@ def slider_card():
                                                             ]),
                                                     html.Div(
                                                         id="inlet-pressure-container",
-                                                        children=[]
+                                                        children=[
+                                                            slider1(DivID="inlet-pressure-div", ID="inlet-pressure-select", ptitle="Inlet Pressure (MPa)", min_v=5, max_v=20,
+                                                                    mark_dict=inlet_pressure_dict, step_i=0.1, start_v=start_vals_sbt["inletpressure"], div_style=div_none_style, parameter_name="Inlet Pressure (MPa)")
+                                                        ]
                                                     ),
                                                     html.Div(
                                                         id="hyperparam5-container",
