@@ -474,6 +474,7 @@ class data:
             Tout = Tout[14:]
             Pout = Pout[14:]
 
+        print(" ******* model run")
         return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):

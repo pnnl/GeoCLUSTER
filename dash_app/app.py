@@ -50,6 +50,7 @@ from info_popups import (
 )
 from write2excel import write_excelsheet
 
+print(" ============= App start =============")
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
 #
