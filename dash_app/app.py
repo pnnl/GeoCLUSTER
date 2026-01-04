@@ -1089,12 +1089,9 @@ def toggle_collapse(n, is_open):
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
     ],
-    [
-        State(component_id="fluid-select", component_property="value"),
-    ],
     prevent_initial_call=True,
 )
-def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_state):
+def update_model_based_on_fluid_and_selection(fluid, model_selection):
     if is_print:
         print("update_model_based_on_fluid_and_selection")
     """
@@ -1106,8 +1103,8 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     # Determine which input triggered the callback
     trigger_id = ctx.triggered_id if ctx.triggered_id else None
     
-    # Get current fluid value (use the one from the input, not state)
-    current_fluid = fluid if fluid is not None else fluid_state
+    # Get current fluid value
+    current_fluid = fluid
     
     # Get updated options based on current fluid
     new_options = get_model_options(current_fluid)
@@ -1410,46 +1407,6 @@ def switch_tab_on_model_change(model, current_tab):
 
 
 @app.callback(
-    [
-        Output(
-            component_id="fluid-select", component_property="value", allow_duplicate=True
-        ),
-        Output(component_id="fluid-selection-store", component_property="data", allow_duplicate=True),
-    ],
-    [
-        Input(component_id="tabs", component_property="value"),
-        Input(component_id="btn-nclicks-1", component_property="n_clicks"),
-        Input(component_id="btn-nclicks-3", component_property="n_clicks"),
-        Input(component_id="fluid-select", component_property="value"),
-    ],
-    [State(component_id="fluid-selection-store", component_property="data")],
-    prevent_initial_call=True,
-)
-def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
-    if is_print:
-        print("retain_entry_between_tabs")
-    trigger_id = ctx.triggered_id if ctx.triggered else None
-    
-    if trigger_id in ["btn-nclicks-1", "btn-nclicks-3"]:
-        if fluid == "All" or fluid is None:
-            if fluid_store is None:
-                fluid_store = {"preferred": "All", "last_specific": "H2O"}
-            return "H2O", fluid_store
-    
-    if trigger_id not in ["tabs", None]:
-        raise PreventUpdate
-    
-    if tab == "energy-tab":
-        if fluid == "All" or fluid is None:
-            if fluid_store is None:
-                fluid_store = {"preferred": "All", "last_specific": "H2O"}
-            return "H2O", fluid_store
-        return fluid, fluid_store
-    
-    raise PreventUpdate
-
-
-@app.callback(
     Output(component_id="end-use-select", component_property="value"),
     [
         Input(component_id="tabs", component_property="value"),
@@ -1477,59 +1434,6 @@ def flip_to_tab(tab, btn1, btn3, end_use):
 
 @app.callback(
     [
-        Output(
-            component_id="fluid-select",
-            component_property="value",
-            allow_duplicate=True,
-        ),
-        Output(
-            component_id="fluid-select",
-            component_property="options",
-            allow_duplicate=True,
-        ),
-    ],
-    [
-        Input(component_id="model-select", component_property="value"),
-        Input(component_id="case-select", component_property="value"),
-    ],
-    [
-        State(component_id="fluid-selection-store", component_property="data"),
-        State(component_id="fluid-select", component_property="value"),
-        State(component_id="tabs", component_property="value"),
-    ],
-    prevent_initial_call=True,
-)
-def update_working_fluid(model, case, fluid_store, current_fluid, current_tab):
-    if is_print:
-        print("update_working_fluid")
-    if current_tab == "energy-tab":
-        raise PreventUpdate
-    
-    if model in ("HDF5", "SBT V2.0", "SBT V1.0"):
-        if ctx.triggered_id == "model-select":
-            if fluid_store is None:
-                fluid_store = {"preferred": "All", "last_specific": "H2O"}
-            preferred = fluid_store.get("preferred", "All")
-            last_specific = fluid_store.get("last_specific", "H2O")
-            
-            fluid_list = ["All", "H2O", "sCO2"]
-            
-            if preferred in fluid_list:
-                selected_fluid = preferred
-            elif last_specific in fluid_list:
-                selected_fluid = last_specific
-            else:
-                selected_fluid = fluid_list[0] if fluid_list else "H2O"
-            
-            return selected_fluid, [{"label": i, "value": i} for i in fluid_list]
-        else:
-            raise PreventUpdate
-    else:
-        raise PreventUpdate
-
-
-@app.callback(
-    [
         Output(component_id="fluid-select", component_property="options"),
         Output(component_id="fluid-select", component_property="value"),
         Output(component_id="interpolation-select", component_property="options"),
@@ -1541,37 +1445,73 @@ def update_working_fluid(model, case, fluid_store, current_fluid, current_tab):
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
         Input(component_id="case-select", component_property="value"),
+        Input(component_id="btn-nclicks-1", component_property="n_clicks"),
+        Input(component_id="btn-nclicks-3", component_property="n_clicks"),
     ],
     [
         State(component_id="fluid-selection-store", component_property="data"),
     ],
+    prevent_initial_call=True,
 )
-def change_dropdown(at, fluid, model, case, fluid_store):
+def change_dropdown(at, fluid, model, case, btn1, btn3, fluid_store):
     if is_print:
         print("change_dropdown")
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
+    trigger_id = ctx.triggered_id if ctx.triggered_id else None
+
+    if fluid_store is None:
+        fluid_store = {"preferred": "All", "last_specific": "H2O"}
+
+    if trigger_id in ["btn-nclicks-1", "btn-nclicks-3"]:
+        if fluid == "All" or fluid is None:
+            preferred = fluid_store.get("preferred", "All")
+            last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
+            new_store = {"preferred": preferred, "last_specific": last_specific}
+            fluid_list = ["All", "H2O", "sCO2"]
+            interpol_list = ["True"]
+            return (
+                [{"label": i, "value": i} for i in fluid_list],
+                "H2O",
+                [{"label": i, "value": i} for i in interpol_list],
+                interpol_list[0],
+                new_store,
+            )
+
     if at == "energy-tab":
-        if fluid_store is None:
-            fluid_store = {"preferred": "All", "last_specific": "H2O"}
         last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
         selected_fluid = fluid if fluid in ["H2O", "sCO2"] else last_specific
         if selected_fluid not in ["H2O", "sCO2"]:
             selected_fluid = "H2O"
-        # Create options WITHOUT "All" - hardcode to ensure it's never there
         fluid_options = [{"label": "H2O", "value": "H2O"}, {"label": "sCO2", "value": "sCO2"}]
         interpol_options = [{"label": "True", "value": "True"}]
         new_store = {"preferred": fluid_store.get("preferred", "All"), "last_specific": last_specific}
         return (fluid_options, selected_fluid, interpol_options, "True", new_store)
 
-    if fluid_store is None:
-        fluid_store = {"preferred": "All", "last_specific": "H2O"}
+    if trigger_id == "model-select" and at != "energy-tab":
+        preferred = fluid_store.get("preferred", "All")
+        last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
+        fluid_list = ["All", "H2O", "sCO2"]
+        if preferred in fluid_list:
+            selected_fluid = preferred
+        elif last_specific in fluid_list:
+            selected_fluid = last_specific
+        else:
+            selected_fluid = fluid_list[0] if fluid_list else "H2O"
+        interpol_list = ["True"]
+        new_store = {"preferred": preferred, "last_specific": last_specific}
+        return (
+            [{"label": i, "value": i} for i in fluid_list],
+            selected_fluid,
+            [{"label": i, "value": i} for i in interpol_list],
+            interpol_list[0],
+            new_store,
+        )
 
     preferred = fluid_store.get("preferred", "All")
     last_specific = fluid_store.get("last_specific", "H2O") or "H2O"
     new_store = {"preferred": preferred, "last_specific": last_specific}
-    trigger_id = ctx.triggered_id
 
     if trigger_id == "fluid-select" and fluid is not None:
         new_store["preferred"] = fluid
@@ -1581,7 +1521,6 @@ def change_dropdown(at, fluid, model, case, fluid_store):
         last_specific = new_store["last_specific"]
 
     fluid_list = ["All", "H2O", "sCO2"]
-
     interpol_list = ["True"]
     selected_fluid = fluid if fluid is not None else preferred
 
@@ -1589,7 +1528,6 @@ def change_dropdown(at, fluid, model, case, fluid_store):
         selected_fluid = preferred
 
     fluid_options = [{"label": i, "value": i} for i in fluid_list]
-    
     interpol_options = [{"label": i, "value": i} for i in interpol_list]
 
     if trigger_id == "tabs":
