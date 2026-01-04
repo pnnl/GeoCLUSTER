@@ -120,10 +120,8 @@ start_vals_d = {"mdot": 30.0, "L2": 10000, "L1": 3500 , "Tinj": 55.0, "grad": 0.
 # start_vals_d = {"mdot": 20.0, "L2": 1000, "L1": 2000 , "grad": 0.05, "D": 0.2280, "Tinj": 20.0, "k": 2.83} #
 start_vals_sbt = {"mesh": 0, "accuracy": 1, "mass-mode": 0, "temp-mode": 0,
                     "diameter-vertical": 0.3500, "diameter-lateral": 0.3500,
-                    "radius": 0.2286,
-                    "radiuscenterpipe": 0.127, 
                     "thicknesscenterpipe": 0.0192,
-                    "k_center_pipe": 0.006,
+                    "k_center_pipe": 0.025,  # Default from README - Insulation Thermal Conductivity
                     "coaxialflowtype": 1,
                     "inletpressure": 20,
                     "piperoughness": 1  # 1 µm (display value), actual value in meters is 1e-6
@@ -168,6 +166,7 @@ def slider1(DivID, ID, ptitle, min_v, max_v, mark_dict, step_i, start_v, div_sty
                        marks=mark_dict, 
                        step=step_i,
                        value=start_v,
+                       updatemode="drag",
                        tooltip={"placement": "bottom", "always_visible": True}),
                        ]
                     )

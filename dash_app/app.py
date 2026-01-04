@@ -2320,6 +2320,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="diameter-lateral-select", component_property="value"),
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
         Input(component_id="model-select", component_property="value"),
@@ -2330,17 +2331,17 @@ def update_slider_ranges(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier, mass_mode, model, case, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, mass_mode, model, case, store_data):
     """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
     if model is None or case is None:
         raise PreventUpdate
     
     if store_data is None:
         store_data = {}
-
+    
     model_bucket = store_data.get(model, {})
     case_bucket = model_bucket.get(case, {}).copy()
-
+    
     case_bucket.update({
         "mdot": mdot,
         "L2": L2,
@@ -2355,19 +2356,20 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_v
         "diameter-vertical": diameter_vertical,
         "diameter-lateral": diameter_lateral,
         "n-laterals": n_laterals,
-        "lateral-flow": lateral_flow,
         "lateral-multiplier": lateral_multiplier,
         "inlet-pressure": mass_mode,  # For SBT V2.0, this is Inlet Pressure (MPa); for others it's a dropdown value
     })
-
-    if case == "coaxial":
+    
+    if case != "coaxial":
+        case_bucket["lateral-flow"] = lateral_flow
+    elif case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+        if insulation_k is not None and isinstance(insulation_k, (int, float)):
+            case_bucket["coaxial-insulation-k"] = insulation_k
         if n_laterals is not None:
             case_bucket["thicknesscenterpipe"] = n_laterals
-        if lateral_flow is not None and isinstance(lateral_flow, (int, float)):
-            case_bucket["coaxial-insulation-k"] = lateral_flow
         if lateral_multiplier is not None and isinstance(lateral_multiplier, str):
             case_bucket["coaxial-flow-type"] = lateral_multiplier
-
+    
     model_bucket[case] = case_bucket
     store_data[model] = model_bucket
     
@@ -2686,21 +2688,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 div_style=div_block_style,
             )
 
-            saved_insulation_k = get_saved_value("coaxial-insulation-k", start_vals_sbt, "k_center_pipe")
-            if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
-                saved_insulation_k = start_vals_sbt["k_center_pipe"]
-            
-            k_center_pipe = slider1(
-                DivID="lateral-flow-select-div",
-                ID="lateral-flow-select",
-                ptitle="Insulation Thermal Conductivity (W/m-°C)",
-                min_v=0.025,
-                max_v=0.5,
-                mark_dict=insulation_thermal_k_dict,
-                step_i=0.001,
-                start_v=saved_insulation_k,
-                div_style=div_block_style,
-            )
+            k_center_pipe = lateral_flow_placeholder(value=1.0, style=div_none_style)
             
             saved_flow_type = get_saved_value("coaxial-flow-type", {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
             if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
@@ -2842,8 +2830,11 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
     # Check what triggered this callback
     triggered_id = ctx.triggered[0]["prop_id"].split(".")[0] if ctx.triggered else None
     
-    # If case-select triggered and we're switching to coaxial, only update lateral-flow and lateral-multiplier
-    if triggered_id == "case-select" and case == "coaxial":
+    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    
+    # If case-select triggered, restore values for the new case
+    if triggered_id == "case-select":
         if store_data is None:
             store_data = {}
         
@@ -2861,21 +2852,31 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
                 return current_value
             return default_dict.get(default_key)
         
-        saved_insulation_k = get_value("coaxial-insulation-k", None, start_vals_sbt, "k_center_pipe")
-        if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
-            saved_insulation_k = start_vals_sbt["k_center_pipe"]
-        lateral_flow = saved_insulation_k
-        
-        saved_flow_type = get_value("coaxial-flow-type", None, {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
-        if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
-            saved_flow_type = "Inject in Annulus"
-        lateral_multiplier = saved_flow_type
-        
-        # Only update lateral-flow and lateral-multiplier, keep others unchanged
-        if current_lateral_flow == lateral_flow and current_lateral_multiplier == lateral_multiplier:
-            raise PreventUpdate
-        
-        return current_diameter_vertical, current_diameter_lateral, current_n_laterals, lateral_flow, lateral_multiplier
+        if case == "coaxial":
+            saved_flow_type = get_value("coaxial-flow-type", None, {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
+            if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+                saved_flow_type = "Inject in Annulus"
+            lateral_multiplier = saved_flow_type
+            
+            if current_lateral_multiplier == lateral_multiplier:
+                raise PreventUpdate
+            
+            from dash import no_update
+            return current_diameter_vertical, current_diameter_lateral, current_n_laterals, no_update, lateral_multiplier
+        else:
+            # For utube, restore lateral flow allocation and multiplier
+            lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
+            n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
+            if n_laterals is not None and n_laterals > 0:
+                lateral_multiplier = 1.0 / n_laterals
+            else:
+                lateral_multiplier = get_value("lateral-multiplier", current_lateral_multiplier, start_vals_hdf5, "lateral-multiplier")
+            
+            # Only update lateral-flow and lateral-multiplier, keep others unchanged
+            if current_lateral_flow == lateral_flow and current_lateral_multiplier == lateral_multiplier:
+                raise PreventUpdate
+            
+            return current_diameter_vertical, current_diameter_lateral, current_n_laterals, lateral_flow, lateral_multiplier
     
     # For model-select changes, restore all sliders (existing behavior)
     if triggered_id != "model-select":
@@ -2909,15 +2910,18 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
     n_laterals = get_value("n-laterals", current_n_laterals, start_vals_hdf5, "n-laterals")
     
     if case == "coaxial":
-        saved_insulation_k = get_value("coaxial-insulation-k", None, start_vals_sbt, "k_center_pipe")
-        if saved_insulation_k is None or not isinstance(saved_insulation_k, (int, float)) or saved_insulation_k < 0.025 or saved_insulation_k > 0.5:
-            saved_insulation_k = start_vals_sbt["k_center_pipe"]
-        lateral_flow = saved_insulation_k
+        from dash import no_update
         
         saved_flow_type = get_value("coaxial-flow-type", None, {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
         if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
             saved_flow_type = "Inject in Annulus"
         lateral_multiplier = saved_flow_type
+        
+        # Only update if flow type changed
+        if current_lateral_multiplier == lateral_multiplier:
+            raise PreventUpdate
+        
+        return diameter_vertical, diameter_lateral, n_laterals, no_update, lateral_multiplier
     else:
         lateral_flow = get_value("lateral-flow", current_lateral_flow, start_vals_hdf5, "lateral-flow")
         if n_laterals is not None and n_laterals > 0:
@@ -3035,77 +3039,12 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     
     Note: Lateral Flow Allocation is unavailable for simulator (SBT) models.
     """
+    if case == "coaxial":
+        raise PreventUpdate
+    
     # Lateral Flow Allocation is unavailable for all models (always return placeholder)
     from sliders import div_none_style
     return lateral_flow_placeholder(style=div_none_style)
-    
-    from info_popups import create_info_button
-    from sliders import div_block_style
-    from fractions import Fraction
-    
-    info_button = create_info_button("Lateral Flow Allocation")
-    num_laterals = int(n_laterals) if n_laterals and n_laterals > 0 else 1
-    allocation_per_lateral = 1.0 / num_laterals if num_laterals > 0 else 1.0
-    
-    saved_values = None
-    if store_data and model in store_data and case in store_data[model] and "lateral-flow" in store_data[model][case]:
-        saved_values = store_data[model][case]["lateral-flow"]
-    
-    lateral_flow_inputs = []
-    for i in range(num_laterals):
-        # Use saved value if it's a list and has enough elements, otherwise use equal distribution
-        if isinstance(saved_values, list) and i < len(saved_values):
-            input_value_decimal = saved_values[i]
-        else:
-            input_value_decimal = allocation_per_lateral
-        
-        # Convert to fraction string for display (e.g., 0.333 -> "1/3")
-        try:
-            frac = Fraction(input_value_decimal).limit_denominator(10)
-            if frac.denominator == 1:
-                fraction_str = str(frac.numerator)
-            else:
-                fraction_str = f"{frac.numerator}/{frac.denominator}"
-        except:
-            fraction_str = str(round(input_value_decimal, 3))
-        
-        lateral_flow_inputs.append(
-            dcc.Input(
-                id={"type": "lateral-flow-input", "index": i},
-                value=fraction_str,
-                type='text',
-                placeholder=fraction_str,
-                className="input-box",
-                disabled=True,
-                style={"width": "60px", "marginRight": "5px"}
-            )
-        )
-    
-    # Hidden input to store aggregated value for callbacks (decimal format)
-    hidden_lateral_flow = dcc.Input(
-        id="lateral-flow-select",
-        value=allocation_per_lateral,
-        type='number',
-        style={"position": "absolute", "left": "-9999px", "visibility": "hidden"}
-    )
-    
-    lateral_flow = html.Div(
-        id="lat-allocation-div",
-        style=div_block_style,
-        className="name-input-container",
-        children=[
-            html.Div(className="title-button-container", style={"display": "flex", "justifyContent": "flex-start", "alignItems": "center"}, children=[
-                html.P("Lateral Flow Allocation", className="input-title", style={"margin": 0}),
-                info_button
-            ]),
-            html.Div(
-                style={"display": "flex", "flexWrap": "wrap", "gap": "5px", "alignItems": "center", "marginTop": "8px"},
-                children=[hidden_lateral_flow] + lateral_flow_inputs
-            )
-        ]
-    )
-    
-    return lateral_flow
 
 
 @app.callback(
@@ -3281,6 +3220,7 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="diameter-lateral-select", component_property="value"),
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
@@ -3296,14 +3236,23 @@ def update_sliders_hyperparms(model, store_data):
 def build_plot_params(
     interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
     radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
-    lateral_flow, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+    lateral_flow, insulation_k, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
     pipe_roughness, fluid_mode, slider_store
 ):
+    import dash._callback_context as ctx
+    triggered = ctx.callback_context.triggered if ctx.callback_context.triggered else []
+    triggered_ids = [t["prop_id"].split(".")[0] for t in triggered] if triggered else []
+    
+    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+        param4_value = insulation_k if insulation_k is not None else lateral_flow
+    else:
+        param4_value = lateral_flow
+    
     return {
         "vals": (
             interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
             radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
-            lateral_flow, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+            param4_value, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
             pipe_roughness, fluid_mode,
         ),
         "slider_store": slider_store,
@@ -3312,7 +3261,9 @@ def build_plot_params(
 
 @app.callback(
     Output(component_id="plot-run-trigger", component_property="data"),
-    Input(component_id="plot-params-store", component_property="data"),
+    [
+        Input(component_id="plot-params-store", component_property="data"),
+    ],
     prevent_initial_call=True,
 )
 def trigger_plot_run(params):
@@ -3368,25 +3319,12 @@ def update_subsurface_results_plots(
     HyperParam3 = temp_mode
     HyperParam5 = fluid_mode
 
-    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
-        if PipeParam4 is not None and isinstance(PipeParam4, (int, float)):
-            if (PipeParam4 < 0.025) or (PipeParam4 > 0.5):
-                if store_data and model in store_data and case in store_data[model]:
-                    saved_insulation_k = store_data[model][case].get("coaxial-insulation-k")
-                    if saved_insulation_k is not None:
-                        PipeParam4 = saved_insulation_k
-                elif store_data:
-                    for other_model in ["SBT V2.0", "SBT V1.0"]:
-                        if other_model in store_data and case in store_data[other_model]:
-                            saved_insulation_k = store_data[other_model][case].get("coaxial-insulation-k")
-                            if saved_insulation_k is not None:
-                                PipeParam4 = saved_insulation_k
-                                break
 
     try:
         # Detect if multiple slider inputs changed at once (batch update from restore_slider_values)
         # If so, check cache first to avoid multiple runs
         triggered = ctx.triggered if ctx.triggered else []
+        triggered_ids = [t["prop_id"].split(".")[0] for t in triggered] if triggered else []
         slider_inputs = ["mdot-select", "L2-select", "L1-select", "grad-select", "diameter-select", "Tinj-select", "k-select"]
         triggered_sliders = [t["prop_id"] for t in triggered if any(slider in t["prop_id"] for slider in slider_inputs)]
         
@@ -3432,8 +3370,9 @@ def update_subsurface_results_plots(
         }
         current_inputs = {k: canon(v) for k, v in current_inputs_raw.items()}
         
-        # Always check cache first (not just for batch updates) to prevent duplicate runs
-        if plot_inputs_cache and plot_inputs_cache.get("inputs"):
+        use_plot_cache = False
+        
+        if use_plot_cache and plot_inputs_cache and plot_inputs_cache.get("inputs"):
             cached_inputs_raw = plot_inputs_cache.get("inputs", {})
             cached_inputs = {k: canon(v) for k, v in cached_inputs_raw.items()}
             # Ensure model matches - don't return cache from different model
