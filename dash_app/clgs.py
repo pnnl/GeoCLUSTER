@@ -134,6 +134,87 @@ class data:
         if fluid == "H2O":
             self.CP_fluid = "H2O"
 
+    # # Andrea's code
+    # def get_parameter_indices(self, array, target):
+    #     """
+    #     returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
+    #     I.E if array is [1, 2, 3] and you give it 1.5, the points around 1.5 are [1, 2], so it will return the indices of [1,2], which are [0, 1].
+    #     However, since we need to use this indices to slice into the 8D matrix, we return a slice object that will slice indices.
+
+    #     if the array contains the target exactly, it'll just return a slice for getting specifically that point.
+
+    #     If we pass in "all" as the target, it will return a slice that will slice the entirety of that array
+    #     """
+
+    #     if target == "all":
+    #         return slice(None)  # slice all of the points
+    #     # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
+    #     # Suppress warning for SBT models which use different parameter ranges
+    #     # Only warn if value is slightly outside range (interpolation case), not way outside (SBT case)
+    #     if target < array[0] or target > array[-1]:
+    #         # Check if value is way outside range (likely SBT model) - suppress warning
+    #         array_range = array[-1] - array[0]
+    #         if target < array[0] - array_range * 0.1 or target > array[-1] + array_range * 0.1:
+    #             # Value is significantly outside range, likely SBT model - don't warn
+    #             pass
+    #         else:
+    #             # Value is slightly outside range, might be interpolation - warn
+    #             lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+    #         # raise Exception(
+    #         #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+    #         # )
+    #     for i, value in enumerate(array):
+    #         if value == target:
+    #             return slice(i, i + 1)
+    #         if value > target:
+    #             return slice(i - 1, i + 1)
+
+    def get_parameter_indices(self, array, target):
+        """
+        returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
+        I.E if array is [1, 2, 3] and you give it 1.5, the points around 1.5 are [1, 2], so it will return the indices of [1,2], which are [0, 1].
+        However, since we need to use this indices to slice into the 8D matrix, we return a slice object that will slice indices.
+
+        if the array contains the target exactly, it'll just return a slice for getting specifically that point.
+
+        If we pass in "all" as the target, it will return a slice that will slice the entirety of that array
+        """
+
+        if target == "all":
+            return slice(None)  # slice all of the points
+        # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
+        if target < array[0] or target > array[-1]:
+            lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+            print(lineprint)
+            # raise Exception(
+            #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+            # )
+        for i, value in enumerate(array):
+            if value == target:
+                return slice(i, i + 1)
+            if value > target:
+                return slice(i - 1, i + 1)
+
+
+    def read_values_around_point_for_interpolation(
+        self, zarr_array, point, parameter_values
+    ):
+        print("read_values_around_point_for_interpolation")
+        """
+        reads the values around the given point(s) for interpolation from the passed in zarr_array.
+        If "all" is passed in as any of the coordinates of the point,
+        then it'll slice across the entirety of that coordinate's dimension
+        """
+        indices = [
+            self.get_parameter_indices(params, value)
+            for value, params in zip(point, parameter_values)
+        ]
+        data = zarr_array[
+            tuple(indices)
+        ]  # need to convert into into a tuple or zarr thinks we're doing fancy indexing
+        return indices, data
+
+    # Andrea's code
     def get_parameter_indices(self, array, target):
         """
         returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
@@ -168,6 +249,32 @@ class data:
             if value > target:
                 return slice(i - 1, i + 1)
 
+    # def get_parameter_indices(self, array, target):
+    #     """
+    #     returns the slice that would give you the points in the given array around target. Assumes that array is sorted.
+    #     I.E if array is [1, 2, 3] and you give it 1.5, the points around 1.5 are [1, 2], so it will return the indices of [1,2], which are [0, 1].
+    #     However, since we need to use this indices to slice into the 8D matrix, we return a slice object that will slice indices.
+
+    #     if the array contains the target exactly, it'll just return a slice for getting specifically that point.
+
+    #     If we pass in "all" as the target, it will return a slice that will slice the entirety of that array
+    #     """
+
+    #     if target == "all":
+    #         return slice(None)  # slice all of the points
+    #     # NOTE: PROBLEM CLAUSE FOR NOT ALLOWING GEOGRAD TO BE MORE THAN 0.7
+    #     if target < array[0] or target > array[-1]:
+    #         lineprint = f"Warning: expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+    #         print(lineprint)
+    #         # raise Exception(
+    #         #     f"expected given value {target} to be between min and max of given array ({array[0], array[-1]})"
+    #         # )
+    #     for i, value in enumerate(array):
+    #         if value == target:
+    #             return slice(i, i + 1)
+    #         if value > target:
+    #             return slice(i - 1, i + 1)
+
     def read_values_around_point_for_interpolation(
         self, zarr_array, point, parameter_values
     ):
@@ -185,6 +292,47 @@ class data:
         ]  # need to convert into into a tuple or zarr thinks we're doing fancy indexing
         return indices, data
 
+    # Andrea's code
+    # def interpolate_points(self, zarr_array, point_to_read_around, points):
+    #     """
+    #     Reads in only the data directly around points_to_read_around from zarr_array and interpolates the passed in points on that data.
+    #     Essentially a wrapper around interpn where we only read the data we need.
+    #     Alot of the data from the original zarr_array is not needed for interpolation since the default linear interpolation method of interpn only needs the corners of the hypercube around a given point to interpolate it's value
+    #     Instead of the entire 8D parameter space.
+    #     """
+    #     indices, values_around_point = self.read_values_around_point_for_interpolation(
+    #         zarr_array, point_to_read_around, self.ivars
+    #     )
+    #     grid = [
+    #         params[these_indices] for these_indices, params in zip(indices, self.ivars)
+    #     ]
+
+    #     points_array = np.array(points, dtype=float)
+    #     if points_array.ndim == 1:
+    #         points_array = points_array.reshape(1, -1)
+        
+    #     for i, g in enumerate(grid):
+    #         if len(g) > 0:
+    #             lo = float(np.min(g))
+    #             hi = float(np.max(g))
+    #             points_array[:, i] = np.clip(points_array[:, i], lo, hi)
+        
+    #     if isinstance(points, list):
+    #         points_clamped = points_array.tolist()
+    #     else:
+    #         points_clamped = points_array
+
+    #     interpolated_points = interpn(
+    #         grid, 
+    #         values_around_point, 
+    #         points_clamped,
+    #         method="linear",
+    #         bounds_error=False,
+    #         fill_value=None
+    #     )
+
+    #     return interpolated_points
+
     def interpolate_points(self, zarr_array, point_to_read_around, points):
         """
         Reads in only the data directly around points_to_read_around from zarr_array and interpolates the passed in points on that data.
@@ -197,32 +345,8 @@ class data:
         )
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
-        ]
-
-        points_array = np.array(points, dtype=float)
-        if points_array.ndim == 1:
-            points_array = points_array.reshape(1, -1)
-        
-        for i, g in enumerate(grid):
-            if len(g) > 0:
-                lo = float(np.min(g))
-                hi = float(np.max(g))
-                points_array[:, i] = np.clip(points_array[:, i], lo, hi)
-        
-        if isinstance(points, list):
-            points_clamped = points_array.tolist()
-        else:
-            points_clamped = points_array
-
-        interpolated_points = interpn(
-            grid, 
-            values_around_point, 
-            points_clamped,
-            method="linear",
-            bounds_error=False,
-            fill_value=None
-        )
-
+        ]  # the grid is the values of the parameters at the points we're interpolating between
+        interpolated_points = interpn(grid, values_around_point, points)
         return interpolated_points
 
     def reshape_output(self, tout):
