@@ -1308,9 +1308,9 @@ def update_see_all_params_cache(n_clicks, current_button_text, current_state):
     [Input(component_id="model-select", component_property="value")],
     prevent_initial_call=True,
 )
-def update_tabs(selected_model):
+def update_scenario_buttons_visibility(selected_model):
     if is_print:
-        print("update_tabs")
+        print("update_scenario_buttons_visibility")
     if selected_model == "HDF5":
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
@@ -1371,9 +1371,9 @@ def update_graphics_container(selected_model):
     [Input(component_id="model-select", component_property="value")],
     prevent_initial_call=True,
 )
-def update_tabs(selected_model):
+def update_contour_tab_visibility(selected_model):
     if is_print:
-        print("update_tabs")
+        print("update_contour_tab_visibility")
     if selected_model == "HDF5":
         return {"display": "block"}
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
