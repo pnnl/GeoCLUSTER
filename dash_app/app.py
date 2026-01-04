@@ -795,6 +795,8 @@ app.layout = html.Div(
             data={"preferred": "All", "last_specific": "H2O"},
         ),  # Remember user fluid preferences across tabs
         dcc.Store(id="plot-inputs-cache", data={}),
+        dcc.Store(id="plot-params-store"),
+        dcc.Store(id="plot-run-trigger"),
         dcc.Store(id="see-all-params-state", data={"expanded": False}),
         dcc.Store(id="calculation-request-id", data=0),
         dcc.Store(id="clipboard-init", data=0),
@@ -3258,16 +3260,7 @@ def update_sliders_hyperparms(model, store_data):
 
 
 @app.callback(
-    [
-        Output(component_id="geothermal_time_plots", component_property="figure"),
-        Output(component_id="thermal-memory", component_property="data"),
-        Output(component_id="thermal-results-mass", component_property="data"),
-        Output(component_id="thermal-results-time", component_property="data"),
-        Output(component_id="thermal-results-errors", component_property="data"),
-        Output(component_id="TandP-data", component_property="data"),
-        Output(component_id="calculation-request-id", component_property="data"),
-        Output(component_id="plot-inputs-cache", component_property="data"),
-    ],
+    Output(component_id="plot-params-store", component_property="data"),
     [
         Input(component_id="interpolation-select", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
@@ -3281,25 +3274,14 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="k-select", component_property="value"),
         Input(component_id="radio-graphic-control3", component_property="value"),
         Input(component_id="model-select", component_property="value"),
-        # more variables
         Input(component_id="Tsurf-select", component_property="value"),
         Input(component_id="c-select", component_property="value"),
         Input(component_id="rho-select", component_property="value"),
-        Input(
-            component_id="diameter-vertical-select", component_property="value"
-        ),  # diameter1
-        Input(
-            component_id="diameter-lateral-select", component_property="value"
-        ),  # diameter2
-        Input(
-            component_id="n-laterals-select", component_property="value"
-        ),  # PipeParam3
-        Input(
-            component_id="lateral-flow-select", component_property="value"
-        ),  # PipeParam4 (for U-tube lateral flow allocation, or coaxial insulation thermal conductivity)
-        Input(
-            component_id="lateral-multiplier-select", component_property="value"
-        ),  # PipeParam5 (for U-tube lateral multiplier, or coaxial flow type)
+        Input(component_id="diameter-vertical-select", component_property="value"),
+        Input(component_id="diameter-lateral-select", component_property="value"),
+        Input(component_id="n-laterals-select", component_property="value"),
+        Input(component_id="lateral-flow-select", component_property="value"),
+        Input(component_id="lateral-multiplier-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
@@ -3308,6 +3290,52 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="fluid-mode-select", component_property="value"),
     ],
     [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
+)
+def build_plot_params(
+    interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
+    radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
+    lateral_flow, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+    pipe_roughness, fluid_mode, slider_store
+):
+    return {
+        "vals": (
+            interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
+            radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
+            lateral_flow, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+            pipe_roughness, fluid_mode,
+        ),
+        "slider_store": slider_store,
+    }
+
+
+@app.callback(
+    Output(component_id="plot-run-trigger", component_property="data"),
+    Input(component_id="plot-params-store", component_property="data"),
+    prevent_initial_call=True,
+)
+def trigger_plot_run(params):
+    import time
+    return time.time()
+
+
+@app.callback(
+    [
+        Output(component_id="geothermal_time_plots", component_property="figure"),
+        Output(component_id="thermal-memory", component_property="data"),
+        Output(component_id="thermal-results-mass", component_property="data"),
+        Output(component_id="thermal-results-time", component_property="data"),
+        Output(component_id="thermal-results-errors", component_property="data"),
+        Output(component_id="TandP-data", component_property="data"),
+        Output(component_id="calculation-request-id", component_property="data"),
+        Output(component_id="plot-inputs-cache", component_property="data"),
+    ],
+    [
+        Input(component_id="plot-run-trigger", component_property="data"),
+    ],
+    [
+        State(component_id="plot-params-store", component_property="data"),
         State(component_id="plot-inputs-cache", component_property="data"),
         State(component_id="calculation-request-id", component_property="data"),
         State(component_id="slider-values-store", component_property="data"),
@@ -3315,34 +3343,8 @@ def update_sliders_hyperparms(model, store_data):
     prevent_initial_call=True,
 )
 def update_subsurface_results_plots(
-    interp_time,
-    fluid,
-    case,
-    mdot,
-    L2,
-    L1,
-    grad,
-    D,
-    Tinj,
-    k_m,
-    scale,
-    model,
-    Tsurf,
-    c_m,
-    rho_m,
-    # diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier,
-    Diameter1,
-    Diameter2,
-    PipeParam3,
-    PipeParam4,
-    PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
-    mesh,
-    accuracy,
-    # mass_mode, temp_mode
-    HyperParam1,
-    HyperParam3,
-    pipe_roughness,
-    HyperParam5,
+    _trigger,
+    params_store,
     plot_inputs_cache,
     current_request_id,
     store_data,
@@ -3350,6 +3352,21 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
+
+    if not params_store:
+        return (no_update,) * 8
+
+    vals = params_store["vals"]
+    (
+        interp_time, fluid, case, mdot, L2, L1, grad, D, Tinj, k_m,
+        scale, model, Tsurf, c_m, rho_m, Diameter1, Diameter2, PipeParam3,
+        PipeParam4, PipeParam5, mesh, accuracy, mass_mode, temp_mode,
+        pipe_roughness, fluid_mode,
+    ) = vals
+    
+    HyperParam1 = mass_mode
+    HyperParam3 = temp_mode
+    HyperParam5 = fluid_mode
 
     if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
         if PipeParam4 is not None and isinstance(PipeParam4, (int, float)):
