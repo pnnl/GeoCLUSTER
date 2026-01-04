@@ -50,7 +50,10 @@ from info_popups import (
 )
 from write2excel import write_excelsheet
 
-print(" ============= App start =============")
+is_print = False
+
+if is_print:
+    print(" ============= App start =============")
 # -----------------------------------------------------------------------------
 # Create dash app with CSS styles and HTML components.
 #
@@ -880,7 +883,8 @@ register_info_modal_callbacks(app)
     prevent_initial_call=True,
 )
 def toggle_resource_card(n_clicks, is_open):
-    print("toggle_resource_card")
+    if is_print:
+        print("toggle_resource_card")
     """Toggle resource card expand/collapse."""
     if n_clicks:
         return not is_open
@@ -967,7 +971,8 @@ app.clientside_callback(
     prevent_initial_call=True,
 )
 def show_clipboard_toast(n_clicks, is_open):
-    print("show_clipboard_toast")
+    if is_print:
+        print("show_clipboard_toast")
     """Show toast notification when clipboard is clicked."""
     if n_clicks:
         return True
@@ -990,7 +995,8 @@ def show_clipboard_toast(n_clicks, is_open):
     prevent_initial_call=True,
 )
 def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ, model, sbt_params):
-    print("generate_summary")
+    if is_print:
+        print("generate_summary")
     if "btn_xlsx" == ctx.triggered_id:
         write_excelsheet(
             df_summary=df_tbl,
@@ -1012,7 +1018,8 @@ def generate_summary(n_clicks, df_tbl, df_mass_flow_rate, df_time, df_econ, mode
     [State(component_id="collapse", component_property="is_open")],
 )
 def toggle_collapse(n, is_open):
-    print("toggle_collapse 1")
+    if is_print:
+        print("toggle_collapse 1")
     # ----------------------------------------------
     # Subsurface contours graph guidance.
     # ----------------------------------------------
@@ -1028,7 +1035,8 @@ def toggle_collapse(n, is_open):
     [State(component_id="collapse2", component_property="is_open")],
 )
 def toggle_collapse(n, is_open):
-    print("toggle_collapse 2")
+    if is_print:
+        print("toggle_collapse 2")
     # ----------------------------------------------
     # Subsurface results graph guidance.
     # ----------------------------------------------
@@ -1044,7 +1052,8 @@ def toggle_collapse(n, is_open):
     [State(component_id="collapse3", component_property="is_open")],
 )
 def toggle_collapse(n, is_open):
-    print("toggle_collapse 3")
+    if is_print:
+        print("toggle_collapse 3")
     # ----------------------------------------------
     # Open to finetune system values.
     # ----------------------------------------------
@@ -1060,7 +1069,8 @@ def toggle_collapse(n, is_open):
     [State(component_id="collapse4", component_property="is_open")],
 )
 def toggle_collapse(n, is_open):
-    print("toggle_collapse 4")
+    if is_print:
+        print("toggle_collapse 4")
     # ----------------------------------------------
     # Economic results graph guidance.
     # ----------------------------------------------
@@ -1085,7 +1095,8 @@ def toggle_collapse(n, is_open):
     prevent_initial_call=True,
 )
 def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_state):
-    print("update_model_based_on_fluid_and_selection")
+    if is_print:
+        print("update_model_based_on_fluid_and_selection")
     """
     Update model-select options and value based on fluid selection and model selection.
     - Database (HDF5): Always stays as HDF5 regardless of fluid
@@ -1138,7 +1149,8 @@ def update_model_based_on_fluid_and_selection(fluid, model_selection, fluid_stat
     prevent_initial_call='initial_duplicate',
 )
 def toggle_see_all_params(n_clicks, model, case, tab, current_button_text, params_state):
-    print("toggle_see_all_params")
+    if is_print:
+        print("toggle_see_all_params")
     callback_ctx = ctx
     style_none = {"display": "none"}
     style_block = {"display": "block"}
@@ -1271,7 +1283,8 @@ def toggle_see_all_params(n_clicks, model, case, tab, current_button_text, param
     prevent_initial_call=True,
 )
 def update_see_all_params_cache(n_clicks, current_button_text, current_state):
-    print("update_see_all_params_cache")
+    if is_print:
+        print("update_see_all_params_cache")
     """Update cache when 'See all parameters' button is clicked"""
     if n_clicks is None or n_clicks == 0:
         raise PreventUpdate
@@ -1299,7 +1312,8 @@ def update_see_all_params_cache(n_clicks, current_button_text, current_state):
     prevent_initial_call=True,
 )
 def update_tabs(selected_model):
-    print("update_tabs")
+    if is_print:
+        print("update_tabs")
     if selected_model == "HDF5":
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
@@ -1317,7 +1331,8 @@ def update_tabs(selected_model):
     prevent_initial_call=True,
 )
 def update_graphics_container(selected_model):
-    print("update_graphics_container")
+    if is_print:
+        print("update_graphics_container")
     if selected_model == "HDF5":
         return html.Div(
             id="graphics-container",
@@ -1360,7 +1375,8 @@ def update_graphics_container(selected_model):
     prevent_initial_call=True,
 )
 def update_tabs(selected_model):
-    print("update_tabs")
+    if is_print:
+        print("update_tabs")
     if selected_model == "HDF5":
         return {"display": "block"}
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
@@ -1380,7 +1396,8 @@ def update_tabs(selected_model):
     prevent_initial_call=True,
 )
 def switch_tab_on_model_change(model, current_tab):
-    print("switch_tab_on_model_change")
+    if is_print:
+        print("switch_tab_on_model_change")
     """
     Automatically switch to first tab (about-tab) when switching from Database to Simulator
     if user is currently on the subsurface contours tab (energy-tab).
@@ -1409,7 +1426,8 @@ def switch_tab_on_model_change(model, current_tab):
     prevent_initial_call=True,
 )
 def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
-    print("retain_entry_between_tabs")
+    if is_print:
+        print("retain_entry_between_tabs")
     trigger_id = ctx.triggered_id if ctx.triggered else None
     
     if trigger_id in ["btn-nclicks-1", "btn-nclicks-3"]:
@@ -1442,7 +1460,8 @@ def retain_entry_between_tabs(tab, btn1, btn3, fluid, fluid_store):
     prevent_initial_call=True,
 )
 def flip_to_tab(tab, btn1, btn3, end_use):
-    print("flip_to_tab")
+    if is_print:
+        print("flip_to_tab")
     if tab != "energy-tab" and end_use == "All":
         if "btn-nclicks-1" == ctx.triggered_id:
             return "Heating"
@@ -1481,7 +1500,8 @@ def flip_to_tab(tab, btn1, btn3, end_use):
     prevent_initial_call=True,
 )
 def update_working_fluid(model, case, fluid_store, current_fluid, current_tab):
-    print("update_working_fluid")
+    if is_print:
+        print("update_working_fluid")
     if current_tab == "energy-tab":
         raise PreventUpdate
     
@@ -1527,7 +1547,8 @@ def update_working_fluid(model, case, fluid_store, current_fluid, current_tab):
     ],
 )
 def change_dropdown(at, fluid, model, case, fluid_store):
-    print("change_dropdown")
+    if is_print:
+        print("change_dropdown")
     if model not in ("HDF5", "SBT V2.0", "SBT V1.0"):
         raise PreventUpdate
 
@@ -1596,7 +1617,8 @@ def change_dropdown(at, fluid, model, case, fluid_store):
     ],
 )
 def flip_to_tab(tab, btn1, btn3):
-    print("flip_to_tab")
+    if is_print:
+        print("flip_to_tab")
     if tab == "about-tab":
         if "btn-nclicks-1" == ctx.triggered_id:
             return "economics-time-tab"
@@ -1648,7 +1670,8 @@ def flip_to_tab(tab, btn1, btn3):
     prevent_initial_call=True,
 )
 def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
-    print("update_slider_with_btn")
+    if is_print:
+        print("update_slider_with_btn")
     N_OUTPUTS = 20
     trigger = ctx.triggered_id
 
@@ -1743,7 +1766,8 @@ def update_slider_with_btn(btn1, btn3, at, case, fluid, end_use, model):
     prevent_initial_call='initial_duplicate',
 )
 def show_model_params(model, case):
-    print("show_model_params")
+    if is_print:
+        print("show_model_params")
     b = {"display": "block"}
     n = {"display": "none"}
     see_all_button_style = {"textAlign": "center", "marginTop": "20px", "marginBottom": "10px", "display": "block"}
@@ -1784,7 +1808,8 @@ def show_model_params(model, case):
     prevent_initial_call=True,
 )
 def econ_sliders_visibility(tab, model, fluid, end_use):
-    print("econ_sliders_visibility")
+    if is_print:
+        print("econ_sliders_visibility")
     b = {"display": "block"}
     n = {"display": "none"}
 
@@ -1862,7 +1887,8 @@ def econ_sliders_visibility(tab, model, fluid, end_use):
     ],
 )
 def show_hide_detailed_card(tab, fluid, end_use, checklist):
-    print("show_hide_detailed_card")
+    if is_print:
+        print("show_hide_detailed_card")
     if tab == "energy-time-tab" or tab == "energy-tab":
         return {"border": "solid 0px white"}, {"display": "none"}, {"display": "none"}
 
@@ -1950,7 +1976,8 @@ def show_hide_detailed_card(tab, fluid, end_use, checklist):
     prevent_initial_call=True,
 )
 def show_hide_element(visibility_state, tab, fluid, end_use, model):
-    print("show_hide_element")
+    if is_print:
+        print("show_hide_element")
     # ----------------------------------------------------------------------------------------------
     # Reveals or hides sliders depending on which tab selected and which dropdowns.
     # ----------------------------------------------------------------------------------------------
@@ -2094,7 +2121,8 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
     prevent_initial_call='initial_duplicate',
 )
 def update_slider_ranges(model, case, store_data):
-    print("update_slider_ranges")
+    if is_print:
+        print("update_slider_ranges")
     grad_dict = create_steps(
         arg_arr=u_sCO2.grad, str_round_place="{:.2f}", val_round_place=2
     )
@@ -2363,7 +2391,8 @@ def update_slider_ranges(model, case, store_data):
     prevent_initial_call=True,
 )
 def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, mass_mode, model, case, store_data):
-    print("save_slider_values")
+    if is_print:
+        print("save_slider_values")
     """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
     if model is None or case is None:
         raise PreventUpdate
@@ -2426,7 +2455,8 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_v
     prevent_initial_call=True,
 )
 def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, current_rho):
-    print("restore_always_visible_sliders")
+    if is_print:
+        print("restore_always_visible_sliders")
     """Restore Tsurf, c, and rho when model changes - these sliders are always present"""
     if model is None:
         raise PreventUpdate
@@ -2495,7 +2525,8 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
 )
 def restore_slider_values(model, case, store_data, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
     """Restore slider values from store when model switches (not on initial load)"""
-    print("restore_slider_values")
+    if is_print:
+        print("restore_slider_values")
     if model is None:
         raise PreventUpdate
     
@@ -2588,7 +2619,8 @@ def restore_slider_values(model, case, store_data, current_mdot, current_L2, cur
     prevent_initial_call=True,
 )
 def update_sliders_heat_exchanger(model, case, store_data):
-    print("update_sliders_heat_exchanger")
+    if is_print:
+        print("update_sliders_heat_exchanger")
     if store_data is None:
         store_data = {}
     saved_values = store_data.get(model, {}).get(case, {})
@@ -2854,7 +2886,8 @@ def update_sliders_heat_exchanger(model, case, store_data):
     prevent_initial_call=True,
 )
 def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, current_diameter_lateral, current_n_laterals, current_lateral_flow, current_lateral_multiplier):
-    print("restore_sbt_sliders")
+    if is_print:
+        print("restore_sbt_sliders")
     """Restore SBT-specific slider values when model or case switches"""
     if model is None:
         raise PreventUpdate
@@ -2982,7 +3015,8 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
     prevent_initial_call=True,
 )
 def update_lateral_multiplier(n_laterals, model, case):
-    print("update_lateral_multiplier")
+    if is_print:
+        print("update_lateral_multiplier")
     """Automatically update lateral flow multiplier based on number of laterals.
     
     The multiplier should be 1/n_laterals:
@@ -3016,7 +3050,8 @@ def update_lateral_multiplier(n_laterals, model, case):
     prevent_initial_call=True,
 )
 def aggregate_lateral_flow_inputs(input_values, model, case):
-    print("aggregate_lateral_flow_inputs")
+    if is_print:
+        print("aggregate_lateral_flow_inputs")
     """Aggregate multiple lateral flow allocation inputs into a single value for callbacks.
     
     For SBT models with utube case, we show multiple inputs (one per lateral).
@@ -3066,7 +3101,8 @@ def aggregate_lateral_flow_inputs(input_values, model, case):
     prevent_initial_call="initial_duplicate",
 )
 def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
-    print("update_lateral_flow_allocation_inputs")
+    if is_print:
+        print("update_lateral_flow_allocation_inputs")
     """Update the lateral flow allocation inputs when number of laterals changes.
     
     Creates multiple input fields (one per lateral) with equal distribution.
@@ -3098,7 +3134,8 @@ def update_lateral_flow_allocation_inputs(n_laterals, model, case, store_data):
     prevent_initial_call=False,
 )
 def update_sliders_hyperparms(model, store_data):
-    print("update_sliders_hyperparms")
+    if is_print:
+        print("update_sliders_hyperparms")
     if store_data is None:
         store_data = {}
     
@@ -3275,7 +3312,8 @@ def build_plot_params(
     pipe_roughness, fluid_mode, slider_store
 ):
     
-    print("build_plot_params")
+    if is_print:
+        print("build_plot_params")
     triggered = ctx.triggered if ctx.triggered else []
     triggered_ids = [t["prop_id"].split(".")[0] for t in triggered] if triggered else []
     
@@ -3303,7 +3341,8 @@ def build_plot_params(
     prevent_initial_call=True,
 )
 def trigger_plot_run(params):
-    print("trigger_plot_run")
+    if is_print:
+        print("trigger_plot_run")
     return time.time()
 
 
@@ -3339,7 +3378,8 @@ def update_subsurface_results_plots(
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface results.
     # -----------------------------------------------------------------------------
-    print("update_subsurface_results_plots")
+    if is_print:
+        print("update_subsurface_results_plots")
     if not params_store:
         return (no_update,) * 8
 
@@ -3564,7 +3604,8 @@ def update_subsurface_results_plots(
 def update_subsurface_contours_plots(
     interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, model
 ):
-    print("update_subsurface_contours_plots")
+    if is_print:
+        print("update_subsurface_contours_plots")
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
@@ -3668,7 +3709,8 @@ def update_econ_plots(
     pipe_roughness,
     HyperParam5,
 ):
-    print("update_econ_plots")
+    if is_print:
+        print("update_econ_plots")
     try:
         # Handle None values
         if TandP_dict is None:
@@ -3753,7 +3795,8 @@ def update_econ_plots(
     ],
 )
 def update_plot_title(fluid, end_use, checklist):
-    print("update_plot_title")
+    if is_print:
+        print("update_plot_title")
     if checklist == [" "]:
         is_title_show = True
     else:
@@ -3852,7 +3895,8 @@ def update_table(
     pipe_roughness,
     HyperParam5,
 ):
-    print("update_table")
+    if is_print:
+        print("update_table")
     try:
         # Handle None values
         if econ_dict is None:
@@ -3960,7 +4004,8 @@ def update_table(
     ],
 )
 def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_results_dict):
-    print("update_error_divs")
+    if is_print:
+        print("update_error_divs")
     # Handle None values
     if err_sub_dict is None:
         err_sub_dict = {}
@@ -4096,7 +4141,8 @@ def update_error_divs(err_sub_dict, err_contour_dict, err_econ_dict, econ_result
     ],
 )
 def update_warning_divs(levelized_cost_dict, econ_results_dict, fluid, end_use):
-    print("update_warning_divs")
+    if is_print:
+        print("update_warning_divs")
     warning_div3 = html.Div(style={"display": "none"})
 
     # Handle None or missing data
