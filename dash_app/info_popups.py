@@ -848,6 +848,10 @@ def register_info_modal_callbacks(app):
         if max_clicks == 0:
             raise PreventUpdate
         
+        last_click_count = last_clicks.get(suffix, 0)
+        if max_clicks <= last_click_count:
+            raise PreventUpdate
+        
         last_clicks = last_clicks.copy()
         last_clicks["_max"] = max_clicks
         last_clicks[suffix] = max_clicks
