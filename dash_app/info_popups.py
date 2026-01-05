@@ -17,24 +17,18 @@ PARAMETER_INFO = {
     
     "Heat Exchanger": {
         "definition": "Specify the geometry of the system. \"U-Tube\" uses two separate wells or laterals; \"Coaxial\" uses concentric pipes for flow-in and flow-out. Coaxial is often the default in simple single-well simulations, but U-Tube systems often have better long-term heat extraction in closed-loop systems.",
-        "recommended_range": "U-Tube, Coaxial",
-        "typical_value": "U-Tube",
         "unit": "mode",
         "description": "Specify the geometry of the system. \"U-Tube\" uses two separate wells or laterals; \"Coaxial\" uses concentric pipes for flow-in and flow-out. Coaxial is often the default in simple single-well simulations, but U-Tube systems often have better long-term heat extraction in closed-loop systems."
     },
     
     "Working Fluid": {
         "definition": "Specify a liquid or gas that carries heat through the system. H₂O (water) is typical for geothermal due to availability; sCO₂ (supercritical carbon dioxide) is included for advanced systems with enhanced heat extraction potential.",
-        "recommended_range": "H2O, sCO2",
-        "typical_value": "H2O",
         "unit": "fluid",
         "description": "Specify a liquid or gas that carries heat through the system. H₂O (water) is typical for geothermal due to availability; sCO₂ (supercritical carbon dioxide) is included for advanced systems with enhanced heat extraction potential."
     },
     
     "End-Use": {
         "definition": "Specify the intended application of the geothermal system output. Options include Heating (direct thermal use), Electricity (power generation), or All (both applications).",
-        "recommended_range": "Heating, Electricity, All",
-        "typical_value": "All",
         "unit": "mode",
         "description": "The end-use selection determines the economic calculations and system design parameters."
     },
@@ -66,23 +60,23 @@ PARAMETER_INFO = {
     
     "Geothermal Gradient (°C/m)": {
         "definition": "Set the rate at which temperature increases with depth. The western United States typically exhibits a higher geothermal gradient (~0.035 °C/m) than the eastern U.S. (~0.025 °C/m).",
-        "recommended_range": "0.015-0.050°C/m",
-        "typical_value": "0.03°C/m",
+        "recommended_range": "0.015-0.200°C/m",
+        "typical_value": "0.065°C/m",
         "unit": "°C/m",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
     "Geothermal Gradient (˚F/ft)": {
         "definition": "Set the rate at which temperature increases with depth. A value of 0.027°F/ft means that the temperature increases by 27°F for every 1000 feet of depth. This represents average conditions in continental crust and it is hot enough to run a small power plant or provide heating for buildings.",
-        "recommended_range": "0.008-0.109°F/ft",
-        "typical_value": "0.027°F/ft",
+        "recommended_range": "0.008-0.110°F/ft",
+        "typical_value": "0.036°F/ft",
         "unit": "°F/ft",
         "description": "Higher gradients indicate more favorable geothermal conditions for energy extraction."
     },
     
     "Rock Thermal Conductivity (W/m-°C)": {
         "definition": "Set how quickly heat moves through rock. A value of 3 W/m-K represents moderately conductive rock, such as granite.",
-        "recommended_range": "0.4-5.0 W/m-K",
+        "recommended_range": "1.5-4.5 W/m-K",
         "typical_value": "3 W/m-K",
         "unit": "W/m-K",
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
@@ -90,24 +84,24 @@ PARAMETER_INFO = {
     
     "Rock Thermal Conductivity (Btu/ft-h-˚F)": {
         "definition": "Set how quickly heat moves through rock. A value of 1.73 Btu/ft-h-°F represents moderately conductive rock, such as granite.",
-        "recommended_range": "0.23-2.89 Btu/ft-h-°F",
+        "recommended_range": "0.87-2.60 Btu/ft-h-°F",
         "typical_value": "1.73 Btu/ft-h-°F",
         "unit": "Btu/ft-h-°F",
         "description": "Higher conductivity improves heat transfer from the rock to the working fluid."
     },
     
     "Rock Specific Heat Capacity (J/kg-°C)": {
-        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.051 J/kg-K represents an average for various dry rocks.",
+        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°C, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 790 J/kg-K represents an average for various dry rocks.",
         "recommended_range": "500-2000 J/kg-K",
-        "typical_value": "0.051 J/kg-K",
+        "typical_value": "790 J/kg-K",
         "unit": "J/kg-K",
         "description": "Affects the thermal storage capacity of the rock formation."
     },
     
     "Rock Specific Heat Capacity (Btu/lb-˚F)": {
-        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°F, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.000012 Btu/lb-°F represents an average for various dry rocks.",
+        "definition": "Set the amount of energy the rock can absorb or release when its temperature changes by 1°F, which determines how quickly the rock heats up or cools down in response to fluid circulation. A value of 0.189 Btu/lb-°F represents an average for various dry rocks.",
         "recommended_range": "0.119-0.477 Btu/lb-°F",
-        "typical_value": "0.000012 Btu/lb-°F",
+        "typical_value": "0.189 Btu/lb-°F",
         "unit": "Btu/lb-°F",
         "description": "Affects the thermal storage capacity of the rock formation."
     },
@@ -131,32 +125,32 @@ PARAMETER_INFO = {
     # Wellbore Operations
     "Injection Temperature (˚C)": {
         "definition": "Set the temperature of the fluid entering the subsurface. A value of 30°C is a common injection temperature for low-enthalpy systems.",
-        "recommended_range": "30-60°C",
-        "typical_value": "30°C",
+        "recommended_range": "30-59°C",
+        "typical_value": "55°C",
         "unit": "°C",
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
     },
     
     "Injection Temperature (˚F)": {
         "definition": "Set the temperature of the fluid entering the subsurface. A value of 86°F is a common injection temperature for low-enthalpy systems.",
-        "recommended_range": "86-140°F",
-        "typical_value": "86°F",
+        "recommended_range": "86-138°F",
+        "typical_value": "131°F",
         "unit": "°F",
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
     },
     
     "Mass Flow Rate (kg/s)": {
         "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 24 kg/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
-        "recommended_range": "5-300 kg/s",
-        "typical_value": "24 kg/s",
+        "recommended_range": "5-100 kg/s",
+        "typical_value": "30 kg/s",
         "unit": "kg/s",
         "description": "Higher flow rates increase heat extraction but may require more pumping power."
     },
     
     "Mass Flow Rate (lb/s)": {
         "definition": "Set the total mass of working fluid that circulates through the geothermal system every second. A value of 52.9 lb/s moves enough fluid to extract significant heat but keeps pumping requirements and pressure losses manageable.",
-        "recommended_range": "11.0-661.4 lb/s",
-        "typical_value": "52.9 lb/s",
+        "recommended_range": "11.0-220.5 lb/s",
+        "typical_value": "66.1 lb/s",
         "unit": "lb/s",
         "description": "Higher flow rates increase heat extraction but may require more pumping power."
     },
@@ -164,7 +158,7 @@ PARAMETER_INFO = {
     # Tube Geometry
     "Borehole Diameter (m)": {
         "definition": "Set the width of the hole drilled into the ground to access the geothermal reservoir. A value of 0.35 m can manage frictional pressure losses where lower widths can increase pressure drops and reduce heat transfer.",
-        "recommended_range": "0.2159-0.4445 m",
+        "recommended_range": "0.2159-0.444 m",
         "typical_value": "0.35 m",
         "unit": "m",
         "description": "Larger diameters allow for higher flow rates but increase drilling costs."
@@ -179,57 +173,57 @@ PARAMETER_INFO = {
     },
     
     "Wellbore Diameter Vertical (m)": {
-        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.35 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.2159-0.4445 m",
-        "typical_value": "0.444 m",
+        "typical_value": "0.35 m",
         "unit": "m",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
     "Wellbore Diameter Vertical (ft)": {
-        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 1.46 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 1.15 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.71-1.46 ft",
-        "typical_value": "1.46 ft",
+        "typical_value": "1.15 ft",
         "unit": "ft",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
     "Wellbore Diameter Lateral (m)": {
-        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.35 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.2159-0.4445 m",
-        "typical_value": "0.444 m",
+        "typical_value": "0.35 m",
         "unit": "m",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
     "Wellbore Diameter Lateral (ft)": {
-        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 1.46 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 1.15 ft is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.71-1.46 ft",
-        "typical_value": "1.46 ft",
+        "typical_value": "1.15 ft",
         "unit": "ft",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
     # Base parameter names (without units) for pattern matching
     "Wellbore Diameter Vertical": {
-        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the vertical injection and production well of the U-tube design. A value of 0.35 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.2159-0.4445 m",
-        "typical_value": "0.444 m",
+        "typical_value": "0.35 m",
         "unit": "m",
         "description": "Affects the heat transfer area and flow resistance in the vertical section."
     },
     
     "Wellbore Diameter Lateral": {
-        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.444 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
+        "definition": "Set the diameter of the lateral branches of the U-tube design. A value of 0.35 m is a relatively large open-hole diameter for maximizing heat transfer surface area.",
         "recommended_range": "0.2159-0.4445 m",
-        "typical_value": "0.444 m",
+        "typical_value": "0.35 m",
         "unit": "m",
         "description": "Influences heat transfer and flow characteristics in the lateral sections."
     },
     
     "Horizontal Extent (m)": {
         "definition": "Set the horizontal length of the well. A value of 10 km represents long multi-lateral systems. A value of 50 km far exceeds directional drilling and would require massive pressure support and well integrity.",
-        "recommended_range": "1000-50000 m",
+        "recommended_range": "1000-20000 m",
         "typical_value": "10000 m",
         "unit": "m",
         "description": "Longer horizontal extents increase heat extraction area but require more drilling."
@@ -237,7 +231,7 @@ PARAMETER_INFO = {
     
     "Horizontal Extent (ft)": {
         "definition": "Set the horizontal length of the well. A value of 32,808 ft represents long multi-lateral systems. A value of 164,042 ft far exceeds directional drilling and would require massive pressure support and well integrity.",
-        "recommended_range": "3,281-164,042 ft",
+        "recommended_range": "3,281-65,617 ft",
         "typical_value": "32,808 ft",
         "unit": "ft",
         "description": "Longer horizontal extents increase heat extraction area but require more drilling."
@@ -245,7 +239,7 @@ PARAMETER_INFO = {
     
     "Drilling Depth (m)": {
         "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 3.5 km targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
-        "recommended_range": "1000-10000 m",
+        "recommended_range": "1000-5000 m",
         "typical_value": "3500 m",
         "unit": "m",
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
@@ -253,7 +247,7 @@ PARAMETER_INFO = {
     
     "Drilling Depth (ft)": {
         "definition": "Set the depth of the hole drilling into the ground to access the geothermal reservoir. A value of 11,483 ft targets mid-to-high enthalpy zones. The deeper the drill, the hotter the rock and higher the drilling cost.",
-        "recommended_range": "3,281-32,808 ft",
+        "recommended_range": "3,281-16,404 ft",
         "typical_value": "11,483 ft",
         "unit": "ft",
         "description": "Deeper drilling accesses higher temperatures but increases costs significantly."
@@ -261,7 +255,7 @@ PARAMETER_INFO = {
     
     "Number of Laterals": {
         "definition": "Set the number of horizontal branches from the main well, with more laterals increasing reservoir contact. A value of 1 is the minimum number of laterals for a U-tube design.",
-        "recommended_range": "1-20",
+        "recommended_range": "0-3",
         "typical_value": "1",
         "unit": "count",
         "description": "Set the number of horizontal branches from the main well, with more laterals increasing reservoir contact. A value of 1 is the minimum number of laterals for a U-tube design."
@@ -351,7 +345,7 @@ PARAMETER_INFO = {
     
     "Turbine Outlet Pressure (bar)": {
         "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 80 bar keeps the working fluid in a dense supercritical or subcooled state.",
-        "recommended_range": "75-200 bar",
+        "recommended_range": "75-195 bar",
         "typical_value": "80 bar",
         "unit": "bar",
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
@@ -359,7 +353,7 @@ PARAMETER_INFO = {
     
     "Turbine Outlet Pressure (psi)": {
         "definition": "Set the pressure of the working fluid after it exits the turbine, determining how much energy can be extracted in the turbine and what condition (phase) the fluid is in for cooling and reinjection. A value of 1,160 psi keeps the working fluid in a dense supercritical or subcooled state.",
-        "recommended_range": "1,088-2,901 psi",
+        "recommended_range": "1,088-2,828 psi",
         "typical_value": "1,160 psi",
         "unit": "psi",
         "description": "Critical parameter for sCO2 cycle efficiency and power output."
@@ -385,8 +379,8 @@ PARAMETER_INFO = {
     
     # Model Fine-tuning Parameters
     "Mesh Fineness": {
-        "definition": "Set the spatial resolution of the borehole based on how finely it is broken into discrete segments for simulation. A value of 0 (coarse) compared to 5 (research-grade accuracy), is the fastest option but least precise geometry.",
-        "recommended_range": "0-5",
+        "definition": "Set the spatial resolution of the borehole based on how finely it is broken into discrete segments for simulation. A value of 0 (coarse) compared to 2 (fine), is the fastest option but least precise geometry.",
+        "recommended_range": "0-2",
         "typical_value": "0",
         "unit": "index",
         "description": "Finer meshes provide more accurate results but require more computation time."
@@ -588,7 +582,7 @@ PARAMETER_INFO = {
     
     "CovHDF5 Injection Temperature (°C)": {
         "definition": "Set the temperature of the working fluid when it enters the system. This is the temperature at which fluid is injected into the well.",
-        "recommended_range": "30-60 °C",
+        "recommended_range": "30-59 °C",
         "typical_value": "45 °C",
         "unit": "°C",
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
@@ -596,7 +590,7 @@ PARAMETER_INFO = {
     
     "CovHDF5 Injection Temperature (°F)": {
         "definition": "Set the temperature of the working fluid when it enters the system. This is the temperature at which fluid is injected into the well.",
-        "recommended_range": "86-140 °F",
+        "recommended_range": "86-138 °F",
         "typical_value": "113 °F",
         "unit": "°F",
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
@@ -861,7 +855,7 @@ def register_info_modal_callbacks(app):
             raise PreventUpdate
 
         if param == "Model Version":
-            header_style = {"fontSize": "16px", "fontWeight": "bold", "marginTop": "15px", "marginBottom": "8px"}
+            header_style = {"fontSize": "18px"}
             
             hdf5_info = MODEL_DESCRIPTIONS.get("HDF5", {})
             sbt1_info = MODEL_DESCRIPTIONS.get("SBT V1.0", {})
@@ -921,15 +915,67 @@ def register_info_modal_callbacks(app):
         modal_content = []
         info_sections = [
             ("Definition", "definition"),
-            ("Recommended Range", "recommended_range"),
-            ("Typical Value", "typical_value"),
+            ("Range", "recommended_range"),
+            ("Default Value", "typical_value"),
             ("Description", "description"),
         ]
 
         for label, key in info_sections:
             value = info.get(key)
+            # Show model-specific ranges for parameters that differ between Database and Simulator
+            if key == "recommended_range":
+                if selected_model == "HDF5":
+                    if param == "Geothermal Gradient (°C/m)":
+                        value = "0.03-0.07°C/m"
+                    elif param == "Geothermal Gradient (˚F/ft)":
+                        value = "0.016-0.038°F/ft"
+                    elif param == "Rock Thermal Conductivity (W/m-°C)":
+                        value = "1.5-4.5 W/m-K"
+                    elif param == "Rock Thermal Conductivity (Btu/ft-h-˚F)":
+                        value = "0.87-2.60 Btu/ft-h-°F"
+                    elif param == "Mass Flow Rate (kg/s)":
+                        value = "5-100 kg/s"
+                    elif param == "Mass Flow Rate (lb/s)":
+                        value = "11.0-220.5 lb/s"
+                    elif param == "Injection Temperature (˚C)":
+                        value = "30-59°C"
+                    elif param == "Injection Temperature (˚F)":
+                        value = "86-138°F"
+                    elif param == "Horizontal Extent (m)":
+                        value = "1000-20000 m"
+                    elif param == "Horizontal Extent (ft)":
+                        value = "3,281-65,617 ft"
+                    elif param == "Drilling Depth (m)":
+                        value = "1000-5000 m"
+                    elif param == "Drilling Depth (ft)":
+                        value = "3,281-16,404 ft"
+                else:  # Simulator (SBT V1.0 or SBT V2.0)
+                    if param == "Geothermal Gradient (°C/m)":
+                        value = "0.015-0.200°C/m"
+                    elif param == "Geothermal Gradient (˚F/ft)":
+                        value = "0.008-0.110°F/ft"
+                    elif param == "Rock Thermal Conductivity (W/m-°C)":
+                        value = "0.4-5.0 W/m-K"
+                    elif param == "Rock Thermal Conductivity (Btu/ft-h-˚F)":
+                        value = "0.23-2.89 Btu/ft-h-°F"
+                    elif param == "Mass Flow Rate (kg/s)":
+                        value = "5-300 kg/s"
+                    elif param == "Mass Flow Rate (lb/s)":
+                        value = "11.0-661.4 lb/s"
+                    elif param == "Injection Temperature (˚C)":
+                        value = "30-59°C"
+                    elif param == "Injection Temperature (˚F)":
+                        value = "86-138°F"
+                    elif param == "Horizontal Extent (m)":
+                        value = "1000-50000 m"
+                    elif param == "Horizontal Extent (ft)":
+                        value = "3,281-164,042 ft"
+                    elif param == "Drilling Depth (m)":
+                        value = "1000-10000 m"
+                    elif param == "Drilling Depth (ft)":
+                        value = "3,281-32,808 ft"
             if value:
-                modal_content.append(html.H6(f"{label}:", className="text-primary"))
+                modal_content.append(html.H6(f"{label}:", className="text-primary", style={"fontSize": "18px"}))
                 modal_content.append(html.P(value, className="mb-3"))
 
         if not modal_content:
