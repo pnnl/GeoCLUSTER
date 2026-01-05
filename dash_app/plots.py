@@ -344,8 +344,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             # Handle each fluid separately so one failure doesn't prevent the other from running
             # Store geometry values for comparison
             geometry_before_sCO2 = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
-
-            print(geometry_before_sCO2)
             
             if (fluid == "sCO2" or fluid == "All") and sCO2_supported: # AB HERE
                 try:

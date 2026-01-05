@@ -176,6 +176,7 @@ def run_sbt(
                                                 radiuslateral=radiuslateral, radiusvertical=radiusvertical,
                                                 lateralflowmultiplier=lateralflowmultiplier,
                                                 lateralflowallocation=lateralflowallocation)
+
     # globals().update(tube_geometry_dict2)
     interconnections = tube_geometry_dict2.get("interconnections")
     Deltaz = tube_geometry_dict2.get("Deltaz")
@@ -677,6 +678,7 @@ def run_sbt(
     #---------------
 
     tic = time.time()  # start clock to measure computation time
+    # print("PASS: entering time loop")
     for i in range(1, len(times)):
         #print current simulation time
         if times[i] < 60:
@@ -730,7 +732,8 @@ def run_sbt(
             if Deltat > timeforfinitelinesource:  # For long time steps, the finite length correction should be applied
                 CPCP = CPCP + np.interp(Deltaz**2 / (4 * alpha_m * Deltat), Amin1vector, finitecorrectiony)
 
-
+        # print("PASS: CPCP computed ", i)
+        
         # ---------------------------------
         # CPOP (= Current pipe, old pulses)
         # ---------------------------------
@@ -817,6 +820,8 @@ def run_sbt(
         else:
             maxindextoconsider = np.where(maxspacingtest > 1)[0][-1]+1 #KB 11/21/2024: is plus 1 needed here?????
 
+        # print("PASS: NPCP computed")
+
         #Calculate and store neighbouring pipes for current pulse as point sources        
         if mindexNPCP < maxindextoconsider:      #KB 11/21/2024: is plus 1 needed here?????
             indicestocalculate = SortedIndices[:, mindexNPCP + 1:maxindextoconsider + 1]
@@ -902,6 +907,7 @@ def run_sbt(
             
             # Use point source model when SoverL is very large
             if len(overallindicestotakeforpsSoverL) > 0:
+                # print("TOO LARGE!")
                 deltatlinear1 = np.ones((N * (int(lastneighbourtoconsider[i])+1), 1)) * (times[i] - timesFMM[1:]).ravel()
                 deltatlinear1 = deltatlinear1[overallindicestotakeforpsSoverL]
                 deltatlinear2 = np.ones((N * int(lastneighbourtoconsider[i]), 1)) * (times[i] - timesFMM[0:-1]).ravel()
@@ -958,6 +964,8 @@ def run_sbt(
         else:
             BBCPOP = np.zeros(N)
         BBCPOP = np.asarray(BBCPOP).reshape(-1)
+
+        # print("PASS: building L and R")
 
         if sbt_version == 1: #constant fluid properties and no convergence needed
             # Velocities and thermal resistances are calculated each time step as the flow rate is allowed to vary each time step
@@ -2035,6 +2043,7 @@ def run_sbt(
                     # Sol = np.linalg.solve(L, R) # original
                     L_sparse = csc_matrix(L)  # Convert dense matrix to sparse format
                     Sol = spsolve(L_sparse, R)
+                    # print("PASS: solver returned")
                     
                     # Andrea's code (this was taking 10 seconds to run!!)
                     # # Validate thermal resistance before solving (prevents division by very small numbers)
@@ -2153,6 +2162,7 @@ def run_sbt(
                         Tfluiddownnodes = np.concatenate(([Tinj], Sol.ravel()[3::4]))
                         Tfluidupnodes = np.concatenate((Sol.ravel()[0::4],[Tfluiddownnodes[-1]]))
                     
+                    # print("PASS: extracted temperatures")
                     # Andrea's code
                     # Validate Tfluidupnodes contains reasonable temperature values (should be in degC, roughly -50 to 500)
                     # Note: For geothermal applications, outlet temps typically range from injection temp (~30-100°C) to ~200-300°C
@@ -2390,6 +2400,7 @@ def run_sbt(
         
         #FMM algorithm for combining heat pulses
         #---------------------------------------
+        # print("FMM algo")
         if (FMM == 1 and i>50 and times[i] > FMMtriggertime):
             remainingtimes = times[(times >= combinedtimes[-1]) & (times < times[i])] 
             currentendtimespassed = times[i] - remainingtimes
@@ -2454,6 +2465,7 @@ def run_sbt(
     # 4. Post-Processing
     # The user can modify this section depending on the desired figures and simulation results
     #-------------------
+    # print("DOPASS: entering time loopNE with iterations")
     #Plot lateral flow rate and exit pressure in U-loop SBT v2
     if sbt_version == 2 and clg_configuration == 2:
         if numberoflaterals > 1:
@@ -2507,7 +2519,8 @@ def run_sbt(
                     interpolator_enthalpy(np.array([[x, y] for x, y in zip(Pfluidnodesstore[0,:], Tfluidnodesstore[0,:] + 273.15)])))/1e6
             else: #For constant fluid properties, calculates the heat production as m*cp*DeltaT [MWth]
                 HeatProduction = mdot*cp_f*(Toutput-Tinj)/1e6
-            
+
+    # print("Heat Prod")        
     AverageProductionTemperature = np.sum((times[1:] - times[:-1]) * Toutput[1:]) / times[-1]  # Calculates the weighted-average production temperature [deg.C]
     AverageHeatProduction = np.sum((times[1:] - times[:-1]) * HeatProduction[1:]) / times[-1]  # Calculates the weighted-average heat production [MW]
     if is_print:
@@ -2574,5 +2587,9 @@ def run_sbt(
     if sbt_version == 2:
         Poutput = Poutput * 100000 # return Pa
 
+    # print("Return values")
+    # print("times: ", len(times))
+    # print("Toutput: ", Toutput[-1])
+    # print("Poutput: ", Poutput)
     return times/365/24/3600, Toutput + 273.15, Poutput #/ 10 # return in seconds, Kelvin, and Pa, respectively
 

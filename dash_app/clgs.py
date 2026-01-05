@@ -576,7 +576,6 @@ class data:
                         # Tsurf=20, GeoGradient=grad, k_m=k, c_m=825, rho_m=2875, 
                     )
 
-
                     if Tout is not None and len(Tout) > 0:
                         final_cache_key = str(cache_key_saved)
                         _set_cached_result(final_cache_key, (times, Tout, Pout))
@@ -593,8 +592,11 @@ class data:
                     np.any(Tout_arr < 200) or np.any(Tout_arr > 1000)):
                     if cache_key_saved in _sbt_cache:
                         del _sbt_cache[cache_key_saved]
-                    return np.array([]), np.array([]), np.array([])
-            
+                    n_idx = 161
+                    print(" ******* model Tout and Pout values are too large")
+                    return (np.full(n_idx, np.nan), np.full(n_idx, np.nan),np.full(n_idx, np.nan),)
+                    # return np.array([]), np.array([]), np.array([])
+                        
             if Pout is None:
                 constant_pressure = 2e7
                 Pout = constant_pressure * np.ones_like(Tout)
@@ -606,6 +608,8 @@ class data:
             Pout = Pout[14:]
 
         # print(" ******* model run")
+        # print(Tout.shape)
+        # print(times.shape)
         return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
