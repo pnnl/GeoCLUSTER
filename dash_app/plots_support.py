@@ -113,7 +113,10 @@ def parse_error_message(e, e_name, model=None):
     # print('\t', e)
 
     if e.__class__.__name__ == "ValueError":
+        print(e)
+        print(e_name)
         dim = re.findall(r'\d+', str(e))
+        print("dim: ", dim)
         if dim != []:
             # For SBT models, show generic message instead of specific parameter
             if model and model in ["SBT V1.0", "SBT V2.0"]:

@@ -346,7 +346,9 @@ class data:
         grid = [
             params[these_indices] for these_indices, params in zip(indices, self.ivars)
         ]  # the grid is the values of the parameters at the points we're interpolating between
-        interpolated_points = interpn(grid, values_around_point, points)
+        
+        points = np.asarray(points, dtype=np.float32) # should convert all to floats that were ints 
+        interpolated_points = interpn(grid, values_around_point, points) # out of bounds error can happen here
         return interpolated_points
 
     def reshape_output(self, tout):
@@ -407,12 +409,12 @@ class data:
                     with _computation_lock:
                         _computations_in_progress.pop(db_cache_key_str, None)
                     if "out of bounds" in str(e):
-                        raise ValueError(f"Parameter values out of bounds for HDF5 database interpolation: {e}")
+                        raise ValueError(f"Parameter values out of bounds for database interpolation: {e}")
                     raise
                 except Exception as e:
                     with _computation_lock:
                         _computations_in_progress.pop(db_cache_key_str, None)
-                    raise ValueError(f"Error during HDF5 database interpolation: {e}")
+                    raise ValueError(f"Error during database interpolation: {e}")
                 times = self.time
 
                 mdot, L2, L1, grad, D , Tinj, k = point
@@ -603,7 +605,7 @@ class data:
             Tout = Tout[14:]
             Pout = Pout[14:]
 
-        print(" ******* model run")
+        # print(" ******* model run")
         return Tout, Pout, times
 
     def interp_outlet_states_contour(self, param, point):
@@ -740,11 +742,11 @@ class data:
 
         mdot = point[0]
         Tinj = point[5]
-        
         # Use provided Pinj if given (for SBT models), otherwise use database value
         inlet_pressure = Pinj if Pinj is not None else self.Pinj
 
-        enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid)
+        # sCO2 will fail here because it has Nulls in Tout and Pout **
+        enthalpy_out = CP.PropsSI("H", "T", Tout, "P", Pout, self.CP_fluid) 
         enthalpy_in = CP.PropsSI("H", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
         entropy_out = CP.PropsSI("S", "T", Tout, "P", Pout, self.CP_fluid)
         entropy_in = CP.PropsSI("S", "T", Tinj, "P", inlet_pressure, self.CP_fluid)
@@ -754,6 +756,7 @@ class data:
             * (enthalpy_out - enthalpy_in - Tamb * (entropy_out - entropy_in))
             / 1000.0
         )
+
         kWt = mdot * (enthalpy_out - enthalpy_in) / 1000.0
 
         return kWe, kWt

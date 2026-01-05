@@ -148,14 +148,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     #       kWe vs. time
     #
     # -----------------------------------------------------------------------------------------------------------------
-
-    # print(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model,
-    # Tsurf, c_m, rho_m, 
-    # # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-    # Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-    # mesh, accuracy, 
-    # # mass_mode, temp_mode
-    # HyperParam1, HyperParam3, HyperParam5) # print AB HERE
     
     sCO2_Tout = sCO2_Pout = H2O_Tout = H2O_Pout = sCO2_kWe = sCO2_kWt = H2O_kWe = H2O_kWt = None
 
@@ -338,7 +330,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 
         if case == "coaxial":
 
-            # print("HERE") # AB HERE
             # Track success/failure for each fluid separately
             sCO2_success = False
             H2O_success = False
@@ -353,15 +344,16 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             # Handle each fluid separately so one failure doesn't prevent the other from running
             # Store geometry values for comparison
             geometry_before_sCO2 = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
+
+            print(geometry_before_sCO2)
             
-            if (fluid == "sCO2" or fluid == "All") and sCO2_supported:
+            if (fluid == "sCO2" or fluid == "All") and sCO2_supported: # AB HERE
                 try:
                     sCO2_Tout, sCO2_Pout, sCO2_time = c_sCO2.interp_outlet_states(point, sbt_version_sco2,
                                                             Tsurf, c_m, rho_m, 
                                                             # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
                                                             Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
                                                             mesh, accuracy, HyperParam1, HyperParam3, HyperParam5)
-                    
                     # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
                     # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
                     if sbt_version_sco2 == 2 and HyperParam1 is not None:
@@ -371,8 +363,8 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
                             Pinj_sco2 = 1e7
                     else:
-                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
-                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                        # For SBT V1.0 or if HyperParam1 is None, use default 200 bar (2e7 Pa)
+                        Pinj_sco2 = 2e7 if sbt_version_sco2 > 0 else None
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                     # Store sCO2 time for later use
@@ -392,8 +384,10 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
             geometry_before_H2O = {'Diameter1': Diameter1, 'Diameter2': Diameter2, 'PipeParam3': PipeParam3, 'PipeParam5': PipeParam5}
             
             if fluid == "H2O" or fluid == "All":
+                # what is geometry_before_sCO2?
                 if fluid == "All" and 'geometry_before_sCO2' in locals():
                     if geometry_before_sCO2['Diameter1'] != geometry_before_H2O['Diameter1'] or geometry_before_sCO2['Diameter2'] != geometry_before_H2O['Diameter2']:
+                        print("geometry")
                         pass
                 try:
                     H2O_Tout, H2O_Pout, H2O_time = c_H2O.interp_outlet_states(point, sbt_version_h2o,
@@ -657,8 +651,6 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     
     if is_blank_data:
         pass
-
-    # print(error_messages_dict) # AB HERE
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
 

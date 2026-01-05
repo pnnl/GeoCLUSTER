@@ -50,7 +50,7 @@ from info_popups import (
 )
 from write2excel import write_excelsheet
 
-is_print = True
+is_print = False
 
 if is_print:
     print(" ============= App start =============")
