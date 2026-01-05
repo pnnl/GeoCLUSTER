@@ -1977,48 +1977,48 @@ def show_hide_element(visibility_state, tab, fluid, end_use, model):
     elif model == "SBT V1.0" or model == "SBT V2.0":
         if tab == "about-tab":
             if fluid == "H2O" or end_use == "Heating":
-                return b, b, b, b, b, b, b, b, b, b, n, n, b
+                return b, b, b, b, n, b, b, b, b, b, n, n, b
             else:
-                return b, b, b, b, b, b, b, b, b, b, b, b, b
+                return b, b, b, b, n, b, b, b, b, b, b, b, b
 
         elif tab == "energy-time-tab":
-            return b, b, b, b, b, b, b, n, n, n, n, n, b
+            return b, b, b, b, n, b, b, n, n, n, n, n, b
 
         elif tab == "energy-tab":
             if visibility_state == param_list[0]:
-                return n, n, b, b, b, b, b, n, n, n, n, n, b
+                return n, n, b, b, n, b, b, n, n, n, n, n, b
             if visibility_state == param_list[1]:
-                return n, b, n, b, b, b, b, n, n, n, n, n, b
+                return n, b, n, b, n, b, b, n, n, n, n, n, b
             if visibility_state == param_list[2]:
-                return n, b, b, n, b, b, b, n, n, n, n, n, b
+                return n, b, b, n, n, b, b, n, n, n, n, n, b
             if visibility_state == param_list[3]:
                 return n, b, b, b, n, b, b, n, n, n, n, n, b
             if visibility_state == param_list[4]:
-                return n, b, b, b, b, n, b, n, n, n, n, n, n
+                return n, b, b, b, n, n, b, n, n, n, n, n, n
             if visibility_state == param_list[5]:
-                return n, b, b, b, b, b, n, n, n, n, n, n, b
+                return n, b, b, b, n, b, n, n, n, n, n, n, b
 
         elif tab == "economics-time-tab":
             if fluid == "H2O":
                 if end_use == "All":
-                    return b, b, b, b, b, b, b, b, b, b, n, n, b
+                    return b, b, b, b, n, b, b, b, b, b, n, n, b
                 if end_use == "Heating":
-                    return b, b, b, b, b, b, b, b, b, b, n, n, b
+                    return b, b, b, b, n, b, b, b, b, b, n, n, b
                 if end_use == "Electricity":
-                    return b, b, b, b, b, b, b, b, b, b, n, n, b
+                    return b, b, b, b, n, b, b, b, b, b, n, n, b
             else:
                 if end_use == "All":
-                    return b, b, b, b, b, b, b, b, b, b, b, b, b
+                    return b, b, b, b, n, b, b, b, b, b, b, b, b
                 if end_use == "Heating":
-                    return b, b, b, b, b, b, b, b, b, b, n, n, b
+                    return b, b, b, b, n, b, b, b, b, b, n, n, b
                 if end_use == "Electricity":
-                    return b, b, b, b, b, b, b, b, b, b, b, b, b
+                    return b, b, b, b, n, b, b, b, b, b, b, b, b
 
         elif tab == "summary-tab":
             if fluid == "H2O":
-                return b, b, b, b, b, b, b, b, b, b, n, n, b
+                return b, b, b, b, n, b, b, b, b, b, n, n, b
             else:
-                return b, b, b, b, b, b, b, b, b, b, b, b, b
+                return b, b, b, b, n, b, b, b, b, b, b, b, b
     else:
         raise PreventUpdate
 
