@@ -2320,6 +2320,7 @@ def update_slider_ranges(model, case, store_data):
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
         Input(component_id="inlet-pressure-select", component_property="value"),
         Input(component_id="model-select", component_property="value"),
@@ -2330,7 +2331,7 @@ def update_slider_ranges(model, case, store_data):
     ],
     prevent_initial_call=True,
 )
-def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, mass_mode, inlet_pressure, model, case, store_data):
+def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_vertical, diameter_lateral, n_laterals, lateral_flow, insulation_k, lateral_multiplier, coaxial_flow_type, mass_mode, inlet_pressure, model, case, store_data):
     if is_print:
         print("save_slider_values")
     """Save slider values to store, keyed by (model, case) to prevent cross-contamination"""
@@ -2372,8 +2373,8 @@ def save_slider_values(mdot, L2, L1, grad, D, Tinj, k, Tsurf, c, rho, diameter_v
             case_bucket["coaxial-insulation-k"] = insulation_k
         if n_laterals is not None:
             case_bucket["thicknesscenterpipe"] = n_laterals
-        if lateral_multiplier is not None and isinstance(lateral_multiplier, str):
-            case_bucket["coaxial-flow-type"] = lateral_multiplier
+        if coaxial_flow_type is not None and isinstance(coaxial_flow_type, str):
+            case_bucket["coaxial-flow-type"] = coaxial_flow_type
     
     model_bucket[case] = case_bucket
     store_data[model] = model_bucket
@@ -2707,35 +2708,28 @@ def update_sliders_heat_exchanger(model, case, store_data):
 
             k_center_pipe = lateral_flow_placeholder(value=1.0, style=div_none_style)
             
-            saved_flow_type = get_saved_value("coaxial-flow-type", {"coaxial-flow-type": "Inject in Annulus"}, "coaxial-flow-type")
-            if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
-                saved_flow_type = "Inject in Annulus"
-            
-            # Create dropdown with explicit value
-            flow_type_options = ["Inject in Annulus", "Inject in Center Pipe"]
-            coaxialflowtype = html.Div(
-                id="lat-flow-mul-div",
-                className="name-input-container-dd",
-                style=div_block_style,
-                children=[
-                    html.P("Coaxial Flow Type", className="input-title"),
-                    dcc.Dropdown(
-                        id="lateral-multiplier-select",
-                        options=flow_type_options,
-                        value=saved_flow_type,
-                        clearable=False,
-                        searchable=False,
-                        disabled=False,
-                        className="select-dropdown"
-                    ),
-                ])
+            # For coaxial, use the existing coaxial-flow-type-select dropdown in the layout
+            # Don't create a duplicate - just return a hidden placeholder
+            lateral_multiplier = input_box(
+                DivID="lat-flow-mul-div",
+                ID="lateral-multiplier-select",
+                ptitle="Lateral Flow Multiplier",
+                min_v=0,
+                max_v=1,
+                start_v=1.0,
+                step_i=0.05,
+                div_style={"position": "absolute", "left": "-9999px", "visibility": "hidden"},
+                parameter_name="Lateral Flow Multiplier",
+                horizontal=True,
+                input_width="60px",
+            )
 
             return (
                 radius,
                 radiuscenterpipe,
                 thicknesscenterpipe,
                 k_center_pipe,
-                coaxialflowtype,
+                lateral_multiplier,
             )
 
     elif model == "HDF5":
@@ -2954,6 +2948,49 @@ def restore_sbt_sliders(model, case, store_data, current_diameter_vertical, curr
     
     return diameter_vertical, diameter_lateral, n_laterals, lateral_flow, lateral_multiplier
 
+
+@app.callback(
+    Output(component_id="coaxial-flow-type-select", component_property="value", allow_duplicate=True),
+    [
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+        State(component_id="coaxial-flow-type-select", component_property="value"),
+    ],
+    prevent_initial_call=True,
+)
+def restore_coaxial_flow_type(model, case, store_data, current_value):
+    """Restore coaxial flow type value when model or case changes."""
+    if model is None or model not in ["SBT V1.0", "SBT V2.0"]:
+        raise PreventUpdate
+    if case != "coaxial":
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    saved_values = store_data.get(model, {}).get(case, {})
+    saved_flow_type = saved_values.get("coaxial-flow-type")
+    
+    if saved_flow_type is None:
+        for other_model in ["SBT V2.0", "SBT V1.0"]:
+            if other_model in store_data and case in store_data[other_model]:
+                saved_flow_type = store_data[other_model][case].get("coaxial-flow-type")
+                if saved_flow_type is not None:
+                    break
+    
+    if saved_flow_type is None:
+        saved_flow_type = "Inject in Annulus"
+    
+    if saved_flow_type not in ["Inject in Annulus", "Inject in Center Pipe"]:
+        saved_flow_type = "Inject in Annulus"
+    
+    if current_value == saved_flow_type:
+        raise PreventUpdate
+    
+    return saved_flow_type
 
 @app.callback(
     Output(component_id="lateral-multiplier-select", component_property="value", allow_duplicate=True),
@@ -3268,6 +3305,7 @@ def update_sliders_hyperparms(model, store_data):
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="insulation-thermal-conductivity-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
@@ -3281,7 +3319,7 @@ def update_sliders_hyperparms(model, store_data):
 def build_plot_params(
     interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
     radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
-    lateral_flow, insulation_k, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+    lateral_flow, insulation_k, lateral_mult, coaxial_flow_type, mesh, accuracy, mass_mode, temp_mode,
     pipe_roughness, fluid_mode, inlet_pressure, slider_store
 ):
     
@@ -3292,14 +3330,16 @@ def build_plot_params(
     
     if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
         param4_value = insulation_k if insulation_k is not None else lateral_flow
+        param5_value = coaxial_flow_type if coaxial_flow_type is not None else lateral_mult
     else:
         param4_value = lateral_flow
+        param5_value = lateral_mult
     
     return {
         "vals": (
             interp_time, fluid, case, mdot, L2, L1, grad, diameter, Tinj, k,
             radio3, model, Tsurf, c_m, rho_m, dia_vert, dia_lat, n_lat,
-            param4_value, lateral_mult, mesh, accuracy, mass_mode, temp_mode,
+            param4_value, param5_value, mesh, accuracy, mass_mode, temp_mode,
             pipe_roughness, fluid_mode, inlet_pressure,
         ),
         "slider_store": slider_store,
@@ -3648,6 +3688,7 @@ def update_subsurface_contours_plots(
         Input(component_id="n-laterals-select", component_property="value"),
         Input(component_id="lateral-flow-select", component_property="value"),
         Input(component_id="lateral-multiplier-select", component_property="value"),
+        Input(component_id="coaxial-flow-type-select", component_property="value"),
         Input(component_id="mesh-select", component_property="value"),
         Input(component_id="accuracy-select", component_property="value"),
         Input(component_id="mass-mode-select", component_property="data"),
@@ -3688,6 +3729,7 @@ def update_econ_plots(
     PipeParam3,
     PipeParam4,
     PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
+    coaxial_flow_type,
     mesh,
     accuracy,
     mass_mode,
@@ -3700,6 +3742,9 @@ def update_econ_plots(
         print("update_econ_plots")
     try:
         # Handle None values
+        # For coaxial case, use coaxial-flow-type-select value instead of lateral-multiplier-select
+        if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+            PipeParam5 = coaxial_flow_type if coaxial_flow_type is not None else PipeParam5
         if TandP_dict is None:
             TandP_dict = {}
         if checklist is None:
@@ -3876,6 +3921,7 @@ def update_table(
     PipeParam3,
     PipeParam4,
     PipeParam5,  # For U-tube: lateral multiplier, For coaxial: flow type (string from dropdown)
+    coaxial_flow_type,
     mesh,
     accuracy,
     mass_mode,
@@ -3888,6 +3934,9 @@ def update_table(
         print("update_table")
     try:
         # Handle None values
+        # For coaxial case, use coaxial-flow-type-select value instead of lateral-multiplier-select
+        if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+            PipeParam5 = coaxial_flow_type if coaxial_flow_type is not None else PipeParam5
         if econ_dict is None:
             econ_dict = {}
         if thermal_dict is None:
