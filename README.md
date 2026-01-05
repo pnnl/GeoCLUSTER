@@ -71,12 +71,12 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Wellbore Operation Parameters | Database Options | Simulator Options | Default |
 |------------------------------|------------------|-------------------|---------|
 | Working Fluid | H₂O, sCO₂ | H₂O, sCO₂ | All |
-| Mass Flow Rate | 5 kg/s to 100 kg/s | 5 kg/s to 300 kg/s | 31 kg/s |
+| Mass Flow Rate | 5 kg/s to 100 kg/s | 5 kg/s to 300 kg/s | 30 kg/s |
 | Injection Temperature | 30 °C to 59 °C | 30 °C to 100 °C | 55 °C |
-| Inlet Pressure | 200 bar (fixed) | 5 MPa to 20 MPa | 20 MPa |
+| Inlet Pressure | 20 MPa (fixed) | 5 MPa to 20 MPa | 20 MPa |
 | Mass Flow Rate Mode | — | Constant, Variable | Constant |
 | Injection Temperature Mode | — | Constant, Variable | Constant |
-| Fluid Properties Mode | — | Constant, Temperature-Pressure Dependent | Constant |
+| Fluid Properties Mode | — | Constant, Temperature-Pressure (T-P) Dependent | T-P Dependent |
 | Fluid Specific Heat Capacity | — | 4,200 J/kg·°C (fixed) | 4,200 J/kg·°C |
 | Fluid Density | — | 1,000 kg/m³ (fixed) | 1,000 kg/m³ |
 | Fluid Thermal Conductivity | — | 0.68 W/m·°C (fixed) | 0.68 W/m·°C |
@@ -89,13 +89,13 @@ To better view all possible parameters a user can edit, a full list of editable 
 | Borehole Diameter | 0.2159 m to 0.4445 m | — | 0.35 m |
 | Wellbore Diameter Vertical (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
 | Wellbore Diameter Lateral (U-tube) | — | 0.2159 m to 0.4445 m | 0.35 m |
-| Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.201 m |
+| Annulus Diameter (coaxial) | — | 0.2159 m to 0.4445 m | 0.4445 m |
 | Center Pipe Diameter (coaxial) | — | 0.127 m to 0.348 m | 0.201 m |
 | Center Pipe Thickness (coaxial) | 0.0192 m | 0.0050 m to 0.025 m | 0.0192 m |
 | Pipe Roughness | 2.5×10⁻⁵ m (fixed) | 1×10⁻⁶ m to 3×10⁻⁶ m | 1×10⁻⁶ |
 | Horizontal Extent | 1,000 m to 20,000 m | 1,000 m to 50,000 m | 10,000 m |
 | Drilling Depth | 1,000 m to 5,000 m | 1,000 m to 10,000 m | 3,500 m |
-| Number of Laterals (U-tube) | 1 (fixed) | 0 to 30 | 1 |
+| Number of Laterals (U-tube) | 1 (fixed) | 1 to 3 | 1 |
 
 | Component Performance | Database Options | Simulator Options | Default |
 |----------------------|------------------|-------------------|---------|
