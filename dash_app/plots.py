@@ -149,13 +149,13 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     #
     # -----------------------------------------------------------------------------------------------------------------
 
-    print(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model,
-    Tsurf, c_m, rho_m, 
-    # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
-    Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
-    mesh, accuracy, 
-    # mass_mode, temp_mode
-    HyperParam1, HyperParam3, HyperParam5)
+    # print(interp_time, fluid, case, arg_mdot, arg_L2, arg_L1, arg_grad, arg_D, arg_Tinj, arg_k, scale, model,
+    # Tsurf, c_m, rho_m, 
+    # # radius_vertical, radius_lateral, n_laterals, lateral_flow, lateral_multiplier,
+    # Diameter1, Diameter2, PipeParam3, PipeParam4, PipeParam5,
+    # mesh, accuracy, 
+    # # mass_mode, temp_mode
+    # HyperParam1, HyperParam3, HyperParam5) # print AB HERE
     
     sCO2_Tout = sCO2_Pout = H2O_Tout = H2O_Pout = sCO2_kWe = sCO2_kWt = H2O_kWe = H2O_kWt = None
 
@@ -338,7 +338,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                 
         if case == "coaxial":
 
-            print("HERE")
+            # print("HERE") # AB HERE
             # Track success/failure for each fluid separately
             sCO2_success = False
             H2O_success = False
@@ -658,7 +658,7 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
     if is_blank_data:
         pass
 
-    print(error_messages_dict)
+    # print(error_messages_dict) # AB HERE
     
     return fig, forty_yr_means_dict, mass_flow_rates_dict, time_dict, error_messages_dict, TandP_dict
 

@@ -50,7 +50,7 @@ from info_popups import (
 )
 from write2excel import write_excelsheet
 
-is_print = False
+is_print = True
 
 if is_print:
     print(" ============= App start =============")
@@ -1308,9 +1308,9 @@ def update_see_all_params_cache(n_clicks, current_button_text, current_state):
     [Input(component_id="model-select", component_property="value")],
     prevent_initial_call=True,
 )
-def update_tabs(selected_model):
+def update_scenario_buttons_visibility(selected_model):
     if is_print:
-        print("update_tabs")
+        print("update_scenario_buttons_visibility")
     if selected_model == "HDF5":
         return {"display": "block"}, {"display": "block"}, {"display": "block"}
 
@@ -1371,9 +1371,9 @@ def update_graphics_container(selected_model):
     [Input(component_id="model-select", component_property="value")],
     prevent_initial_call=True,
 )
-def update_tabs(selected_model):
+def update_contour_tab_visibility(selected_model):
     if is_print:
-        print("update_tabs")
+        print("update_contour_tab_visibility")
     if selected_model == "HDF5":
         return {"display": "block"}
     elif selected_model == "SBT V1.0" or selected_model == "SBT V2.0":
@@ -1739,13 +1739,13 @@ def show_model_params(model, case):
     ],
     [
         Input(component_id="tabs", component_property="value"),
-        Input(component_id="model-select", component_property="value"),
+        # Input(component_id="model-select", component_property="value"),
         Input(component_id="fluid-select", component_property="value"),
         Input(component_id="end-use-select", component_property="value"),
     ],
     prevent_initial_call=True,
 )
-def econ_sliders_visibility(tab, model, fluid, end_use):
+def econ_sliders_visibility(tab, fluid, end_use):
     if is_print:
         print("econ_sliders_visibility")
     b = {"display": "block"}
