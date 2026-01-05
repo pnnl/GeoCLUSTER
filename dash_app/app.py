@@ -1396,12 +1396,12 @@ def switch_tab_on_model_change(model, current_tab):
     if is_print:
         print("switch_tab_on_model_change")
     """
-    Automatically switch to first tab (about-tab) when switching from Database to Simulator
-    if user is currently on the subsurface contours tab (energy-tab).
+    Automatically switch from subsurface contours tab (energy-tab) to subsurface results tab (energy-time-tab)
+    when switching from Database to Simulator.
     """
     # Only trigger if switching from Database to Simulator
     if model in ("SBT V1.0", "SBT V2.0") and current_tab == "energy-tab":
-        return "about-tab"
+        return "energy-time-tab"
     else:
         raise PreventUpdate
 
