@@ -275,15 +275,22 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                                                         )
                     # For SBT V2.0 sCO2, use HyperParam1 (in MPa) converted to Pa as inlet pressure
                     # For SBT V1.0, HyperParam1 is Mass Flow Rate Mode (string like 'Constant'), not inlet pressure
+                    print("sbt_version_sco2: ", sbt_version_sco2)
                     if sbt_version_sco2 == 2 and HyperParam1 is not None:
                         try:
                             Pinj_sco2 = float(HyperParam1) * 1e6
                         except (ValueError, TypeError):
                             # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
-                            Pinj_sco2 = 1e7
+                            Pinj_sco2 = 2e7
+                            print("oh no 1!")
                     else:
-                        # For SBT V1.0 or if HyperParam1 is None, use default 100 bar (1e7 Pa)
-                        Pinj_sco2 = 1e7 if sbt_version_sco2 > 0 else None
+                        # For SBT V1.0 or if HyperParam1 is None, use default 200 bar (2e7 Pa)
+                        if sbt_version_sco2 > 0:
+                            Pinj_sco2 = 2e7
+                            print("oh no 2.0!")
+                        else:
+                            Pinj_sco2 = None
+                            print("oh no 2 !")
                     sCO2_kWe, sCO2_kWt = u_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                 except Exception as e:
@@ -359,10 +366,17 @@ def generate_subsurface_lineplots(interp_time, fluid, case, arg_mdot, arg_L2, ar
                             Pinj_sco2 = float(HyperParam1) * 1e6
                         except (ValueError, TypeError):
                             # HyperParam1 is not a numeric value (e.g., 'Constant' for SBT V1.0)
-                            Pinj_sco2 = 1e7
+                            Pinj_sco2 = 2e7
+                            print("oh no 3!")
                     else:
                         # For SBT V1.0 or if HyperParam1 is None, use default 200 bar (2e7 Pa)
-                        Pinj_sco2 = 2e7 if sbt_version_sco2 > 0 else None
+                        if sbt_version_sco2 > 0:
+                            Pinj_sco2 = 2e7
+                            print("oh no 4.0!")
+                        else:
+                            print("oh no 4!")
+                            Pinj_sco2 = None
+
                     sCO2_kWe, sCO2_kWt = c_sCO2.interp_kW(point, sCO2_Tout, sCO2_Pout, Pinj=Pinj_sco2)
                     sCO2_success = True
                     # Store sCO2 time for later use
