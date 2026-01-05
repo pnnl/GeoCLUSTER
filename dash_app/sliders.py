@@ -399,7 +399,7 @@ def slider_card():
                                                             id="diameter-container",
                                                             children=[ 
                                                                 slider1(DivID="diameter-select-div", ID="diameter-select", ptitle="Borehole Diameter (m)", min_v=0.2159, max_v=0.444, 
-                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_block_style, parameter_name="Borehole Diameter (m)")
+                                                                        mark_dict=D_dict, step_i=0.002, start_v=start_vals_d["D"], div_style=div_none_style, parameter_name="Borehole Diameter (m)")
                                                             ]),
                                                     html.Div(
                                                             id="Diameter1-container",
