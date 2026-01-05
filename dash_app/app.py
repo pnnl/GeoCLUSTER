@@ -2302,6 +2302,46 @@ def update_slider_ranges(model, case, store_data):
 
 
 @app.callback(
+    [
+        Output(component_id="grad-select", component_property="value", allow_duplicate=True),
+        Output(component_id="k-select", component_property="value", allow_duplicate=True),
+        Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
+        Output(component_id="mdot-select", component_property="value", allow_duplicate=True),
+        Output(component_id="L2-select", component_property="value", allow_duplicate=True),
+        Output(component_id="L1-select", component_property="value", allow_duplicate=True),
+        Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
+    ],
+    [
+        Input(component_id="model-select", component_property="value"),
+        Input(component_id="case-select", component_property="value"),
+    ],
+    [
+        State(component_id="slider-values-store", component_property="data"),
+    ],
+    prevent_initial_call=True,
+)
+def update_slider_values_on_model_change(model, case, store_data):
+    """Update slider values when model/case changes to ensure visual position updates immediately."""
+    if model is None or case is None:
+        raise PreventUpdate
+    
+    if store_data is None:
+        store_data = {}
+    
+    saved_values = store_data.get(model, {}).get(case, {})
+    
+    grad = saved_values.get("grad", start_vals_d["grad"])
+    k = saved_values.get("k", start_vals_d["k"])
+    Tinj = saved_values.get("Tinj", 55.0 if model == "HDF5" else start_vals_d["Tinj"])
+    mdot = saved_values.get("mdot", start_vals_d["mdot"])
+    L2 = saved_values.get("L2", start_vals_d["L2"])
+    L1 = saved_values.get("L1", start_vals_d["L1"])
+    D = saved_values.get("D", start_vals_d["D"])
+    
+    return grad, k, Tinj, mdot, L2, L1, D
+
+
+@app.callback(
     Output(component_id="slider-values-store", component_property="data"),
     [
         Input(component_id="mdot-select", component_property="value"),

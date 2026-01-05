@@ -124,8 +124,8 @@ PARAMETER_INFO = {
     
     # Wellbore Operations
     "Injection Temperature (˚C)": {
-        "definition": "Set the temperature of the fluid entering the subsurface. A value of 30°C is a common injection temperature for low-enthalpy systems.",
-        "recommended_range": "30-59°C",
+        "definition": "Set the temperature of the fluid entering the subsurface. A value of 30°C is a common injection temperature for low-enthalpy systems. Database (HDF5) range: 30-59°C. Simulator (SBT) range: 30-100°C.",
+        "recommended_range": "30-100°C",
         "typical_value": "55°C",
         "unit": "°C",
         "description": "Lower injection temperatures generally improve heat extraction efficiency."
