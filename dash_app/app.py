@@ -2441,98 +2441,103 @@ def restore_always_visible_sliders(model, store_data, current_tsurf, current_c, 
     return Tsurf, c, rho
 
 
-@app.callback(
-    [
-        Output(component_id="mdot-select", component_property="value", allow_duplicate=True),
-        Output(component_id="L2-select", component_property="value", allow_duplicate=True),
-        Output(component_id="L1-select", component_property="value", allow_duplicate=True),
-        Output(component_id="grad-select", component_property="value", allow_duplicate=True),
-        Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
-        Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
-        Output(component_id="k-select", component_property="value", allow_duplicate=True),
-    ],
-    [
-        Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
-        Input(component_id="case-select", component_property="value"),
-    ],
-    [
-        State(component_id="slider-values-store", component_property="data"),
-        State(component_id="mdot-select", component_property="value"),
-        State(component_id="L2-select", component_property="value"),
-        State(component_id="L1-select", component_property="value"),
-        State(component_id="grad-select", component_property="value"),
-        State(component_id="diameter-select", component_property="value"),
-        State(component_id="Tinj-select", component_property="value"),
-        State(component_id="k-select", component_property="value"),
-    ],
-    prevent_initial_call=True,
-)
-def restore_slider_values(model, case, store_data, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
-    """Restore slider values from store when model switches (not on initial load)"""
-    if is_print:
-        print("restore_slider_values")
-    if model is None:
-        raise PreventUpdate
-    
-    # Only restore when model-select actually changed (not on initial load)
-    if not ctx.triggered or ctx.triggered_id != "model-select":
-        raise PreventUpdate
-    
-    # Don't restore values for coaxial - let users set their own values
-    # This prevents the callback from overriding user-set slider values
-    if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
-        raise PreventUpdate
-    
-    if store_data is None:
-        store_data = {}
-    
-    # Helper function to get value from current model or fall back to other models
-    # Returns (value, found) tuple where found indicates if value was found in store
-    def get_value(key):
-        # First check current model
-        if model in store_data and key in store_data[model]:
-            val = store_data[model][key]
-            if val is not None:
-                return val, True
-        
-        # If not found, check other models
-        for other_model in ["HDF5", "SBT V2.0", "SBT V1.0"]:
-            if other_model in store_data and key in store_data[other_model]:
-                val = store_data[other_model][key]
-                if val is not None:
-                    return val, True
-        
-        # Return None if not found anywhere
-        return None, False
-    
-    # Try to restore values from store for all cases
-    # Don't force defaults - let users set their own values
-    mdot, mdot_found = get_value("mdot")
-    L2, L2_found = get_value("L2")
-    L1, L1_found = get_value("L1")
-    grad, grad_found = get_value("grad")
-    D, D_found = get_value("D")
-    Tinj, Tinj_found = get_value("Tinj")
-    k, k_found = get_value("k")
-    
-    if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
-        raise PreventUpdate
-    
-    # Use defaults for any None values
-    mdot = mdot if mdot is not None else start_vals_d.get("mdot", 30.0)
-    L2 = L2 if L2 is not None else start_vals_d.get("L2", 10000)
-    L1 = L1 if L1 is not None else start_vals_d.get("L1", 3500)
-    grad = grad if grad is not None else start_vals_d.get("grad", 0.065)
-    D = D if D is not None else start_vals_d.get("D", 0.3500)
-    Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
-    k = k if k is not None else start_vals_d.get("k", 3.0)
-    
-    # Only update if values have changed to prevent unnecessary cascading updates
-    if (current_mdot == mdot and current_L2 == L2 and current_L1 == L1 and 
-        current_grad == grad and current_D == D and current_Tinj == Tinj and current_k == k):
-        raise PreventUpdate
-    
-    return mdot, L2, L1, grad, D, Tinj, k
+# COMMENTED OUT: restore_slider_values was removed because it's redundant with update_slider_ranges
+# which already sets saved values via start_v when creating sliders. This callback was causing
+# React unmounting errors by trying to update slider values while update_slider_ranges was
+# recreating them. The batching benefit is no longer needed since values are set during creation.
+#
+# @app.callback(
+#     [
+#         Output(component_id="mdot-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="L2-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="L1-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="grad-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="diameter-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="Tinj-select", component_property="value", allow_duplicate=True),
+#         Output(component_id="k-select", component_property="value", allow_duplicate=True),
+#     ],
+#     [
+#         Input(component_id="model-select", component_property="value"),  # Trigger only on model switches
+#         Input(component_id="case-select", component_property="value"),
+#     ],
+#     [
+#         State(component_id="slider-values-store", component_property="data"),
+#         State(component_id="mdot-select", component_property="value"),
+#         State(component_id="L2-select", component_property="value"),
+#         State(component_id="L1-select", component_property="value"),
+#         State(component_id="grad-select", component_property="value"),
+#         State(component_id="diameter-select", component_property="value"),
+#         State(component_id="Tinj-select", component_property="value"),
+#         State(component_id="k-select", component_property="value"),
+#     ],
+#     prevent_initial_call=True,
+# )
+# def restore_slider_values(model, case, store_data, current_mdot, current_L2, current_L1, current_grad, current_D, current_Tinj, current_k):
+#     """Restore slider values from store when model switches (not on initial load)"""
+#     if is_print:
+#         print("restore_slider_values")
+#     if model is None:
+#         raise PreventUpdate
+#     
+#     # Only restore when model-select actually changed (not on initial load)
+#     if not ctx.triggered or ctx.triggered_id != "model-select":
+#         raise PreventUpdate
+#     
+#     # Don't restore values for coaxial - let users set their own values
+#     # This prevents the callback from overriding user-set slider values
+#     if case == "coaxial" and model in ["SBT V1.0", "SBT V2.0"]:
+#         raise PreventUpdate
+#     
+#     if store_data is None:
+#         store_data = {}
+#     
+#     # Helper function to get value from current model or fall back to other models
+#     # Returns (value, found) tuple where found indicates if value was found in store
+#     def get_value(key):
+#         # First check current model
+#         if model in store_data and key in store_data[model]:
+#             val = store_data[model][key]
+#             if val is not None:
+#                 return val, True
+#         
+#         # If not found, check other models
+#         for other_model in ["HDF5", "SBT V2.0", "SBT V1.0"]:
+#             if other_model in store_data and key in store_data[other_model]:
+#                 val = store_data[other_model][key]
+#                 if val is not None:
+#                     return val, True
+#         
+#         # Return None if not found anywhere
+#         return None, False
+#     
+#     # Try to restore values from store for all cases
+#     # Don't force defaults - let users set their own values
+#     mdot, mdot_found = get_value("mdot")
+#     L2, L2_found = get_value("L2")
+#     L1, L1_found = get_value("L1")
+#     grad, grad_found = get_value("grad")
+#     D, D_found = get_value("D")
+#     Tinj, Tinj_found = get_value("Tinj")
+#     k, k_found = get_value("k")
+#     
+#     if not any([mdot_found, L2_found, L1_found, grad_found, D_found, Tinj_found, k_found]):
+#         raise PreventUpdate
+#     
+#     # Use defaults for any None values
+#     mdot = mdot if mdot is not None else start_vals_d.get("mdot", 30.0)
+#     L2 = L2 if L2 is not None else start_vals_d.get("L2", 10000)
+#     L1 = L1 if L1 is not None else start_vals_d.get("L1", 3500)
+#     grad = grad if grad is not None else start_vals_d.get("grad", 0.065)
+#     D = D if D is not None else start_vals_d.get("D", 0.3500)
+#     Tinj = Tinj if Tinj is not None else start_vals_d.get("Tinj", 60.0)
+#     k = k if k is not None else start_vals_d.get("k", 3.0)
+#     
+#     # Only update if values have changed to prevent unnecessary cascading updates
+#     if (current_mdot == mdot and current_L2 == L2 and current_L1 == L1 and 
+#         current_grad == grad and current_D == D and current_Tinj == Tinj and current_k == k):
+#         raise PreventUpdate
+#     
+#     return mdot, L2, L1, grad, D, Tinj, k
 
 
 @app.callback(
@@ -3581,7 +3586,7 @@ def update_subsurface_contours_plots(
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
-    if not params_store:
+    if not params_store or "vals" not in params_store:
         raise PreventUpdate
     
     vals = params_store["vals"]
