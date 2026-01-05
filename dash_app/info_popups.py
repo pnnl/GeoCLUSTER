@@ -963,9 +963,9 @@ def register_info_modal_callbacks(app):
                     elif param == "Mass Flow Rate (lb/s)":
                         value = "11.0-661.4 lb/s"
                     elif param == "Injection Temperature (˚C)":
-                        value = "30-59°C"
+                        value = "30-100°C"
                     elif param == "Injection Temperature (˚F)":
-                        value = "86-138°F"
+                        value = "86-212°F"
                     elif param == "Horizontal Extent (m)":
                         value = "1000-50000 m"
                     elif param == "Horizontal Extent (ft)":
