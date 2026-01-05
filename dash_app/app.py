@@ -2653,7 +2653,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
 
         elif case == "coaxial":
             insulation_thermal_k_dict = {0.025: "0.025", 0.50: "0.5"}
-            radius_centerpipe_dict = {0.127: "0.127", 0.2155: "0.2155"}
+            radius_centerpipe_dict = {0.127: "0.127", 0.348: "0.348"}
 
             coaxial_defaults = {"diameter-vertical": 0.4445, "diameter-lateral": 0.2}
             # Get both values first - filtering will handle invalid values
@@ -2685,7 +2685,7 @@ def update_sliders_heat_exchanger(model, case, store_data):
                 ID="diameter-lateral-select",
                 ptitle="Center Pipe Diameter (m)",
                 min_v=0.127,
-                max_v=0.2155,
+                max_v=0.348,
                 mark_dict=radius_centerpipe_dict,
                 step_i=0.002,
                 start_v=centerpipe_diameter,
