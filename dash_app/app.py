@@ -3567,18 +3567,26 @@ def update_subsurface_results_plots(
         Input(component_id="diameter-select", component_property="value"),
         Input(component_id="Tinj-select", component_property="value"),
         Input(component_id="k-select", component_property="value"),
-        Input(component_id="model-select", component_property="value"),
+    ],
+    [
+        State(component_id="plot-params-store", component_property="data"),
     ],
     prevent_initial_call=True,
 )
 def update_subsurface_contours_plots(
-    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, model
+    interp_time, fluid, case, param, mdot, L2, L1, grad, D, Tinj, k_m, params_store
 ):
     if is_print:
         print("update_subsurface_contours_plots")
     # -----------------------------------------------------------------------------
     # Creates and displays Plotly subplots of the subsurface contours.
     # -----------------------------------------------------------------------------
+    if not params_store:
+        raise PreventUpdate
+    
+    vals = params_store["vals"]
+    model = vals[11]
+    
     # Contours are only available for HDF5 models, not SBT models
     if model is None or model in ["SBT V1.0", "SBT V2.0"]:
         raise PreventUpdate
